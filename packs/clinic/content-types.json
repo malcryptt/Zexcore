@@ -1,0 +1,31 @@
+[
+  {
+    "slug": "patient-profile",
+    "name": "Patient Profile",
+    "description": "Patient demographic and contact information",
+    "schemaJson": {
+      "fields": [
+        { "key": "fullName", "label": "Full Name", "type": "string", "required": true },
+        { "key": "dateOfBirth", "label": "Date of Birth", "type": "date", "required": true },
+        { "key": "bloodType", "label": "Blood Group", "type": "select", "options": ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"], "required": false },
+        { "key": "emergencyContact", "label": "Emergency Contact Name", "type": "string", "required": true },
+        { "key": "emergencyPhone", "label": "Emergency Phone", "type": "string", "required": true },
+        { "key": "medicalRecordNumber", "label": "MRN / National ID (Encrypted)", "type": "encrypted", "required": true }
+      ]
+    }
+  },
+  {
+    "slug": "clinical-consultation",
+    "name": "Clinical Consultation Note",
+    "description": "Encounter notes with envelope encryption protection",
+    "schemaJson": {
+      "fields": [
+        { "key": "encounterDate", "label": "Encounter Date", "type": "date", "required": true },
+        { "key": "practitioner", "label": "Attending Clinician", "type": "string", "required": true },
+        { "key": "diagnosisCode", "label": "ICD-10 Code", "type": "string", "required": false },
+        { "key": "notes", "label": "Clinical Notes (Encrypted)", "type": "encrypted", "required": true },
+        { "key": "treatmentPlan", "label": "Prescriptions & Plan", "type": "string", "required": false }
+      ]
+    }
+  }
+]

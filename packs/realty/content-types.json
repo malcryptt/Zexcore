@@ -1,0 +1,34 @@
+[
+  {
+    "slug": "property",
+    "name": "Property Listing",
+    "description": "Commercial and residential real estate listings",
+    "schemaJson": {
+      "fields": [
+        { "key": "title", "label": "Title", "type": "string", "required": true },
+        { "key": "propertyType", "label": "Property Type", "type": "select", "options": ["apartment", "villa", "penthouse", "commercial"], "required": true },
+        { "key": "price", "label": "Price ($)", "type": "number", "required": true },
+        { "key": "bedrooms", "label": "Bedrooms", "type": "number", "required": false },
+        { "key": "bathrooms", "label": "Bathrooms", "type": "number", "required": false },
+        { "key": "squareFeet", "label": "Square Feet", "type": "number", "required": false },
+        { "key": "location", "label": "City / Address", "type": "string", "required": true },
+        { "key": "featured", "label": "Featured Listing", "type": "boolean", "required": false },
+        { "key": "status", "label": "Listing Status", "type": "select", "options": ["available", "under_contract", "sold"], "required": true }
+      ]
+    }
+  },
+  {
+    "slug": "viewing-inquiry",
+    "name": "Viewing Inquiry",
+    "description": "Prospective buyer tour inquiries",
+    "schemaJson": {
+      "fields": [
+        { "key": "clientName", "label": "Client Name", "type": "string", "required": true },
+        { "key": "clientEmail", "label": "Client Email", "type": "string", "required": true },
+        { "key": "phone", "label": "Phone Number", "type": "string", "required": false },
+        { "key": "preferredDate", "label": "Preferred Tour Date", "type": "date", "required": true },
+        { "key": "notes", "label": "Special Requests", "type": "string", "required": false }
+      ]
+    }
+  }
+]

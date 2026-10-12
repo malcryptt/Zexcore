@@ -1,0 +1,31 @@
+[
+  {
+    "slug": "product",
+    "name": "Product Catalog Item",
+    "description": "Inventory items, pricing, and stock levels",
+    "schemaJson": {
+      "fields": [
+        { "key": "title", "label": "Product Title", "type": "string", "required": true },
+        { "key": "sku", "label": "SKU Identifier", "type": "string", "required": true },
+        { "key": "price", "label": "Unit Price ($)", "type": "number", "required": true },
+        { "key": "stockQuantity", "label": "Stock Quantity", "type": "number", "required": true },
+        { "key": "category", "label": "Product Category", "type": "string", "required": false },
+        { "key": "isAvailable", "label": "In Stock / Visible", "type": "boolean", "required": true }
+      ]
+    }
+  },
+  {
+    "slug": "customer-order",
+    "name": "Customer Order",
+    "description": "Retail customer transaction records",
+    "schemaJson": {
+      "fields": [
+        { "key": "orderNumber", "label": "Order Reference", "type": "string", "required": true },
+        { "key": "customerEmail", "label": "Customer Email", "type": "string", "required": true },
+        { "key": "totalAmount", "label": "Total Amount ($)", "type": "number", "required": true },
+        { "key": "orderStatus", "label": "Status", "type": "select", "options": ["pending", "paid", "fulfilled", "cancelled"], "required": true },
+        { "key": "items", "label": "Purchased Line Items", "type": "json", "required": true }
+      ]
+    }
+  }
+]

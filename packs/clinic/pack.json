@@ -1,0 +1,14 @@
+{
+  "slug": "clinic",
+  "name": "Healthcare & Clinic Vertical Pack",
+  "description": "Hardened compliance pack for medical practices, patient intake, appointments, and encrypted clinical records.",
+  "version": "1.0.0",
+  "recommendedTier": "hardened_clinic",
+  "recommendedModules": ["crm"],
+  "compliance": {
+    "hipaa": true,
+    "gdpr": true,
+    "envelopeEncryption": true,
+    "auditTrailHardening": true
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "slug": "store",
+  "name": "Commerce & Store Vertical Pack",
+  "description": "Catalog and retail order management pack for online and retail businesses.",
+  "version": "1.0.0",
+  "recommendedModules": ["cms", "crm"],
+  "features": {
+    "inventoryTracking": true,
+    "discountCodes": true,
+    "orderExport": true
+  }
+}

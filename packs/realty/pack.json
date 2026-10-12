@@ -1,0 +1,12 @@
+{
+  "slug": "realty",
+  "name": "Real Estate Vertical Pack",
+  "description": "Preconfigured pack for real estate brokerages, property listings, viewing schedules, and client leads.",
+  "version": "1.0.0",
+  "recommendedModules": ["cms", "crm"],
+  "features": {
+    "propertyMap": true,
+    "virtualTours": true,
+    "mortgageCalculator": true
+  }
+}

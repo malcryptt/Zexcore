@@ -1,0 +1,31 @@
+{
+  "name": "zexcore-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.33.2",
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter @zexcore/api dev",
+    "dev:all": "pnpm -r --parallel run dev",
+    "build": "pnpm -r run build",
+    "test": "vitest run",
+    "test:isolation": "vitest run tests/isolation",
+    "lint": "eslint .",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
+    "db:generate": "pnpm --filter @zexcore/core db:generate",
+    "db:migrate": "pnpm --filter @zexcore/core db:migrate",
+    "seed": "tsx scripts/seed.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.21.0",
+    "@types/node": "^22.13.9",
+    "drizzle-orm": "^0.39.3",
+    "eslint": "^9.21.0",
+    "globals": "^15.15.0",
+    "prettier": "^3.5.3",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.25.0",
+    "vitest": "^3.0.7"
+  }
+}

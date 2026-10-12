@@ -1,0 +1,68 @@
+import type { TenantRole, PrincipalType } from '../db/schema/memberships.js';
+import { CORE_CAPABILITIES } from './capabilities.js';
+
+export const ROLE_CAPABILITIES: Record<TenantRole, string[]> = {
+  owner: [
+    CORE_CAPABILITIES.RECORDS_READ,
+    CORE_CAPABILITIES.RECORDS_CREATE,
+    CORE_CAPABILITIES.RECORDS_UPDATE,
+    CORE_CAPABILITIES.RECORDS_DELETE,
+    CORE_CAPABILITIES.RECORDS_PUBLISH,
+    CORE_CAPABILITIES.CONTENT_TYPES_MANAGE,
+    CORE_CAPABILITIES.TENANT_SETTINGS,
+    CORE_CAPABILITIES.USERS_MANAGE,
+    CORE_CAPABILITIES.AUDIT_READ,
+    CORE_CAPABILITIES.AI_PROPOSE,
+    CORE_CAPABILITIES.AI_APPROVE,
+  ],
+  admin: [
+    CORE_CAPABILITIES.RECORDS_READ,
+    CORE_CAPABILITIES.RECORDS_CREATE,
+    CORE_CAPABILITIES.RECORDS_UPDATE,
+    CORE_CAPABILITIES.RECORDS_DELETE,
+    CORE_CAPABILITIES.RECORDS_PUBLISH,
+    CORE_CAPABILITIES.CONTENT_TYPES_MANAGE,
+    CORE_CAPABILITIES.USERS_MANAGE,
+    CORE_CAPABILITIES.AUDIT_READ,
+    CORE_CAPABILITIES.AI_PROPOSE,
+    CORE_CAPABILITIES.AI_APPROVE,
+  ],
+  member: [
+    CORE_CAPABILITIES.RECORDS_READ,
+    CORE_CAPABILITIES.RECORDS_CREATE,
+    CORE_CAPABILITIES.RECORDS_UPDATE,
+    CORE_CAPABILITIES.AI_PROPOSE,
+  ],
+  viewer: [
+    CORE_CAPABILITIES.RECORDS_READ,
+  ],
+};
+
+export const PRINCIPAL_DEFAULT_CAPABILITIES: Record<PrincipalType, string[]> = {
+  platform_admin: [
+    // Cross-tenant access only in explicit time-boxed session; granted all within active scope
+    ...ROLE_CAPABILITIES.owner,
+  ],
+  tenant_admin: [
+    ...ROLE_CAPABILITIES.admin,
+  ],
+  tenant_user: [
+    ...ROLE_CAPABILITIES.member,
+  ],
+  public: [
+    CORE_CAPABILITIES.RECORDS_READ,
+  ],
+  end_user: [
+    CORE_CAPABILITIES.RECORDS_READ,
+  ],
+  device: [
+    CORE_CAPABILITIES.DEVICE_INGEST,
+  ],
+  ai_agent: [
+    // Invariant: AI agent can ONLY propose, never directly write or mutate records
+    CORE_CAPABILITIES.AI_PROPOSE,
+  ],
+  system: [
+    ...ROLE_CAPABILITIES.admin,
+  ],
+};
