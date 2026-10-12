@@ -15,6 +15,7 @@ export * from './schema/rule.js';
 export * from './evaluator/conditions.js';
 export * from './executor/actions.js';
 export * from './runner/runner.js';
+export * from './ai/author.js';
 
 export const RULES_CAPABILITIES = {
   READ:    'rules:read',

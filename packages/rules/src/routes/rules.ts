@@ -9,18 +9,107 @@
  * POST   /api/rules/:id/disable  – disable without deleting
  * DELETE /api/rules/:id          – delete
  * POST   /api/rules/:id/test-run – dry-run against a sample payload (never executes actions)
+ * POST   /api/rules/ai-draft     – AI-assisted: convert plain English → RuleDraft (approved=false)
  */
+
 
 import type { FastifyInstance } from 'fastify';
 import type { ZexCoreContext } from '@zexcore/core';
-import { RuleSchema, RuleDraftSchema } from '../schema/rule.js';
+import { RuleDraftSchema } from '../schema/rule.js';
 import { evaluateConditionGroup } from '../evaluator/conditions.js';
+import { authorRule } from '../ai/author.js';
 
 const RULES_READ    = 'rules:read';
 const RULES_MANAGE  = 'rules:manage';
 const RULES_APPROVE = 'rules:approve';
 
 export function registerRulesRoutes(server: FastifyInstance, core: ZexCoreContext): void {
+
+  // ── AI DRAFT ──────────────────────────────────────────────────────────────
+  // Converts a plain-English intent into a RuleDraft via Gemini.
+  // The result is stored with approved=false — a human must still approve it.
+  server.post('/api/rules/ai-draft', {
+    preHandler: [server.authenticate, server.requireCapability(RULES_MANAGE)],
+    schema: {
+      body: {
+        type: 'object',
+        required: ['intent'],
+        properties: {
+          intent: { type: 'string', minLength: 10, maxLength: 1000 },
+        },
+      },
+    },
+    handler: async (request, reply) => {
+      const { intent } = request.body as { intent: string };
+      const tenantId = request.tenant.id;
+      const userId   = request.user.id;
+
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        return reply.status(503).send({ error: 'AI authoring is not configured on this server (missing GEMINI_API_KEY)' });
+      }
+
+      // Call the AI authoring pipeline
+      const outcome = await authorRule({ intent, tenantId, createdBy: userId, apiKey });
+
+      if (!outcome.success) {
+        return reply.status(422).send({
+          error:    'AI could not produce a valid rule from the given intent',
+          detail:   outcome.error,
+          issues:   outcome.issues,
+          attempts: outcome.attempts,
+          // Return the raw LLM output so the developer/user can see what went wrong
+          rawOutput: outcome.rawOutput,
+        });
+      }
+
+      const draft = outcome.draft;
+
+      // Persist as a draft (approved=false)
+      const result = await core.db.execute({
+        sql: `
+          INSERT INTO rules
+            (tenant_id, name, description, enabled, trigger, conditions, actions,
+             approved, created_by)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,FALSE,$8)
+          RETURNING *
+        `,
+        params: [
+          tenantId,
+          draft.name,
+          draft.description ?? null,
+          draft.enabled ?? true,
+          JSON.stringify(draft.trigger),
+          draft.conditions ? JSON.stringify(draft.conditions) : null,
+          JSON.stringify(draft.actions),
+          userId,
+        ],
+      });
+
+      await core.audit.log({
+        action:     'rules.ai_draft.created',
+        tenantId,
+        actorId:    userId,
+        resourceId: result.rows[0].id as string,
+        meta: {
+          intent,
+          name:     draft.name,
+          trigger:  draft.trigger.source,
+          attempts: outcome.attempts,
+        },
+      });
+
+      return reply.status(201).send({
+        rule:     result.rows[0],
+        meta: {
+          generatedBy: 'gemini',
+          attempts:    outcome.attempts,
+          approved:    false,
+          note: 'Review this rule carefully before approving. POST /api/rules/:id/approve to activate it.',
+        },
+      });
+    },
+  });
 
   // ── LIST ──────────────────────────────────────────────────────────────────
   server.get('/api/rules', {
