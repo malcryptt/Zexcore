@@ -35,18 +35,14 @@ describe('Tenant Isolation & RLS Security Attacks', () => {
     // Bypass RLS during initial fixture wipe
     await db.execute(sql`SELECT set_config('app.bypass_rls', 'on', false)`);
 
-    // Clean up test fixtures if present
-    await db.delete(records);
-    await db.delete(contentTypes);
-    await db.delete(memberships);
-    await db.delete(auditLog);
-    await db.delete(tenants).where(sql`slug IN ('test-tenant-alpha', 'test-tenant-beta')`);
+    // 2. Create Tenant A and Tenant B with unique slugs
+    const slugA = `test-tenant-alpha-${Date.now()}`;
+    const slugB = `test-tenant-beta-${Date.now()}`;
 
-    // 2. Create Tenant A and Tenant B
     const [tA] = await db
       .insert(tenants)
       .values({
-        slug: 'test-tenant-alpha',
+        slug: slugA,
         name: 'Alpha Corp',
         tier: 'standard',
       })
@@ -56,7 +52,7 @@ describe('Tenant Isolation & RLS Security Attacks', () => {
     const [tB] = await db
       .insert(tenants)
       .values({
-        slug: 'test-tenant-beta',
+        slug: slugB,
         name: 'Beta LLC',
         tier: 'standard',
       })

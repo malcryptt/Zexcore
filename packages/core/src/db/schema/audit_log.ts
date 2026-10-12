@@ -16,6 +16,8 @@ export const auditLog = pgTable(
     entity: varchar('entity', { length: 64 }).notNull(),
     entityId: varchar('entity_id', { length: 255 }).notNull(),
     changes: jsonb('changes').$type<Record<string, unknown>>().default({}).notNull(),
+    prevHash: varchar('prev_hash', { length: 64 }),
+    hash: varchar('hash', { length: 64 }),
     ipAddress: varchar('ip_address', { length: 64 }),
     userAgent: text('user_agent'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

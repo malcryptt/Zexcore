@@ -59,6 +59,9 @@ BEGIN
   END LOOP;
 END
 \\\$\\\$;
+
+-- Enforce append-only audit log: application cannot mutate or delete historical audits
+REVOKE UPDATE, DELETE ON audit_log FROM zexcore_app;
 " > /dev/null 2>&1
 
 echo "[dev-db] Postgres is ready at postgres://zexcore_app:$DB_PASS@localhost:$DB_PORT/$DB_NAME"

@@ -1,5 +1,5 @@
 import { getSqlClient } from './client.js';
-import { applyCoreRlsPolicies } from './rls/index.js';
+import { applyCoreRlsPolicies, applyRlsToTable } from './rls/index.js';
 
 export async function initializeDatabaseSchema(): Promise<void> {
   const sql = getSqlClient();
@@ -86,7 +86,7 @@ export async function initializeDatabaseSchema(): Promise<void> {
   await sql`CREATE INDEX IF NOT EXISTS records_tenant_content_type_idx ON records(tenant_id, content_type_id);`;
   await sql`CREATE INDEX IF NOT EXISTS records_tenant_slug_idx ON records(tenant_id, slug);`;
 
-  // 6. Audit Log table
+  // 6. Audit Log table (with cryptographic hash-chaining)
   await sql`
     CREATE TABLE IF NOT EXISTS audit_log (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -97,15 +97,38 @@ export async function initializeDatabaseSchema(): Promise<void> {
       entity VARCHAR(64) NOT NULL,
       entity_id VARCHAR(255) NOT NULL,
       changes JSONB DEFAULT '{}'::jsonb NOT NULL,
+      prev_hash VARCHAR(64),
+      hash VARCHAR(64),
       ip_address VARCHAR(64),
       user_agent TEXT,
       created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
     );
   `;
 
+  await sql`ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS prev_hash VARCHAR(64);`;
+  await sql`ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS hash VARCHAR(64);`;
+
   await sql`CREATE INDEX IF NOT EXISTS audit_log_tenant_created_at_idx ON audit_log(tenant_id, created_at);`;
   await sql`CREATE INDEX IF NOT EXISTS audit_log_tenant_entity_idx ON audit_log(tenant_id, entity, entity_id);`;
 
-  // Apply Row-Level Security policies
+  // 7. Transactional Outbox table
+  await sql`
+    CREATE TABLE IF NOT EXISTS outbox_events (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+      event_name VARCHAR(64) NOT NULL,
+      payload JSONB NOT NULL,
+      status VARCHAR(32) DEFAULT 'pending' NOT NULL,
+      retry_count INT DEFAULT 0 NOT NULL,
+      error TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+      processed_at TIMESTAMPTZ
+    );
+  `;
+
+  await sql`CREATE INDEX IF NOT EXISTS outbox_events_tenant_status_idx ON outbox_events(tenant_id, status, created_at);`;
+
+  // Apply Row-Level Security policies to core tables and outbox
   await applyCoreRlsPolicies();
+  await applyRlsToTable('outbox_events');
 }
