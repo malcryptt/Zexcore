@@ -53,6 +53,9 @@ importers:
       '@zexcore/module-crm':
         specifier: workspace:*
         version: link:../../packages/module-crm
+      '@zexcore/rules':
+        specifier: workspace:*
+        version: link:../../packages/rules
       dotenv:
         specifier: ^16.4.7
         version: 16.6.1
@@ -141,6 +144,22 @@ importers:
       fastify:
         specifier: ^5.2.1
         version: 5.12.5
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
+  packages/rules:
+    dependencies:
+      '@zexcore/core':
+        specifier: workspace:*
+        version: link:../core
+      zod:
+        specifier: ^3.24.2
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.9
+        version: 22.20.5
       typescript:
         specifier: ^5.7.3
         version: 5.9.3

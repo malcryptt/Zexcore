@@ -15,6 +15,7 @@ import {
 } from '@zexcore/core';
 import { cmsModule } from '@zexcore/module-cms';
 import { crmModule } from '@zexcore/module-crm';
+import { rulesModule } from '@zexcore/rules';
 
 export async function bootstrapApp(server: FastifyInstance): Promise<void> {
   // 1. Initialize DB schema and RLS policies
@@ -27,6 +28,9 @@ export async function bootstrapApp(server: FastifyInstance): Promise<void> {
 
   server.log.info('[bootstrap] Registering CRM module...');
   globalModuleRegistry.register(crmModule);
+
+  server.log.info('[bootstrap] Registering Rules engine...');
+  globalModuleRegistry.register(rulesModule);
 
   // 3. Initialize all modules (lifecycle onInit)
   const coreContext = {
