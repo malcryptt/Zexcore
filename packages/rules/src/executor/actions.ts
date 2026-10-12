@@ -82,12 +82,14 @@ export async function executeActions(
           const parts = action.path.split('.');
           let cur: Record<string, unknown> = result.mutations;
           for (let i = 0; i < parts.length - 1; i++) {
-            if (typeof cur[parts[i]] !== 'object' || cur[parts[i]] === null) {
-              cur[parts[i]] = {};
+            const part = parts[i]!;
+            if (typeof cur[part] !== 'object' || cur[part] === null) {
+              cur[part] = {};
             }
-            cur = cur[parts[i]] as Record<string, unknown>;
+            cur = cur[part] as Record<string, unknown>;
           }
-          cur[parts[parts.length - 1]] = action.value;
+          const lastPart = parts[parts.length - 1]!;
+          cur[lastPart] = action.value;
           break;
         }
 

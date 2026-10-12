@@ -3,7 +3,6 @@ import {
   initializeDatabaseSchema,
   globalModuleRegistry,
   getDb,
-  globalEventBus,
   tenants,
   users,
   records,
@@ -12,9 +11,12 @@ import {
   withTenantDb,
   verifyPassword,
   signAuthToken,
+  createDefaultCoreContext,
 } from '@zexcore/core';
 import { cmsModule } from '@zexcore/module-cms';
 import { crmModule } from '@zexcore/module-crm';
+import { iotModule } from '@zexcore/module-iot';
+import { complianceModule } from '@zexcore/compliance';
 import { rulesModule } from '@zexcore/rules';
 
 export async function bootstrapApp(server: FastifyInstance): Promise<void> {
@@ -29,14 +31,17 @@ export async function bootstrapApp(server: FastifyInstance): Promise<void> {
   server.log.info('[bootstrap] Registering CRM module...');
   globalModuleRegistry.register(crmModule);
 
+  server.log.info('[bootstrap] Registering IoT module...');
+  globalModuleRegistry.register(iotModule);
+
+  server.log.info('[bootstrap] Registering Compliance module...');
+  globalModuleRegistry.register(complianceModule);
+
   server.log.info('[bootstrap] Registering Rules engine...');
   globalModuleRegistry.register(rulesModule);
 
   // 3. Initialize all modules (lifecycle onInit)
-  const coreContext = {
-    db: getDb(),
-    events: globalEventBus,
-  };
+  const coreContext = createDefaultCoreContext();
   await globalModuleRegistry.initAll(coreContext);
 
   // 4. Register health check

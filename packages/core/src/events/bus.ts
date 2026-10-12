@@ -36,16 +36,18 @@ export class EventBus {
     name: string,
     params: {
       tenantId: string;
-      payload: T;
+      payload?: T;
       sourceModule?: string;
       userId?: string;
+      [key: string]: any;
     },
   ): Promise<void> {
+    const payload = 'payload' in params ? (params.payload as T) : (params as unknown as T);
     const event: ZexEvent<T> = {
       name,
       tenantId: params.tenantId,
       timestamp: new Date(),
-      payload: params.payload,
+      payload,
       sourceModule: params.sourceModule,
       userId: params.userId,
     };

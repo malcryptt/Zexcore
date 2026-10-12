@@ -133,7 +133,7 @@ async function callGemini(
 function extractJson(raw: string): string {
   // Strip ```json ... ``` or ``` ... ``` wrappers defensively
   const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fenced) return fenced[1].trim();
+  if (fenced && fenced[1]) return fenced[1].trim();
   return raw.trim();
 }
 

@@ -27,3 +27,7 @@ export * from './modules/index.js';
 
 // Configuration & Workspace Flags
 export * from './config/index.js';
+
+// Fastify Type Augmentations
+export * from './types/fastify.js';
+

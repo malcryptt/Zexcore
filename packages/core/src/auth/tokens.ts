@@ -11,7 +11,7 @@ export interface AuthTokenPayload {
 
 export function signAuthToken(payload: AuthTokenPayload, secret?: string, expiresIn = '24h'): string {
   const jwtSecret = secret || process.env.JWT_SECRET || 'zexcore-default-secret-key-change-me';
-  return jwt.sign(payload, jwtSecret, { expiresIn });
+  return jwt.sign(payload, jwtSecret, { expiresIn: expiresIn as any });
 }
 
 export function verifyAuthToken(token: string, secret?: string): AuthTokenPayload {

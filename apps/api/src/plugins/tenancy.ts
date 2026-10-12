@@ -2,15 +2,6 @@ import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import fp from 'fastify-plugin';
 import { runWithTenant, getDb, tenants, eq } from '@zexcore/core';
 
-declare module 'fastify' {
-  interface FastifyRequest {
-    tenant?: {
-      id: string;
-      slug: string;
-      tier: string;
-    };
-  }
-}
 
 const tenancyPluginAsync: FastifyPluginAsync = async (server) => {
   server.addHook('onRequest', async (request: FastifyRequest, reply) => {

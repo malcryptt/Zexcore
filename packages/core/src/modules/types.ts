@@ -12,9 +12,22 @@ export interface ModuleContentTypeDefinition {
   isSystem?: boolean;
 }
 
+export type ZexDbWrapper = DrizzleDb & {
+  execute(query: any): Promise<any>;
+};
+
 export interface ZexCoreContext {
-  db: DrizzleDb;
+  db: ZexDbWrapper;
   events: EventBus;
+  audit: {
+    log(entry: any): Promise<void>;
+  };
+  logger: {
+    info(...args: any[]): void;
+    error(...args: any[]): void;
+    warn(...args: any[]): void;
+    debug(...args: any[]): void;
+  };
 }
 
 export interface ZexModule {

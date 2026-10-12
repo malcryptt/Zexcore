@@ -11,16 +11,6 @@ export interface RequestUser {
   capabilities: string[];
 }
 
-declare module 'fastify' {
-  interface FastifyRequest {
-    user?: RequestUser;
-  }
-  interface FastifyInstance {
-    authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
-    requireCapability: (capability: string) => (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
-  }
-}
-
 const authPluginAsync: FastifyPluginAsync = async (server) => {
   // Pre-handler hook to inspect Bearer token if present
   server.addHook('preHandler', async (request: FastifyRequest) => {
@@ -30,6 +20,7 @@ const authPluginAsync: FastifyPluginAsync = async (server) => {
       try {
         const payload = verifyAuthToken(token);
         request.user = {
+          id: payload.userId,
           userId: payload.userId,
           principalType: payload.principalType,
           role: payload.role,
@@ -44,6 +35,7 @@ const authPluginAsync: FastifyPluginAsync = async (server) => {
     // Default to 'public' principal if no authenticated user
     if (!request.user) {
       request.user = {
+        id: 'anonymous',
         userId: 'anonymous',
         principalType: 'public',
         isPlatformAdmin: false,

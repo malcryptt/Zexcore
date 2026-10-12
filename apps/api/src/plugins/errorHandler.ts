@@ -2,7 +2,7 @@ import type { FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
 
 const errorHandlerPluginAsync: FastifyPluginAsync = async (server) => {
-  server.setErrorHandler((error, request, reply) => {
+  server.setErrorHandler((error: any, request, reply) => {
     request.log.error(error);
 
     // Postgres / RLS policy violation

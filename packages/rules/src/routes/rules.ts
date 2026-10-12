@@ -299,7 +299,7 @@ export function registerRulesRoutes(server: FastifyInstance, core: ZexCoreContex
       }
 
       // Hot-reload: notify runner to pick up the newly approved rule
-      await core.events.emit('rules.rule.activated', { rule: result.rows[0] });
+      await core.events.emit('rules.rule.activated', { tenantId, rule: result.rows[0] });
 
       await core.audit.log({
         action: 'rules.rule.approved',
@@ -323,7 +323,7 @@ export function registerRulesRoutes(server: FastifyInstance, core: ZexCoreContex
         params: [id, tenantId],
       });
 
-      await core.events.emit('rules.rule.deactivated', { ruleId: id });
+      await core.events.emit('rules.rule.deactivated', { tenantId, ruleId: id });
 
       await core.audit.log({
         action: 'rules.rule.disabled', tenantId, actorId: userId, resourceId: id, meta: {},
@@ -346,7 +346,7 @@ export function registerRulesRoutes(server: FastifyInstance, core: ZexCoreContex
         params: [id, tenantId],
       });
 
-      await core.events.emit('rules.rule.deactivated', { ruleId: id });
+      await core.events.emit('rules.rule.deactivated', { tenantId, ruleId: id });
 
       await core.audit.log({
         action: 'rules.rule.deleted', tenantId, actorId: userId, resourceId: id, meta: {},

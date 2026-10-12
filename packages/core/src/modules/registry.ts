@@ -1,7 +1,42 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZexModule, ZexCoreContext } from './types.js';
-import { getDb } from '../db/client.js';
+import { getDb, getSqlClient } from '../db/client.js';
 import { globalEventBus } from '../events/bus.js';
+import { logAuditEvent } from '../audit/logger.js';
+
+export function createDefaultCoreContext(): ZexCoreContext {
+  const db = getDb();
+  const sqlClient = getSqlClient();
+
+  const wrappedDb = Object.assign(db, {
+    async execute(queryOrSql: any) {
+      if (queryOrSql && typeof queryOrSql === 'object' && 'sql' in queryOrSql) {
+        const rows = await sqlClient.unsafe(queryOrSql.sql, (queryOrSql.params || []) as any);
+        return { rows };
+      }
+      return db.execute(queryOrSql);
+    },
+  });
+
+  return {
+    db: wrappedDb as any,
+    events: globalEventBus,
+    audit: {
+      log: async (entry: any) => {
+        await logAuditEvent({
+          tenantId: entry.tenantId,
+          userId: entry.actorId ?? entry.userId ?? 'system',
+          principalType: entry.principalType ?? 'tenant_user',
+          action: entry.action,
+          entity: entry.entity ?? entry.resourceId ?? 'unknown',
+          entityId: entry.resourceId ?? entry.entityId,
+          changes: entry.meta ?? entry.changes ?? {},
+        });
+      },
+    },
+    logger: console,
+  };
+}
 
 export class ModuleRegistry {
   private modules = new Map<string, ZexModule>();
@@ -65,10 +100,7 @@ export class ModuleRegistry {
   public async initAll(context?: ZexCoreContext): Promise<void> {
     if (this.initialized) return;
 
-    const ctx: ZexCoreContext = context || {
-      db: getDb(),
-      events: globalEventBus,
-    };
+    const ctx: ZexCoreContext = context || createDefaultCoreContext();
 
     const sorted = this.getAll();
     for (const mod of sorted) {
@@ -84,10 +116,7 @@ export class ModuleRegistry {
    * Mounts all module routes onto a Fastify server instance.
    */
   public async registerAllRoutes(server: FastifyInstance, context?: ZexCoreContext): Promise<void> {
-    const ctx: ZexCoreContext = context || {
-      db: getDb(),
-      events: globalEventBus,
-    };
+    const ctx: ZexCoreContext = context || createDefaultCoreContext();
 
     const sorted = this.getAll();
     for (const mod of sorted) {
@@ -101,10 +130,7 @@ export class ModuleRegistry {
    * Graceful shutdown of all modules in reverse order.
    */
   public async shutdownAll(context?: ZexCoreContext): Promise<void> {
-    const ctx: ZexCoreContext = context || {
-      db: getDb(),
-      events: globalEventBus,
-    };
+    const ctx: ZexCoreContext = context || createDefaultCoreContext();
 
     const sorted = this.getAll().reverse();
     for (const mod of sorted) {

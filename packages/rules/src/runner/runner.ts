@@ -62,8 +62,8 @@ export class RuleRunner {
     this.core.logger.info(`[rules] Loaded ${result.rows.length} active rules`);
 
     // Hot-reload listeners
-    this.core.events.on('rules.rule.activated',   (p: { rule: Rule }) => this.register(p.rule));
-    this.core.events.on('rules.rule.deactivated', (p: { ruleId: string }) => this.deregister(p.ruleId));
+    this.core.events.on('rules.rule.activated',   (p: any) => this.register(p?.rule || p?.payload?.rule));
+    this.core.events.on('rules.rule.deactivated', (p: any) => this.deregister(p?.ruleId || p?.payload?.ruleId));
   }
 
   // ─── Registration ──────────────────────────────────────────────────────────
@@ -89,8 +89,8 @@ export class RuleRunner {
     // Subscribe to this event on the bus if we haven't yet
     if (!this.subscribed.has(eventName)) {
       this.subscribed.add(eventName);
-      this.core.events.on(eventName, (payload: Record<string, unknown>) => {
-        void this.dispatch(eventName, payload);
+      this.core.events.on(eventName, (e: any) => {
+        void this.dispatch(eventName, (e?.payload ?? e) as Record<string, unknown>);
       });
     }
   }

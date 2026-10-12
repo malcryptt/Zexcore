@@ -44,6 +44,9 @@ importers:
       '@fastify/cors':
         specifier: ^10.0.2
         version: 10.1.0
+      '@zexcore/compliance':
+        specifier: workspace:*
+        version: link:../../packages/compliance
       '@zexcore/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -53,6 +56,9 @@ importers:
       '@zexcore/module-crm':
         specifier: workspace:*
         version: link:../../packages/module-crm
+      '@zexcore/module-iot':
+        specifier: workspace:*
+        version: link:../../packages/module-iot
       '@zexcore/rules':
         specifier: workspace:*
         version: link:../../packages/rules
@@ -75,6 +81,25 @@ importers:
       tsx:
         specifier: ^4.19.3
         version: 4.23.15
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
+  packages/compliance:
+    dependencies:
+      '@zexcore/core':
+        specifier: workspace:*
+        version: link:../core
+      zod:
+        specifier: ^3.24.2
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.9
+        version: 22.20.5
+      fastify:
+        specifier: ^5.2.1
+        version: 5.12.5
       typescript:
         specifier: ^5.7.3
         version: 5.9.3
@@ -148,6 +173,25 @@ importers:
         specifier: ^5.7.3
         version: 5.9.3
 
+  packages/module-iot:
+    dependencies:
+      '@zexcore/core':
+        specifier: workspace:*
+        version: link:../core
+      drizzle-orm:
+        specifier: ^0.39.3
+        version: 0.39.3(postgres@3.4.9)
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.9
+        version: 22.20.5
+      fastify:
+        specifier: ^5.2.1
+        version: 5.12.5
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
   packages/rules:
     dependencies:
       '@zexcore/core':
@@ -160,6 +204,9 @@ importers:
       '@types/node':
         specifier: ^22.13.9
         version: 22.20.5
+      fastify:
+        specifier: ^5.2.1
+        version: 5.12.5
       typescript:
         specifier: ^5.7.3
         version: 5.9.3
