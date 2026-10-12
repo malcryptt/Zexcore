@@ -1,7 +1,18 @@
 /**
- * ZexCore Control — Enterprise Infrastructure Control Plane
- * Red & White Production-Ready Enterprise Dashboard
+ * ZexCore Control & Enterprise SaaS Platform
+ * Red & White Production-Ready Multi-Page Website & Console
  */
+
+import { renderHomePage } from './pages/home';
+import { renderPlatformPage } from './pages/platform';
+import { renderArchitecturePage } from './pages/architecture';
+import { renderModulesPage } from './pages/modules';
+import { renderSolutionsPage } from './pages/solutions';
+import { renderSecurityPage } from './pages/security';
+import { renderDocsPage } from './pages/docs';
+import { renderResourcesPage } from './pages/resources';
+import { renderSignInPage, setupSignInEvents } from './pages/signin';
+import { setupNavbarEvents } from './components/navbar';
 
 interface Device {
   id: string;
@@ -46,7 +57,7 @@ interface Consent {
 
 // ── Application State ────────────────────────────────────────────────────────
 const state = {
-  currentView: 'home' as 'home' | 'signin' | 'dashboard',
+  currentView: 'home' as 'home' | 'platform' | 'architecture' | 'modules' | 'solutions' | 'security' | 'docs' | 'resources' | 'signin' | 'console' | 'dashboard',
   currentTab: 'overview',
   activeTenant: 'acme_corp',
   devices: [
@@ -909,370 +920,121 @@ function renderEventLog() {
   `).join('');
 }
 
-// ── Marketing Homepage ───────────────────────────────────────────────────────
-function renderMarketingHome() {
-  const app = document.getElementById('app');
-  if (!app) return;
-
-  app.innerHTML = `
-    <header class="marketing-header">
-      <div style="display: flex; align-items: center; gap: 20px;">
-        <img src="/zexcore-logo-horizontal.png" alt="ZexCore Logo" class="marketing-logo" id="mkt-logo" />
-      </div>
-      <nav class="marketing-nav-links">
-        <a href="#architecture" class="marketing-nav-link">Architecture</a>
-        <a href="#modules" class="marketing-nav-link">Modules</a>
-        <a href="#security" class="marketing-nav-link">Security &amp; RLS</a>
-        <a href="#compliance" class="marketing-nav-link">Compliance</a>
-      </nav>
-      <div class="marketing-nav-actions">
-        <button class="btn btn-secondary btn-sm" id="btn-nav-signin">Sign In</button>
-        <button class="btn btn-primary btn-sm" id="btn-nav-launch">Launch Console &rarr;</button>
-      </div>
-    </header>
-
-    <main>
-      <!-- Hero Section -->
-      <section class="hero-section">
-        <div class="hero-pill">
-          <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--primary);"></span>
-          ENTERPRISE INFRASTRUCTURE PLATFORM
-        </div>
-        <h1 class="hero-title">
-          One Core. <span>Infinite Possibilities.</span>
-        </h1>
-        <p class="hero-desc">
-          The sovereign multi-tenant foundation engineered for mission-critical IoT telemetry, deterministic rules automation, isolated CRM pipelines, and cryptographic compliance vaults.
-        </p>
-        <div class="hero-actions">
-          <button class="btn btn-primary btn-lg" id="btn-hero-launch" style="padding: 12px 28px; font-size: 0.95rem;">
-            Launch Control Console &rarr;
-          </button>
-          <button class="btn btn-secondary btn-lg" id="btn-hero-signin" style="padding: 12px 24px; font-size: 0.95rem;">
-            Sign In to Workspace
-          </button>
-        </div>
-
-        <div class="hero-showcase">
-          <img src="/zexcore-logo-full.png" alt="ZexCore &mdash; One Core Infinite Possibilities" class="hero-showcase-logo" />
-          <div class="hero-stats-row">
-            <div class="hero-stat-col">
-              <div class="hero-stat-number">100% RLS</div>
-              <div class="hero-stat-title">Row-Level Security</div>
-              <div class="hero-stat-subtitle">PostgreSQL 17 Hard Isolation</div>
-            </div>
-            <div class="hero-stat-col">
-              <div class="hero-stat-number">&lt; 1ms</div>
-              <div class="hero-stat-title">Rules Engine</div>
-              <div class="hero-stat-subtitle">Deterministic Safe AST Sandbox</div>
-            </div>
-            <div class="hero-stat-col">
-              <div class="hero-stat-number">AES-256-GCM</div>
-              <div class="hero-stat-title">Envelope Encryption</div>
-              <div class="hero-stat-subtitle">Blind Indexing &amp; Key Rotation</div>
-            </div>
-            <div class="hero-stat-col">
-              <div class="hero-stat-number">5 Modules</div>
-              <div class="hero-stat-title">EventBus Mesh</div>
-              <div class="hero-stat-subtitle">Decoupled Pub-Sub Ingest</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Architecture Section -->
-      <section class="marketing-features" id="architecture" style="border-top: 1px solid var(--border-default);">
-        <div class="section-label">FOUNDATIONAL ARCHITECTURE</div>
-        <h2 class="section-heading">Engineered for Strict Sovereign Multi-Tenancy</h2>
-
-        <div class="features-grid">
-          <div class="feature-card">
-            <div class="feature-icon-box">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            </div>
-            <h3 class="feature-title">Row-Level Security (RLS)</h3>
-            <p class="feature-text">
-              Every database transaction runs inside a session scoped to <code>tenant_id</code>. Composite keys prevent cross-tenant referencing, guaranteeing complete isolation at the storage layer.
-            </p>
-          </div>
-
-          <div class="feature-card">
-            <div class="feature-icon-box">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-            </div>
-            <h3 class="feature-title">Asynchronous EventBus Broker</h3>
-            <p class="feature-text">
-              Decoupled publish-subscribe messaging links telemetry ingest, automated rules evaluation, sales pipeline transitions, and compliance audit events in real time.
-            </p>
-          </div>
-
-          <div class="feature-card">
-            <div class="feature-icon-box">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
-            </div>
-            <h3 class="feature-title">Cryptographic Privacy Vault</h3>
-            <p class="feature-text">
-              Automated PII envelope encryption using AES-256-GCM, blind HMAC search indexing, and 1-click GDPR Article 17 Right-to-be-Forgotten erasure pipelines.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <!-- Modules Section -->
-      <section class="marketing-features" id="modules" style="background: #FFFFFF; border-top: 1px solid var(--border-default); border-bottom: 1px solid var(--border-default);">
-        <div class="section-label">UNIFIED SYSTEM MODULES</div>
-        <h2 class="section-heading">Five Specialized Engines. One Clean Core.</h2>
-
-        <div class="features-grid">
-          <div class="feature-card">
-            <div class="feature-icon-box">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            </div>
-            <h3 class="feature-title">IoT Fleet &amp; Telemetry Gateway</h3>
-            <p class="feature-text">
-              Token-authenticated device ingestion (<code>X-Device-Token</code>), real-time time-series telemetry streams, threshold alerts, and bidirectional command dispatch.
-            </p>
-          </div>
-
-          <div class="feature-card">
-            <div class="feature-icon-box">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/></svg>
-            </div>
-            <h3 class="feature-title">Rules &amp; AI Authoring Engine</h3>
-            <p class="feature-text">
-              Deterministic AST condition validation with strict zero-eval execution, paired with an LLM-assisted rule generator with mandatory human approval workflows.
-            </p>
-          </div>
-
-          <div class="feature-card">
-            <div class="feature-icon-box">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            </div>
-            <h3 class="feature-title">Enterprise CRM Sales Pipeline</h3>
-            <p class="feature-text">
-              Multi-currency deals tracking, Kanban stage progression, contact governance, and deal velocity analytics protected by multi-tenant RLS.
-            </p>
-          </div>
-
-          <div class="feature-card">
-            <div class="feature-icon-box">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            </div>
-            <h3 class="feature-title">Compliance &amp; Vault</h3>
-            <p class="feature-text">
-              Cryptographic envelope encryption, GDPR consent registry with verifiable lawful basis timestamps, and automated subject pseudonymization.
-            </p>
-          </div>
-
-          <div class="feature-card">
-            <div class="feature-icon-box">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-            </div>
-            <h3 class="feature-title">Core Multi-Tenant Runtime</h3>
-            <p class="feature-text">
-              Central schema migrations, automated tenant provisioning, hash-chained audit trails, and Fastify HTTP plugin bootstrap system.
-            </p>
-          </div>
-
-          <div class="feature-card" style="display: flex; flex-direction: column; justify-content: center; background: var(--primary-subtle); border-color: var(--primary-border);">
-            <div style="font-size: 0.82rem; font-weight: 700; color: var(--primary); margin-bottom: 6px;">READY FOR PRODUCTION</div>
-            <h3 class="feature-title" style="margin-bottom: 10px;">Experience ZexCore Live</h3>
-            <p class="feature-text" style="margin-bottom: 18px;">
-              Jump directly into the control console with pre-authenticated demo tenants.
-            </p>
-            <button class="btn btn-primary" id="btn-card-launch" style="align-self: flex-start;">Open Control Console &rarr;</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- Pre-footer CTA -->
-      <section style="padding: 60px 24px; text-align: center; max-width: 960px; margin: 0 auto;">
-        <h2 style="font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 12px;">
-          Deploy Your Enterprise SaaS Infrastructure
-        </h2>
-        <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto 28px auto; font-size: 1.05rem;">
-          Clean Red &amp; White design, hardened security, and multi-tenant isolation out of the box.
-        </p>
-        <div style="display: flex; gap: 14px; justify-content: center;">
-          <button class="btn btn-primary btn-lg" id="btn-cta-launch" style="padding: 12px 28px;">Launch Control Console &rarr;</button>
-          <button class="btn btn-secondary btn-lg" id="btn-cta-signin" style="padding: 12px 24px;">Sign In to Workspace</button>
-        </div>
-      </section>
-    </main>
-
-    <footer class="marketing-footer">
-      <div class="footer-inner">
-        <div style="display: flex; align-items: center; gap: 16px;">
-          <img src="/zexcore-logo-horizontal.png" alt="ZexCore" class="marketing-logo" id="footer-logo" style="cursor: pointer;" />
-          <span style="font-size: 0.85rem; color: var(--text-secondary);">One Core. Infinite Possibilities.</span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 24px; font-size: 0.82rem; color: var(--text-secondary);">
-          <div class="status-pill"><div class="status-dot"></div><span>All Systems Operational</span></div>
-          <span>&copy; 2026 ZexCore Systems Inc.</span>
-        </div>
-      </div>
-    </footer>
-  `;
-
-  // Bind Marketing Events
-  document.getElementById('mkt-logo')?.addEventListener('click', () => navigateTo('home'));
-  document.getElementById('footer-logo')?.addEventListener('click', () => navigateTo('home'));
-  document.getElementById('btn-nav-signin')?.addEventListener('click', () => navigateTo('signin'));
-  document.getElementById('btn-nav-launch')?.addEventListener('click', () => navigateTo('dashboard'));
-  document.getElementById('btn-hero-launch')?.addEventListener('click', () => navigateTo('dashboard'));
-  document.getElementById('btn-hero-signin')?.addEventListener('click', () => navigateTo('signin'));
-  document.getElementById('btn-card-launch')?.addEventListener('click', () => navigateTo('dashboard'));
-  document.getElementById('btn-cta-launch')?.addEventListener('click', () => navigateTo('dashboard'));
-  document.getElementById('btn-cta-signin')?.addEventListener('click', () => navigateTo('signin'));
-}
-
-// ── Sign In / Authentication Page ───────────────────────────────────────────
-function renderSignIn() {
-  const app = document.getElementById('app');
-  if (!app) return;
-
-  app.innerHTML = `
-    <div class="auth-page">
-      <div class="auth-card">
-        <div class="auth-header">
-          <img src="/zexcore-logo-horizontal.png" alt="ZexCore" class="auth-logo" id="auth-logo-link" style="cursor: pointer;" />
-          <h2 class="auth-title">Sign in to ZexCore Control</h2>
-          <p class="auth-subtitle">Access your enterprise workspace and control plane</p>
-        </div>
-
-        <form id="auth-form" onsubmit="event.preventDefault();">
-          <div class="form-group">
-            <label class="form-label" for="auth-workspace">Workspace Domain</label>
-            <div style="display: flex; align-items: center;">
-              <input type="text" id="auth-workspace" class="input" value="${state.activeTenant}" placeholder="e.g. acme_corp" style="border-top-right-radius: 0; border-bottom-right-radius: 0;" />
-              <span style="background: var(--bg-subtle); border: 1px solid var(--border-default); border-left: none; padding: 8px 12px; font-size: 0.82rem; color: var(--text-secondary); border-top-right-radius: var(--radius-sm); border-bottom-right-radius: var(--radius-sm); font-family: var(--font-mono);">.zexcore.io</span>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="auth-email">Work Email</label>
-            <input type="email" id="auth-email" class="input" value="admin@${state.activeTenant}.com" placeholder="name@company.com" />
-          </div>
-
-          <div class="form-group">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <label class="form-label" for="auth-password" style="margin-bottom: 0;">Password</label>
-              <a href="javascript:void(0)" style="font-size: 0.75rem; color: var(--primary); text-decoration: none;">Forgot password?</a>
-            </div>
-            <input type="password" id="auth-password" class="input" value="••••••••••••" placeholder="Enter password" />
-          </div>
-
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--text-secondary); cursor: pointer;">
-              <input type="checkbox" checked style="accent-color: var(--primary);" /> Remember this device
-            </label>
-            <span class="status-pill" style="font-size: 0.7rem;"><span class="status-dot"></span>SSO Ready</span>
-          </div>
-
-          <button type="button" class="btn btn-primary" id="btn-submit-signin" style="width: 100%; padding: 10px; font-size: 0.9rem; justify-content: center;">
-            Sign In to Workspace &rarr;
-          </button>
-        </form>
-
-        <div class="auth-divider">
-          <span>OR 1-CLICK DEMO ACCESS</span>
-        </div>
-
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          <button class="btn btn-secondary" id="btn-demo-acme" style="justify-content: space-between; font-size: 0.82rem;">
-            <span>🏢 <strong>Acme Enterprise Corp</strong></span>
-            <span class="tier-badge">Admin Role</span>
-          </button>
-          <button class="btn btn-secondary" id="btn-demo-globex" style="justify-content: space-between; font-size: 0.82rem;">
-            <span>🔬 <strong>Globex Research</strong></span>
-            <span class="tier-badge">Ops Lead</span>
-          </button>
-          <button class="btn btn-secondary" id="btn-demo-soylent" style="justify-content: space-between; font-size: 0.82rem;">
-            <span>🌱 <strong>Soylent Dynamics</strong></span>
-            <span class="tier-badge">Compliance</span>
-          </button>
-        </div>
-
-        <div style="text-align: center; margin-top: 24px;">
-          <a href="#home" id="link-back-home" style="font-size: 0.84rem; color: var(--text-secondary); text-decoration: none;">
-            &larr; Return to Public Website
-          </a>
-        </div>
-      </div>
-    </div>
-  `;
-
-  // Bind Auth Events
-  document.getElementById('auth-logo-link')?.addEventListener('click', () => navigateTo('home'));
-  document.getElementById('link-back-home')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    navigateTo('home');
-  });
-
-  document.getElementById('btn-submit-signin')?.addEventListener('click', () => {
-    const slug = (document.getElementById('auth-workspace') as HTMLInputElement)?.value || 'acme_corp';
-    state.activeTenant = slug.replace(/[^a-zA-Z0-9_]/g, '_');
-    logBusEvent('auth.session.created', { tenant: state.activeTenant, method: 'password', status: 'authenticated' });
-    navigateTo('dashboard');
-  });
-
-  document.getElementById('btn-demo-acme')?.addEventListener('click', () => {
-    state.activeTenant = 'acme_corp';
-    logBusEvent('auth.demo.session', { tenant: 'acme_corp', role: 'enterprise_admin' });
-    navigateTo('dashboard');
-  });
-
-  document.getElementById('btn-demo-globex')?.addEventListener('click', () => {
-    state.activeTenant = 'globex_corp';
-    logBusEvent('auth.demo.session', { tenant: 'globex_corp', role: 'operations_lead' });
-    navigateTo('dashboard');
-  });
-
-  document.getElementById('btn-demo-soylent')?.addEventListener('click', () => {
-    state.activeTenant = 'soylent_ind';
-    logBusEvent('auth.demo.session', { tenant: 'soylent_ind', role: 'compliance_officer' });
-    navigateTo('dashboard');
-  });
-}
-
-// ── Application Router ───────────────────────────────────────────────────────
+// ── Application Router (10 Distinct Pages) ──────────────────────────────────
 function renderApp() {
-  if (state.currentView === 'home') {
-    renderMarketingHome();
-  } else if (state.currentView === 'signin') {
-    renderSignIn();
-  } else {
-    renderDashboard();
+  const app = document.getElementById('app');
+  if (!app) return;
+
+  const view = state.currentView;
+
+  switch (view) {
+    case 'home':
+      app.innerHTML = renderHomePage();
+      setupNavbarEvents();
+      break;
+    case 'platform':
+      app.innerHTML = renderPlatformPage();
+      setupNavbarEvents();
+      break;
+    case 'architecture':
+      app.innerHTML = renderArchitecturePage();
+      setupNavbarEvents();
+      break;
+    case 'modules':
+      app.innerHTML = renderModulesPage();
+      setupNavbarEvents();
+      break;
+    case 'solutions':
+      app.innerHTML = renderSolutionsPage();
+      setupNavbarEvents();
+      break;
+    case 'security':
+      app.innerHTML = renderSecurityPage();
+      setupNavbarEvents();
+      break;
+    case 'docs':
+      app.innerHTML = renderDocsPage();
+      setupNavbarEvents();
+      break;
+    case 'resources':
+      app.innerHTML = renderResourcesPage();
+      setupNavbarEvents();
+      break;
+    case 'signin':
+      app.innerHTML = renderSignInPage(state.activeTenant);
+      setupSignInEvents((tenant) => {
+        state.activeTenant = tenant;
+        logBusEvent('auth.session.created', { tenant, status: 'authenticated' });
+        window.location.hash = '#/console';
+      });
+      break;
+    case 'console':
+    case 'dashboard':
+      renderDashboard();
+      break;
+    default:
+      app.innerHTML = renderHomePage();
+      setupNavbarEvents();
+      break;
   }
 }
 
 function syncRouteFromHash() {
-  const hash = window.location.hash.replace(/^#\/?/, '').split('?')[0];
-  if (hash === 'signin' || hash === 'login') {
+  const rawHash = window.location.hash.replace(/^#\/?/, '').split('?')[0].split('#')[0];
+  const route = rawHash.toLowerCase();
+
+  if (route === 'signin' || route === 'login') {
     state.currentView = 'signin';
-  } else if (hash === 'dashboard' || hash === 'app' || hash === 'console') {
-    state.currentView = 'dashboard';
+  } else if (route === 'console' || route === 'dashboard' || route === 'app') {
+    state.currentView = 'console';
+  } else if (route === 'platform') {
+    state.currentView = 'platform';
+  } else if (route === 'architecture') {
+    state.currentView = 'architecture';
+  } else if (route === 'modules') {
+    state.currentView = 'modules';
+  } else if (route === 'solutions') {
+    state.currentView = 'solutions';
+  } else if (route === 'security') {
+    state.currentView = 'security';
+  } else if (route === 'docs' || route === 'documentation') {
+    state.currentView = 'docs';
+  } else if (route === 'resources') {
+    state.currentView = 'resources';
   } else {
     state.currentView = 'home';
   }
+
+  // Dynamic Page Titles
+  const titles: Record<string, string> = {
+    home: 'ZexCore — One Core Infinite Possibilities',
+    platform: 'Platform & Capabilities — ZexCore Infrastructure',
+    architecture: 'Technical Architecture & Invariants — ZexCore',
+    modules: 'Domain Modules — ZexCore Micro-Kernel',
+    solutions: 'Vertical SaaS Solutions & Industry Packs — ZexCore',
+    security: 'Security Model & RLS Defense-in-Depth — ZexCore',
+    docs: 'Developer Documentation & API Reference — ZexCore',
+    resources: 'Engineering Publications & Whitepapers — ZexCore',
+    signin: 'Sign in to ZexCore Control',
+    console: 'ZexCore Control — Operational Console',
+  };
+  document.title = titles[state.currentView] || 'ZexCore — Enterprise Infrastructure Platform';
+
   renderApp();
+  window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
-function navigateTo(view: 'home' | 'signin' | 'dashboard') {
+function navigateTo(view: string) {
   if (view === 'home') {
-    window.location.hash = '';
+    window.location.hash = '#/home';
   } else {
-    window.location.hash = view;
+    window.location.hash = `#/${view}`;
   }
-  syncRouteFromHash();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 (window as any).navigateTo = navigateTo;
 
 function initApp() {
-  window.addEventListener('hashchange', () => {
-    syncRouteFromHash();
-  });
+  window.addEventListener('hashchange', syncRouteFromHash);
   syncRouteFromHash();
 }
 
