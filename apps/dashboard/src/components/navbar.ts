@@ -18,7 +18,7 @@ export function renderNavbar(activePage: string): string {
     <header class="site-header">
       <div class="header-inner">
         <a href="#/home" class="brand-link" id="nav-brand-logo" aria-label="ZexCore Home">
-          <img src="/zexcore-logo-horizontal.png" alt="ZexCore" class="site-logo" />
+          <img src="/zexcore-logo-light.png" alt="ZexCore" class="site-logo" />
         </a>
 
         <nav class="desktop-nav" aria-label="Main Navigation">

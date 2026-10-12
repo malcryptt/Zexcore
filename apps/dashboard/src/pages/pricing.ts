@@ -14,35 +14,36 @@ export function renderPricingPage(): string {
       <main>
         <!-- ── PRICING HERO ─────────────────────────────────────────────── -->
         <section class="page-intro-section" style="padding-bottom: 72px;">
+          <div class="page-hero-backdrop" style="background-image: url('/heroes/hero-pricing.jpg');"></div>
           <div class="site-container">
-            <div class="pricing-hero-block">
+            <div class="page-intro-header page-hero-content-col">
               <div class="section-eyebrow">TRANSPARENT INFRASTRUCTURE LICENSING</div>
-              <h1 class="page-intro-title" style="max-width: 820px; margin-bottom: 18px;">
+              <h1 class="page-intro-title" style="margin-bottom: 18px;">
                 One Core.<br />
                 <span class="text-brand">Right-Sized Pricing.</span>
               </h1>
-              <p class="page-intro-desc" style="max-width: 680px; margin-bottom: 36px;">
+              <p class="page-intro-desc" style="max-width: 680px; margin-bottom: 24px;">
                 ZexCore licenses align to your operational scale — from early-stage product teams shipping their first vertical SaaS module, to enterprise organizations running mission-critical multi-tenant infrastructure across multiple regions.
               </p>
               <div class="pricing-trust-row">
                 <div class="trust-fact">
-                  <strong>No per-seat fees</strong>
-                  <span>License by platform tier</span>
-                </div>
-                <div class="trust-divider"></div>
-                <div class="trust-fact">
-                  <strong>SLA-backed uptime</strong>
-                  <span>99.99% on Enterprise</span>
-                </div>
-                <div class="trust-divider"></div>
-                <div class="trust-fact">
-                  <strong>Data sovereignty</strong>
+                  <strong>Flexible deployment</strong>
                   <span>Self-hosted or managed</span>
                 </div>
                 <div class="trust-divider"></div>
                 <div class="trust-fact">
-                  <strong>PostgreSQL 17 RLS</strong>
-                  <span>Hard tenant isolation</span>
+                  <strong>Clear plan boundaries</strong>
+                  <span>Predictable capabilities</span>
+                </div>
+                <div class="trust-divider"></div>
+                <div class="trust-fact">
+                  <strong>Security-focused</strong>
+                  <span>PostgreSQL 17 RLS native</span>
+                </div>
+                <div class="trust-divider"></div>
+                <div class="trust-fact">
+                  <strong>Scalable modularity</strong>
+                  <span>Independent domain packs</span>
                 </div>
               </div>
             </div>
@@ -64,7 +65,7 @@ export function renderPricingPage(): string {
                     <span class="pricing-period">/ mo</span>
                   </div>
                   <p class="pricing-desc">
-                    Self-hosted. For teams evaluating ZexCore or shipping a single-tenant proof of concept.
+                    Local development and evaluation. Basic platform access with limited capabilities.
                   </p>
                   <a href="#/signin" class="btn btn-secondary" style="width: 100%; justify-content: center; margin-top: 20px;" id="btn-pricing-start-starter">
                     Get Started Free
@@ -92,21 +93,21 @@ export function renderPricingPage(): string {
                 </div>
               </div>
 
-              <!-- SCALE (FEATURED) -->
+              <!-- GROWTH (FEATURED) -->
               <div class="pricing-card pricing-card-featured">
                 <div class="pricing-featured-tag">MOST POPULAR</div>
                 <div class="pricing-card-top">
-                  <div class="pricing-tier-label" style="color: #FFFFFF; opacity: 0.7;">SCALE</div>
+                  <div class="pricing-tier-label" style="color: #FFFFFF; opacity: 0.7;">GROWTH</div>
                   <div class="pricing-price-block">
                     <span class="pricing-currency" style="color: #FFFFFF;">$</span>
-                    <span class="pricing-amount" style="color: #FFFFFF;">1,200</span>
+                    <span class="pricing-amount" style="color: #FFFFFF;">99</span>
                     <span class="pricing-period" style="color: rgba(255,255,255,0.7);">/ mo</span>
                   </div>
                   <p class="pricing-desc" style="color: rgba(255,255,255,0.8);">
-                    Managed or self-hosted. For product teams shipping production-grade vertical SaaS to real customers.
+                    Expanded module access, dev &amp; staging workflows, and operational capabilities (illustrative).
                   </p>
-                  <a href="#/signin" class="btn" style="width: 100%; justify-content: center; margin-top: 20px; background: #FFFFFF; color: var(--primary); border-color: #FFFFFF; font-weight: 700;" id="btn-pricing-start-scale">
-                    Start Scale Trial →
+                  <a href="#/console" class="btn" style="width: 100%; justify-content: center; margin-top: 20px; background: #FFFFFF; color: var(--primary); border-color: #FFFFFF; font-weight: 700;" id="btn-pricing-start-growth">
+                    Explore Growth &rarr;
                   </a>
                 </div>
                 <div class="pricing-features-list">
@@ -186,7 +187,7 @@ export function renderPricingPage(): string {
                   <tr>
                     <th class="comp-th-feature">Feature</th>
                     <th class="comp-th-tier">Starter</th>
-                    <th class="comp-th-tier comp-th-featured">Scale</th>
+                    <th class="comp-th-tier comp-th-featured">Growth</th>
                     <th class="comp-th-tier">Enterprise</th>
                   </tr>
                 </thead>
@@ -243,19 +244,19 @@ export function renderPricingPage(): string {
               )}
               ${faqItem(
                 'Can I self-host on any tier?',
-                'Yes. All tiers support self-hosted deployment on your own infrastructure. The Scale and Enterprise tiers additionally offer managed cloud hosting where ZexCore operates the PostgreSQL cluster, security patching, backups, and failover on your behalf.'
+                'Yes. All tiers support self-hosted deployment on your own infrastructure. The Growth and Enterprise tiers additionally offer managed cloud hosting where ZexCore operates the PostgreSQL cluster, security patching, backups, and failover on your behalf.'
               )}
               ${faqItem(
                 'What counts as a "tenant" in ZexCore?',
-                'A tenant is any isolated organizational unit mapped to its own RLS context — typically a customer of your vertical SaaS product. The Starter tier supports up to 5 tenants, while Scale and Enterprise support unlimited tenants.'
+                'A tenant is any isolated organizational unit mapped to its own RLS context — typically a customer of your vertical SaaS product. The Starter tier supports up to 5 tenants, while Growth and Enterprise support unlimited tenants.'
               )}
               ${faqItem(
                 'How does the GDPR Compliance Vault work?',
                 'The compliance module provides AES-256-GCM envelope encryption, HMAC blind-index querying, consent ledger management with lawful basis tracking, and one-click GDPR Article 17 Right to be Forgotten execution — including audit ledger entries and anonymization pipelines.'
               )}
               ${faqItem(
-                'Is there a free trial for Scale?',
-                'Yes. You can trial the Scale tier for 30 days — full access to all Scale-tier modules and managed hosting — with no credit card required. Enterprise trials are available on request with a 30-minute architecture call.'
+                'Is there a free trial for Growth?',
+                'Yes. You can trial the Growth tier for 30 days — full access to all Growth-tier modules and managed hosting — with no credit card required. Enterprise trials are available on request with a 30-minute architecture call.'
               )}
               ${faqItem(
                 'Can I use ZexCore modules independently?',

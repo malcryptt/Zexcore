@@ -14,8 +14,9 @@ export function renderResourcesPage(): string {
       <main>
         <!-- Page Header -->
         <section class="section-white page-intro-section">
+          <div class="page-hero-backdrop" style="background-image: url('/heroes/hero-resources.jpg');"></div>
           <div class="site-container">
-            <div class="page-intro-header">
+            <div class="page-intro-header page-hero-content-col">
               <div class="section-eyebrow">ENGINEERING PUBLICATIONS</div>
               <h1 class="page-intro-title">Technical Resources &amp; Whitepapers</h1>
               <p class="page-intro-desc">

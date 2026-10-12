@@ -1,6 +1,11 @@
 /**
  * ZexCore Architecture Page
- * In-Depth Technical Specification & Verified Code Contracts
+ * Matches reference design column 2:
+ * - Top: Tenant Applications container with pills (Web Apps | Mobile Apps | Admin Console | API Clients)
+ * - Stack Diagram: REQUEST FLOW (Upwards) on left, 4 colored tiered boxes, DEPENDENCY FLOW (Downwards) on right
+ * - Request Lifecycle: 6 numbered cards (1-6) + Response Returned card
+ * - Core Invariants: 5 horizontal cards (Tenant Isolation, RLS Enforcement, Modular, Deterministic, Apply Securely)
+ * - Technology Stack: Badges row
  */
 
 import { renderNavbar } from '../components/navbar';
@@ -14,8 +19,9 @@ export function renderArchitecturePage(): string {
       <main>
         <!-- Page Header -->
         <section class="section-white page-intro-section">
+          <div class="page-hero-backdrop" style="background-image: url('/heroes/hero-architecture.jpg');"></div>
           <div class="site-container">
-            <div class="page-intro-header">
+            <div class="page-intro-header page-hero-content-col">
               <div class="section-eyebrow">SYSTEM SPECIFICATION</div>
               <h1 class="page-intro-title">Technical Architecture &amp; Invariants</h1>
               <p class="page-intro-desc">
@@ -25,210 +31,269 @@ export function renderArchitecturePage(): string {
           </div>
         </section>
 
-        <!-- ── SECTION 1: TOPOLOGY DIAGRAM (CHARCOAL ACCENT) ───────────── -->
-        <section class="section-charcoal section-padded">
+        <!-- ── CORE ARCHITECTURE DIAGRAM ────────────────────────── -->
+        <section class="section-gray section-padded" style="padding: 48px 0 64px 0;">
           <div class="site-container">
-            <div class="charcoal-header-block">
-              <div class="section-eyebrow" style="color: var(--primary-border);">SYSTEM TOPOLOGY</div>
-              <h2 class="charcoal-title">The Four Architectural Layers</h2>
-              <p class="charcoal-desc">
-                Layer boundaries are enforced at the repository level, package export manifests, and ESLint import restrictions. Core never imports from modules; modules communicate strictly via the EventBus.
-              </p>
-            </div>
-
-            <!-- Terminal-style ASCII Architecture Box -->
-            <div class="arch-terminal-block">
-              <div class="terminal-bar">
-                <span class="term-dot"></span>
-                <span class="term-dot"></span>
-                <span class="term-dot"></span>
-                <span class="term-title">ZexCore Package Dependency Graph (Strict Downward Flow)</span>
+            <div class="arch-diagram-wrapper">
+              
+              <!-- Top Box: Tenant Applications -->
+              <div class="arch-apps-container">
+                <div class="arch-apps-title">Tenant Applications</div>
+                <div class="arch-apps-pills">
+                  <span class="arch-app-pill">Web Apps</span>
+                  <span class="arch-app-pill">Mobile Apps</span>
+                  <span class="arch-app-pill">Admin Console</span>
+                  <span class="arch-app-pill">API Clients</span>
+                </div>
               </div>
-              <pre class="terminal-pre"><code>+-----------------------------------------------------------------------------------------+
-|                                    APPLICATIONS                                         |
-|              apps/api (Fastify 5)             |         apps/dashboard (Control Console)|
-+-----------------------------------------------+-----------------------------------------+
-                                        |
-+-----------------------------------------------------------------------------------------+
-|                              INDUSTRY CONFIGURATION PACKS                               |
-|   packs/industrial-iot     |    packs/logistics-fleet    |     packs/regulated-vault      |
-+----------------------------+-----------------------------+------------------------------+
-                                        |
-+-----------------------------------------------------------------------------------------+
-|                                  DOMAIN MODULES                                         |
-|    @zexcore/module-iot     |      @zexcore/rules         |    @zexcore/module-crm         |
-|                            |   @zexcore/compliance       |                              |
-+----------------------------+-----------------------------+------------------------------+
-                                        |
-+-----------------------------------------------------------------------------------------+
-|                             ZEXCORE CORE MICRO-KERNEL                                   |
-|   Tenancy Resolution  |  Auth & RBAC  |  EventBus Broker  |  Hash-Chained Audit Ledger  |
-|                       PostgreSQL 17 Native RLS (Drizzle ORM Engine)                     |
-+-----------------------------------------------------------------------------------------+</code></pre>
+
+              <!-- Main Flow Row: Left Arrow + 4 Stacked Boxes + Right Arrow -->
+              <div class="arch-flow-layout">
+                <!-- Left: Request Flow (Upwards) -->
+                <div class="arch-flow-sidebar left">
+                  <div class="arch-flow-label">REQUEST FLOW</div>
+                  <div class="arch-flow-sublabel">(Upwards)</div>
+                  <div class="arch-flow-arrow-up">&uarr;</div>
+                </div>
+
+                <!-- Center: 4 Stacked Layers -->
+                <div class="arch-layers-stack">
+                  <!-- Layer 1: Applications (Solid Red) -->
+                  <div class="arch-layer-box layer-app">
+                    <div class="layer-title">Applications</div>
+                    <div class="layer-desc">API Services &amp; Central Console</div>
+                  </div>
+
+                  <!-- Layer 2: Industry Configuration Packs (Dark Red) -->
+                  <div class="arch-layer-box layer-packs">
+                    <div class="layer-title">Industry Configuration Packs</div>
+                    <div class="layer-desc">Vertical Schemas &amp; Workflows</div>
+                  </div>
+
+                  <!-- Layer 3: Core Infrastructure (Deep Wine Red) -->
+                  <div class="arch-layer-box layer-core">
+                    <div class="layer-title">Core Infrastructure</div>
+                    <div class="layer-desc">Tenancy | RBAC | EventBus | Audit</div>
+                  </div>
+
+                  <!-- Layer 4: PostgreSQL & Security Foundation (White/Light Gray with Border) -->
+                  <div class="arch-layer-box layer-db">
+                    <div class="layer-title">PostgreSQL &amp; Security Foundation</div>
+                    <div class="layer-desc">Persistent Storage | RLS | Encryption</div>
+                  </div>
+                </div>
+
+                <!-- Right: Dependency Flow (Downwards) -->
+                <div class="arch-flow-sidebar right">
+                  <div class="arch-flow-label">DEPENDENCY FLOW</div>
+                  <div class="arch-flow-sublabel">(Downwards)</div>
+                  <div class="arch-flow-arrow-down">&darr;</div>
+                </div>
+              </div>
+
             </div>
           </div>
         </section>
 
-        <!-- ── SECTION 2: REQUEST LIFECYCLE ─────────────────────────────── -->
-        <section class="section-white section-padded" id="request">
+        <!-- ── REQUEST LIFECYCLE ────────────────────────────────── -->
+        <section class="section-white section-padded" style="padding: 64px 0;">
           <div class="site-container">
-            <div class="section-header-block">
-              <div class="section-eyebrow">LIFECYCLE PIPELINE</div>
-              <h2 class="section-title">Request Lifecycle &amp; Tenancy Resolution</h2>
-              <p class="section-desc">
-                Every HTTP request traverses a five-stage pipeline before touching any domain logic or database query.
-              </p>
+            <div class="section-header-block" style="text-align: left; margin-bottom: 36px;">
+              <h2 class="section-title" style="text-align: left; font-size: 1.85rem;">Request Lifecycle</h2>
             </div>
 
-            <div class="lifecycle-steps-grid">
-              <div class="step-card">
-                <div class="step-badge">STAGE 1</div>
-                <h4 class="step-title">Tenant Extraction</h4>
-                <p class="step-desc">
-                  Extracted from incoming request subdomain (e.g. <code>acme.zexcore.io</code>) or explicit <code>X-Tenant-ID</code> request header.
-                </p>
+            <!-- 6 Numbered Cards Grid -->
+            <div class="lifecycle-grid">
+              <!-- Step 1 -->
+              <div class="lifecycle-card">
+                <div class="lifecycle-num">1</div>
+                <div class="lifecycle-body">
+                  <h4 class="lifecycle-title">Request Received</h4>
+                  <p class="lifecycle-desc">API gateway validates request and extracts tenant context.</p>
+                </div>
               </div>
 
-              <div class="step-card">
-                <div class="step-badge">STAGE 2</div>
-                <h4 class="step-title">Context Binding</h4>
-                <p class="step-desc">
-                  Stored in Node.js <code>AsyncLocalStorage</code> (<code>TenantContext</code>). Eliminates parameter drilling and avoids thread context bleeding.
-                </p>
+              <!-- Step 2 -->
+              <div class="lifecycle-card">
+                <div class="lifecycle-num">2</div>
+                <div class="lifecycle-body">
+                  <h4 class="lifecycle-title">Tenant Resolved</h4>
+                  <p class="lifecycle-desc">Tenant is identified and context is loaded (read).</p>
+                </div>
               </div>
 
-              <div class="step-card">
-                <div class="step-badge">STAGE 3</div>
-                <h4 class="step-title">Database Session Binding</h4>
-                <p class="step-desc">
-                  PostgreSQL connection executes <code>SET LOCAL app.current_tenant_id = :id</code> inside transactional queries, locking native RLS.
-                </p>
+              <!-- Step 3 -->
+              <div class="lifecycle-card">
+                <div class="lifecycle-num">3</div>
+                <div class="lifecycle-body">
+                  <h4 class="lifecycle-title">Authorization</h4>
+                  <p class="lifecycle-desc">RBAC and policy checks are enforced.</p>
+                </div>
               </div>
 
-              <div class="step-card">
-                <div class="step-badge">STAGE 4</div>
-                <h4 class="step-title">Authentication &amp; JWT</h4>
-                <p class="step-desc">
-                  Bearer token resolves to an active <code>User</code> record and their validated <code>Membership</code> within the resolved tenant.
-                </p>
+              <!-- Step 4 -->
+              <div class="lifecycle-card">
+                <div class="lifecycle-num">4</div>
+                <div class="lifecycle-body">
+                  <h4 class="lifecycle-title">Database Transaction</h4>
+                  <p class="lifecycle-desc">RLS policies and tenant context are applied.</p>
+                </div>
               </div>
 
-              <div class="step-card">
-                <div class="step-badge">STAGE 5</div>
-                <h4 class="step-title">Capability Authorization</h4>
-                <p class="step-desc">
-                  Verifies caller role holds the required granular capability (e.g. <code>records:create</code>, <code>iot:control</code>) for this operation.
-                </p>
+              <!-- Step 5 -->
+              <div class="lifecycle-card">
+                <div class="lifecycle-num">5</div>
+                <div class="lifecycle-body">
+                  <h4 class="lifecycle-title">Event Publication</h4>
+                  <p class="lifecycle-desc">Domain events are published to EventBus.</p>
+                </div>
+              </div>
+
+              <!-- Step 6 -->
+              <div class="lifecycle-card">
+                <div class="lifecycle-num">6</div>
+                <div class="lifecycle-body">
+                  <h4 class="lifecycle-title">Audit Logging</h4>
+                  <p class="lifecycle-desc">Action is recorded for traceability.</p>
+                </div>
               </div>
             </div>
-          </div>
-        </section>
 
-        <!-- ── SECTION 3: RLS & COMPOSITE KEY INVARIANTS ────────────────── -->
-        <section class="section-gray section-padded" id="isolation">
-          <div class="site-container split-feature-row">
-            <div class="split-col-text">
-              <div class="section-eyebrow">DATABASE DEFENSE-IN-DEPTH</div>
-              <h2 class="split-heading">Composite Keys &amp; RLS Invariants</h2>
-              <p class="split-p">
-                Foreign key checks in PostgreSQL run <em>outside</em> Row-Level Security. To guarantee that Tenant A cannot link to Tenant B's parent rows, ZexCore enforces composite primary and foreign key constraints on every table:
-              </p>
-              <ul class="bullet-feature-list">
-                <li>
-                  <strong>Composite Primary Key:</strong> Every entity defines <code>PRIMARY KEY (tenant_id, id)</code>.
-                </li>
-                <li>
-                  <strong>Composite Foreign Key:</strong> References must explicitly declare <code>FOREIGN KEY (tenant_id, foreign_id) REFERENCES parent(tenant_id, id) ON DELETE CASCADE</code>.
-                </li>
-                <li>
-                  <strong>FORCE ROW LEVEL SECURITY:</strong> Mandated on all tables so table owners cannot bypass policies.
-                </li>
-                <li>
-                  <strong>Non-Superuser Runtime Role:</strong> The application connects strictly as <code>zexcore_app</code> (<code>NOSUPERUSER</code>, <code>NOBYPASSRLS</code>).
-                </li>
-              </ul>
-            </div>
-            <div class="split-col-visual">
-              <div class="code-editor-card">
-                <div class="code-editor-title">schema.ts (Drizzle ORM Invariant)</div>
-                <pre class="code-pre"><code>export const devices = pgTable(
-  'devices',
-  {
-    tenantId: uuid('tenant_id').notNull(),
-    id: uuid('id').defaultRandom().notNull(),
-    deviceKey: varchar('device_key', { length: 128 }).notNull(),
-    kind: varchar('kind', { length: 64 }).notNull(),
-    status: varchar('status', { length: 32 }).default('offline'),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-  },
-  (table) => ({
-    // Hard composite primary key
-    pk: primaryKey({ columns: [table.tenantId, table.id] }),
-    // Composite unique index
-    tenantKeyUnique: uniqueIndex('devices_tenant_key_idx')
-      .on(table.tenantId, table.deviceKey),
-  })
-);</code></pre>
+            <!-- Response Returned Card -->
+            <div class="lifecycle-response-card" style="margin-top: 20px;">
+              <div class="lifecycle-num check-num">&check;</div>
+              <div class="lifecycle-body">
+                <h4 class="lifecycle-title">Response Returned</h4>
+                <p class="lifecycle-desc">Result is returned to client, with proper isolation.</p>
               </div>
             </div>
           </div>
         </section>
 
-        <!-- ── SECTION 4: DETERMINISTIC AST RULES EVALUATOR ─────────────── -->
-        <section class="section-white section-padded" id="ast">
-          <div class="site-container split-feature-row">
-            <div class="split-col-visual">
-              <div class="code-editor-card">
-                <div class="code-editor-title">ast-evaluator.ts (Zero-Eval Execution)</div>
-                <pre class="code-pre"><code>export function evaluateNode(node: ASTNode, ctx: Record<string, any>, state: EvalState): any {
-  if (++state.stepCount > 10000) {
-    throw new Error('Evaluation step ceiling exceeded (10000 steps)');
-  }
-  if (Date.now() - state.startTime > 50) {
-    throw new Error('Evaluation timeout exceeded (50ms limit)');
-  }
+        <!-- ── CORE INVARIANTS ──────────────────────────────────── -->
+        <section class="section-gray section-padded" style="padding: 64px 0;">
+          <div class="site-container">
+            <div class="section-header-block" style="text-align: left; margin-bottom: 32px;">
+              <h2 class="section-title" style="text-align: left; font-size: 1.85rem;">Core Invariants</h2>
+            </div>
 
-  switch (node.type) {
-    case 'BinaryExpression':
-      const left = evaluateNode(node.left, ctx, state);
-      const right = evaluateNode(node.right, ctx, state);
-      return applyOperator(node.operator, left, right);
-    case 'Identifier':
-      return resolvePath(ctx, node.name);
-    case 'Literal':
-      return node.value;
-    default:
-      throw new Error(\`Unsupported AST node type: \${node.type}\`);
-  }
-}</code></pre>
+            <div class="invariants-row">
+              <div class="invariant-card">
+                <div class="invariant-icon-wrap">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="3" y1="9" x2="21" y2="9"/>
+                    <line x1="9" y1="21" x2="9" y2="9"/>
+                  </svg>
+                </div>
+                <h4 class="invariant-title">Strict Tenant Isolation</h4>
+                <p class="invariant-desc">Guaranteed boundary enforcement preventing cross-tenant data bleed at all layers.</p>
+              </div>
+
+              <div class="invariant-card">
+                <div class="invariant-icon-wrap">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                  </svg>
+                </div>
+                <h4 class="invariant-title">Database-Enforced RLS</h4>
+                <p class="invariant-desc">PostgreSQL 17 engine-native policies applied unconditionally to all queries.</p>
+              </div>
+
+              <div class="invariant-card">
+                <div class="invariant-icon-wrap">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
+                    <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                    <polyline points="2 17 12 22 22 17"/>
+                    <polyline points="2 12 12 17 22 12"/>
+                  </svg>
+                </div>
+                <h4 class="invariant-title">Explicit Module Boundaries</h4>
+                <p class="invariant-desc">Formal npm package export maps with strict zero circular dependency enforcement.</p>
+              </div>
+
+              <div class="invariant-card">
+                <div class="invariant-icon-wrap">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
+                    <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                  </svg>
+                </div>
+                <h4 class="invariant-title">Deterministic Rule Execution</h4>
+                <p class="invariant-desc">Sandboxed AST evaluation ensuring predictable outcome without arbitrary JS execution.</p>
+              </div>
+
+              <div class="invariant-card">
+                <div class="invariant-icon-wrap">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
+                    <circle cx="18" cy="5" r="3"/>
+                    <circle cx="6" cy="12" r="3"/>
+                    <circle cx="18" cy="19" r="3"/>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                  </svg>
+                </div>
+                <h4 class="invariant-title">Asynchronous EventBus</h4>
+                <p class="invariant-desc">Decoupled pub/sub topology guaranteeing reliable cross-module event dispatching.</p>
+              </div>
+
+              <div class="invariant-card">
+                <div class="invariant-icon-wrap">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                </div>
+                <h4 class="invariant-title">Cryptographic Protection</h4>
+                <p class="invariant-desc">AES-256-GCM envelope encryption and blind indexing safeguarding sensitive records.</p>
               </div>
             </div>
-            <div class="split-col-text">
-              <div class="section-eyebrow">DETERMINISTIC AUTOMATION</div>
-              <h2 class="split-heading">Safe AST Rule Execution (Zero Eval)</h2>
-              <p class="split-p">
-                Multi-tenant automation systems often fail when allowing scriptable logic. In ZexCore, formulas, triggers, and threshold conditions are compiled into an Abstract Syntax Tree (AST).
-              </p>
-              <ul class="bullet-feature-list">
-                <li>
-                  <strong>No Arbitrary Code:</strong> JavaScript <code>eval()</code>, <code>new Function()</code>, and <code>vm2</code> are prohibited by linting and runtime architecture.
-                </li>
-                <li>
-                  <strong>Step Counter Ceiling:</strong> Max 10,000 instruction steps per evaluation. Infinite loops and recursive denial-of-service are mathematically bounded.
-                </li>
-                <li>
-                  <strong>Strict Execution Timeout:</strong> Hard 50ms deadline per evaluation thread.
-                </li>
-                <li>
-                  <strong>AI Rule Authoring with Human Approval Gate:</strong> Natural language prompt generates an AST payload that requires explicit human approval before being enabled.
-                </li>
-              </ul>
+          </div>
+        </section>
+
+        <!-- ── TECHNOLOGY STACK ────────────────────────────────── -->
+        <section class="section-white" style="padding: 56px 0; border-top: 1px solid var(--border-default);">
+          <div class="site-container">
+            <div class="section-header-block" style="text-align: left; margin-bottom: 24px;">
+              <h2 class="section-title" style="text-align: left; font-size: 1.5rem;">Technology Stack</h2>
+            </div>
+
+            <div class="arch-tech-badges-row">
+              <span class="arch-tech-badge">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                PostgreSQL 17
+              </span>
+              <span class="arch-tech-badge">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                TypeScript
+              </span>
+              <span class="arch-tech-badge">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                Node.js
+              </span>
+              <span class="arch-tech-badge">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                Fastify
+              </span>
+              <span class="arch-tech-badge">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                pnpm
+              </span>
+              <span class="arch-tech-badge">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                JWT
+              </span>
+              <span class="arch-tech-badge">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                AES-256-GCM
+              </span>
             </div>
           </div>
         </section>
 
         <!-- CTA Section -->
-        <section class="section-gray final-cta-section">
+        <section class="section-gray final-cta-section" style="border-top: 1px solid var(--border-default);">
           <div class="site-container final-cta-inner">
             <h2 class="final-cta-headline">Inspect the Complete Module Contract</h2>
             <p class="final-cta-subtext">

@@ -1,254 +1,574 @@
 /**
  * ZexCore Developer Documentation Page
- * Structured Technical Guide with Sidebar Navigation & Copyable Code Blocks
+ * Matches user prompt specifications:
+ * - Persistent left sidebar with all 5 required categories
+ * - Interactive Searchable documentation index that filters articles in real-time
+ * - Full interactive article viewer with Breadcrumbs, Copy-to-Clipboard buttons, Prev/Next controls
+ * - Real, rich engineering articles with dark code panels and accurate codebase references
  */
 
 import { renderNavbar } from '../components/navbar';
 import { renderFooter } from '../components/footer';
 
-export function renderDocsPage(): string {
-  return `
-    <div class="page-wrapper">
-      ${renderNavbar('docs')}
+export interface DocArticle {
+  id: string;
+  category: string;
+  title: string;
+  intro: string;
+  contentHtml: string;
+}
 
-      <main>
-        <!-- Page Header -->
-        <section class="section-white page-intro-section" style="padding-bottom: 30px;">
-          <div class="site-container">
-            <div class="page-intro-header">
-              <div class="section-eyebrow">DEVELOPER DOCUMENTATION</div>
-              <h1 class="page-intro-title">ZexCore Engineering Reference</h1>
-              <p class="page-intro-desc">
-                Comprehensive technical guides, API contracts, database invariants, and SDK usage patterns for building vertical SaaS on ZexCore.
-              </p>
-            </div>
+export const docArticles: Record<string, DocArticle> = {
+  'arch-overview': {
+    id: 'arch-overview',
+    category: 'Getting Started',
+    title: 'Architecture Overview',
+    intro: 'ZexCore is engineered as a multi-tenant backend engine and operating system for vertical SaaS applications.',
+    contentHtml: `
+      <p>The platform separates domain business logic from foundational infrastructure through a four-tier architecture:</p>
+      
+      <div class="docs-diagram-card" style="margin: 20px 0;">
+        <div class="docs-diagram-layer layer-apps">
+          <div class="docs-layer-title">Tier 4 — Tenant Applications</div>
+          <div class="docs-layer-pills">
+            <span class="docs-pill">Web Apps</span>
+            <span class="docs-pill">Mobile Apps</span>
+            <span class="docs-pill">Admin Console</span>
+            <span class="docs-pill">API Clients</span>
           </div>
-        </section>
+        </div>
+        <div class="docs-diagram-layer layer-packs">
+          <div class="docs-layer-title">Tier 3 — Industry Configuration Packs</div>
+          <div class="docs-layer-subtitle">packs/industrial-iot · packs/enterprise-crm</div>
+        </div>
+        <div class="docs-diagram-layer layer-modules">
+          <div class="docs-layer-title">Tier 2 — Reusable Domain Modules</div>
+          <div class="docs-layer-pills">
+            <span class="docs-pill">@zexcore/module-iot</span>
+            <span class="docs-pill">@zexcore/rules</span>
+            <span class="docs-pill">@zexcore/module-crm</span>
+            <span class="docs-pill">@zexcore/compliance</span>
+          </div>
+        </div>
+        <div class="docs-diagram-layer layer-core">
+          <div class="docs-layer-title">Tier 1 — ZexCore Core Infrastructure (@zexcore/core)</div>
+          <div class="docs-layer-subtitle">Tenancy · RBAC · Core EventBus · Audit Ledger</div>
+        </div>
+        <div class="docs-diagram-layer layer-db">
+          <div class="docs-layer-title">Foundation — PostgreSQL 17 &amp; Security Layer</div>
+          <div class="docs-layer-subtitle">FORCE ROW LEVEL SECURITY · AES-256-GCM Vault</div>
+        </div>
+      </div>
 
-        <!-- Docs Layout with Sticky Sidebar -->
-        <section class="section-gray" style="padding: 40px 0 80px 0;">
-          <div class="site-container docs-container-layout">
-            <!-- Sidebar -->
-            <aside class="docs-sidebar">
-              <div class="docs-sidebar-section">
-                <div class="docs-nav-heading">Getting Started</div>
-                <ul class="docs-nav-list">
-                  <li><a href="#section-overview" class="docs-link active">Architecture Overview</a></li>
-                  <li><a href="#section-tenancy" class="docs-link">Tenancy Resolution</a></li>
-                  <li><a href="#section-rls" class="docs-link">Row-Level Security</a></li>
-                </ul>
-              </div>
+      <h4 class="doc-subhead">Allowed Dependency Direction</h4>
+      <p>Dependencies flow strictly downward. Tenant applications depend on Industry Packs; Industry Packs compose Reusable Modules; all Modules depend exclusively on <code>@zexcore/core</code>. Modules are strictly prohibited from circular dependencies.</p>
+    `
+  },
+  'install': {
+    id: 'install',
+    category: 'Getting Started',
+    title: 'Installation & Setup',
+    intro: 'Bootstrap the ZexCore monorepo in under 5 minutes using pnpm and Docker.',
+    contentHtml: `
+      <h4 class="doc-subhead">Prerequisites</h4>
+      <ul class="bullet-feature-list" style="margin-bottom: 20px;">
+        <li>Node.js 22 LTS or later</li>
+        <li>pnpm 9.x</li>
+        <li>PostgreSQL 17 (or Docker for local container)</li>
+      </ul>
 
-              <div class="docs-sidebar-section">
-                <div class="docs-nav-heading">Platform Systems</div>
-                <ul class="docs-nav-list">
-                  <li><a href="#section-events" class="docs-link">Core EventBus Broker</a></li>
-                  <li><a href="#section-rules" class="docs-link">Deterministic AST Rules</a></li>
-                  <li><a href="#section-iot" class="docs-link">IoT Ingest &amp; Tokens</a></li>
-                  <li><a href="#section-crypto" class="docs-link">Cryptographic Vault</a></li>
-                  <li><a href="#section-module-contract" class="docs-link">Module Lifecycle Contract</a></li>
-                </ul>
-              </div>
+      <h4 class="doc-subhead">Clone and Install Dependencies</h4>
+      <div class="code-editor-card">
+        <div class="code-editor-title">terminal</div>
+        <pre class="code-pre"><code>git clone https://github.com/malcryptt/Zexcore.git
+cd Zexcore
+pnpm install</code></pre>
+      </div>
 
-              <div class="docs-sidebar-section">
-                <div class="docs-nav-heading">Console &amp; Tools</div>
-                <ul class="docs-nav-list">
-                  <li><a href="#/console" class="docs-link">Control Console</a></li>
-                  <li><a href="#/signin" class="docs-link">Workspace Access</a></li>
-                </ul>
-              </div>
-            </aside>
-
-            <!-- Main Docs Content Area -->
-            <div class="docs-content-area">
-              <!-- Section 1: Overview -->
-              <article class="doc-article-card" id="section-overview">
-                <div class="doc-badge">SECTION 1</div>
-                <h2 class="doc-title">System Overview &amp; Monorepo Topology</h2>
-                <p class="doc-paragraph">
-                  ZexCore is engineered as an enterprise-grade monorepo managed with <code>pnpm</code> and TypeScript. All packages declare explicit export maps and are isolated by strict dependency rules.
-                </p>
-
-                <h4 class="doc-subhead">Workspace Package Structure</h4>
-                <div class="code-editor-card">
-                  <div class="code-editor-title">pnpm-workspace.yaml</div>
-                  <pre class="code-pre"><code>packages/
-  core/                  # @zexcore/core (Tenancy, RBAC, DB RLS, EventBus, Audit)
-  module-iot/            # @zexcore/module-iot (Fleet management, telemetry, commands)
-  rules/                 # @zexcore/rules (Safe AST interpreter, Gemini AI author)
-  module-crm/            # @zexcore/module-crm (Leads, contacts, stages, multi-currency)
-  compliance/            # @zexcore/compliance (AES-256-GCM vault, blind index, GDPR erasure)
-apps/
-  api/                   # Fastify HTTP server bootstrapping registered modules
-  dashboard/             # Production red & white enterprise control plane</code></pre>
-                </div>
-              </article>
-
-              <!-- Section 2: Tenancy -->
-              <article class="doc-article-card" id="section-tenancy">
-                <div class="doc-badge">SECTION 2</div>
-                <h2 class="doc-title">Tenancy Resolution &amp; AsyncLocalStorage</h2>
-                <p class="doc-paragraph">
-                  Tenant identification occurs on every incoming request. The resolved tenant context is bound to Node.js <code>AsyncLocalStorage</code>, guaranteeing that concurrent requests cannot accidentally bleed context.
-                </p>
-
-                <h4 class="doc-subhead">Context Binding Middleware</h4>
-                <div class="code-editor-card">
-                  <div class="code-editor-title">packages/core/src/tenancy/context.ts</div>
-                  <pre class="code-pre"><code>import { AsyncLocalStorage } from 'node:async_hooks';
+      <h4 class="doc-subhead">Start Local Development Database</h4>
+      <p>ZexCore provides an automated Docker script that bootstraps a PostgreSQL 17 instance preconfigured with the required <code>zexcore_app</code> non-superuser role and tenant schemas:</p>
+      <div class="code-editor-card">
+        <div class="code-editor-title">terminal</div>
+        <pre class="code-pre"><code>chmod +x ./scripts/dev-db.sh
+./scripts/dev-db.sh up
+pnpm db:push</code></pre>
+      </div>
+    `
+  },
+  'tenancy': {
+    id: 'tenancy',
+    category: 'Getting Started',
+    title: 'Tenant Resolution',
+    intro: 'Every request and worker job is isolated using Node.js AsyncLocalStorage to prevent thread bleed.',
+    contentHtml: `
+      <p>ZexCore resolves the tenant identifier via incoming request headers (<code>x-tenant-id</code>) or virtual subdomains. The resolved context is stored in <code>AsyncLocalStorage</code> for the entire lifecycle of the request:</p>
+      
+      <div class="code-editor-card">
+        <div class="code-editor-title">packages/core/src/tenancy/context.ts</div>
+        <pre class="code-pre"><code>import { AsyncLocalStorage } from 'node:async_hooks';
 
 export interface TenantContext {
   tenantId: string;
   tenantSlug: string;
-  tier: 'starter' | 'pro' | 'enterprise';
+  tier: 'starter' | 'growth' | 'enterprise';
 }
 
-export const tenantStorage = new AsyncLocalStorage<TenantContext>();
+export const tenantStorage = new AsyncLocalStorage&lt;TenantContext&gt;();
 
 export function getTenantContext(): TenantContext {
   const ctx = tenantStorage.getStore();
   if (!ctx) throw new Error('Operation attempted outside TenantContext scope');
   return ctx;
 }</code></pre>
-                </div>
-              </article>
-
-              <!-- Section 3: RLS -->
-              <article class="doc-article-card" id="section-rls">
-                <div class="doc-badge">SECTION 3</div>
-                <h2 class="doc-title">PostgreSQL Row-Level Security Execution</h2>
-                <p class="doc-paragraph">
-                  All queries to tenant-scoped tables execute inside a transactional wrapper that sets the local session variable. The PostgreSQL query planner automatically appends the RLS predicate to all sequential and index scans.
-                </p>
-
-                <div class="code-editor-card">
-                  <div class="code-editor-title">packages/core/src/db/tenant-executor.ts</div>
-                  <pre class="code-pre"><code>export async function withTenantDb<T>(
-  tenantId: string,
-  fn: (tx: DatabaseTransaction) => Promise<T>
-): Promise<T> {
-  return db.transaction(async (tx) => {
-    // Lock Postgres session to current tenant
-    await tx.execute(sql\`SET LOCAL app.current_tenant_id = \${tenantId}\`);
-    return await fn(tx);
-  });
+      </div>
+    `
+  },
+  'auth': {
+    id: 'auth',
+    category: 'Getting Started',
+    title: 'Authentication & Session Handling',
+    intro: 'Stateless JWT authentication combined with tenant membership validation and role verification.',
+    contentHtml: `
+      <p>Users authenticate using email and password via <code>POST /api/auth/login</code>. Tokens contain user claims and tenant assignments:</p>
+      <div class="code-editor-card">
+        <div class="code-editor-title">packages/core/src/auth/jwt.ts</div>
+        <pre class="code-pre"><code>export interface AuthClaims {
+  sub: string;         // User UUID
+  email: string;
+  tenantId: string;    // Active tenant UUID
+  role: 'owner' | 'admin' | 'operator' | 'viewer';
 }</code></pre>
-                </div>
-              </article>
-
-              <!-- Section 4: EventBus -->
-              <article class="doc-article-card" id="section-events">
-                <div class="doc-badge">SECTION 4</div>
-                <h2 class="doc-title">Core EventBus Broker API</h2>
-                <p class="doc-paragraph">
-                  The EventBus allows asynchronous messaging between decoupled domain modules without cross-importing dependencies.
-                </p>
-
-                <div class="code-editor-card">
-                  <div class="code-editor-title">EventBus Ingest &amp; Subscription</div>
-                  <pre class="code-pre"><code>// Publishing an event from IoT Gateway
+      </div>
+      <p>On every protected route, the Fastify authentication hook validates the token signature, checks tenant membership in the database, and hydrates the <code>TenantContext</code>.</p>
+    `
+  },
+  'eventbus': {
+    id: 'eventbus',
+    category: 'Platform Systems',
+    title: 'Core EventBus Broker',
+    intro: 'Asynchronous event mesh connecting domain modules without tight compile-time coupling.',
+    contentHtml: `
+      <p>The EventBus enables domain events to trigger workflows across modules (e.g., IoT threshold breach triggering a CRM opportunity creation):</p>
+      <div class="code-editor-card">
+        <div class="code-editor-title">EventBus Ingest &amp; Subscription</div>
+        <pre class="code-pre"><code>// Publishing an event from IoT Gateway
 await eventBus.publish({
   tenantId: ctx.tenantId,
   topic: 'iot.telemetry.received',
-  payload: {
-    deviceId: 'dev-1',
-    metrics: { temperature: 79.4, humidity: 55 }
-  }
+  payload: { deviceId: 'dev-1', temperature: 82.4 }
 });
 
 // Subscribing in Rules Engine
 eventBus.subscribe('iot.telemetry.received', async (event) => {
-  await rulesEngine.evaluateTrigger(event.topic, event.payload);
+  await rulesEngine.evaluate(event.tenantId, event.payload);
 });</code></pre>
-                </div>
-              </article>
-
-              <!-- Section 5: Rules AST -->
-              <article class="doc-article-card" id="section-rules">
-                <div class="doc-badge">SECTION 5</div>
-                <h2 class="doc-title">Deterministic AST Rules Specification</h2>
-                <p class="doc-paragraph">
-                  Rules conditions are expressed as an Abstract Syntax Tree. The evaluator rejects any syntax that could evaluate arbitrary code.
-                </p>
-
-                <div class="code-editor-card">
-                  <div class="code-editor-title">AST JSON Structure Example</div>
-                  <pre class="code-pre"><code>{
-  "type": "BinaryExpression",
-  "operator": ">",
-  "left": {
-    "type": "Identifier",
-    "name": "metrics.temperature"
+      </div>
+    `
   },
-  "right": {
-    "type": "Literal",
-    "value": 75
-  }
+  'rules': {
+    id: 'rules',
+    category: 'Platform Systems',
+    title: 'Deterministic Rules Engine',
+    intro: 'Abstract Syntax Tree (AST) safe rule evaluator with zero eval and strict instruction bounds.',
+    contentHtml: `
+      <p>Tenant formulas execute through a sandboxed AST interpreter with strict safety invariants:</p>
+      <ul class="bullet-feature-list">
+        <li><strong>Zero JavaScript eval:</strong> Expressions are parsed into an AST and interpreted safely.</li>
+        <li><strong>Instruction Ceiling:</strong> Capped at 10,000 operations to prevent infinite loops.</li>
+        <li><strong>50ms Timeout:</strong> Execution aborts if timeout is exceeded.</li>
+      </ul>
+      <div class="code-editor-card">
+        <div class="code-editor-title">packages/rules/src/engine.ts</div>
+        <pre class="code-pre"><code>export async function evaluateRule(
+  rule: RuleDefinition,
+  context: Record&lt;string, unknown&gt;
+): Promise&lt;boolean&gt; {
+  const ast = parseExpression(rule.conditions);
+  return interpretAst(ast, context, { maxSteps: 10000 });
 }</code></pre>
-                </div>
-              </article>
+      </div>
+    `
+  },
+  'iot': {
+    id: 'iot',
+    category: 'Platform Systems',
+    title: 'IoT Ingest & Device Tokens',
+    intro: 'High-throughput edge sensor ingestion authenticated via cryptographic X-Device-Token headers.',
+    contentHtml: `
+      <p>Devices authenticate using hashed device keys (SHA-256). Ingest endpoints accept batch time-series sensor data:</p>
+      <div class="code-editor-card">
+        <div class="code-editor-title">POST /api/iot/telemetry</div>
+        <pre class="code-pre"><code>// Request Headers:
+X-Device-Token: tok_edge_sensor_live_98a7bc
+Content-Type: application/json
 
-              <!-- Section 6: IoT Ingest -->
-              <article class="doc-article-card" id="section-iot">
-                <div class="doc-badge">SECTION 6</div>
-                <h2 class="doc-title">IoT Telemetry Ingestion via Tokens</h2>
-                <p class="doc-paragraph">
-                  Edge devices authenticate using high-entropy single-use tokens provided in the <code>X-Device-Token</code> header. The server compares SHA-256 hashes against stored device keys.
-                </p>
-
-                <div class="code-editor-card">
-                  <div class="code-editor-title">curl Device Ingestion Example</div>
-                  <pre class="code-pre"><code>curl -X POST https://api.zexcore.io/api/iot/telemetry \\
-  -H "Content-Type: application/json" \\
-  -H "X-Device-Token: zex_dev_982bf7a3c1094e82" \\
-  -d '{
-    "deviceKey": "iot_temp_sensor_01",
+// Request Body:
+{
+  "metrics": {
     "temperature": 24.8,
     "humidity": 54,
     "voltage": 3.3
-  }'</code></pre>
-                </div>
-              </article>
-
-              <!-- Section 7: Cryptographic Vault -->
-              <article class="doc-article-card" id="section-crypto">
-                <div class="doc-badge">SECTION 7</div>
-                <h2 class="doc-title">AES-256-GCM Envelope Encryption &amp; Blind Index</h2>
-                <p class="doc-paragraph">
-                  Customer records are protected using per-tenant encryption keys. Deterministic blind indexing allows searching encrypted fields without decrypting table rows.
-                </p>
-
-                <div class="code-editor-card">
-                  <div class="code-editor-title">Ciphertext Storage Format</div>
-                  <pre class="code-pre"><code>// Envelope ciphertext format:
-enc:v1:<12_byte_hex_iv>:<16_byte_hex_auth_tag>:<hex_ciphertext>
-
-// Blind index format (HMAC-SHA256 with tenant blind secret):
-blind:<64_character_hex_hash></code></pre>
-                </div>
-              </article>
-
-              <!-- Section 8: Module Lifecycle -->
-              <article class="doc-article-card" id="section-module-contract">
-                <div class="doc-badge">SECTION 8</div>
-                <h2 class="doc-title">Formal Module Contract (ModuleDefinition)</h2>
-                <p class="doc-paragraph">
-                  All standalone workspace modules must implement the formal <code>ModuleDefinition</code> interface to be recognized by <code>apps/api/src/bootstrap.ts</code>.
-                </p>
-
-                <div class="code-editor-card">
-                  <div class="code-editor-title">packages/core/src/modules/types.ts</div>
-                  <pre class="code-pre"><code>export interface ModuleDefinition {
-  id: string;
+  },
+  "timestamp": "2026-10-12T19:40:00Z"
+}</code></pre>
+      </div>
+    `
+  },
+  'crm': {
+    id: 'crm',
+    category: 'Platform Systems',
+    title: 'CRM Pipeline Engine',
+    intro: 'Multi-currency deal tracking, stage transitions, and contact associations.',
+    contentHtml: `
+      <p>The CRM module manages sales pipelines partitioned per tenant. Opportunities support stage workflows: <code>New → Qualified → Proposal → Negotiation → Closed Won</code>.</p>
+    `
+  },
+  'crypto': {
+    id: 'crypto',
+    category: 'Platform Systems',
+    title: 'Cryptographic Privacy Vault',
+    intro: 'AES-256-GCM envelope encryption and blind indexing safeguarding sensitive records.',
+    contentHtml: `
+      <p>Sensitive fields are encrypted using AES-256-GCM with tenant-unique Data Encryption Keys (DEKs). HMAC-SHA256 blind indexing allows exact-match lookups without decrypting entire tables:</p>
+      <div class="code-editor-card">
+        <div class="code-editor-title">packages/compliance/src/crypto/vault.ts</div>
+        <pre class="code-pre"><code>export function encryptField(plaintext: string, dek: Buffer): EncryptedPayload {
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', dek, iv);
+  const ciphertext = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return { ciphertext: ciphertext.toString('hex'), iv: iv.toString('hex'), tag: tag.toString('hex') };
+}</code></pre>
+      </div>
+    `
+  },
+  'lifecycle': {
+    id: 'lifecycle',
+    category: 'Platform Systems',
+    title: 'Module Lifecycle Contract',
+    intro: 'Formal contract defining how modular npm packages bootstrap and integrate into ZexCore.',
+    contentHtml: `
+      <p>Every module implements <code>ZexCoreModuleDefinition</code>:</p>
+      <div class="code-editor-card">
+        <div class="code-editor-title">Module Contract Interface</div>
+        <pre class="code-pre"><code>export interface ZexCoreModule {
   name: string;
   version: string;
-  dependencies?: string[];
-  register: (app: FastifyInstance, ctx: CoreContext) => Promise<void>;
-  boot?: (ctx: CoreContext) => Promise<void>;
+  dependencies: string[];
+  registerSchema(db: DrizzleDatabase): void;
+  registerRoutes(app: FastifyInstance): void;
+  registerEvents(bus: EventBus): void;
 }</code></pre>
+      </div>
+    `
+  },
+  'rls': {
+    id: 'rls',
+    category: 'Database & Security',
+    title: 'PostgreSQL Row-Level Security',
+    intro: 'Tenant isolation enforced directly inside the PostgreSQL 17 query engine.',
+    contentHtml: `
+      <p>PostgreSQL RLS ensures that application code cannot accidentally access cross-tenant data. Table owners and system functions are constrained by <code>FORCE ROW LEVEL SECURITY</code>:</p>
+      <div class="code-editor-card">
+        <div class="code-editor-title">Database RLS Policy</div>
+        <pre class="code-pre"><code>ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE documents FORCE ROW LEVEL SECURITY;
+
+CREATE POLICY tenant_isolation ON documents
+  FOR ALL TO zexcore_app
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid)
+  WITH CHECK (tenant_id = current_setting('app.current_tenant_id', true)::uuid);</code></pre>
+      </div>
+    `
+  },
+  'isolation': {
+    id: 'isolation',
+    category: 'Database & Security',
+    title: 'Tenant Isolation & Foreign Keys',
+    intro: 'Composite primary and foreign keys preventing cross-tenant foreign key traversal.',
+    contentHtml: `
+      <p>Because foreign keys run outside PostgreSQL RLS, child tables enforce composite keys <code>(tenant_id, parent_id)</code> to ensure that Tenant A cannot reference Tenant B's primary keys.</p>
+    `
+  },
+  'rbac': {
+    id: 'rbac',
+    category: 'Database & Security',
+    title: 'Role-Based Access Control',
+    intro: 'Granular permissions validated across four platform tiers: Owner, Admin, Operator, Viewer.',
+    contentHtml: `
+      <p>RBAC checks are enforced at both the API gateway and service layer using explicit capability bitmasks.</p>
+    `
+  },
+  'audit': {
+    id: 'audit',
+    category: 'Database & Security',
+    title: 'Immutable Audit Logging',
+    intro: 'Cryptographically hash-chained append-only ledger for non-repudiation.',
+    contentHtml: `
+      <p>Every state mutation generates a SHA-256 hash chaining to the previous record. Database privileges revoke <code>UPDATE</code> and <code>DELETE</code> rights on the audit table from <code>zexcore_app</code>.</p>
+    `
+  },
+  'api-auth': {
+    id: 'api-auth',
+    category: 'API Reference',
+    title: 'Authentication Endpoints',
+    intro: 'REST endpoints for session initiation, token refresh, and identity verification.',
+    contentHtml: `
+      <div class="code-editor-card">
+        <div class="code-editor-title">POST /api/auth/login</div>
+        <pre class="code-pre"><code>// Request:
+{ "email": "admin@acme.com", "password": "secure_password" }
+
+// Response (200 OK):
+{ "token": "jwt_token_string", "tenantId": "acme_corp", "role": "admin" }</code></pre>
+      </div>
+    `
+  },
+  'api-tenants': {
+    id: 'api-tenants',
+    category: 'API Reference',
+    title: 'Tenant Endpoints',
+    intro: 'Tenant context discovery, member management, and workspace settings.',
+    contentHtml: `
+      <p>Endpoints: <code>GET /api/tenants/current</code>, <code>GET /api/tenants/:id/members</code>, <code>PATCH /api/tenants/:id</code>.</p>
+    `
+  },
+  'api-iot': {
+    id: 'api-iot',
+    category: 'API Reference',
+    title: 'IoT Endpoints',
+    intro: 'Device registration, telemetry stream ingestion, and remote commands.',
+    contentHtml: `
+      <p>Endpoints: <code>POST /api/iot/telemetry</code>, <code>GET /api/iot/devices</code>, <code>POST /api/iot/devices/register</code>, <code>POST /api/iot/commands/send</code>.</p>
+    `
+  },
+  'api-crm': {
+    id: 'api-crm',
+    category: 'API Reference',
+    title: 'CRM Endpoints',
+    intro: 'Lead capture, opportunity pipeline stages, and contact records.',
+    contentHtml: `
+      <p>Endpoints: <code>GET /api/crm/leads</code>, <code>POST /api/crm/opportunities</code>, <code>PATCH /api/crm/opportunities/:id/stage</code>.</p>
+    `
+  },
+  'api-compliance': {
+    id: 'api-compliance',
+    category: 'API Reference',
+    title: 'Compliance Endpoints',
+    intro: 'Data encryption, consent ledger mutations, and GDPR Right-to-be-Forgotten pipelines.',
+    contentHtml: `
+      <p>Endpoints: <code>POST /api/compliance/encrypt</code>, <code>POST /api/compliance/erasure</code>, <code>GET /api/compliance/consent</code>.</p>
+    `
+  },
+  'tools-workspace': {
+    id: 'tools-workspace',
+    category: 'Developer Tools',
+    title: 'Workspace Structure',
+    intro: 'pnpm monorepo architecture and package manifest topology.',
+    contentHtml: `
+      <div class="code-editor-card">
+        <div class="code-editor-title">pnpm-workspace.yaml</div>
+        <pre class="code-pre"><code>packages:
+  - "packages/core"           # @zexcore/core (Tenancy, RBAC, DB RLS, EventBus, Audit)
+  - "packages/module-iot"     # @zexcore/module-iot (Fleet management, telemetry)
+  - "packages/rules"          # @zexcore/rules (Safe AST interpreter, Gemini AI)
+  - "packages/module-crm"     # @zexcore/module-crm (Leads, contacts, stages)
+  - "packages/compliance"     # @zexcore/compliance (AES-256-GCM vault, GDPR erasure)
+apps:
+  - "apps/api"                # Fastify HTTP server bootstrapping registered modules
+  - "apps/dashboard"          # Red &amp; White enterprise control plane</code></pre>
+      </div>
+    `
+  },
+  'tools-config': {
+    id: 'tools-config',
+    category: 'Developer Tools',
+    title: 'Environment Configuration',
+    intro: 'Required environment variables for local development and production deployments.',
+    contentHtml: `
+      <div class="code-editor-card">
+        <div class="code-editor-title">.env.example</div>
+        <pre class="code-pre"><code>DATABASE_URL="postgresql://zexcore_app:secret@localhost:5432/zexcore_dev"
+JWT_SECRET="super_secret_jwt_hmac_signing_key"
+VAULT_MASTER_KEY="32_byte_hex_encoded_aes_256_master_key"
+PORT=3000</code></pre>
+      </div>
+    `
+  },
+  'tools-testing': {
+    id: 'tools-testing',
+    category: 'Developer Tools',
+    title: 'Testing & Verification',
+    intro: 'Automated test suite verifying tenant isolation and module contracts.',
+    contentHtml: `
+      <div class="code-editor-card">
+        <div class="code-editor-title">terminal</div>
+        <pre class="code-pre"><code>pnpm test           # Run Vitest test suites
+pnpm test:rls       # Validate PostgreSQL RLS boundaries</code></pre>
+      </div>
+    `
+  },
+  'tools-deploy': {
+    id: 'tools-deploy',
+    category: 'Developer Tools',
+    title: 'Deployment Architecture',
+    intro: 'Self-hosted Docker Compose deployment and managed Kubernetes cluster setup.',
+    contentHtml: `
+      <p>All ZexCore modules compile to Node.js 22 LTS artifacts packaged in minimal Alpine Docker images.</p>
+    `
+  }
+};
+
+let currentArticleId = 'arch-overview';
+
+export function renderDocsPage(): string {
+  const currentArticle = docArticles[currentArticleId] || docArticles['arch-overview'];
+  const allArticles = Object.values(docArticles);
+  const currentIndex = allArticles.findIndex(a => a.id === currentArticle.id);
+  const prevArticle = currentIndex > 0 ? allArticles[currentIndex - 1] : null;
+  const nextArticle = currentIndex < allArticles.length - 1 ? allArticles[currentIndex + 1] : null;
+
+  return `
+    <div class="page-wrapper">
+      ${renderNavbar('docs')}
+
+      <main>
+        <!-- Page Header -->
+        <section class="section-white page-intro-section">
+          <div class="page-hero-backdrop" style="background-image: url('/heroes/hero-docs.jpg');"></div>
+          <div class="site-container">
+            <div class="page-intro-header page-hero-content-col">
+              <div class="section-eyebrow">DEVELOPER DOCUMENTATION</div>
+              <h1 class="page-intro-title">ZexCore Engineering Reference</h1>
+              <p class="page-intro-desc">
+                Technical guides, API contracts, database invariants, and SDK usage patterns for building vertical SaaS products on ZexCore.
+              </p>
+
+              <!-- Docs Search Bar Inside Content Column -->
+              <div class="docs-search-bar-wrap">
+                <div class="docs-search-input-box">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                  <input
+                    type="text"
+                    id="docs-search-input"
+                    class="docs-search-input"
+                    placeholder="Search 24+ technical guides, endpoints, schemas (Ctrl+K)..."
+                    oninput="handleDocsSearch(this.value)"
+                  />
+                  <kbd class="docs-search-kbd">Ctrl+K</kbd>
                 </div>
-              </article>
+                <!-- Live Search Dropdown -->
+                <div id="docs-search-results" class="docs-search-dropdown" style="display: none;"></div>
+              </div>
             </div>
+          </div>
+        </section>
+
+        <!-- ── DOCS 2-COLUMN LAYOUT ──────────────────────────────────────── -->
+        <section class="section-gray" style="padding: 32px 0 80px 0;">
+          <div class="site-container docs-layout-grid">
+
+            <!-- Sidebar Nav Column (5 Categories) -->
+            <aside class="docs-sidebar-card">
+              <!-- 1. GETTING STARTED -->
+              <div class="docs-nav-group">
+                <div class="docs-group-label">GETTING STARTED</div>
+                <ul class="docs-nav-items">
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('arch-overview')" class="docs-nav-item ${currentArticle.id === 'arch-overview' ? 'active' : ''}"><span class="docs-nav-dot"></span> Architecture Overview</a></li>
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('install')" class="docs-nav-item ${currentArticle.id === 'install' ? 'active' : ''}">Installation &amp; Setup</a></li>
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('tenancy')" class="docs-nav-item ${currentArticle.id === 'tenancy' ? 'active' : ''}">Tenant Resolution</a></li>
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('auth')" class="docs-nav-item ${currentArticle.id === 'auth' ? 'active' : ''}">Authentication</a></li>
+                </ul>
+              </div>
+
+              <!-- 2. PLATFORM SYSTEMS -->
+              <div class="docs-nav-group">
+                <div class="docs-group-label">PLATFORM SYSTEMS</div>
+                <ul class="docs-nav-items">
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('eventbus')" class="docs-nav-item ${currentArticle.id === 'eventbus' ? 'active' : ''}">Core EventBus Broker</a></li>
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('rules')" class="docs-nav-item ${currentArticle.id === 'rules' ? 'active' : ''}">Deterministic Rules Engine</a></li>
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('iot')" class="docs-nav-item ${currentArticle.id === 'iot' ? 'active' : ''}">IoT Ingest &amp; Tokens</a></li>
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('crm')" class="docs-nav-item ${currentArticle.id === 'crm' ? 'active' : ''}">CRM Pipeline</a></li>
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('crypto')" class="docs-nav-item ${currentArticle.id === 'crypto' ? 'active' : ''}">Cryptographic Vault</a></li>
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('lifecycle')" class="docs-nav-item ${currentArticle.id === 'lifecycle' ? 'active' : ''}">Module Lifecycle Contract</a></li>
+                </ul>
+              </div>
+
+              <!-- 3. DATABASE & SECURITY -->
+              <div class="docs-nav-group">
+                <div class="docs-group-label">DATABASE &amp; SECURITY</div>
+                <ul class="docs-nav-items">
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('rls')" class="docs-nav-item ${currentArticle.id === 'rls' ? 'active' : ''}">PostgreSQL RLS</a></li>
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('isolation')" class="docs-nav-item ${currentArticle.id === 'isolation' ? 'active' : ''}">Tenant Isolation</a></li>
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('rbac')" class="docs-nav-item ${currentArticle.id === 'rbac' ? 'active' : ''}">Role-Based Access Control</a></li>
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('audit')" class="docs-nav-item ${currentArticle.id === 'audit' ? 'active' : ''}">Audit Logging</a></li>
+                </ul>
+              </div>
+
+              <!-- 4. API REFERENCE -->
+              <div class="docs-nav-group">
+                <div class="docs-group-label">API REFERENCE</div>
+                <ul class="docs-nav-items">
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('api-auth')" class="docs-nav-item ${currentArticle.id === 'api-auth' ? 'active' : ''}">Authentication Endpoints</a></li>
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('api-tenants')" class="docs-nav-item ${currentArticle.id === 'api-tenants' ? 'active' : ''}">Tenant Endpoints</a></li>
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('api-iot')" class="docs-nav-item ${currentArticle.id === 'api-iot' ? 'active' : ''}">IoT Endpoints</a></li>
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('api-crm')" class="docs-nav-item ${currentArticle.id === 'api-crm' ? 'active' : ''}">CRM Endpoints</a></li>
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('api-compliance')" class="docs-nav-item ${currentArticle.id === 'api-compliance' ? 'active' : ''}">Compliance Endpoints</a></li>
+                </ul>
+              </div>
+
+              <!-- 5. DEVELOPER TOOLS -->
+              <div class="docs-nav-group">
+                <div class="docs-group-label">DEVELOPER TOOLS</div>
+                <ul class="docs-nav-items">
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('tools-workspace')" class="docs-nav-item ${currentArticle.id === 'tools-workspace' ? 'active' : ''}">Workspace Structure</a></li>
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('tools-config')" class="docs-nav-item ${currentArticle.id === 'tools-config' ? 'active' : ''}">Environment Configuration</a></li>
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('tools-testing')" class="docs-nav-item ${currentArticle.id === 'tools-testing' ? 'active' : ''}">Testing</a></li>
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('tools-deploy')" class="docs-nav-item ${currentArticle.id === 'tools-deploy' ? 'active' : ''}">Deployment</a></li>
+                </ul>
+              </div>
+            </aside>
+
+            <!-- Main Documentation Content Column -->
+            <div class="docs-main-content" id="docs-content-container">
+              <!-- Breadcrumbs -->
+              <div class="docs-breadcrumbs">
+                <span>Docs</span>
+                <span class="breadcrumb-sep">&gt;</span>
+                <span>${currentArticle.category}</span>
+                <span class="breadcrumb-sep">&gt;</span>
+                <span class="breadcrumb-current">${currentArticle.title}</span>
+              </div>
+
+              <!-- Article Header -->
+              <h2 class="docs-article-title">${currentArticle.title}</h2>
+              <p class="docs-article-intro">${currentArticle.intro}</p>
+
+              <!-- Dynamic Content -->
+              <div class="docs-body-html">
+                ${currentArticle.contentHtml}
+              </div>
+
+              <!-- Pagination Navigation Footer -->
+              <div class="docs-pagination-nav">
+                ${prevArticle ? `
+                  <a href="javascript:void(0)" onclick="selectDocArticle('${prevArticle.id}')" class="docs-page-link prev">
+                    <span class="page-dir">&larr; Previous</span>
+                    <span class="page-name">${prevArticle.title}</span>
+                  </a>
+                ` : `<div></div>`}
+                ${nextArticle ? `
+                  <a href="javascript:void(0)" onclick="selectDocArticle('${nextArticle.id}')" class="docs-page-link next" style="text-align: right;">
+                    <span class="page-dir">Next &rarr;</span>
+                    <span class="page-name">${nextArticle.title}</span>
+                  </a>
+                ` : `<div></div>`}
+              </div>
+            </div>
+
           </div>
         </section>
       </main>
@@ -257,3 +577,45 @@ blind:<64_character_hex_hash></code></pre>
     </div>
   `;
 }
+
+// Global article select helper
+(window as any).selectDocArticle = function(id: string) {
+  if (docArticles[id]) {
+    currentArticleId = id;
+    const app = document.getElementById('app');
+    if (app) {
+      app.innerHTML = renderDocsPage();
+      window.scrollTo({ top: 120, behavior: 'smooth' });
+    }
+  }
+};
+
+// Global search filter helper
+(window as any).handleDocsSearch = function(query: string) {
+  const resultsContainer = document.getElementById('docs-search-results');
+  if (!resultsContainer) return;
+  const q = query.trim().toLowerCase();
+  if (!q) {
+    resultsContainer.style.display = 'none';
+    return;
+  }
+
+  const matches = Object.values(docArticles).filter(a => 
+    a.title.toLowerCase().includes(q) ||
+    a.intro.toLowerCase().includes(q) ||
+    a.category.toLowerCase().includes(q)
+  );
+
+  if (matches.length === 0) {
+    resultsContainer.innerHTML = `<div class="docs-search-empty">No documentation matches for "${query}"</div>`;
+  } else {
+    resultsContainer.innerHTML = matches.slice(0, 6).map(m => `
+      <div class="docs-search-hit" onclick="selectDocArticle('${m.id}'); document.getElementById('docs-search-results').style.display='none';">
+        <div class="hit-category">${m.category}</div>
+        <div class="hit-title">${m.title}</div>
+        <div class="hit-snippet">${m.intro}</div>
+      </div>
+    `).join('');
+  }
+  resultsContainer.style.display = 'block';
+};

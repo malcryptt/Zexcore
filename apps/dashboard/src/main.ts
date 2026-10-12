@@ -3,7 +3,8 @@
  * Red & White Production-Ready Multi-Page Website & Console
  */
 
-import { renderHomePage } from './pages/home';
+import './style.css';
+import { renderHomePage, setupHomePageEvents } from './pages/home';
 import { renderPlatformPage } from './pages/platform';
 import { renderArchitecturePage } from './pages/architecture';
 import { renderModulesPage } from './pages/modules';
@@ -222,66 +223,235 @@ function renderDashboard() {
             </div>
 
             <div class="grid-4" style="margin-bottom: 24px;">
-              <div class="stat-box highlight">
+              <div class="stat-box">
                 <div class="stat-label">Platform Health</div>
-                <div class="stat-value" style="color: var(--success);">Operational</div>
-                <div class="stat-subtext">All 5 modules active &amp; registered</div>
+                <div style="margin: 8px 0 4px 0;">
+                  <span class="badge" style="background: #ECFDF5; color: #168447; border: 1px solid #A7F3D0; font-size: 0.95rem; font-weight: 700; padding: 4px 12px; border-radius: 9999px;">Operational</span>
+                </div>
+                <div class="stat-subtext" style="color: var(--text-muted); font-size: 0.72rem;">Micro-kernel &amp; 5 modules</div>
               </div>
               <div class="stat-box">
-                <div class="stat-label">Connected Fleet Nodes</div>
-                <div class="stat-value" id="stat-online-devices">3 / 4</div>
-                <div class="stat-subtext">Telemetry streaming via SHA-256 tokens</div>
+                <div class="stat-label">Fleet Nodes</div>
+                <div class="stat-value" id="stat-online-devices">12</div>
+                <div class="stat-subtext" style="color: #168447; font-weight: 600;">&bull; Connected</div>
               </div>
               <div class="stat-box">
-                <div class="stat-label">Active Rules Evaluated</div>
+                <div class="stat-label">Rules Evaluated</div>
                 <div class="stat-value">1,428</div>
-                <div class="stat-subtext">Deterministic execution (0 runtime eval)</div>
+                <div class="stat-subtext">Today</div>
               </div>
               <div class="stat-box">
-                <div class="stat-label">Total Pipeline Value</div>
-                <div class="stat-value" id="stat-total-pipeline" style="color: var(--primary);">$478,000</div>
-                <div class="stat-subtext">5 active sales opportunities</div>
+                <div class="stat-label">Pipeline Value</div>
+                <div class="stat-value" id="stat-total-pipeline" style="color: #E50920; font-weight: 800;">$478,000</div>
+                <div class="stat-subtext">Total</div>
               </div>
             </div>
 
+            <!-- Middle Row: Multi-Tenant Isolation Diagram + Quick Operations -->
             <div class="grid-2" style="margin-bottom: 24px;">
               <div class="card">
-                <div class="card-header">
+                <div class="card-header" style="margin-bottom: 12px;">
                   <div>
-                    <div class="card-title">Multi-Tenant Isolation Architecture</div>
-                    <div class="card-subtitle">Zero data leakage boundary enforced via PostgreSQL Row-Level Security</div>
+                    <div class="card-title">Multi-Tenant Isolation</div>
+                    <div class="card-subtitle">Isolated tenant execution enforced via PostgreSQL RLS</div>
                   </div>
                 </div>
-                <div style="font-size: 0.85rem; line-height: 1.6; color: var(--text-secondary);">
-                  <p style="margin-bottom: 10px;">
-                    Every query executes with <code>set_config('app.current_tenant_id', :id, true)</code>. All module tables enforce composite unique and foreign keys <code>(tenant_id, id)</code> preventing cross-tenant references at the database engine level.
-                  </p>
-                  <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 14px;">
-                    <span class="module-chip">FORCE ROW LEVEL SECURITY</span>
-                    <span class="module-chip">Composite Foreign Keys</span>
-                    <span class="module-chip">AES-256-GCM Vault</span>
-                    <span class="module-chip">Hash-Chained Audit Log</span>
+                <div class="console-tenant-diagram-wrap">
+                  <div class="console-tenant-diagram">
+                    <!-- SVG connector lines -->
+                    <svg class="console-tenant-svg-lines" viewBox="0 0 440 160">
+                      <line x1="80" y1="30" x2="170" y2="80" stroke="#E1E5EA" stroke-width="2" stroke-dasharray="3 3"/>
+                      <line x1="360" y1="30" x2="270" y2="80" stroke="#E1E5EA" stroke-width="2" stroke-dasharray="3 3"/>
+                      <line x1="80" y1="130" x2="170" y2="80" stroke="#E1E5EA" stroke-width="2" stroke-dasharray="3 3"/>
+                      <line x1="360" y1="130" x2="270" y2="80" stroke="#E1E5EA" stroke-width="2" stroke-dasharray="3 3"/>
+                    </svg>
+
+                    <!-- 4 Tenant Nodes -->
+                    <div class="console-tenant-node node-a">Tenant A</div>
+                    <div class="console-tenant-node node-b">Tenant B</div>
+                    <div class="console-tenant-node node-c">Tenant C</div>
+                    <div class="console-tenant-node node-d">Tenant D</div>
+
+                    <!-- Center Box: ZexCore Core -->
+                    <div class="console-core-center">
+                      <img src="/zexcore-logo-icon.png" alt="ZexCore" class="console-core-logo" />
+                      <span class="console-core-text">ZexCore Core</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
+              <!-- Quick Operations -->
               <div class="card">
-                <div class="card-header">
+                <div class="card-header" style="margin-bottom: 12px;">
                   <div>
                     <div class="card-title">Quick Operations</div>
-                    <div class="card-subtitle">Trigger live module workflows</div>
+                    <div class="card-subtitle">Dispatch platform actions across isolated engines</div>
                   </div>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                  <button class="btn btn-secondary" id="btn-quick-telemetry" style="justify-content: flex-start;">
-                    📡 Ingest Simulated High-Temp IoT Reading (79.4°C)
+                <div class="console-quick-op-list">
+                  <button class="console-quick-op-btn" id="btn-quick-reg-device">
+                    <span class="console-quick-op-icon">&oplus;</span>
+                    <span>Register Edge Device</span>
                   </button>
-                  <button class="btn btn-secondary" id="btn-quick-lead" style="justify-content: flex-start;">
-                    💼 Create Enterprise Deal ($95,000)
+                  <button class="console-quick-op-btn" id="btn-quick-telemetry">
+                    <span class="console-quick-op-icon">&oplus;</span>
+                    <span>Ingest IoT Reading</span>
                   </button>
-                  <button class="btn btn-secondary" id="btn-quick-encrypt" style="justify-content: flex-start;">
-                    🔐 Encrypt Sensitive PII Record with Tenant Key
+                  <button class="console-quick-op-btn" id="btn-quick-lead">
+                    <span class="console-quick-op-icon">&oplus;</span>
+                    <span>Create Opportunity</span>
                   </button>
+                  <button class="console-quick-op-btn" id="btn-quick-eval-rule">
+                    <span class="console-quick-op-icon">&oplus;</span>
+                    <span>Evaluate Rule</span>
+                  </button>
+                  <button class="console-quick-op-btn" id="btn-quick-view-audit">
+                    <span class="console-quick-op-icon">&oplus;</span>
+                    <span>View Audit Event</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom 3-Column Panels: Real-Time Event Stream, Recent Activity, Module Health -->
+            <div class="console-bottom-3col" style="margin-bottom: 24px;">
+              <!-- 1. Real-Time Event Stream -->
+              <div class="console-card-panel">
+                <div class="console-panel-header">
+                  <span class="console-panel-title">Real-Time Event Stream</span>
+                </div>
+                <div class="console-stream-list">
+                  <div class="console-stream-item">
+                    <div class="console-stream-left">
+                      <span class="console-stream-dot"></span>
+                      <span>device.telemetry</span>
+                    </div>
+                    <span class="console-stream-time">10:21:55</span>
+                  </div>
+                  <div class="console-stream-item">
+                    <div class="console-stream-left">
+                      <span class="console-stream-dot"></span>
+                      <span>rules.executed</span>
+                    </div>
+                    <span class="console-stream-time">10:21:12</span>
+                  </div>
+                  <div class="console-stream-item">
+                    <div class="console-stream-left">
+                      <span class="console-stream-dot"></span>
+                      <span>audit.logged</span>
+                    </div>
+                    <span class="console-stream-time">10:20:41</span>
+                  </div>
+                  <div class="console-stream-item">
+                    <div class="console-stream-left">
+                      <span class="console-stream-dot"></span>
+                      <span>tenant.created</span>
+                    </div>
+                    <span class="console-stream-time">10:17:22</span>
+                  </div>
+                </div>
+                <div class="console-panel-footer">
+                  <a href="#/console" class="console-panel-link" onclick="document.querySelector('[data-tab=\\'iot\\']')?.click()">View All &rarr;</a>
+                </div>
+              </div>
+
+              <!-- 2. Recent Activity -->
+              <div class="console-card-panel">
+                <div class="console-panel-header">
+                  <span class="console-panel-title">Recent Activity</span>
+                </div>
+                <div class="console-stream-list">
+                  <div class="console-stream-item">
+                    <div class="console-stream-left">
+                      <span class="console-stream-dot blue"></span>
+                      <div>
+                        <strong>New device registered</strong>
+                        <div style="font-size: 0.72rem; color: var(--text-muted);">sensor-hub</div>
+                      </div>
+                    </div>
+                    <span class="console-stream-time">2m ago</span>
+                  </div>
+                  <div class="console-stream-item">
+                    <div class="console-stream-left">
+                      <span class="console-stream-dot blue"></span>
+                      <div>
+                        <strong>Rule executed</strong>
+                        <div style="font-size: 0.72rem; color: var(--text-muted);">temperature_threshold</div>
+                      </div>
+                    </div>
+                    <span class="console-stream-time">4m ago</span>
+                  </div>
+                  <div class="console-stream-item">
+                    <div class="console-stream-left">
+                      <span class="console-stream-dot blue"></span>
+                      <div>
+                        <strong>Opportunity created</strong>
+                        <div style="font-size: 0.72rem; color: var(--text-muted);">$95,000</div>
+                      </div>
+                    </div>
+                    <span class="console-stream-time">12m ago</span>
+                  </div>
+                  <div class="console-stream-item">
+                    <div class="console-stream-left">
+                      <span class="console-stream-dot blue"></span>
+                      <div>
+                        <strong>Audit log viewed</strong>
+                        <div style="font-size: 0.72rem; color: var(--text-muted);">admin</div>
+                      </div>
+                    </div>
+                    <span class="console-stream-time">18m ago</span>
+                  </div>
+                </div>
+                <div class="console-panel-footer">
+                  <a href="#/console" class="console-panel-link" onclick="document.querySelector('[data-tab=\\'compliance\\']')?.click()">View All &rarr;</a>
+                </div>
+              </div>
+
+              <!-- 3. Module Health -->
+              <div class="console-card-panel">
+                <div class="console-panel-header">
+                  <span class="console-panel-title">Module Health</span>
+                </div>
+                <div class="console-health-list">
+                  <div class="console-health-item">
+                    <div class="console-stream-left">
+                      <span class="console-stream-dot green"></span>
+                      <span>Core</span>
+                    </div>
+                    <span class="console-health-pct">100%</span>
+                  </div>
+                  <div class="console-health-item">
+                    <div class="console-stream-left">
+                      <span class="console-stream-dot green"></span>
+                      <span>IoT</span>
+                    </div>
+                    <span class="console-health-pct">100%</span>
+                  </div>
+                  <div class="console-health-item">
+                    <div class="console-stream-left">
+                      <span class="console-stream-dot green"></span>
+                      <span>Rules</span>
+                    </div>
+                    <span class="console-health-pct">100%</span>
+                  </div>
+                  <div class="console-health-item">
+                    <div class="console-stream-left">
+                      <span class="console-stream-dot green"></span>
+                      <span>CRM</span>
+                    </div>
+                    <span class="console-health-pct">100%</span>
+                  </div>
+                  <div class="console-health-item">
+                    <div class="console-stream-left">
+                      <span class="console-stream-dot green"></span>
+                      <span>Compliance</span>
+                    </div>
+                    <span class="console-health-pct">100%</span>
+                  </div>
+                </div>
+                <div class="console-panel-footer">
+                  <a href="#/modules" class="console-panel-link">View All &rarr;</a>
                 </div>
               </div>
             </div>
@@ -499,12 +669,33 @@ function setupEventListeners() {
   });
 
   // Quick actions
+  document.getElementById('btn-quick-reg-device')?.addEventListener('click', () => {
+    const modal = document.getElementById('register-device-modal');
+    if (modal) modal.style.display = 'flex';
+    else {
+      const tabIot = document.querySelector('[data-tab="iot"]') as HTMLElement;
+      tabIot?.click();
+    }
+  });
+
   document.getElementById('btn-quick-telemetry')?.addEventListener('click', () => {
     triggerTelemetryPing('dev-1', 79.4, 55, 3.2);
   });
 
   document.getElementById('btn-quick-lead')?.addEventListener('click', () => {
     createLead('Enterprise Analytics Platform', 'CloudScale Inc', 95000, 'Qualified');
+  });
+
+  document.getElementById('btn-quick-eval-rule')?.addEventListener('click', () => {
+    logBusEvent('rules.eval.requested', { ruleId: 'rule-temp-alert', tenantId: state.activeTenant, result: 'PASSED' });
+    const tabRules = document.querySelector('[data-tab="rules"]') as HTMLElement;
+    tabRules?.click();
+  });
+
+  document.getElementById('btn-quick-view-audit')?.addEventListener('click', () => {
+    logBusEvent('audit.viewed', { actor: 'admin@enterprise.org', tenantId: state.activeTenant });
+    const tabCompliance = document.querySelector('[data-tab="compliance"]') as HTMLElement;
+    tabCompliance?.click();
   });
 
   document.getElementById('btn-quick-encrypt')?.addEventListener('click', () => {
@@ -932,6 +1123,7 @@ function renderApp() {
     case 'home':
       app.innerHTML = renderHomePage();
       setupNavbarEvents();
+      setupHomePageEvents();
       break;
     case 'platform':
       app.innerHTML = renderPlatformPage();
@@ -980,6 +1172,7 @@ function renderApp() {
     default:
       app.innerHTML = renderHomePage();
       setupNavbarEvents();
+      setupHomePageEvents();
       break;
   }
 }

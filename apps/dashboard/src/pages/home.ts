@@ -1,387 +1,442 @@
 /**
- * ZexCore Enterprise Homepage
- * Editorial Red-and-White Design System | Authentic Photography & Technical Architecture
+ * ZexCore Enterprise Homepage — Huawei Flagship Style
+ * Features:
+ * - Dynamic Industrial Chevron Hero Showcase with interactive slider indicators
+ * - 4 Enterprise Metric Invariants (100% RLS, < 1ms, AES-256-GCM, 5 Modules)
+ * - "What's New" section with red accent bar and 4 domain showcase cards
+ * - 3-tier sovereign isometric stack architecture diagram
+ * - Industrial plant vertical SaaS showcase and trust badges
+ * - Strict Red & White enterprise design system
  */
 
 import { renderNavbar } from '../components/navbar';
 import { renderFooter } from '../components/footer';
 
+export interface HeroSlide {
+  badge: string;
+  titleHtml: string;
+  subtext: string;
+  image: string;
+  alt: string;
+  primaryCtaText: string;
+  primaryCtaHref: string;
+  secondaryCtaText: string;
+  secondaryCtaHref: string;
+}
+
+export const heroSlides: HeroSlide[] = [
+  {
+    badge: 'MISSION-CRITICAL VERTICAL SAAS',
+    titleHtml: 'Accelerate<br />Industrial<br /><span class="huawei-hero-red">Intelligence.</span>',
+    subtext: 'The sovereign multi-tenant operating system for vertical SaaS — power grids, industrial IoT telemetry, deterministic rules automation, and cryptographic compliance vaults.',
+    image: '/hero-industrial-chevron.jpg',
+    alt: 'Industrial intelligence chevron showing smart cities, energy grids, robotics welding, and high-speed rail',
+    primaryCtaText: 'Launch Console →',
+    primaryCtaHref: '#/console',
+    secondaryCtaText: 'Explore Solutions',
+    secondaryCtaHref: '#/solutions',
+  },
+  {
+    badge: 'POSTGRESQL 17 ROW-LEVEL SECURITY',
+    titleHtml: '<span class="huawei-hero-red">Sovereign<br />Multi-Tenancy.<br />Zero Leakage.</span>',
+    subtext: 'Enforced mathematically at the PostgreSQL session level using Row-Level Security, composite primary keys, and transaction-isolated database connections. No reliance on software developer discipline.',
+    image: '/refinery.jpg',
+    alt: 'Industrial plant and refinery operations powered by sovereign multi-tenancy',
+    primaryCtaText: 'Security Architecture →',
+    primaryCtaHref: '#/security',
+    secondaryCtaText: 'Technical Whitepaper',
+    secondaryCtaHref: '#/architecture',
+  },
+  {
+    badge: 'AST ENGINE • ZERO JAVASCRIPT EVAL',
+    titleHtml: 'Deterministic<br />Rules &amp; Automation.<br /><span class="huawei-hero-red">&lt; 1ms Latency.</span>',
+    subtext: 'Compile conditional business logic into secure Abstract Syntax Tree graphs. Trigger real-time alert pipelines and dispatch state machines across the EventBus mesh with predictable microsecond execution.',
+    image: '/solutions/automation.jpg',
+    alt: 'Industrial robotic manufacturing automation with deterministic execution',
+    primaryCtaText: 'Test Rules Engine →',
+    primaryCtaHref: '#/console',
+    secondaryCtaText: 'Developer Documentation',
+    secondaryCtaHref: '#/docs',
+  },
+];
+
 export function renderHomePage(): string {
+  const defaultSlide = heroSlides[0];
+
   return `
     <div class="page-wrapper">
       ${renderNavbar('home')}
 
       <main>
-        <!-- ── HERO SECTION ─────────────────────────────────────────────── -->
-        <section class="hero-split-section">
-          <div class="site-container hero-split-inner">
-            <div class="hero-copy-col">
-              <div class="eyebrow-badge">
-                <span class="eyebrow-dot"></span>
-                ENTERPRISE INFRASTRUCTURE PLATFORM
+        <!-- ═══════════════════════════════════════════════════════════════
+             FLAGSHIP HUAWEI-STYLE HERO BANNER
+             ═══════════════════════════════════════════════════════════════ -->
+        <section class="huawei-flagship-hero" id="home-flagship-hero">
+          <div id="hero-half-backdrop" class="huawei-half-backdrop" style="display: none; opacity: 0;"></div>
+          <div class="site-container">
+            <div class="huawei-hero-grid">
+              
+              <!-- Left Visual: Industrial Chevron Showcase (Active on Slide 0) -->
+              <div class="huawei-hero-visual-col" id="hero-chevron-col">
+                <div class="huawei-chevron-frame">
+                  <img
+                    id="hero-slide-img"
+                    src="${defaultSlide.image}"
+                    alt="${defaultSlide.alt}"
+                    class="huawei-chevron-img"
+                    loading="eager"
+                  />
+                  <div class="huawei-chevron-overlay-glow"></div>
+                </div>
               </div>
-              <h1 class="hero-headline">
-                One Core.<br />
-                <span class="text-brand">Infinite Possibilities.</span>
-              </h1>
-              <p class="hero-subtext">
-                ZexCore is the multi-tenant backend engine and operating system for vertical SaaS applications &mdash; providing shared, battle-tested infrastructure for identity, hard data isolation, deterministic automation, and cryptographic compliance.
+
+              <!-- Right Copy: Enterprise Headline & Actions -->
+              <div class="huawei-hero-copy-col">
+                <div class="huawei-brand-geometric-symbol">
+                  <svg width="44" height="44" viewBox="0 0 32 32" fill="none">
+                    <polygon points="4,4 16,16 4,28" fill="#E50920" />
+                    <polygon points="14,4 26,16 14,28" fill="#17191D" />
+                  </svg>
+                </div>
+
+                <h1 class="huawei-hero-title" id="hero-slide-title">
+                  ${defaultSlide.titleHtml}
+                </h1>
+
+                <p class="huawei-hero-desc" id="hero-slide-desc">
+                  ${defaultSlide.subtext}
+                </p>
+
+                <div class="huawei-hero-actions" id="hero-slide-actions">
+                  <a href="${defaultSlide.primaryCtaHref}" class="btn btn-primary btn-lg" id="btn-hero-primary">
+                    ${defaultSlide.primaryCtaText}
+                  </a>
+                  <a href="${defaultSlide.secondaryCtaHref}" class="btn btn-outline btn-lg" id="btn-hero-secondary">
+                    ${defaultSlide.secondaryCtaText}
+                  </a>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Slide Pagination Indicators Matching Huawei Reference -->
+            <div class="huawei-slider-indicators" aria-label="Hero carousel pagination">
+              <button class="huawei-slide-pill active" data-slide-index="0" aria-label="Go to slide 1"></button>
+              <button class="huawei-slide-pill" data-slide-index="1" aria-label="Go to slide 2"></button>
+              <button class="huawei-slide-pill" data-slide-index="2" aria-label="Go to slide 3"></button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             4 METRIC CARDS ROW UNDER HERO
+             ═══════════════════════════════════════════════════════════════ -->
+        <section class="section-white" style="padding: 32px 0 48px 0; border-bottom: 1px solid var(--border-subtle);">
+          <div class="site-container">
+            <div class="hero-metrics-4col">
+              <div class="hero-metric-card">
+                <div class="metric-icon-wrap">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="metric-big-val">100% RLS</div>
+                  <div class="metric-sub-lbl">Row-Level Security</div>
+                </div>
+              </div>
+
+              <div class="hero-metric-card">
+                <div class="metric-icon-wrap">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="metric-big-val">&lt; 1ms</div>
+                  <div class="metric-sub-lbl">Rules Engine</div>
+                </div>
+              </div>
+
+              <div class="hero-metric-card">
+                <div class="metric-icon-wrap">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="metric-big-val">AES-256-GCM</div>
+                  <div class="metric-sub-lbl">Encryption</div>
+                </div>
+              </div>
+
+              <div class="hero-metric-card">
+                <div class="metric-icon-wrap">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                    <polyline points="2 17 12 22 22 17"/>
+                    <polyline points="2 12 12 17 22 12"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="metric-big-val">5 Modules</div>
+                  <div class="metric-sub-lbl">EventBus Mesh</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             "WHAT'S NEW" SECTION (MATCHING HUAWEI REFERENCE DESIGN)
+             ═══════════════════════════════════════════════════════════════ -->
+        <section class="section-gray section-padded whats-new-section" style="padding: 72px 0 84px 0;">
+          <div class="site-container">
+            <!-- Header with Red Underline Accent Bar -->
+            <div class="whats-new-header text-center">
+              <h2 class="whats-new-title">What's New</h2>
+              <div class="whats-new-red-bar"></div>
+              <p class="whats-new-subtitle">
+                Explore recently certified enterprise capabilities, sovereign runtime modules, and vertical industry packs.
               </p>
-              <div class="hero-actions-row">
-                <a href="#/console" class="btn btn-primary btn-lg" id="btn-hero-launch">
-                  Launch Console &rarr;
+            </div>
+
+            <!-- 4-Card Enterprise Showcase Grid -->
+            <div class="whats-new-cards-grid">
+              
+              <!-- 1. Industrial IoT -->
+              <div class="whats-new-card">
+                <div class="whats-new-img-wrap">
+                  <img src="/solutions/iot.jpg" alt="Industrial IoT device telemetry" class="whats-new-img" loading="lazy" />
+                  <span class="whats-new-category">IOT FLEET</span>
+                </div>
+                <div class="whats-new-content">
+                  <h3 class="whats-new-card-title">Edge Device Fleet &amp; Telemetry Stream</h3>
+                  <p class="whats-new-card-desc">
+                    Hardware-isolated single-use token rotation, high-frequency time-series telemetry ingestion, and sub-millisecond metric anomaly thresholds.
+                  </p>
+                  <a href="#/modules" class="whats-new-card-link">Learn More &rarr;</a>
+                </div>
+              </div>
+
+              <!-- 2. Deterministic Rules -->
+              <div class="whats-new-card">
+                <div class="whats-new-img-wrap">
+                  <img src="/solutions/automation.jpg" alt="Automated robotic manufacturing" class="whats-new-img" loading="lazy" />
+                  <span class="whats-new-category">AUTOMATION</span>
+                </div>
+                <div class="whats-new-content">
+                  <h3 class="whats-new-card-title">Zero-Eval AST Workflow Evaluation</h3>
+                  <p class="whats-new-card-desc">
+                    Deterministic condition graphs and action dispatchers with zero JavaScript eval risk. Evaluates state machines and triggers in microseconds.
+                  </p>
+                  <a href="#/modules" class="whats-new-card-link">Learn More &rarr;</a>
+                </div>
+              </div>
+
+              <!-- 3. Sovereign CRM -->
+              <div class="whats-new-card">
+                <div class="whats-new-img-wrap">
+                  <img src="/solutions/sales.jpg" alt="Enterprise CRM and sales pipeline" class="whats-new-img" loading="lazy" />
+                  <span class="whats-new-category">CRM &amp; PIPELINE</span>
+                </div>
+                <div class="whats-new-content">
+                  <h3 class="whats-new-card-title">Composite Key Tenant Isolation</h3>
+                  <p class="whats-new-card-desc">
+                    Enterprise deal pipelines, contact ledgers, and stage transitions enforced with composite foreign-key invariants preventing cross-tenant leakage.
+                  </p>
+                  <a href="#/modules" class="whats-new-card-link">Learn More &rarr;</a>
+                </div>
+              </div>
+
+              <!-- 4. Cryptographic Compliance -->
+              <div class="whats-new-card">
+                <div class="whats-new-img-wrap">
+                  <img src="/solutions/compliance.jpg" alt="Cryptographic data vault and compliance" class="whats-new-img" loading="lazy" />
+                  <span class="whats-new-category">COMPLIANCE VAULT</span>
+                </div>
+                <div class="whats-new-content">
+                  <h3 class="whats-new-card-title">GDPR Article 17 Cryptographic Erasure</h3>
+                  <p class="whats-new-card-desc">
+                    Right-to-be-Forgotten pipeline with key destruction, HMAC blind indexing for searchable encrypted PII, and immutable append-only audit trails.
+                  </p>
+                  <a href="#/security" class="whats-new-card-link">Learn More &rarr;</a>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SECTION 3: ENGINEERED FOR STRICT SOVEREIGN MULTI-TENANCY
+             ═══════════════════════════════════════════════════════════════ -->
+        <section class="section-white section-padded" style="padding: 80px 0;">
+          <div class="site-container">
+            <div class="multi-tenant-split-grid">
+              <!-- Left Column: Copy & Button -->
+              <div class="multi-tenant-copy">
+                <div class="hero-eyebrow-pill" style="margin-bottom: 16px;">
+                  <span class="hero-eyebrow-dot"></span>
+                  SOVEREIGN PLATFORM ARCHITECTURE
+                </div>
+                <h2 class="section-title" style="text-align: left; font-size: 2.35rem; font-weight: 850; letter-spacing: -0.04em; margin-bottom: 18px; line-height: 1.15;">
+                  Engineered for Strict Sovereign Multi-Tenancy
+                </h2>
+                <p style="font-size: 1.05rem; color: var(--text-secondary); line-height: 1.7; margin-bottom: 34px; max-width: 490px;">
+                  Build for scale, definition, and workflow execution &mdash; ZexCore delivers the enterprise foundation your vertical SaaS needs to operate securely without architectural compromises.
+                </p>
+                <a href="#/architecture" class="btn btn-primary btn-lg">
+                  Learn More About Our Architecture &rarr;
                 </a>
-                <a href="#/architecture" class="btn btn-secondary btn-lg" id="btn-hero-arch">
-                  Explore Architecture
-                </a>
               </div>
 
-              <!-- Technical Metric Badges -->
-              <div class="hero-metrics-grid">
-                <div class="metric-item">
-                  <div class="metric-val">100%</div>
-                  <div class="metric-lbl">RLS Isolation</div>
-                </div>
-                <div class="metric-item">
-                  <div class="metric-val">&lt; 1ms</div>
-                  <div class="metric-lbl">AST Rule Eval</div>
-                </div>
-                <div class="metric-item">
-                  <div class="metric-val">AES-256</div>
-                  <div class="metric-lbl">Envelope Vault</div>
-                </div>
-                <div class="metric-item">
-                  <div class="metric-val">Postgres 17</div>
-                  <div class="metric-lbl">Engine Native</div>
-                </div>
-              </div>
-            </div>
+              <!-- Right Column: Unified 3D Isometric Stack Diagram matching Reference Design -->
+              <div class="stack-illustration-col">
+                <div class="platform-stack-diagram-card">
+                  <svg viewBox="0 0 660 410" class="platform-stack-svg-unified" aria-label="ZexCore 3-tier sovereign platform architecture stack">
+                    <defs>
+                      <linearGradient id="slabFaceGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#ffffff"/>
+                        <stop offset="100%" stop-color="#fff8f9"/>
+                      </linearGradient>
+                      <linearGradient id="facetLeft" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#fddce0"/>
+                        <stop offset="100%" stop-color="#f8bec6"/>
+                      </linearGradient>
+                      <linearGradient id="facetRight" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#fce8eb"/>
+                        <stop offset="100%" stop-color="#f9cbd1"/>
+                      </linearGradient>
+                      <filter id="stack3DShadow" x="-20%" y="-20%" width="150%" height="160%">
+                        <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#a60c1c" flood-opacity="0.14"/>
+                      </filter>
+                      <filter id="glowNode" x="-30%" y="-30%" width="160%" height="160%">
+                        <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#e50920" flood-opacity="0.55"/>
+                      </filter>
+                    </defs>
 
-            <div class="hero-visual-col">
-              <div class="hero-image-frame">
-                <img
-                  src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80"
-                  alt="Enterprise engineering team collaborating on multi-tenant infrastructure"
-                  class="hero-photo"
-                  loading="eager"
-                />
-                <div class="hero-image-overlay">
-                  <div class="overlay-header">
-                    <span class="status-indicator-dot"></span>
-                    <span>ZexCore Kernel Runtime &mdash; Active</span>
-                  </div>
-                  <div class="overlay-code">
-                    <code>SET LOCAL app.current_tenant_id = 'tenant_prod_us_east';</code>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+                    <!-- ── LAYER 3 (BASE): ZexCore Core ── -->
+                    <g filter="url(#stack3DShadow)">
+                      <polygon points="50,230 200,282 200,300 50,248" fill="url(#facetLeft)" stroke="#E50920" stroke-width="1.2"/>
+                      <polygon points="200,282 350,230 350,248 200,300" fill="url(#facetRight)" stroke="#E50920" stroke-width="1.2"/>
+                      <polygon points="200,178 350,230 200,282 50,230" fill="url(#slabFaceGrad)" stroke="#E50920" stroke-width="2.2"/>
+                    </g>
+                    <line x1="350" y1="230" x2="420" y2="230" stroke="#E50920" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="420" cy="230" r="4.5" fill="#E50920" filter="url(#glowNode)"/>
+                    <text x="438" y="226" font-family="Inter, -apple-system, sans-serif" font-weight="750" font-size="15" fill="#17191D">ZexCore Core</text>
+                    <text x="438" y="246" font-family="Inter, -apple-system, sans-serif" font-weight="500" font-size="12.5" fill="#626D7E">Multi-tenant infrastructure</text>
 
-        <!-- ── PLATFORM FOUNDATION (EDITORIAL SPLIT) ─────────────────────── -->
-        <section class="section-gray section-padded">
-          <div class="site-container">
-            <div class="section-header-block">
-              <div class="section-eyebrow">FOUNDATIONAL CAPABILITIES</div>
-              <h2 class="section-title">The Operating System for Vertical SaaS</h2>
-              <p class="section-desc">
-                Building multi-tenant enterprise software repeatedly leads to fragile data boundaries and fragmented logic. ZexCore provides hardened, shared infrastructure so engineering teams focus purely on vertical domain workflows.
-              </p>
-            </div>
+                    <!-- ── LAYER 2 (MIDDLE): Reusable Modules ── -->
+                    <g filter="url(#stack3DShadow)">
+                      <polygon points="75,175 200,219 200,235 75,191" fill="url(#facetLeft)" stroke="#E50920" stroke-width="1.2"/>
+                      <polygon points="200,219 325,175 325,191 200,235" fill="url(#facetRight)" stroke="#E50920" stroke-width="1.2"/>
+                      <polygon points="200,131 325,175 200,219 75,175" fill="url(#slabFaceGrad)" stroke="#E50920" stroke-width="2"/>
+                    </g>
+                    <line x1="325" y1="175" x2="420" y2="175" stroke="#E50920" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="420" cy="175" r="4.5" fill="#E50920" filter="url(#glowNode)"/>
+                    <text x="438" y="171" font-family="Inter, -apple-system, sans-serif" font-weight="750" font-size="15" fill="#17191D">Reusable Modules</text>
+                    <text x="438" y="191" font-family="Inter, -apple-system, sans-serif" font-weight="500" font-size="12.5" fill="#626D7E">Core platform capabilities</text>
 
-            <!-- Asymmetric Editorial Grid -->
-            <div class="capabilities-editorial-grid">
-              <!-- Item 1: Multi-Tenancy (Wide Card) -->
-              <div class="cap-card cap-card-wide">
-                <div class="cap-card-content">
-                  <div class="cap-badge">DATABASE-ENFORCED ISOLATION</div>
-                  <h3 class="cap-title">Multi-Tenant Row-Level Security</h3>
-                  <p class="cap-desc">
-                    Tenant isolation is executed directly inside the PostgreSQL 17 database engine using native Row-Level Security. Every transactional session executes with <code>SET LOCAL app.current_tenant_id</code>. Tables mandate composite keys <code>(tenant_id, id)</code> preventing cross-tenant foreign key traversal.
-                  </p>
-                  <div class="tech-spec-pills">
-                    <span class="tech-pill">FORCE ROW LEVEL SECURITY</span>
-                    <span class="tech-pill">Composite Foreign Keys</span>
-                    <span class="tech-pill">NOSUPERUSER Application Role</span>
-                  </div>
-                </div>
-                <div class="cap-card-code">
-                  <pre><code>CREATE POLICY tenant_isolation_policy
-ON devices FOR ALL
-TO zexcore_app
-USING (tenant_id = current_setting('app.current_tenant_id', true))
-WITH CHECK (tenant_id = current_setting('app.current_tenant_id', true));</code></pre>
-                </div>
-              </div>
-
-              <!-- Item 2: Deterministic Rules Engine -->
-              <div class="cap-card">
-                <div class="cap-badge">SAFE AUTOMATION</div>
-                <h3 class="cap-title">Deterministic AST Engine</h3>
-                <p class="cap-desc">
-                  Tenant rules and formula calculations execute through a sandboxed Abstract Syntax Tree interpreter with zero JavaScript <code>eval</code>. Strict 10,000-instruction ceiling and 50ms execution timeouts prevent denial-of-service vulnerabilities.
-                </p>
-                <div class="card-footer-action">
-                  <a href="#/platform#rules" class="inline-link">Explore Rules Pipeline &rarr;</a>
-                </div>
-              </div>
-
-              <!-- Item 3: Cryptographic Vault -->
-              <div class="cap-card">
-                <div class="cap-badge">SECURITY &amp; PRIVACY</div>
-                <h3 class="cap-title">Cryptographic Envelope Vault</h3>
-                <p class="cap-desc">
-                  Automated AES-256-GCM envelope encryption with unique tenant data keys. Deterministic HMAC-SHA256 blind indexing enables exact-match queries without decrypting sensitive customer records in memory.
-                </p>
-                <div class="card-footer-action">
-                  <a href="#/security#crypto" class="inline-link">View Crypto Model &rarr;</a>
-                </div>
-              </div>
-
-              <!-- Item 4: Asynchronous EventBus -->
-              <div class="cap-card">
-                <div class="cap-badge">EVENT-DRIVEN ARCHITECTURE</div>
-                <h3 class="cap-title">Core EventBus Broker</h3>
-                <p class="cap-desc">
-                  Decoupled publish-subscribe broker connecting IoT device telemetry ingest, CRM sales stage updates, and compliance triggers in real time without creating tight module dependencies.
-                </p>
-                <div class="card-footer-action">
-                  <a href="#/architecture#bus" class="inline-link">Inspect Event Mesh &rarr;</a>
-                </div>
-              </div>
-
-              <!-- Item 5: Immutable Audit Ledger -->
-              <div class="cap-card">
-                <div class="cap-badge">COMPLIANCE &amp; TRACEABILITY</div>
-                <h3 class="cap-title">Hash-Chained Audit Trail</h3>
-                <p class="cap-desc">
-                  Every state mutation is recorded in an append-only ledger with cryptographic SHA-256 hash chaining. Database permissions strictly revoke <code>UPDATE</code> and <code>DELETE</code> rights on the audit table.
-                </p>
-                <div class="card-footer-action">
-                  <a href="#/security#audit" class="inline-link">Review Audit Security &rarr;</a>
+                    <!-- ── LAYER 1 (TOP): Industry Packs ── -->
+                    <g filter="url(#stack3DShadow)">
+                      <polygon points="100,120 200,158 200,173 100,135" fill="url(#facetLeft)" stroke="#E50920" stroke-width="1.2"/>
+                      <polygon points="200,158 300,120 300,135 200,173" fill="url(#facetRight)" stroke="#E50920" stroke-width="1.2"/>
+                      <polygon points="200,82 300,120 200,158 100,120" fill="url(#slabFaceGrad)" stroke="#E50920" stroke-width="2"/>
+                      <image href="/zexcore-logo-icon.png" x="178" y="98" width="44" height="44" preserveAspectRatio="xMidYMid meet"/>
+                    </g>
+                    <line x1="300" y1="120" x2="420" y2="120" stroke="#E50920" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="420" cy="120" r="4.5" fill="#E50920" filter="url(#glowNode)"/>
+                    <text x="438" y="116" font-family="Inter, -apple-system, sans-serif" font-weight="750" font-size="15" fill="#17191D">Industry Packs</text>
+                    <text x="438" y="136" font-family="Inter, -apple-system, sans-serif" font-weight="500" font-size="12.5" fill="#626D7E">Vertical configurations</text>
+                  </svg>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        <!-- ── ARCHITECTURE SHOWCASE HIERARCHY ──────────────────────────── -->
-        <section class="section-white section-padded" id="architecture-preview">
+        <!-- ═══════════════════════════════════════════════════════════════
+             SECTION 4: POWERING THE NEXT GENERATION OF VERTICAL SAAS
+             ═══════════════════════════════════════════════════════════════ -->
+        <section class="section-gray section-padded" style="padding: 80px 0;">
           <div class="site-container">
-            <div class="section-header-block">
-              <div class="section-eyebrow">SYSTEM TOPOLOGY</div>
-              <h2 class="section-title">Strict Architectural Hierarchy</h2>
-              <p class="section-desc">
-                ZexCore enforces a clean four-tier boundary. The micro-kernel handles foundation services, reusable modules provide domain logic, industry packs declare manifests, and tenant apps stay completely isolated.
-              </p>
-            </div>
-
-            <!-- Connected Architecture Diagram Component -->
-            <div class="arch-hierarchy-diagram">
-              <div class="arch-tier-box tier-tenant">
-                <div class="tier-label">TIER 4 &mdash; TENANT APPLICATIONS</div>
-                <div class="tier-content-row">
-                  <div class="tier-node">Acme Industrial Web App</div>
-                  <div class="tier-node">Globex Depot Console</div>
-                  <div class="tier-node">Soylent Compliance Portal</div>
-                  <div class="tier-node">Third-Party API Clients</div>
-                </div>
-              </div>
-
-              <div class="arch-connector-line">
-                <div class="connector-arrow">&darr; Configured by Industry Manifests</div>
-              </div>
-
-              <div class="arch-tier-box tier-packs">
-                <div class="tier-label">TIER 3 &mdash; INDUSTRY CONFIGURATION PACKS</div>
-                <div class="tier-content-row">
-                  <div class="tier-node active-pack">packs/industrial-iot</div>
-                  <div class="tier-node active-pack">packs/logistics-fleet</div>
-                  <div class="tier-node active-pack">packs/enterprise-crm</div>
-                  <div class="tier-node active-pack">packs/regulated-vault</div>
-                </div>
-              </div>
-
-              <div class="arch-connector-line">
-                <div class="connector-arrow">&darr; Composed of Modular Workspace Packages</div>
-              </div>
-
-              <div class="arch-tier-box tier-modules">
-                <div class="tier-label">TIER 2 &mdash; REUSABLE DOMAIN MODULES</div>
-                <div class="tier-content-row">
-                  <div class="tier-node">@zexcore/module-iot</div>
-                  <div class="tier-node">@zexcore/rules</div>
-                  <div class="tier-node">@zexcore/module-crm</div>
-                  <div class="tier-node">@zexcore/compliance</div>
-                </div>
-              </div>
-
-              <div class="arch-connector-line">
-                <div class="connector-arrow">&darr; Built on Core Runtime Micro-Kernel</div>
-              </div>
-
-              <div class="arch-tier-box tier-core">
-                <div class="tier-label">TIER 1 &mdash; ZEXCORE CORE INFRASTRUCTURE (@zexcore/core)</div>
-                <div class="tier-content-row">
-                  <div class="tier-node highlight-node">PostgreSQL 17 RLS Engine</div>
-                  <div class="tier-node highlight-node">Identity &amp; RBAC</div>
-                  <div class="tier-node highlight-node">Core EventBus Broker</div>
-                  <div class="tier-node highlight-node">Hash-Chained Audit Ledger</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="arch-cta-center">
-              <a href="#/architecture" class="btn btn-secondary">
-                View Full Technical Architecture &amp; Data Flows &rarr;
-              </a>
-            </div>
-          </div>
-        </section>
-
-        <!-- ── REAL VERTICAL INDUSTRY SOLUTIONS ─────────────────────────── -->
-        <section class="section-gray section-padded">
-          <div class="site-container">
-            <div class="section-header-block">
-              <div class="section-eyebrow">VERTICAL USE CASES</div>
-              <h2 class="section-title">Engineered for High-Stakes Industries</h2>
-              <p class="section-desc">
-                From manufacturing automation to refrigerated cold-chains, ZexCore packs configure capabilities without rewriting or destabilizing the foundational core engine.
-              </p>
-            </div>
-
-            <div class="solutions-showcase-grid">
-              <!-- Solution 1: Industrial IoT -->
-              <div class="solution-card">
-                <div class="solution-img-wrapper">
+            <div class="powering-saas-grid">
+              <!-- Left Column: Industrial Plant Photo -->
+              <div class="powering-photo-col">
+                <div class="powering-photo-frame">
                   <img
-                    src="https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80"
-                    alt="Industrial robotics and manufacturing equipment"
-                    class="solution-img"
+                    src="/refinery.jpg"
+                    alt="Engineer in hardhat working on vertical SaaS automation in an industrial plant"
+                    class="powering-photo-img"
                     loading="lazy"
                   />
-                  <div class="solution-tag">PACK: INDUSTRIAL-IOT</div>
-                </div>
-                <div class="solution-body">
-                  <h3 class="solution-title">Industrial IoT &amp; Telemetry</h3>
-                  <p class="solution-text">
-                    Token-authenticated edge sensor ingestion (<code>X-Device-Token</code>), time-series storage, threshold alerting, and bidirectional remote command execution for manufacturing lines.
-                  </p>
-                  <div class="solution-metrics">
-                    <span><strong>10,000+</strong> msgs/sec ingest</span>
-                    <span><strong>SHA-256</strong> token auth</span>
-                  </div>
                 </div>
               </div>
 
-              <!-- Solution 2: Cold-Chain Logistics -->
-              <div class="solution-card">
-                <div class="solution-img-wrapper">
-                  <img
-                    src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80"
-                    alt="Modern logistics distribution warehouse"
-                    class="solution-img"
-                    loading="lazy"
-                  />
-                  <div class="solution-tag">PACK: LOGISTICS-FLEET</div>
+              <!-- Right Column: Copy & Explore Button -->
+              <div class="powering-copy-col">
+                <div class="hero-eyebrow-pill" style="margin-bottom: 16px;">
+                  <span class="hero-eyebrow-dot"></span>
+                  PRODUCTION-GRADE FOUNDATION
                 </div>
-                <div class="solution-body">
-                  <h3 class="solution-title">Logistics &amp; Cold-Chain Fleet</h3>
-                  <p class="solution-text">
-                    Multi-facility depot tracking, temperature threshold alerts for pharmaceuticals and perishables, vehicle telemetry dispatch, and cross-depot handoff records.
-                  </p>
-                  <div class="solution-metrics">
-                    <span><strong>-4.2&deg;C</strong> chiller tracking</span>
-                    <span><strong>GPS / Temp</strong> fusion</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Solution 3: Regulated Data Vault -->
-              <div class="solution-card">
-                <div class="solution-img-wrapper">
-                  <img
-                    src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=800&q=80"
-                    alt="Secure enterprise server racks and data center"
-                    class="solution-img"
-                    loading="lazy"
-                  />
-                  <div class="solution-tag">PACK: REGULATED-VAULT</div>
-                </div>
-                <div class="solution-body">
-                  <h3 class="solution-title">Cryptographic Compliance Vault</h3>
-                  <p class="solution-text">
-                    GDPR Article 17 Right-to-be-Forgotten erasure pipeline, verifiable consent ledger with lawful basis tracking, and AES-256-GCM envelope encryption.
-                  </p>
-                  <div class="solution-metrics">
-                    <span><strong>AES-256-GCM</strong> envelope</span>
-                    <span><strong>1-Click</strong> GDPR erasure</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="arch-cta-center">
-              <a href="#/solutions" class="btn btn-secondary">
-                Explore All Industry Configuration Packs &rarr;
-              </a>
-            </div>
-          </div>
-        </section>
-
-        <!-- ── SECURITY CALLOUT ─────────────────────────────────────────── -->
-        <section class="section-white section-padded">
-          <div class="site-container">
-            <div class="security-feature-banner">
-              <div class="security-banner-content">
-                <div class="section-eyebrow">VERIFIED SECURITY INVARIANTS</div>
-                <h2 class="security-banner-title">Zero Cross-Tenant Leakage Guarantee</h2>
-                <p class="security-banner-desc">
-                  We don't rely on software developer discipline or <code>where tenant_id = x</code> clauses in application code. Tenant isolation is enforced mathematically at the database session level using PostgreSQL Row-Level Security and composite keys.
+                <h2 class="section-title" style="text-align: left; font-size: 2.2rem; font-weight: 850; letter-spacing: -0.04em; margin-bottom: 20px;">
+                  Powering the next generation of vertical SaaS
+                </h2>
+                <p style="font-size: 1.02rem; color: var(--text-secondary); line-height: 1.7; margin-bottom: 32px; max-width: 500px;">
+                  From industrial IoT to healthcare and financial operations, ZexCore gives you the foundation to build, scale, and operate industry-specific applications with confidence.
                 </p>
-                <div class="security-badges-row">
-                  <div class="sec-badge-item">
-                    <span class="sec-icon">&check;</span>
-                    <span>FORCE ROW LEVEL SECURITY</span>
-                  </div>
-                  <div class="sec-badge-item">
-                    <span class="sec-icon">&check;</span>
-                    <span>REVOKE UPDATE, DELETE on Audit</span>
-                  </div>
-                  <div class="sec-badge-item">
-                    <span class="sec-icon">&check;</span>
-                    <span>Zero JavaScript eval Execution</span>
-                  </div>
-                  <div class="sec-badge-item">
-                    <span class="sec-icon">&check;</span>
-                    <span>SSRF Private Range Filtering</span>
-                  </div>
-                </div>
-              </div>
-              <div class="security-banner-action">
-                <a href="#/security" class="btn btn-primary btn-lg">
-                  Read Enterprise Security Whitepaper &rarr;
+                <a href="#/solutions" class="btn btn-outline btn-lg">
+                  Explore Solutions &rarr;
                 </a>
               </div>
             </div>
           </div>
         </section>
 
-        <!-- ── FINAL CALL TO ACTION ─────────────────────────────────────── -->
-        <section class="section-gray final-cta-section">
-          <div class="site-container final-cta-inner">
-            <h2 class="final-cta-headline">Ready to Deploy Your Multi-Tenant SaaS?</h2>
-            <p class="final-cta-subtext">
-              Experience ZexCore Control live with pre-authenticated demo tenants across industrial IoT, deterministic rules, CRM, and cryptographic compliance vaults.
-            </p>
-            <div class="final-cta-buttons">
-              <a href="#/console" class="btn btn-primary btn-lg">
-                Launch Control Console &rarr;
-              </a>
-              <a href="#/docs" class="btn btn-secondary btn-lg">
-                Read Developer Documentation
-              </a>
+        <!-- ═══════════════════════════════════════════════════════════════
+             SECTION 5: TRUSTED BY FORWARD-THINKING TEAMS
+             ═══════════════════════════════════════════════════════════════ -->
+        <section class="section-white section-padded" style="padding: 56px 0 68px 0; border-top: 1px solid var(--border-default);">
+          <div class="site-container">
+            <div class="trust-bar-header" style="text-align: center; margin-bottom: 32px;">
+              <span class="trust-bar-title" style="font-size: 0.98rem; font-weight: 750; color: var(--text-main); letter-spacing: 0.02em;">
+                Trusted by forward-thinking engineering teams
+              </span>
+            </div>
+
+            <div class="trust-badges-row">
+              <div class="trust-badge-card">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                </svg>
+                <span>Build Faster</span>
+              </div>
+
+              <div class="trust-badge-card">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                <span>Scale Securely</span>
+              </div>
+
+              <div class="trust-badge-card">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                <span>Stay Compliant</span>
+              </div>
+
+              <div class="trust-badge-card">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="2" y1="12" x2="22" y2="12"/>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                </svg>
+                <span>Unlock Possibilities</span>
+              </div>
             </div>
           </div>
         </section>
@@ -390,4 +445,95 @@ WITH CHECK (tenant_id = current_setting('app.current_tenant_id', true));</code><
       ${renderFooter()}
     </div>
   `;
+}
+
+/**
+ * Attaches interactive carousel handlers for the flagship hero slider
+ */
+export function setupHomePageEvents(): void {
+  const pills = document.querySelectorAll<HTMLButtonElement>('.huawei-slide-pill');
+  if (!pills.length) return;
+
+  let currentSlide = 0;
+  let autoTimer: ReturnType<typeof setInterval> | null = null;
+
+  function setSlide(index: number) {
+    if (index < 0 || index >= heroSlides.length) return;
+    currentSlide = index;
+    const slide = heroSlides[index];
+
+    // Update active pill
+    pills.forEach((p, idx) => {
+      p.classList.toggle('active', idx === index);
+    });
+
+    // Update DOM elements with smooth transition
+    const img = document.getElementById('hero-slide-img') as HTMLImageElement | null;
+    const chevronCol = document.getElementById('hero-chevron-col');
+    const halfBackdrop = document.getElementById('hero-half-backdrop');
+    const badgeText = document.getElementById('hero-badge-text');
+    const title = document.getElementById('hero-slide-title');
+    const desc = document.getElementById('hero-slide-desc');
+    const btnPrimary = document.getElementById('btn-hero-primary') as HTMLAnchorElement | null;
+    const btnSecondary = document.getElementById('btn-hero-secondary') as HTMLAnchorElement | null;
+
+    if (index === 0) {
+      // Slide 0: Accelerate slide remains the classic chevron frame
+      if (halfBackdrop) {
+        halfBackdrop.style.opacity = '0';
+        setTimeout(() => { halfBackdrop.style.display = 'none'; }, 200);
+      }
+      if (chevronCol) {
+        chevronCol.style.display = 'block';
+        chevronCol.style.visibility = 'visible';
+        chevronCol.style.opacity = '1';
+      }
+      if (img) {
+        img.src = slide.image;
+        img.alt = slide.alt;
+      }
+    } else {
+      // Slides 1 & 2: Occupies left half of hero section, fading smoothly into right
+      if (chevronCol) {
+        chevronCol.style.opacity = '0';
+        chevronCol.style.visibility = 'hidden';
+      }
+      if (halfBackdrop) {
+        halfBackdrop.style.display = 'block';
+        halfBackdrop.style.backgroundImage = `url('${slide.image}')`;
+        setTimeout(() => { halfBackdrop.style.opacity = '1'; }, 50);
+      }
+    }
+
+    if (badgeText) badgeText.textContent = slide.badge;
+    if (title) title.innerHTML = slide.titleHtml;
+    if (desc) desc.textContent = slide.subtext;
+
+    if (btnPrimary) {
+      btnPrimary.textContent = slide.primaryCtaText;
+      btnPrimary.href = slide.primaryCtaHref;
+    }
+    if (btnSecondary) {
+      btnSecondary.textContent = slide.secondaryCtaText;
+      btnSecondary.href = slide.secondaryCtaHref;
+    }
+  }
+
+  pills.forEach((pill) => {
+    pill.addEventListener('click', () => {
+      const idx = parseInt(pill.getAttribute('data-slide-index') || '0', 10);
+      setSlide(idx);
+      resetAutoTimer();
+    });
+  });
+
+  function resetAutoTimer() {
+    if (autoTimer) clearInterval(autoTimer);
+    autoTimer = setInterval(() => {
+      const next = (currentSlide + 1) % heroSlides.length;
+      setSlide(next);
+    }, 6000);
+  }
+
+  resetAutoTimer();
 }

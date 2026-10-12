@@ -18,6 +18,7 @@ export function renderSignInPage(activeTenant: string): string {
           </a>
 
           <div class="signin-brand-content">
+            <div class="signin-eyebrow"><span class="signin-eyebrow-dot"></span> ENTERPRISE INFRASTRUCTURE PLATFORM</div>
             <img src="/zexcore-logo-horizontal.png" alt="ZexCore" class="signin-brand-logo" />
             <h2 class="signin-brand-headline">
               The Operating System for<br />Vertical SaaS.
@@ -41,17 +42,12 @@ export function renderSignInPage(activeTenant: string): string {
               </div>
             </div>
 
-            <div class="signin-security-note">
-              <span class="signin-security-dot"></span>
-              <span>All sessions enforce <code>SET LOCAL app.current_tenant_id</code> — zero cross-tenant data leakage.</span>
+            <div class="signin-architecture-mini" aria-hidden="true">
+              <div class="signin-layer signin-layer-top"><span></span><span></span><span></span></div>
+              <div class="signin-layer signin-layer-mid"><span></span><span></span><span></span></div>
+              <div class="signin-layer signin-layer-base"><span></span><span></span><span></span></div>
+              <div class="signin-layer-caption"><b>ZexCore Core</b><small>Tenant isolation · RBAC · EventBus</small></div>
             </div>
-          </div>
-
-          <div class="signin-brand-footer">
-            <span class="tech-badge">PostgreSQL 17</span>
-            <span class="tech-badge">Fastify 5</span>
-            <span class="tech-badge">Drizzle ORM</span>
-            <span class="tech-badge">AES-256-GCM</span>
           </div>
         </div>
       </div>
@@ -60,8 +56,9 @@ export function renderSignInPage(activeTenant: string): string {
       <div class="signin-form-panel">
         <div class="signin-form-inner">
           <div class="signin-form-header">
-            <h1 class="signin-form-title">Sign in to ZexCore Control</h1>
-            <p class="signin-form-subtitle">Enter your workspace credentials to access the operational console</p>
+            <div class="signin-form-kicker">SECURE WORKSPACE ACCESS</div>
+            <h1 class="signin-form-title">Welcome back.</h1>
+            <p class="signin-form-subtitle">Sign in to your ZexCore control console to continue.</p>
           </div>
 
           <form id="auth-form" onsubmit="event.preventDefault();">
@@ -110,7 +107,6 @@ export function renderSignInPage(activeTenant: string): string {
                 <input type="checkbox" checked style="accent-color: var(--primary);" />
                 Remember this device for 30 days
               </label>
-              <span class="status-pill" style="font-size: 0.7rem;"><span class="status-dot"></span>SSO Ready</span>
             </div>
 
             <button type="button" class="btn btn-primary" id="btn-submit-signin" style="width: 100%; padding: 12px; font-size: 0.95rem; justify-content: center;">
@@ -131,7 +127,6 @@ export function renderSignInPage(activeTenant: string): string {
                   <div style="font-size: 0.74rem; color: var(--text-secondary); font-family: var(--font-mono);">prod-us-east · Industrial IoT</div>
                 </div>
               </div>
-              <span class="tier-badge">Admin Role</span>
             </button>
             <button class="btn btn-secondary signin-demo-btn" id="btn-demo-globex" style="justify-content: space-between;">
               <div style="display: flex; align-items: center; gap: 10px;">
@@ -141,7 +136,6 @@ export function renderSignInPage(activeTenant: string): string {
                   <div style="font-size: 0.74rem; color: var(--text-secondary); font-family: var(--font-mono);">dev-eu-west · CRM Pipeline</div>
                 </div>
               </div>
-              <span class="tier-badge">Ops Lead</span>
             </button>
             <button class="btn btn-secondary signin-demo-btn" id="btn-demo-soylent" style="justify-content: space-between;">
               <div style="display: flex; align-items: center; gap: 10px;">
@@ -151,7 +145,6 @@ export function renderSignInPage(activeTenant: string): string {
                   <div style="font-size: 0.74rem; color: var(--text-secondary); font-family: var(--font-mono);">staging-apac · Compliance</div>
                 </div>
               </div>
-              <span class="tier-badge">Compliance</span>
             </button>
           </div>
 

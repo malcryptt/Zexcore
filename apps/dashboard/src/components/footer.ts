@@ -9,16 +9,12 @@ export function renderFooter(): string {
       <div class="footer-top">
         <div class="footer-brand-col">
           <a href="#/home" class="footer-logo-link">
-            <img src="/zexcore-logo-horizontal.png" alt="ZexCore" class="footer-logo" />
+            <img src="/zexcore-logo-dark.png" alt="ZexCore" class="footer-logo" />
           </a>
           <p class="footer-tagline">One Core Infinite Possibilities.</p>
           <p class="footer-desc">
             The multi-tenant backend engine and operating system for vertical SaaS applications — providing shared infrastructure for identity, hard data isolation, deterministic rules, and compliance.
           </p>
-          <div class="footer-status">
-            <span class="status-indicator-dot"></span>
-            <span>All Systems Operational &mdash; PostgreSQL 17 RLS</span>
-          </div>
         </div>
 
         <div class="footer-links-grid">
@@ -95,12 +91,6 @@ export function renderFooter(): string {
           <p class="footer-copyright">
             &copy; 2026 ZexCore Systems Inc. All rights reserved. Sovereign multi-tenant backend infrastructure.
           </p>
-          <div class="footer-bottom-badges">
-            <span class="tech-badge">PostgreSQL 17</span>
-            <span class="tech-badge">Fastify 5</span>
-            <span class="tech-badge">Drizzle ORM</span>
-            <span class="tech-badge">AES-256-GCM</span>
-          </div>
         </div>
       </div>
     </footer>
