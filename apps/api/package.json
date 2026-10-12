@@ -11,6 +11,7 @@
     "@fastify/cors": "^10.0.2",
     "@zexcore/core": "workspace:*",
     "@zexcore/module-cms": "workspace:*",
+    "@zexcore/module-crm": "workspace:*",
     "dotenv": "^16.4.7",
     "fastify": "^5.2.1",
     "fastify-plugin": "^5.0.1",

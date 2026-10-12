@@ -50,6 +50,9 @@ importers:
       '@zexcore/module-cms':
         specifier: workspace:*
         version: link:../../packages/module-cms
+      '@zexcore/module-crm':
+        specifier: workspace:*
+        version: link:../../packages/module-crm
       dotenv:
         specifier: ^16.4.7
         version: 16.6.1
@@ -105,6 +108,25 @@ importers:
         version: 5.9.3
 
   packages/module-cms:
+    dependencies:
+      '@zexcore/core':
+        specifier: workspace:*
+        version: link:../core
+      drizzle-orm:
+        specifier: ^0.39.3
+        version: 0.39.3(postgres@3.4.9)
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.9
+        version: 22.20.5
+      fastify:
+        specifier: ^5.2.1
+        version: 5.12.5
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
+  packages/module-crm:
     dependencies:
       '@zexcore/core':
         specifier: workspace:*
