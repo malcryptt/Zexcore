@@ -10,8 +10,8 @@ export function renderNavbar(activePage: string): string {
     { id: 'modules', label: 'Modules', href: '#/modules' },
     { id: 'solutions', label: 'Solutions', href: '#/solutions' },
     { id: 'security', label: 'Security', href: '#/security' },
-    { id: 'docs', label: 'Documentation', href: '#/docs' },
-    { id: 'resources', label: 'Resources', href: '#/resources' },
+    { id: 'docs', label: 'Docs', href: '#/docs' },
+    { id: 'pricing', label: 'Pricing', href: '#/pricing' },
   ];
 
   return `
@@ -64,6 +64,7 @@ export function renderNavbar(activePage: string): string {
               .join('')}
           </div>
           <div class="mobile-drawer-actions">
+            <a href="#/pricing" class="mobile-nav-link ${activePage === 'pricing' ? 'active' : ''}" style="color: var(--primary); font-weight: 600;">Pricing →</a>
             <a href="#/signin" class="btn btn-secondary" style="width: 100%; justify-content: center;">Sign In to Workspace</a>
             <a href="#/console" class="btn btn-primary" style="width: 100%; justify-content: center;">Launch Control Console &rarr;</a>
           </div>

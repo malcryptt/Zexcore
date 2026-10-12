@@ -11,6 +11,7 @@ import { renderSolutionsPage } from './pages/solutions';
 import { renderSecurityPage } from './pages/security';
 import { renderDocsPage } from './pages/docs';
 import { renderResourcesPage } from './pages/resources';
+import { renderPricingPage } from './pages/pricing';
 import { renderSignInPage, setupSignInEvents } from './pages/signin';
 import { setupNavbarEvents } from './components/navbar';
 
@@ -57,7 +58,7 @@ interface Consent {
 
 // ── Application State ────────────────────────────────────────────────────────
 const state = {
-  currentView: 'home' as 'home' | 'platform' | 'architecture' | 'modules' | 'solutions' | 'security' | 'docs' | 'resources' | 'signin' | 'console' | 'dashboard',
+  currentView: 'home' as 'home' | 'platform' | 'architecture' | 'modules' | 'solutions' | 'security' | 'docs' | 'resources' | 'pricing' | 'signin' | 'console' | 'dashboard',
   currentTab: 'overview',
   activeTenant: 'acme_corp',
   devices: [
@@ -960,6 +961,10 @@ function renderApp() {
       app.innerHTML = renderResourcesPage();
       setupNavbarEvents();
       break;
+    case 'pricing':
+      app.innerHTML = renderPricingPage();
+      setupNavbarEvents();
+      break;
     case 'signin':
       app.innerHTML = renderSignInPage(state.activeTenant);
       setupSignInEvents((tenant) => {
@@ -1001,6 +1006,8 @@ function syncRouteFromHash() {
     state.currentView = 'docs';
   } else if (route === 'resources') {
     state.currentView = 'resources';
+  } else if (route === 'pricing') {
+    state.currentView = 'pricing';
   } else {
     state.currentView = 'home';
   }
@@ -1015,6 +1022,7 @@ function syncRouteFromHash() {
     security: 'Security Model & RLS Defense-in-Depth — ZexCore',
     docs: 'Developer Documentation & API Reference — ZexCore',
     resources: 'Engineering Publications & Whitepapers — ZexCore',
+    pricing: 'Pricing & Platform Tiers — ZexCore Infrastructure',
     signin: 'Sign in to ZexCore Control',
     console: 'ZexCore Control — Operational Console',
   };

@@ -82,6 +82,7 @@ export function renderFooter(): string {
               <li><a href="#/docs#api">REST API Reference</a></li>
               <li><a href="#/docs#tokens">Device Token Ingest</a></li>
               <li><a href="#/resources">Technical Whitepapers</a></li>
+              <li><a href="#/pricing">Pricing</a></li>
               <li><a href="#/console">Control Console</a></li>
               <li><a href="#/signin">Workspace Sign In</a></li>
             </ul>
