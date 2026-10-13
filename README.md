@@ -5,7 +5,7 @@
 
 ---
 
-## 🛠️ Stack & Architecture
+##  Stack & Architecture
 
 - **Runtime**: Node.js 22 LTS
 - **Language**: TypeScript (`strict: true`)
@@ -19,7 +19,7 @@
 
 ---
 
-## 🏗️ Repository Layout
+##  Repository Layout
 
 ```text
 ZexCore/
@@ -69,7 +69,7 @@ ZexCore/
 
 ---
 
-## 🚀 Quickstart
+##  Quickstart
 
 ### 1. Start the Database
 Spins up PostgreSQL in Docker, creates the database, and provisions the `zexcore_app` non-superuser role to enforce strict Row-Level Security:
@@ -107,7 +107,7 @@ curl http://localhost:3000/api/health
 
 ---
 
-## 🔒 Security & Defense-in-Depth
+##  Security & Defense-in-Depth
 
 1. **Database Row-Level Security (RLS)**: Enforced via PostgreSQL policies and session context `app.current_tenant_id`. Bypasses are blocked by running as `zexcore_app` (`NOBYPASSRLS`).
 2. **Application Scoping**: Node.js `AsyncLocalStorage` isolates request context per asynchronous execution tree.
