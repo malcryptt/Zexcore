@@ -1234,9 +1234,26 @@ function navigateTo(view: string) {
 }
 (window as any).navigateTo = navigateTo;
 
+// ── Pricing billing toggle ────────────────────────────────────────────────
+(window as any).setPricingBilling = function(mode: 'monthly' | 'annual') {
+  const monthly = document.getElementById('btn-billing-monthly');
+  const annual = document.getElementById('btn-billing-annual');
+  const note = document.getElementById('billing-annual-note');
+
+  if (monthly) monthly.classList.toggle('active', mode === 'monthly');
+  if (annual) annual.classList.toggle('active', mode === 'annual');
+  if (note) note.style.display = mode === 'annual' ? 'block' : 'none';
+
+  document.querySelectorAll<HTMLElement>('.pricing-amount[data-monthly]').forEach(el => {
+    const val = mode === 'annual' ? el.dataset.annual : el.dataset.monthly;
+    if (val !== undefined) el.textContent = val;
+  });
+};
+
 function initApp() {
   window.addEventListener('hashchange', syncRouteFromHash);
   syncRouteFromHash();
 }
 
 document.addEventListener('DOMContentLoaded', initApp);
+

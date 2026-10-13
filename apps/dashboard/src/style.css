@@ -2887,11 +2887,73 @@ body {
   flex-shrink: 0;
 }
 
+/* ── Legacy 3-col kept for compat; new pages use pricing-grid-2col ── */
 .pricing-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
   align-items: start;
+}
+
+/* ── 2-column pricing grid ── */
+.pricing-grid-2col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+/* Enterprise card spans both columns */
+.pricing-card-enterprise {
+  grid-column: 1 / -1;
+  border: 2px solid var(--border-default);
+}
+
+/* ── Billing toggle ── */
+.billing-toggle-wrap {
+  display: inline-flex;
+  background: var(--bg-subtle, #f5f5f7);
+  border: 1px solid var(--border-default);
+  border-radius: 100px;
+  padding: 4px;
+  gap: 2px;
+}
+
+.billing-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 22px;
+  border: none;
+  border-radius: 100px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-secondary);
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+}
+
+.billing-toggle-btn.active {
+  background: #FFFFFF;
+  color: var(--text-main);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+}
+
+.billing-save-badge {
+  background: var(--primary);
+  color: #FFFFFF;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 100px;
+}
+
+.billing-annual-note {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-align: center;
 }
 
 .pricing-card {
@@ -3119,6 +3181,8 @@ body {
 
 @media (max-width: 1024px) {
   .pricing-grid { grid-template-columns: 1fr; max-width: 480px; margin: 0 auto; }
+  .pricing-grid-2col { grid-template-columns: 1fr; max-width: 520px; margin: 0 auto; }
+  .pricing-card-enterprise { grid-column: 1; }
   .pricing-card-featured { transform: none; }
   .faq-grid { grid-template-columns: 1fr; }
   .enterprise-contact-block { grid-template-columns: 1fr; gap: 32px; }
