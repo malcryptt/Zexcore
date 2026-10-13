@@ -1,6 +1,6 @@
 # ZexCore
 
-> **Multi-tenant Backend Engine & Modular Platform ("OS for Vertical SaaS")**  
+> **Multi-tenant Backend Engine & Modular Platform ("One Core, Different Possibilities")**  
 > Built by Zexlabs for extensible, enterprise-grade business workloads.
 
 ---
