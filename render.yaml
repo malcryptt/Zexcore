@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: zexcore-api
+    runtime: docker
+    dockerfilePath: Dockerfile
+    plan: starter
+    region: frankfurt
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: CORS_ORIGIN
+        value: https://zexcore-5d6c0.web.app,https://zexcore-5d6c0.firebaseapp.com
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: zexcore-db
+          property: connectionString
+
+databases:
+  - name: zexcore-db
+    plan: starter
+    region: frankfurt
+    databaseName: zexcore_db
+    user: zexcore_app

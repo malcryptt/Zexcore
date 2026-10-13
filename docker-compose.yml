@@ -1,0 +1,42 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: zexcore-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: zexcore_app
+      POSTGRES_PASSWORD: zexcore_super_secret_password
+      POSTGRES_DB: zexcore_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zexcore_app -d zexcore_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: zexcore-api
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOST: 0.0.0.0
+      CORS_ORIGIN: "https://zexcore-5d6c0.web.app,https://zexcore-5d6c0.firebaseapp.com,http://localhost:5173"
+      DATABASE_URL: "postgres://zexcore_app:zexcore_super_secret_password@postgres:5432/zexcore_db"
+      JWT_SECRET: "zexcore-production-secure-jwt-signing-secret-key-32-chars-minimum"
+      SESSION_TTL_HOURS: 24
+      LOG_LEVEL: info
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:

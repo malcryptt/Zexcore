@@ -16,6 +16,13 @@ import { renderPricingPage } from './pages/pricing';
 import { renderSignInPage, setupSignInEvents } from './pages/signin';
 import { setupNavbarEvents } from './components/navbar';
 import { getCurrentUser, logoutUser, subscribeToAuth, type AuthUserProfile } from './lib/firebase';
+import {
+  loadOnboardingState,
+  saveOnboardingState,
+  renderOnboardingBanner,
+  INDUSTRY_STARTERS,
+  type OnboardingState,
+} from './components/onboarding';
 
 interface Device {
   id: string;
@@ -64,6 +71,7 @@ const state = {
   currentTab: 'overview',
   activeTenant: 'acme_corp',
   currentUser: getCurrentUser() as AuthUserProfile | null,
+  onboarding: loadOnboardingState() as OnboardingState,
   devices: [
     { id: 'dev-1', name: 'Factory Edge Sensor Node 01', key: 'iot_temp_sensor_01', kind: 'temperature_probe', status: 'online', temperature: 24.8, humidity: 54, voltage: 3.3, firmware: 'v2.1.4', lastSeen: 'Just now' },
     { id: 'dev-2', name: 'Cold Chain Storage Facility B', key: 'iot_cold_chiller_02', kind: 'chiller_probe', status: 'online', temperature: -4.2, humidity: 76, voltage: 3.2, firmware: 'v2.1.2', lastSeen: '1m ago' },
@@ -239,6 +247,9 @@ function renderDashboard() {
                 <div class="page-desc">Runtime health, active module metrics, and cross-module event bus ledger</div>
               </div>
             </div>
+
+            <!-- "Great First Ten Minutes" Onboarding Strip / Starters -->
+            ${renderOnboardingBanner(state.onboarding)}
 
             <div class="grid-4" style="margin-bottom: 24px;">
               <div class="stat-box">
@@ -691,6 +702,113 @@ function setupEventListeners() {
     const val = (e.target as HTMLSelectElement).value;
     state.activeTenant = val;
     logBusEvent('tenant.context.switched', { tenantId: val, rlsStatus: 'enforced' });
+  });
+
+  // ── First 10 Minutes Onboarding & Starter Selection ────────────────────────
+  document.querySelectorAll('.industry-choice-card').forEach((card) => {
+    card.addEventListener('click', () => {
+      const vKey = card.getAttribute('data-vertical');
+      if (!vKey || !INDUSTRY_STARTERS[vKey]) return;
+      const preset = INDUSTRY_STARTERS[vKey];
+      state.onboarding.verticalKey = vKey;
+      state.onboarding.companyName = preset.companyDefault;
+      state.onboarding.listingTitle = preset.listingTitle;
+      state.onboarding.listingPrice = preset.listingPrice;
+      state.onboarding.checklist.selectedField = true;
+      state.devices = [...preset.devices];
+      state.rules = [...preset.rules];
+      state.leads = [...preset.leads];
+      saveOnboardingState(state.onboarding);
+      logBusEvent('onboarding.starter.applied', { vertical: vKey, company: preset.companyDefault });
+      renderDashboard();
+    });
+  });
+
+  // Undo & Reset to Select Another Field
+  document.getElementById('btn-onboarding-undo')?.addEventListener('click', () => {
+    state.onboarding.verticalKey = null;
+    saveOnboardingState(state.onboarding);
+    logBusEvent('onboarding.starter.reset', { tenant: state.activeTenant });
+    renderDashboard();
+  });
+
+  // Open / Close Sample Site Preview Modal
+  const sampleModal = document.getElementById('sample-site-modal');
+  document.getElementById('btn-open-sample-site')?.addEventListener('click', () => {
+    if (sampleModal) sampleModal.style.display = 'flex';
+  });
+  document.getElementById('btn-close-sample-modal')?.addEventListener('click', () => {
+    if (sampleModal) sampleModal.style.display = 'none';
+  });
+
+  // Sample Enquiry Form submission -> creates CRM lead + logs event
+  document.getElementById('sample-enquiry-form')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = (document.getElementById('enquiry-name') as HTMLInputElement)?.value || 'Enquiry Client';
+    const contact = (document.getElementById('enquiry-contact') as HTMLInputElement)?.value || 'contact@client.io';
+    const msg = (document.getElementById('enquiry-msg') as HTMLTextAreaElement)?.value || '';
+
+    const newLead = {
+      id: 'lead-' + Date.now().toString(36),
+      title: `${state.onboarding.listingTitle} (${name})`,
+      company: contact,
+      value: parseInt(state.onboarding.listingPrice.replace(/[^0-9]/g, '')) || 2500,
+      currency: 'USD',
+      stage: 'New',
+    };
+    state.leads.unshift(newLead);
+    state.onboarding.checklist.testedEnquiry = true;
+    saveOnboardingState(state.onboarding);
+    logBusEvent('crm.enquiry.received', { lead: name, contact, notes: msg, followUp: 'instant_dispatched' });
+
+    const successBanner = document.getElementById('enquiry-success-banner');
+    if (successBanner) successBanner.style.display = 'block';
+
+    const submitBtn = document.getElementById('btn-submit-enquiry') as HTMLButtonElement | null;
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = '✓ Enquiry Dispatched to CRM Pipeline';
+    }
+    renderKanban();
+  });
+
+  // Checklist actions
+  document.getElementById('check-action-name')?.addEventListener('click', () => {
+    const newName = prompt('Enter your company or brand name:', state.onboarding.companyName);
+    if (newName && newName.trim()) {
+      state.onboarding.companyName = newName.trim();
+      state.onboarding.checklist.namedCompany = true;
+      saveOnboardingState(state.onboarding);
+      renderDashboard();
+    }
+  });
+
+  document.getElementById('check-action-listing')?.addEventListener('click', () => {
+    const newTitle = prompt('Enter your first listing or service title:', state.onboarding.listingTitle);
+    if (newTitle && newTitle.trim()) {
+      const newPrice = prompt('Enter price (e.g. $1,250 / mo):', state.onboarding.listingPrice);
+      state.onboarding.listingTitle = newTitle.trim();
+      if (newPrice && newPrice.trim()) state.onboarding.listingPrice = newPrice.trim();
+      state.onboarding.checklist.editedListing = true;
+      saveOnboardingState(state.onboarding);
+      renderDashboard();
+    }
+  });
+
+  document.getElementById('check-action-enquiry')?.addEventListener('click', () => {
+    if (sampleModal) sampleModal.style.display = 'flex';
+  });
+
+  document.getElementById('check-action-share')?.addEventListener('click', () => {
+    const shareUrl = window.location.origin + '/#/console';
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      alert(`Link copied to clipboard!\nShare this link to showcase your site and enquiry flow:\n${shareUrl}`);
+      state.onboarding.checklist.sharedLink = true;
+      saveOnboardingState(state.onboarding);
+      renderDashboard();
+    }).catch(() => {
+      alert(`Share this link to showcase your site and enquiry flow:\n${shareUrl}`);
+    });
   });
 
   // Quick actions

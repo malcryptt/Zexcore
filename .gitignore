@@ -38,3 +38,4 @@ data/
 .turbo/
 .eslintcache
 tsconfig.tsbuildinfo
+.firebase/
