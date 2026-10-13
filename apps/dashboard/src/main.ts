@@ -15,6 +15,7 @@ import { renderResourcesPage } from './pages/resources';
 import { renderPricingPage } from './pages/pricing';
 import { renderSignInPage, setupSignInEvents } from './pages/signin';
 import { setupNavbarEvents } from './components/navbar';
+import { getCurrentUser, logoutUser, subscribeToAuth, type AuthUserProfile } from './lib/firebase';
 
 interface Device {
   id: string;
@@ -62,6 +63,7 @@ const state = {
   currentView: 'home' as 'home' | 'platform' | 'architecture' | 'modules' | 'solutions' | 'security' | 'docs' | 'resources' | 'pricing' | 'signin' | 'console' | 'dashboard',
   currentTab: 'overview',
   activeTenant: 'acme_corp',
+  currentUser: getCurrentUser() as AuthUserProfile | null,
   devices: [
     { id: 'dev-1', name: 'Factory Edge Sensor Node 01', key: 'iot_temp_sensor_01', kind: 'temperature_probe', status: 'online', temperature: 24.8, humidity: 54, voltage: 3.3, firmware: 'v2.1.4', lastSeen: 'Just now' },
     { id: 'dev-2', name: 'Cold Chain Storage Facility B', key: 'iot_cold_chiller_02', kind: 'chiller_probe', status: 'online', temperature: -4.2, humidity: 76, voltage: 3.2, firmware: 'v2.1.2', lastSeen: '1m ago' },
@@ -207,7 +209,23 @@ function renderDashboard() {
               <span class="module-chip"><span class="dot"></span>crm</span>
               <span class="module-chip"><span class="dot"></span>compliance</span>
             </div>
-            <button class="btn btn-secondary btn-sm" id="btn-topbar-home" style="margin-left: 8px;">Public Site</button>
+
+            <!-- Authenticated User Profile Badge -->
+            <div class="auth-user-badge" style="display: flex; align-items: center; gap: 8px; padding: 4px 10px; background: #fff; border: 1px solid var(--border-default); border-radius: 20px; font-size: 0.76rem;">
+              <div style="width: 24px; height: 24px; border-radius: 50%; background: #e50920; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.7rem;">
+                ${((state.currentUser?.displayName || state.currentUser?.email || 'A')[0]).toUpperCase()}
+              </div>
+              <div style="display: flex; flex-direction: column; text-align: left; line-height: 1.15;">
+                <span style="font-weight: 600; color: var(--text-primary); max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  ${state.currentUser?.displayName || state.currentUser?.email || 'Operator'}
+                </span>
+                <span style="font-size: 0.65rem; color: ${state.currentUser?.isDemo ? '#d97706' : '#16a34a'}; font-family: var(--font-mono);">
+                  ${state.currentUser?.isDemo ? 'Demo Session' : 'Firebase Live'}
+                </span>
+              </div>
+            </div>
+
+            <button class="btn btn-secondary btn-sm" id="btn-topbar-home" style="margin-left: 4px;">Public Site</button>
             <button class="btn btn-secondary btn-sm" id="btn-topbar-signout">Sign Out</button>
           </div>
         </header>
@@ -656,9 +674,16 @@ function setupEventListeners() {
   // Topbar and Sidebar Navigation
   document.getElementById('brand-header-to-home')?.addEventListener('click', () => navigateTo('home'));
   document.getElementById('btn-topbar-home')?.addEventListener('click', () => navigateTo('home'));
-  document.getElementById('btn-topbar-signout')?.addEventListener('click', () => navigateTo('signin'));
   document.getElementById('btn-sidebar-home')?.addEventListener('click', () => navigateTo('home'));
-  document.getElementById('btn-sidebar-signout')?.addEventListener('click', () => navigateTo('signin'));
+
+  const handleSignOut = async () => {
+    await logoutUser();
+    state.currentUser = null;
+    logBusEvent('auth.session.terminated', { tenant: state.activeTenant });
+    navigateTo('signin');
+  };
+  document.getElementById('btn-topbar-signout')?.addEventListener('click', handleSignOut);
+  document.getElementById('btn-sidebar-signout')?.addEventListener('click', handleSignOut);
 
   // Tenant switch
   const tenantSelect = document.getElementById('tenantSelect') as HTMLSelectElement;
@@ -1159,9 +1184,10 @@ function renderApp() {
       break;
     case 'signin':
       app.innerHTML = renderSignInPage(state.activeTenant);
-      setupSignInEvents((tenant) => {
+      setupSignInEvents((tenant, user) => {
         state.activeTenant = tenant;
-        logBusEvent('auth.session.created', { tenant, status: 'authenticated' });
+        state.currentUser = user;
+        logBusEvent('auth.session.created', { tenant, user: user.email, status: 'authenticated' });
         window.location.hash = '#/console';
       });
       break;
@@ -1251,6 +1277,9 @@ function navigateTo(view: string) {
 };
 
 function initApp() {
+  subscribeToAuth((user) => {
+    state.currentUser = user;
+  });
   window.addEventListener('hashchange', syncRouteFromHash);
   syncRouteFromHash();
 }
