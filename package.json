@@ -14,7 +14,9 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
     "db:generate": "pnpm --filter @zexcore/core db:generate",
     "db:migrate": "pnpm --filter @zexcore/core db:migrate",
-    "seed": "tsx scripts/seed.ts"
+    "seed": "tsx scripts/seed.ts",
+    "build:dashboard": "pnpm --filter @zexcore/dashboard build",
+    "deploy": "pnpm build:dashboard && firebase deploy --only hosting"
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
