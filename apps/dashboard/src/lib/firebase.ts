@@ -13,6 +13,8 @@ import {
   updateProfile,
 } from 'firebase/auth';
 
+import { getAnalytics, isSupported, type Analytics } from 'firebase/analytics';
+
 export interface AuthUserProfile {
   uid: string;
   email: string | null;
@@ -22,14 +24,15 @@ export interface AuthUserProfile {
   isDemo: boolean;
 }
 
-// Firebase configuration loaded from Vite environment variables or defaults
+// Live ZexCore Firebase configuration
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyD_g3SVv0zBlKyUsvgVV58sqiI-9BJot9g',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'zexcore-5d6c0.firebaseapp.com',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'zexcore-5d6c0',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'zexcore-5d6c0.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '683742152729',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:683742152729:web:a1c4842d3c28b013464288',
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || 'G-7SDECRF3R0',
 };
 
 const isConfigured = Boolean(
@@ -41,15 +44,25 @@ const isConfigured = Boolean(
 
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
+let analytics: Analytics | null = null;
 
 if (isConfigured) {
   try {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
+    if (typeof window !== 'undefined') {
+      isSupported().then((supported) => {
+        if (supported && app) {
+          analytics = getAnalytics(app);
+        }
+      }).catch(() => {});
+    }
   } catch (err) {
     console.warn('[ZexCore Auth] Firebase init error, falling back to local session manager:', err);
   }
 }
+
+export { app, auth, analytics };
 
 export function isFirebaseConfigured(): boolean {
   return Boolean(isConfigured && auth);
