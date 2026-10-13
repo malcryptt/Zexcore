@@ -189,6 +189,118 @@ export function renderHomePage(): string {
         </section>
 
         <!-- ═══════════════════════════════════════════════════════════════
+             UP IN 10 MINUTES — FIRST-RUN ONBOARDING SHOWCASE
+             ═══════════════════════════════════════════════════════════════ -->
+        <section class="section-white section-padded" style="padding: 88px 0 96px; border-bottom: 1px solid var(--border-subtle);">
+          <div class="site-container">
+
+            <div style="text-align:center;">
+              <div class="section-eyebrow">FIRST-RUN EXPERIENCE</div>
+              <h2 class="section-title" style="max-width:640px; margin:0 auto 16px;">
+                A great first <span class="text-brand">ten minutes.</span>
+              </h2>
+              <p class="section-desc" style="max-width:560px; margin:0 auto 60px;">
+                A business signs up, answers one question, and sees a working site already set up for their field — sample listing, enquiry form, and a follow-up ready to go. No blank screens. No manual.
+              </p>
+            </div>
+
+            <!-- 4-Step Flow -->
+            <div class="onboard-steps-row">
+
+              <div class="onboard-step">
+                <div class="onboard-step-num">01</div>
+                <div class="onboard-step-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                </div>
+                <h3 class="onboard-step-title">One question</h3>
+                <p class="onboard-step-desc">Answer "what do you do?" — clinic, property, salon, logistics. ZexCore picks the right starter setup for your industry automatically.</p>
+              </div>
+
+              <div class="onboard-step-connector"></div>
+
+              <div class="onboard-step">
+                <div class="onboard-step-num">02</div>
+                <div class="onboard-step-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                </div>
+                <h3 class="onboard-step-title">Working site, instantly</h3>
+                <p class="onboard-step-desc">A finished sample site with realistic example content — listings, services, prices — that looks like their business. Edit it. It feels made for them.</p>
+              </div>
+
+              <div class="onboard-step-connector"></div>
+
+              <div class="onboard-step">
+                <div class="onboard-step-num">03</div>
+                <div class="onboard-step-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11 16.8a19.5 19.5 0 0 1-5-5 19.79 19.79 0 0 1-4.12-8.78A2 2 0 0 1 3.88 1H7a2 2 0 0 1 2 1.72c.13.96.37 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91A16 16 0 0 0 14 14.91l1.27-1.27a2 2 0 0 1 2.11-.45c.91.33 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                </div>
+                <h3 class="onboard-step-title">Enquiries flow in</h3>
+                <p class="onboard-step-desc">Enquiry form and WhatsApp follow-up pre-configured. A lead on WhatsApp with a quick reply is worth far more than one sitting in an email inbox.</p>
+              </div>
+
+              <div class="onboard-step-connector"></div>
+
+              <div class="onboard-step">
+                <div class="onboard-step-num">04</div>
+                <div class="onboard-step-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                </div>
+                <h3 class="onboard-step-title">See what's working</h3>
+                <p class="onboard-step-desc">A simple dashboard: enquiries in, which became customers. That justifies paying monthly — and earns loyalty better than any feature list.</p>
+              </div>
+
+            </div>
+
+            <!-- Checklist strip -->
+            <div class="onboard-checklist-strip">
+              <div class="onboard-checklist-label">Short guided checklist on first login:</div>
+              <div class="onboard-checklist-items">
+                <div class="onboard-check-item"><span class="onboard-check-icon">✓</span> Add your logo</div>
+                <div class="onboard-check-item"><span class="onboard-check-icon">✓</span> Add your first listing or service</div>
+                <div class="onboard-check-item"><span class="onboard-check-icon">✓</span> Share the link</div>
+                <div class="onboard-check-item onboard-check-item--undo"><span class="onboard-check-icon onboard-check-icon--soft">↺</span> Undo everything &amp; start over — always safe to experiment</div>
+              </div>
+            </div>
+
+            <!-- 3 value-prop runner-up strips -->
+            <div class="onboard-value-strips">
+
+              <div class="onboard-value-card">
+                <div class="onboard-value-icon" style="background:#25D366;">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.997 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.878-1.42A9.96 9.96 0 0 0 12 22c5.523 0 10-4.477 10-10S17.52 2 11.997 2z"/></svg>
+                </div>
+                <div class="onboard-value-body">
+                  <h4 class="onboard-value-title">WhatsApp for enquiries &amp; follow-ups</h4>
+                  <p class="onboard-value-desc">Your market lives on WhatsApp. Leads arrive there, get a quick automated reply, and a personal follow-up — all without leaving the app they're already on.</p>
+                </div>
+              </div>
+
+              <div class="onboard-value-card">
+                <div class="onboard-value-icon" style="background:var(--primary);">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 10 10 7 13 10 17 6"/></svg>
+                </div>
+                <div class="onboard-value-body">
+                  <h4 class="onboard-value-title">A simple "what's working" dashboard</h4>
+                  <p class="onboard-value-desc">Enquiries received, which became customers, response time. Seeing the numbers turns a business owner into a loyal subscriber — not features.</p>
+                </div>
+              </div>
+
+              <div class="onboard-value-card">
+                <div class="onboard-value-icon" style="background:#2563EB;">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </div>
+                <div class="onboard-value-body">
+                  <h4 class="onboard-value-title">Easy backup &amp; "download all my data"</h4>
+                  <p class="onboard-value-desc">One-click export of everything. Builds trust with clinics and businesses abroad who worry about data ownership — and makes leaving feel safe enough they never do.</p>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════
              "WHAT'S NEW" SECTION (MATCHING HUAWEI REFERENCE DESIGN)
              ═══════════════════════════════════════════════════════════════ -->
         <section class="section-gray section-padded whats-new-section" style="padding: 72px 0 84px 0;">
