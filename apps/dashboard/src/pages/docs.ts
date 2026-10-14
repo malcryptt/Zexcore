@@ -19,6 +19,118 @@ export interface DocArticle {
 }
 
 export const docArticles: Record<string, DocArticle> = {
+  'what-is-zexcore': {
+    id: 'what-is-zexcore',
+    category: 'Getting Started',
+    title: 'What ZexCore is All About',
+    intro: 'The sovereign multi-tenant backend engine and operating system for vertical SaaS — why it exists, what it solves, and how it transforms industry software.',
+    contentHtml: `
+      <div class="doc-callout-box" style="background: linear-gradient(135deg, #fff1f2 0%, #fff 100%); border-left: 4px solid #e50920; padding: 20px; border-radius: 8px; margin-bottom: 28px; box-shadow: 0 4px 12px rgba(229,9,32,0.05);">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+          <span style="background: #e50920; color: #fff; font-size: 0.68rem; font-weight: 800; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.05em;">EXECUTIVE THESIS</span>
+          <span style="font-size: 0.8rem; color: #9f1239; font-weight: 700;">ONE CORE. INFINITE POSSIBILITIES.</span>
+        </div>
+        <p style="margin: 0; color: #334155; font-size: 0.95rem; line-height: 1.65;">
+          <b>ZexCore is the operating system for vertical SaaS.</b> Instead of spending 12 to 18 months re-inventing multi-tenancy, cryptographic vaults, IoT telemetry queues, deterministic business rules, and sales pipeline mechanics, founders and enterprise teams build their entire vertical software stack on top of a single, kernel-isolated engine.
+        </p>
+      </div>
+
+      <h3 class="doc-subhead" style="font-size: 1.3rem; margin-top: 32px;">1. The Problem: The 18-Month Plumbing Trap</h3>
+      <p>
+        Building a specialized B2B vertical SaaS (whether for refrigerated freight, industrial robotics, commercial HVAC, or healthcare clinics) inevitably hits the exact same engineering bottleneck:
+      </p>
+      <ul class="bullet-feature-list" style="margin-bottom: 20px;">
+        <li><b>Hard Data Isolation:</b> Ensuring Customer A can never see Customer B's records, even if an engineer writes an unoptimized query.</li>
+        <li><b>Deterministic Business Automation:</b> Letting businesses write custom triggers, alerts, and state machines without risking arbitrary code execution.</li>
+        <li><b>Cryptographic Privacy &amp; Compliance:</b> Encrypting sensitive PII at rest with envelope encryption while retaining the operational ability to search records.</li>
+        <li><b>Device Telemetry:</b> Ingesting high-frequency IoT sensor data from physical machinery securely.</li>
+        <li><b>Commercial Operations:</b> Tracking leads, pipeline stages, contracts, and customer lifecycle data.</li>
+      </ul>
+      <p>
+        Most startups attempt to solve this with application-layer code decorators (<code>WHERE tenant_id = x</code>). Inevitably, one missed WHERE clause in a reporting query or background job introduces catastrophic cross-tenant data leakage. ZexCore eliminates this failure mode permanently.
+      </p>
+
+      <h3 class="doc-subhead" style="font-size: 1.3rem; margin-top: 36px;">2. The 6 Pillars of ZexCore</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 24px 0;">
+        <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+          <div style="font-size: 1.6rem; margin-bottom: 8px;">🛡️</div>
+          <div style="font-weight: 700; color: #0f172a; font-size: 1rem; margin-bottom: 6px;">1. Kernel-Enforced Tenancy</div>
+          <p style="font-size: 0.86rem; color: #64748b; line-height: 1.55; margin: 0;">
+            Database-level PostgreSQL 17 <code>FORCE ROW LEVEL SECURITY</code>. Isolation is mathematically enforced by the database session within transactions, eliminating reliance on developer discipline.
+          </p>
+        </div>
+
+        <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+          <div style="font-size: 1.6rem; margin-bottom: 8px;">⚡</div>
+          <div style="font-weight: 700; color: #0f172a; font-size: 1rem; margin-bottom: 6px;">2. Deterministic AST Rules Engine</div>
+          <p style="font-size: 0.86rem; color: #64748b; line-height: 1.55; margin: 0;">
+            Sub-millisecond condition evaluations using safe Abstract Syntax Tree graphs. Zero <code>eval()</code>, prototype pollution guards, and hard ReDoS timeouts.
+          </p>
+        </div>
+
+        <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+          <div style="font-size: 1.6rem; margin-bottom: 8px;">🔐</div>
+          <div style="font-weight: 700; color: #0f172a; font-size: 1rem; margin-bottom: 6px;">3. Cryptographic Privacy Vault</div>
+          <p style="font-size: 0.86rem; color: #64748b; line-height: 1.55; margin: 0;">
+            Authenticated AES-256-GCM envelope encryption with unique random IVs, HMAC-SHA256 tenant subkeys, and blind indexing for searchable encrypted fields.
+          </p>
+        </div>
+
+        <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+          <div style="font-size: 1.6rem; margin-bottom: 8px;">📡</div>
+          <div style="font-weight: 700; color: #0f172a; font-size: 1rem; margin-bottom: 6px;">4. Edge &amp; Fleet IoT Hub</div>
+          <p style="font-size: 0.86rem; color: #64748b; line-height: 1.55; margin: 0;">
+            Hardware authentication via SHA-256 device tokens, high-throughput burst rate limits (5,000 req/min), timeseries telemetry, and automated incident alarms.
+          </p>
+        </div>
+
+        <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+          <div style="font-size: 1.6rem; margin-bottom: 8px;">💼</div>
+          <div style="font-weight: 700; color: #0f172a; font-size: 1rem; margin-bottom: 6px;">5. Built-In CRM Pipeline</div>
+          <p style="font-size: 0.86rem; color: #64748b; line-height: 1.55; margin: 0;">
+            Multi-stage deal flow, contact relationship management, composite-key invariants, and automated quotation dispatching.
+          </p>
+        </div>
+
+        <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+          <div style="font-size: 1.6rem; margin-bottom: 8px;">🚀</div>
+          <div style="font-weight: 700; color: #0f172a; font-size: 1rem; margin-bottom: 6px;">6. "Great First 10 Minutes"</div>
+          <p style="font-size: 0.86rem; color: #64748b; line-height: 1.55; margin: 0;">
+            A business owner signs up, answers one question ("What do you do?"), and instantly receives a working, good-looking niche site, sample listings, an inquiry form, and instant automated follow-up.
+          </p>
+        </div>
+      </div>
+
+      <h3 class="doc-subhead" style="font-size: 1.3rem; margin-top: 36px;">3. Who Is ZexCore Built For?</h3>
+      <ul class="bullet-feature-list" style="margin-bottom: 24px;">
+        <li><b>Vertical SaaS Founders:</b> Launch enterprise-ready software for specific industries (HVAC, cold chain, maritime, clinics, fleet) in 10 minutes instead of two years.</li>
+        <li><b>Enterprise Architects &amp; CTOs:</b> Deploy sovereign backend infrastructure that complies with strict data residency, HIPAA, and GDPR regulations.</li>
+        <li><b>Industrial &amp; Logistics Companies:</b> Connect edge telemetry nodes directly to billing, alerts, and customer self-service portals.</li>
+      </ul>
+
+      <h3 class="doc-subhead" style="font-size: 1.3rem; margin-top: 36px;">4. Architectural Workflow</h3>
+      <div class="doc-code-card">
+        <div class="doc-code-header">
+          <span class="doc-code-lang">REQUEST LIFECYCLE</span>
+        </div>
+        <pre><code>[1] Client Request: POST /api/crm/leads (Authorization: Bearer &lt;JWT&gt;)
+    ↓
+[2] Fastify Tenancy &amp; Anti-Spoofing:
+    - Validates JWT signature
+    - Strictly binds tenantId to token claims (rejects foreign x-tenant-id)
+    - Enforces rate limiting (120 req/min general, 5,000 req/min IoT)
+    ↓
+[3] PostgreSQL Database Transaction:
+    - Executes: SELECT set_config('app.current_tenant_id', 'uuid', true)
+    - FORCE ROW LEVEL SECURITY ensures only tenant rows are accessible
+    ↓
+[4] Deterministic EventBus:
+    - Emits: crm.lead.created
+    - RuleRunner executes AST rules in &lt;1ms
+    - Action: Dispatches automated WhatsApp/SMS lead acknowledgement</code></pre>
+      </div>
+    `
+  },
   'arch-overview': {
     id: 'arch-overview',
     category: 'Getting Started',
@@ -419,10 +531,17 @@ pnpm test:rls       # Validate PostgreSQL RLS boundaries</code></pre>
   }
 };
 
-let currentArticleId = 'arch-overview';
+let currentArticleId = 'what-is-zexcore';
 
 export function renderDocsPage(): string {
-  const currentArticle = docArticles[currentArticleId] || docArticles['arch-overview'];
+  // If URL hash points to a specific article, select it automatically
+  if (window.location.hash.includes('what-is-zexcore')) {
+    currentArticleId = 'what-is-zexcore';
+  } else if (window.location.hash.includes('arch-overview')) {
+    currentArticleId = 'arch-overview';
+  }
+
+  const currentArticle = docArticles[currentArticleId] || docArticles['what-is-zexcore'] || docArticles['arch-overview'];
   const allArticles = Object.values(docArticles);
   const currentIndex = allArticles.findIndex(a => a.id === currentArticle.id);
   const prevArticle = currentIndex > 0 ? allArticles[currentIndex - 1] : null;
@@ -477,7 +596,8 @@ export function renderDocsPage(): string {
               <div class="docs-nav-group">
                 <div class="docs-group-label">GETTING STARTED</div>
                 <ul class="docs-nav-items">
-                  <li><a href="javascript:void(0)" onclick="selectDocArticle('arch-overview')" class="docs-nav-item ${currentArticle.id === 'arch-overview' ? 'active' : ''}"><span class="docs-nav-dot"></span> Architecture Overview</a></li>
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('what-is-zexcore')" class="docs-nav-item ${currentArticle.id === 'what-is-zexcore' ? 'active' : ''}"><span class="docs-nav-dot"></span> <b>What ZexCore is All About</b></a></li>
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('arch-overview')" class="docs-nav-item ${currentArticle.id === 'arch-overview' ? 'active' : ''}">Architecture Overview</a></li>
                   <li><a href="javascript:void(0)" onclick="selectDocArticle('install')" class="docs-nav-item ${currentArticle.id === 'install' ? 'active' : ''}">Installation &amp; Setup</a></li>
                   <li><a href="javascript:void(0)" onclick="selectDocArticle('tenancy')" class="docs-nav-item ${currentArticle.id === 'tenancy' ? 'active' : ''}">Tenant Resolution</a></li>
                   <li><a href="javascript:void(0)" onclick="selectDocArticle('auth')" class="docs-nav-item ${currentArticle.id === 'auth' ? 'active' : ''}">Authentication</a></li>

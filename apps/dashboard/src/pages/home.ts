@@ -99,6 +99,13 @@ export function renderHomePage(): string {
                   </svg>
                 </div>
 
+                <div style="margin-bottom: 14px;">
+                  <a href="#/docs#what-is-zexcore" class="hero-discover-pill" style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 700; color: #e50920; background: #fff1f2; border: 1px solid #fecdd3; padding: 6px 16px; border-radius: 9999px; text-decoration: none; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(229,9,32,0.06);">
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #e50920; box-shadow: 0 0 0 3px rgba(229,9,32,0.2);"></span>
+                    <span>What is ZexCore? Read the Full Guide &rarr;</span>
+                  </a>
+                </div>
+
                 <h1 class="huawei-hero-title" id="hero-slide-title">
                   ${defaultSlide.titleHtml}
                 </h1>
@@ -107,12 +114,15 @@ export function renderHomePage(): string {
                   ${defaultSlide.subtext}
                 </p>
 
-                <div class="huawei-hero-actions" id="hero-slide-actions">
+                <div class="huawei-hero-actions" id="hero-slide-actions" style="display: flex; gap: 12px; flex-wrap: wrap;">
                   <a href="${defaultSlide.primaryCtaHref}" class="btn btn-primary btn-lg" id="btn-hero-primary">
                     ${defaultSlide.primaryCtaText}
                   </a>
                   <a href="${defaultSlide.secondaryCtaHref}" class="btn btn-outline btn-lg" id="btn-hero-secondary">
                     ${defaultSlide.secondaryCtaText}
+                  </a>
+                  <a href="#/docs#what-is-zexcore" class="btn btn-secondary btn-lg" id="btn-hero-what-is-zexcore" style="background: #fff; border: 1px solid #d1d5db; color: #1e293b; font-weight: 700;">
+                    What ZexCore is All About &rarr;
                   </a>
                 </div>
               </div>
