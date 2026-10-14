@@ -3,20 +3,51 @@ import type { ZexModule, ZexCoreContext } from './types.js';
 import { getDb, getSqlClient } from '../db/client.js';
 import { globalEventBus } from '../events/bus.js';
 import { logAuditEvent } from '../audit/logger.js';
+import { getTenantContext } from '../tenancy/context.js';
 
 export function createDefaultCoreContext(): ZexCoreContext {
   const db = getDb();
   const sqlClient = getSqlClient();
 
-  const wrappedDb = Object.assign(db, {
-    async execute(queryOrSql: any) {
-      if (queryOrSql && typeof queryOrSql === 'object' && 'sql' in queryOrSql) {
-        const rows = await sqlClient.unsafe(queryOrSql.sql, (queryOrSql.params || []) as any);
-        return { rows };
+  const wrappedDb = new Proxy(db, {
+    get(target, prop, receiver) {
+      if (prop === 'execute') {
+        return async (queryOrSql: any) => {
+          if (queryOrSql && typeof queryOrSql === 'object' && 'sql' in queryOrSql && typeof queryOrSql.sql === 'string') {
+            const params = (queryOrSql.params || []) as unknown[];
+
+            // Resolve tenant ID from query metadata or AsyncLocalStorage context
+            const ctx = getTenantContext();
+            const tenantId = (queryOrSql as any).tenantId || ctx?.tenantId;
+
+            if (tenantId) {
+              // Wrap in a transaction so SET LOCAL scopes to this query only.
+              // This ensures RLS WITH CHECK and USING policies evaluate correctly
+              // without contaminating the connection pool between requests.
+              const result = await sqlClient.begin(async (tx) => {
+                // Use parameterized set_config to avoid SQL injection
+                await tx.unsafe(
+                  `SELECT set_config('app.current_tenant_id', $1, true)`,
+                  [tenantId],
+                );
+                await tx.unsafe(`SELECT set_config('app.bypass_rls', 'off', true)`);
+                return await tx.unsafe(queryOrSql.sql, params as any);
+              });
+              return { rows: result };
+            }
+
+            // No tenant context — run without RLS context (schema init, module onInit, etc.)
+            const rows = await sqlClient.unsafe(queryOrSql.sql, params as any);
+            return { rows };
+          }
+          return (target as any).execute(queryOrSql);
+        };
       }
-      return db.execute(queryOrSql);
+      return Reflect.get(target, prop, receiver);
     },
   });
+
+
 
   return {
     db: wrappedDb as any,
@@ -44,13 +75,26 @@ export class ModuleRegistry {
 
   /**
    * Registers a module into the registry.
+   * Idempotent: if the module is already registered under the same name, this is a no-op.
+   * (Prevents double-registration errors in test environments where createServer() is called
+   * multiple times within the same process and globalModuleRegistry is a shared singleton.)
    */
   public register(module: ZexModule): this {
     if (this.modules.has(module.name)) {
-      throw new Error(`Module '${module.name}' is already registered.`);
+      // Already registered — skip silently. This is intentional for test isolation.
+      return this;
     }
     this.modules.set(module.name, module);
     return this;
+  }
+
+  /**
+   * Resets the registry back to an empty, uninitialized state.
+   * ONLY intended for use in test teardown (afterAll hooks).
+   */
+  public reset(): void {
+    this.modules.clear();
+    this.initialized = false;
   }
 
   /**

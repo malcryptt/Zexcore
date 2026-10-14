@@ -32,7 +32,7 @@ export function renderArchitecturePage(): string {
         </section>
 
         <!-- ── CORE ARCHITECTURE DIAGRAM ────────────────────────── -->
-        <section class="section-gray section-padded" style="padding: 48px 0 64px 0;">
+        <section class="section-white section-padded" style="padding: 48px 0 64px 0; border-bottom: 1px solid #f3e5e8;">
           <div class="site-container">
             <div class="arch-diagram-wrapper">
               
@@ -96,7 +96,7 @@ export function renderArchitecturePage(): string {
         </section>
 
         <!-- ── REQUEST LIFECYCLE ────────────────────────────────── -->
-        <section class="section-white section-padded" style="padding: 64px 0;">
+        <section class="section-tinted-red section-padded" style="padding: 64px 0;">
           <div class="site-container">
             <div class="section-header-block" style="text-align: left; margin-bottom: 36px;">
               <h2 class="section-title" style="text-align: left; font-size: 1.85rem;">Request Lifecycle</h2>
@@ -171,7 +171,7 @@ export function renderArchitecturePage(): string {
         </section>
 
         <!-- ── CORE INVARIANTS ──────────────────────────────────── -->
-        <section class="section-gray section-padded" style="padding: 64px 0;">
+        <section class="section-white section-padded" style="padding: 64px 0; border-bottom: 1px solid #f3e5e8;">
           <div class="site-container">
             <div class="section-header-block" style="text-align: left; margin-bottom: 32px;">
               <h2 class="section-title" style="text-align: left; font-size: 1.85rem;">Core Invariants</h2>
@@ -252,48 +252,10 @@ export function renderArchitecturePage(): string {
           </div>
         </section>
 
-        <!-- ── TECHNOLOGY STACK ────────────────────────────────── -->
-        <section class="section-white" style="padding: 56px 0; border-top: 1px solid var(--border-default);">
-          <div class="site-container">
-            <div class="section-header-block" style="text-align: left; margin-bottom: 24px;">
-              <h2 class="section-title" style="text-align: left; font-size: 1.5rem;">Technology Stack</h2>
-            </div>
 
-            <div class="arch-tech-badges-row">
-              <span class="arch-tech-badge">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-                PostgreSQL 17
-              </span>
-              <span class="arch-tech-badge">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-                TypeScript
-              </span>
-              <span class="arch-tech-badge">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                Node.js
-              </span>
-              <span class="arch-tech-badge">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                Fastify
-              </span>
-              <span class="arch-tech-badge">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-                pnpm
-              </span>
-              <span class="arch-tech-badge">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                JWT
-              </span>
-              <span class="arch-tech-badge">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                AES-256-GCM
-              </span>
-            </div>
-          </div>
-        </section>
 
         <!-- CTA Section -->
-        <section class="section-gray final-cta-section" style="border-top: 1px solid var(--border-default);">
+        <section class="section-ambient-red final-cta-section">
           <div class="site-container final-cta-inner">
             <h2 class="final-cta-headline">Inspect the Complete Module Contract</h2>
             <p class="final-cta-subtext">

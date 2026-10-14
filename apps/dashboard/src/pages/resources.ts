@@ -27,7 +27,7 @@ export function renderResourcesPage(): string {
         </section>
 
         <!-- Articles Grid -->
-        <section class="section-gray section-padded">
+        <section class="section-tinted-red section-padded">
           <div class="site-container">
             <div class="resources-grid">
               <!-- Article 1 -->

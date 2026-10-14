@@ -85,29 +85,52 @@ export const iotModule: ZexModule = {
     );
     await applyRlsToTable('iot_commands');
 
-    // ── iot_alerts ───────────────────────────────────────────────────────────
+    // ── iot_alert_rules ──────────────────────────────────────────────────────
     await core.db.execute(
       sql.raw(`
-        CREATE TABLE IF NOT EXISTS iot_alerts (
+        CREATE TABLE IF NOT EXISTS iot_alert_rules (
           id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
           tenant_id         UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
           device_id         UUID,
-          name              VARCHAR(128) NOT NULL,
           metric            VARCHAR(64) NOT NULL,
-          operator          VARCHAR(8) NOT NULL CHECK (operator IN ('gt', 'lt', 'eq', 'gte', 'lte', 'neq')),
+          op                VARCHAR(8) NOT NULL CHECK (op IN ('gt', 'lt', 'eq', 'gte', 'lte', 'neq')),
           threshold         DOUBLE PRECISION NOT NULL,
           severity          VARCHAR(16) NOT NULL DEFAULT 'medium'
                               CHECK (severity IN ('low', 'medium', 'high', 'critical')),
+          message           VARCHAR(255),
           enabled           BOOLEAN NOT NULL DEFAULT TRUE,
-          last_triggered_at TIMESTAMPTZ,
           created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-          CONSTRAINT iot_alerts_device_fk FOREIGN KEY (tenant_id, device_id)
+          CONSTRAINT iot_alert_rules_composite_pk UNIQUE (tenant_id, id),
+          CONSTRAINT iot_alert_rules_device_fk FOREIGN KEY (tenant_id, device_id)
             REFERENCES iot_devices(tenant_id, id) ON DELETE CASCADE
         );
-        CREATE INDEX IF NOT EXISTS iot_alerts_metric_idx ON iot_alerts(tenant_id, metric);
+        CREATE INDEX IF NOT EXISTS iot_alert_rules_metric_idx ON iot_alert_rules(tenant_id, metric);
       `),
     );
-    await applyRlsToTable('iot_alerts');
+    await applyRlsToTable('iot_alert_rules');
+
+    // ── iot_alert_events ─────────────────────────────────────────────────────
+    await core.db.execute(
+      sql.raw(`
+        CREATE TABLE IF NOT EXISTS iot_alert_events (
+          id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          tenant_id      UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+          device_id      UUID NOT NULL,
+          alert_rule_id  UUID,
+          metric         VARCHAR(64) NOT NULL,
+          actual_value   DOUBLE PRECISION NOT NULL,
+          threshold      DOUBLE PRECISION NOT NULL,
+          severity       VARCHAR(16) NOT NULL,
+          triggered_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          CONSTRAINT iot_alert_events_device_fk FOREIGN KEY (tenant_id, device_id)
+            REFERENCES iot_devices(tenant_id, id) ON DELETE CASCADE,
+          CONSTRAINT iot_alert_events_rule_fk FOREIGN KEY (tenant_id, alert_rule_id)
+            REFERENCES iot_alert_rules(tenant_id, id) ON DELETE SET NULL
+        );
+        CREATE INDEX IF NOT EXISTS iot_alert_events_tenant_idx ON iot_alert_events(tenant_id, triggered_at DESC);
+      `),
+    );
+    await applyRlsToTable('iot_alert_events');
 
     core.logger.info('[iot] Tables & RLS initialised');
   },

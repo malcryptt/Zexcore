@@ -22,6 +22,9 @@ export function resolvePath(obj: unknown, path: string): unknown {
     if (cur === null || cur === undefined || typeof cur !== 'object') {
       return undefined;
     }
+    if (part === '__proto__' || part === 'constructor' || part === 'prototype') {
+      return undefined;
+    }
     cur = (cur as Record<string, unknown>)[part];
   }
   return cur;

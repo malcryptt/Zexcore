@@ -31,3 +31,9 @@ export * from './config/index.js';
 // Fastify Type Augmentations
 export * from './types/fastify.js';
 
+// Security & SSRF Protection
+export * from './security/ssrf.js';
+
+// Subscription Plans & Billing Integration
+export * from './billing/plans.js';
+export * from './billing/stripe.js';

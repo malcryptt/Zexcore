@@ -30,7 +30,7 @@ export function renderSolutionsPage(): string {
         </section>
 
         <!-- ── ALTERNATING SOLUTIONS SECTIONS ───────────────────── -->
-        <section class="section-gray section-padded" style="padding: 48px 0 80px 0;">
+        <section class="section-white section-padded" style="padding: 48px 0 80px 0;">
           <div class="site-container">
             <div class="solutions-v-list">
 
@@ -155,7 +155,7 @@ export function renderSolutionsPage(): string {
         </section>
 
         <!-- CTA Section -->
-        <section class="section-white final-cta-section" style="border-top: 1px solid var(--border-default);">
+        <section class="section-tinted-red final-cta-section">
           <div class="site-container final-cta-inner">
             <h2 class="final-cta-headline">Deploy an Industry Pack in ZexCore Control</h2>
             <p class="final-cta-subtext">

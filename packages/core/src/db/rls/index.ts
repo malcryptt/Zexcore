@@ -18,20 +18,29 @@ export async function applyRlsToTable(tableName: string): Promise<void> {
   await db.execute(sql.raw(`ALTER TABLE IF EXISTS "${tableName}" FORCE ROW LEVEL SECURITY;`));
 
   const policyName = `tenant_isolation_${tableName.replace(/[^a-zA-Z0-9_]/g, '_')}`;
-  await db.execute(sql.raw(`DROP POLICY IF EXISTS "${policyName}" ON "${tableName}";`));
 
   await db.execute(
     sql.raw(`
-    CREATE POLICY "${policyName}" ON "${tableName}"
-      FOR ALL
-      USING (
-        current_setting('app.bypass_rls', true) = 'on'
-        OR tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
-      )
-      WITH CHECK (
-        current_setting('app.bypass_rls', true) = 'on'
-        OR tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
-      );
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = '${tableName}' AND policyname = '${policyName}'
+      ) THEN
+        CREATE POLICY "${policyName}" ON "${tableName}"
+          FOR ALL
+          USING (
+            current_setting('app.bypass_rls', true) = 'on'
+            OR tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
+          )
+          WITH CHECK (
+            current_setting('app.bypass_rls', true) = 'on'
+            OR tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
+          );
+      END IF;
+    EXCEPTION
+      WHEN duplicate_object THEN NULL;
+    END $$;
   `),
   );
 }

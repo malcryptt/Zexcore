@@ -137,6 +137,50 @@ export const INDUSTRY_STARTERS: Record<string, IndustryStarter> = {
       { id: 'lead-srv-1', title: 'Downtown Corporate Tower HVAC Contract', company: 'Metro Commercial Properties', value: 36000, currency: 'USD', stage: 'Qualified' },
     ],
   },
+  fintech_agency: {
+    id: 'fintech_agency',
+    name: 'Fintech & Agency Commerce',
+    icon: '💳',
+    tagline: 'Paystack, Flutterwave & WhatsApp agency onboarding',
+    companyDefault: 'AfriPay Digital Agency',
+    listingTitle: 'Turnkey Merchant Gateway & WhatsApp Checkout',
+    listingPrice: '₦150,000 / mo',
+    listingDesc: 'Omnichannel merchant payments across Paystack, Flutterwave, and Stripe with instant WhatsApp receipts and abandoned-cart recovery.',
+    listingBadges: ['Paystack & Flutterwave', 'WhatsApp Invoicing', 'Instant Settlement'],
+    followUpMsg: 'Welcome to AfriPay! Your merchant account setup has been initiated. A WhatsApp onboarding link has been dispatched to your mobile phone.',
+    devices: [
+      { id: 'dev-fin-1', name: 'Virtual Terminal Edge POS Node', key: 'pos_terminal_lagos_01', kind: 'network_gateway', status: 'online', temperature: 26.5, humidity: 42, voltage: 5.0, firmware: 'v1.8.0', lastSeen: 'Just now' },
+    ],
+    rules: [
+      { id: 'rule-fin-1', name: 'Auto-Send WhatsApp Receipt on Paystack / Flutterwave Success', trigger: 'commerce.order.paid', conditions: 'payment.status == "success"', action: 'emit: whatsapp.receipt.dispatched', approved: true, enabled: true },
+      { id: 'rule-fin-2', name: 'Instant VIP Merchant Escalation (> ₦1,000,000)', trigger: 'crm.lead.created', conditions: 'lead.value >= 1000000', action: 'emit: crm.vip_merchant.alert', approved: true, enabled: true },
+    ],
+    leads: [
+      { id: 'lead-fin-1', title: 'Lagos E-Commerce Superstore Checkout', company: 'Zenith Retail Outlets', value: 2500000, currency: 'NGN', stage: 'Negotiation' },
+      { id: 'lead-fin-2', title: 'Agency White-Label Reseller Portal', company: 'Prime Digital Studios', value: 850000, currency: 'NGN', stage: 'Qualified' },
+    ],
+  },
+  clinic_booking: {
+    id: 'clinic_booking',
+    name: 'Healthcare & Clinic Booking',
+    icon: '🩺',
+    tagline: 'Patient scheduling with automated WhatsApp reminders that cut no-shows',
+    companyDefault: 'Apex Specialist Clinic',
+    listingTitle: 'Specialist Medical Consultation & Diagnostics',
+    listingPrice: '$150 / session',
+    listingDesc: 'Seamless patient booking, multi-staff calendar sync, deposits to hold slots, and automated 24h/1h WhatsApp reminders cutting patient no-shows by 40%.',
+    listingBadges: ['WhatsApp Reminders', 'Zero No-Shows', 'HIPAA/GDPR Vault'],
+    followUpMsg: 'Your appointment request has been confirmed! An automated WhatsApp calendar invitation and preparation checklist has been sent to your phone.',
+    devices: [
+      { id: 'dev-cln-1', name: 'Vaccine Storage Reefer Telemetry Probe', key: 'iot_vaccine_chiller_01', kind: 'chiller_probe', status: 'online', temperature: 4.1, humidity: 55, voltage: 220.0, firmware: 'v2.0.1', lastSeen: 'Just now' },
+    ],
+    rules: [
+      { id: 'rule-cln-1', name: 'Automated WhatsApp 24h & 1h Appointment Reminders', trigger: 'booking.appointment.scheduled', conditions: 'appointment.status == "confirmed"', action: 'emit: whatsapp.reminder.scheduled', approved: true, enabled: true },
+    ],
+    leads: [
+      { id: 'lead-cln-1', title: 'Corporate Annual Employee Health Screening', company: 'Standard Capital Corp', value: 18500, currency: 'USD', stage: 'Proposal' },
+    ],
+  },
 };
 
 export interface OnboardingState {

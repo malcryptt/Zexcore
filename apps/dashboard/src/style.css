@@ -5421,14 +5421,51 @@ pre, code, .code-block, .terminal-window { overflow-wrap: anywhere; }
   background: #ffffff !important;
   color: #17191d !important;
 }
+.page-wrapper .section-white,
+.section-white {
+  background: #ffffff !important;
+  color: #17191d !important;
+}
+
+.page-wrapper .section-tinted-red,
+.section-tinted-red {
+  position: relative;
+  background-color: #fff6f8 !important;
+  background-image: 
+    radial-gradient(circle at 88% 18%, rgba(229, 9, 32, 0.08) 0%, transparent 55%),
+    radial-gradient(circle at 12% 82%, rgba(229, 9, 32, 0.05) 0%, transparent 50%),
+    linear-gradient(180deg, #fff5f7 0%, #fef1f4 50%, #fff7f9 100%) !important;
+  border-top: 1px solid #f9d5db !important;
+  border-bottom: 1px solid #f9d5db !important;
+  color: #17191d !important;
+}
+
+.page-wrapper .section-ambient-red,
+.section-ambient-red {
+  position: relative;
+  background-color: #ffffff !important;
+  background-image: 
+    radial-gradient(ellipse 75% 55% at 50% 0%, rgba(229, 9, 32, 0.065), transparent 75%),
+    linear-gradient(180deg, #fff9fa 0%, #ffffff 100%) !important;
+  border-top: 1px solid #fde4e7 !important;
+  border-bottom: 1px solid #fde4e7 !important;
+  color: #17191d !important;
+}
+
 .page-wrapper .section-gray,
-.page-wrapper .section-padded,
+.section-gray {
+  background: #faf6f7 !important;
+  border-top: 1px solid #f3e5e8 !important;
+  border-bottom: 1px solid #f3e5e8 !important;
+  color: #17191d !important;
+}
+
 .page-wrapper .sec-principles-section {
-  background: #f7f8fa !important;
+  background: #ffffff !important;
   color: #17191d !important;
 }
 .page-wrapper .section-white:nth-of-type(even),
-.page-wrapper .section-gray:nth-of-type(odd) { border-color: #e5e8ed !important; }
+.page-wrapper .section-gray:nth-of-type(odd) { border-color: #f3e5e8 !important; }
 .page-wrapper h1,
 .page-wrapper h2,
 .page-wrapper h3,
@@ -5967,7 +6004,7 @@ body { background: #fff; letter-spacing: -.008em; }
 .signin-brand-content { justify-content: center !important; padding: 8px 0 24px !important; }
 .signin-eyebrow { display: flex; align-items: center; gap: 9px; margin-bottom: 18px; color: #e50920; font-size: .7rem; font-weight: 800; letter-spacing: .095em; }
 .signin-eyebrow-dot { width: 7px; height: 7px; border-radius: 50%; background: #e50920; box-shadow: 0 0 0 4px #fee2e5; }
-.signin-brand-logo { width: 178px !important; max-width: 100% !important; height: 58px !important; object-fit: contain !important; object-position: left center !important; filter: none !important; margin-bottom: 28px !important; }
+.signin-brand-logo { width: 240px !important; max-width: 100% !important; height: 80px !important; object-fit: contain !important; object-position: left center !important; filter: none !important; margin-bottom: 32px !important; }
 .signin-brand-headline { color: #17191d !important; max-width: 520px !important; font-size: clamp(2.1rem, 3.1vw, 3.05rem) !important; line-height: 1.08 !important; letter-spacing: -.055em !important; margin-bottom: 18px !important; }
 .signin-brand-headline br { display: block; }
 .signin-brand-headline span { color: #e50920 !important; }
@@ -6339,187 +6376,245 @@ body { background: #fff; letter-spacing: -.008em; }
   font-size: 0.7rem;
 }
 
-/* Flagship Hero Banner Section with Ambient Red Hue */
-.huawei-flagship-hero {
+/* ─────────────────────────────────────────────────────────────────────────────
+   FULL-WIDTH HUAWEI-STYLE HERO  (hz- prefix)
+   Left: arrow composite image fills exactly 52 % of viewport
+   Right: light silver-grey with copy, brand mark, CTAs
+───────────────────────────────────────────────────────────────────────────── */
+.hz-hero {
   position: relative;
+  width: 100%;
+  min-height: 480px;
+  height: clamp(450px, 30vw, 580px);
+  overflow: hidden;
+  border-bottom: 1px solid #f6c4cc;
   background-color: #fff4f6;
   background-image: 
-    radial-gradient(circle at 75% 20%, rgba(229, 9, 32, 0.13) 0%, transparent 60%),
-    radial-gradient(circle at 15% 80%, rgba(229, 9, 32, 0.09) 0%, transparent 55%),
+    radial-gradient(circle at 85% 20%, rgba(229, 9, 32, 0.13) 0%, transparent 60%),
+    radial-gradient(circle at 10% 80%, rgba(229, 9, 32, 0.09) 0%, transparent 55%),
     linear-gradient(135deg, #fff5f7 0%, #feecef 50%, #fce5e8 100%);
-  border-bottom: 1px solid #f6c4cc;
-  padding: 56px 0 36px 0;
-  overflow: hidden;
-}
-.huawei-flagship-hero::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  background: radial-gradient(circle at 50% 40%, rgba(229, 9, 32, 0.06) 0%, transparent 75%);
-  pointer-events: none;
-}
-.huawei-hero-grid {
-  display: grid;
-  grid-template-columns: 1.18fr 0.92fr;
+  display: flex;
   align-items: center;
-  gap: 48px;
-  min-height: 460px;
 }
 
-/* Left Hero Visual: Chevron Industrial Showcase Frame */
-.huawei-hero-visual-col {
-  position: relative;
-  width: 100%;
+/* Soft accent geometries on right side */
+.hz-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -40px;
+  right: -30px;
+  width: 220px;
+  height: 220px;
+  background: rgba(229, 9, 32, 0.07);
+  clip-path: polygon(0 40%, 100% 0, 100% 100%, 0 100%);
+  pointer-events: none;
 }
-.huawei-chevron-frame {
-  position: relative;
-  width: 100%;
-  border-radius: 16px;
+.hz-hero::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  right: 60px;
+  width: 120px;
+  height: 170px;
+  background: rgba(229, 9, 32, 0.05);
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+  pointer-events: none;
+}
+
+/* ── LEFT-HALF SEAMLESS BLENDED BACKDROP ── */
+.hz-hero-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 58%;
+  height: 100%;
   overflow: hidden;
-  box-shadow: 0 16px 42px rgba(229, 9, 32, 0.16), 0 4px 16px rgba(23, 25, 29, 0.08);
-  border: 2px solid rgba(255, 255, 255, 0.9);
-  background: #ffffff;
-  aspect-ratio: 16 / 9;
+  pointer-events: none;
+  z-index: 1;
+  /* Ultra-smooth feather: starts fading at 28%, smooth cosine-like blend out to 95% */
+  mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.96) 28%, rgba(0, 0, 0, 0.6) 55%, rgba(0, 0, 0, 0.15) 80%, rgba(0, 0, 0, 0) 95%);
+  -webkit-mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.96) 28%, rgba(0, 0, 0, 0.6) 55%, rgba(0, 0, 0, 0.15) 80%, rgba(0, 0, 0, 0) 95%);
 }
-.huawei-chevron-img {
+
+.hz-hero-arrow-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center left;
   display: block;
-  transition: opacity 0.3s ease, transform 0.4s ease;
-}
-.huawei-chevron-overlay-glow {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(229, 9, 32, 0.12) 0%, transparent 45%, rgba(23, 25, 29, 0.18) 100%);
-  pointer-events: none;
-}
-.huawei-floating-pill {
-  position: absolute;
-  top: 18px;
-  left: 20px;
-  background: rgba(23, 25, 29, 0.88);
-  backdrop-filter: blur(8px);
-  color: #ffffff;
-  padding: 6px 14px;
-  border-radius: 24px;
-  font-size: 0.72rem;
-  font-weight: 750;
-  letter-spacing: 0.06em;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-}
-.huawei-radar-dot {
-  width: 8px;
-  height: 8px;
-  background: #E50920;
-  border-radius: 50%;
-  display: inline-block;
-  box-shadow: 0 0 8px #E50920;
-  animation: radarPulse 2s infinite ease-in-out;
-}
-@keyframes radarPulse {
-  0% { transform: scale(0.9); opacity: 0.8; }
-  50% { transform: scale(1.3); opacity: 1; }
-  100% { transform: scale(0.9); opacity: 0.8; }
+  /* Slide-in from left + fade on load */
+  animation: hzImgEnter 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: opacity 0.25s ease, transform 0.35s ease;
 }
 
-/* Right Hero Copy */
-.huawei-hero-copy-col {
-  padding-left: 8px;
+@keyframes hzImgEnter {
+  from { opacity: 0; transform: translateX(-28px) scale(1.04); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
 }
-.huawei-brand-geometric-symbol {
-  margin-bottom: 20px;
-  display: inline-block;
+
+/* ── RIGHT-SIDE CONTENT WRAPPER ── */
+.hz-hero-site-container {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%;
 }
-.huawei-hero-title {
-  font-size: 3.4rem;
+
+.hz-hero-copy {
+  max-width: 560px;
+  width: 100%;
+  padding: 30px 0;
+  position: relative;
+  z-index: 2;
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+@media (max-width: 900px) {
+  .hz-hero-backdrop {
+    width: 100%;
+    opacity: 0.18;
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+  .hz-hero-site-container {
+    justify-content: flex-start;
+  }
+  .hz-hero-copy {
+    max-width: 100%;
+    padding: 36px 16px;
+  }
+}
+
+/* Brand play-arrow mark */
+.hz-brand-mark {
+  margin-bottom: 22px;
+}
+
+/* Staggered fade-up entrance for hero copy elements */
+@keyframes hzFadeUp {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hz-anim-fade-up {
+  animation: hzFadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Main headline */
+.hz-hero-title {
+  font-size: clamp(2.2rem, 3.2vw, 3.6rem);
   font-weight: 850;
-  line-height: 1.08;
+  line-height: 1.06;
   letter-spacing: -0.03em;
-  color: #17191D;
-  margin: 0 0 20px 0;
+  /* Warm red-tinted dark tone matching docs page headlines */
+  color: #1a0a0c;
+  margin: 0 0 18px 0;
 }
-.huawei-hero-red {
-  color: #E50920;
-}
-.huawei-hero-desc {
-  font-size: 1.08rem;
+.hz-hero-red { color: #E50920; }
+
+/* Subtext */
+.hz-hero-desc {
+  font-size: clamp(0.88rem, 1.05vw, 1.05rem);
   line-height: 1.62;
-  color: #4b5565;
-  margin: 0 0 32px 0;
-  max-width: 520px;
+  color: #5c3a40;
+  margin: 0 0 30px 0;
+  max-width: 460px;
 }
-.huawei-hero-actions {
+
+/* CTA row */
+.hz-hero-actions {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
 }
-.huawei-hero-actions .btn-primary {
+.hz-btn-primary {
+  display: inline-block;
   background: #E50920;
-  border-color: #E50920;
-  color: #ffffff;
-  padding: 13px 30px;
+  color: #fff;
+  font-size: 0.93rem;
   font-weight: 750;
-  font-size: 0.98rem;
-  border-radius: 6px;
-  box-shadow: 0 4px 16px rgba(229, 9, 32, 0.3);
-  transition: all 0.2s ease;
+  padding: 11px 26px;
+  border-radius: 5px;
+  text-decoration: none;
+  border: 1.5px solid #E50920;
+  box-shadow: 0 4px 14px rgba(229,9,32,0.28);
+  transition: background 0.18s, transform 0.15s, box-shadow 0.18s;
 }
-.huawei-hero-actions .btn-primary:hover {
+.hz-btn-primary:hover {
   background: #C90019;
   border-color: #C90019;
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(229, 9, 32, 0.4);
+  box-shadow: 0 6px 18px rgba(229,9,32,0.38);
 }
-.huawei-hero-actions .btn-outline {
-  background: #ffffff;
-  border: 1.5px solid #d2d8e2;
+.hz-btn-outline {
+  display: inline-block;
+  background: #fff;
   color: #17191D;
-  padding: 13px 28px;
+  font-size: 0.93rem;
   font-weight: 700;
-  font-size: 0.98rem;
-  border-radius: 6px;
-  transition: all 0.2s ease;
+  padding: 10px 24px;
+  border-radius: 5px;
+  text-decoration: none;
+  border: 1.5px solid #c4ccd8;
+  transition: border-color 0.18s, color 0.18s, background 0.18s;
 }
-.huawei-hero-actions .btn-outline:hover {
+.hz-btn-outline:hover {
   border-color: #E50920;
   color: #E50920;
   background: #fff5f6;
 }
+.hz-btn-ghost {
+  display: inline-block;
+  font-size: 0.88rem;
+  font-weight: 650;
+  color: #556070;
+  text-decoration: none;
+  padding: 10px 4px;
+  border-bottom: 1px solid transparent;
+  transition: color 0.18s, border-color 0.18s;
+}
+.hz-btn-ghost:hover {
+  color: #E50920;
+  border-color: #E50920;
+}
 
-/* Slider Indicators Matching Reference */
-.huawei-slider-indicators {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 36px;
+/* Slide dots — hidden (auto-cycle only, no visible indicators) */
+.hz-slider-dots { display: none; }
+.hz-dot { display: none; }
+
+/* Responsive: stack vertically below 860px */
+@media (max-width: 860px) {
+  .hz-hero {
+    flex-direction: column;
+    height: auto;
+    min-height: unset;
+  }
+  .hz-hero-left {
+    flex: none;
+    width: 100%;
+    height: 260px;
+  }
+  .hz-hero-right {
+    flex: none;
+    width: 100%;
+    padding: 36px 0 60px;
+  }
+  .hz-hero-copy { padding: 0 28px; }
+  .hz-slider-dots { left: 50%; }
 }
-.huawei-slide-pill {
-  width: 44px;
-  height: 4px;
-  background: rgba(23, 25, 29, 0.2);
-  border: none;
-  border-radius: 2px;
-  cursor: pointer;
-  padding: 0;
-  transition: all 0.25s ease;
+
+/* Keep .huawei-half-backdrop for legacy slides 1 & 2 */
+.huawei-half-backdrop {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  z-index: 0;
+  transition: opacity 0.3s ease;
 }
-.huawei-slide-pill:hover {
-  background: rgba(23, 25, 29, 0.4);
-}
-.huawei-slide-pill.active {
-  background: #E50920;
-  width: 64px;
-}
+
 
 /* What's New Section Matching Huawei Reference */
 .whats-new-section {
@@ -6851,6 +6946,818 @@ body { background: #fff; letter-spacing: -.008em; }
   background: #f7f9fa !important;
   border: 1px solid #d5dde8 !important;
   color: #556070 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRIPE CHECKOUT MODAL & SUBSCRIPTION BILLING
+   ═══════════════════════════════════════════════════════════════════════════ */
+.stripe-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(8px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: stripeFadeIn 0.25s ease-out;
+}
+@keyframes stripeFadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.stripe-modal-box {
+  background: #ffffff;
+  border-radius: 14px;
+  max-width: 840px;
+  width: 100%;
+  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.stripe-modal-close {
+  background: transparent;
+  border: none;
+  font-size: 1.6rem;
+  color: #94a3b8;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+.stripe-modal-close:hover {
+  color: #E50920;
+  background: #fee2e6;
+}
+
+.stripe-header {
+  background: #ffffff;
+  border-bottom: 1.5px solid #fee2e6;
+  padding: 16px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.stripe-brand-left {
+  display: flex;
+  align-items: center;
+}
+.stripe-merchant-logo {
+  height: 38px;
+  max-width: 175px;
+  object-fit: contain;
+  display: block;
+}
+.stripe-brand-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.stripe-powered-pill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+  background: #fff5f7;
+  border: 1px solid #fed7dc;
+  padding: 5px 12px;
+  border-radius: 999px;
+}
+.stripe-official-logo {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.stripe-modal-body {
+  display: grid;
+  grid-template-columns: 1fr 1.08fr;
+  min-height: 480px;
+}
+@media (max-width: 740px) {
+  .stripe-modal-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stripe-plan-summary {
+  background: #fff8f9;
+  border-right: 1px solid #fee2e6;
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+}
+.stripe-plan-kicker {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #E50920;
+  margin-bottom: 8px;
+}
+.stripe-plan-name {
+  font-size: 1.7rem;
+  font-weight: 850;
+  letter-spacing: -0.03em;
+  color: #17191D;
+  margin: 0 0 6px 0;
+}
+.stripe-plan-tagline {
+  font-size: 0.88rem;
+  color: #64748b;
+  line-height: 1.45;
+  margin-bottom: 20px;
+}
+.stripe-price-display {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+.stripe-currency {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #17191D;
+}
+.stripe-amount {
+  font-size: 2.8rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: #17191D;
+}
+.stripe-term {
+  font-size: 0.92rem;
+  color: #64748b;
+  margin-left: 4px;
+}
+.stripe-billed-note {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-bottom: 18px;
+}
+
+.stripe-cycle-toggle {
+  display: flex;
+  background: #fee2e6;
+  padding: 3px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+.stripe-cycle-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.stripe-cycle-btn.active {
+  background: #ffffff;
+  color: #E50920;
+  font-weight: 800;
+  box-shadow: 0 2px 6px rgba(229, 9, 32, 0.12);
+}
+
+.stripe-plan-features-list {
+  margin-top: auto;
+  border-top: 1px solid #fee2e6;
+  padding-top: 18px;
+}
+.stripe-features-heading {
+  font-size: 0.76rem;
+  font-weight: 750;
+  color: #17191D;
+  margin-bottom: 12px;
+}
+.stripe-feat-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 0.82rem;
+  color: #334155;
+  margin-bottom: 8px;
+  line-height: 1.35;
+}
+.stripe-feat-check {
+  color: #E50920;
+  font-weight: 800;
+  font-size: 0.88rem;
+  flex-shrink: 0;
+}
+
+.stripe-payment-form {
+  padding: 32px 32px;
+  display: flex;
+  flex-direction: column;
+}
+.stripe-payment-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #17191D;
+  margin: 0 0 16px 0;
+}
+
+.checkout-gateway-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.gateway-tab-btn {
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 6px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  transition: all 0.15s ease;
+}
+.gateway-tab-btn:hover {
+  background: #fff5f7;
+  border-color: #fecdd3;
+}
+.gateway-tab-btn.active {
+  background: #ffffff;
+  border-color: #E50920;
+  box-shadow: 0 3px 10px rgba(229, 9, 32, 0.12);
+}
+.gw-badge-sub {
+  font-size: 0.65rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.stripe-form-group {
+  margin-bottom: 18px;
+}
+.stripe-form-group label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 6px;
+}
+.stripe-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 7px;
+  font-size: 0.88rem;
+  color: #1e293b;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  background: #ffffff;
+}
+.stripe-input:focus {
+  border-color: #E50920;
+  box-shadow: 0 0 0 3px rgba(229, 9, 32, 0.14);
+}
+
+.stripe-card-field-wrap {
+  border: 1.5px solid #cbd5e1;
+  border-radius: 7px;
+  overflow: hidden;
+  background: #ffffff;
+}
+.stripe-card-field-wrap:focus-within {
+  border-color: #E50920;
+  box-shadow: 0 0 0 3px rgba(229, 9, 32, 0.14);
+}
+.stripe-card-input-row {
+  display: flex;
+  align-items: center;
+  padding: 9px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  gap: 10px;
+}
+.stripe-card-number-input {
+  border: none;
+  outline: none;
+  flex: 1;
+  font-size: 0.9rem;
+  font-family: var(--font-mono);
+  color: #0f172a;
+  letter-spacing: 0.04em;
+}
+.stripe-card-brand {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #E50920;
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  padding: 3px 6px;
+  border-radius: 4px;
+}
+.stripe-card-meta-row {
+  display: flex;
+}
+.stripe-meta-input {
+  border: none;
+  outline: none;
+  flex: 1;
+  padding: 9px 12px;
+  font-size: 0.88rem;
+  font-family: var(--font-mono);
+  color: #0f172a;
+}
+.stripe-meta-input:first-child {
+  border-right: 1px solid #e2e8f0;
+}
+
+.stripe-submit-btn {
+  width: 100%;
+  margin-top: 18px;
+  background: #E50920;
+  color: #ffffff;
+  border: none;
+  padding: 14px 20px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(229, 9, 32, 0.32);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.stripe-submit-btn:hover {
+  background: #cc081c;
+  transform: translateY(-1px);
+}
+.stripe-submit-btn:disabled {
+  opacity: 0.75;
+  cursor: wait;
+  transform: none;
+}
+.stripe-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: stripeSpin 0.7s linear infinite;
+}
+@keyframes stripeSpin {
+  to { transform: rotate(360deg); }
+}
+.stripe-secure-note {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  text-align: center;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SOFT PAYWALL OVERLAYS (LOCKED TABS IN CONSOLE)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.soft-paywall-wrap {
+  position: relative;
+  min-height: 480px;
+}
+.soft-paywall-blur-bg {
+  filter: blur(5px) opacity(0.35);
+  pointer-events: none;
+  user-select: none;
+}
+.soft-paywall-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  background: radial-gradient(circle at 50% 40%, rgba(255, 245, 247, 0.88) 0%, rgba(255, 255, 255, 0.96) 100%);
+  z-index: 10;
+}
+.soft-paywall-card {
+  max-width: 580px;
+  width: 100%;
+  background: #ffffff;
+  border: 1.5px solid #f9ced4;
+  border-radius: 14px;
+  padding: 38px 36px;
+  text-align: center;
+  box-shadow: 0 16px 42px rgba(229, 9, 32, 0.09);
+  animation: paywallPop 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes paywallPop {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.soft-paywall-icon-wrap {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 18px auto;
+  border-radius: 16px;
+  background: #fff1f2;
+  border: 1.5px solid #fecdd3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(229, 9, 32, 0.12);
+}
+.soft-paywall-tier-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  color: #E50920;
+  background: #fff1f2;
+  border: 1px solid #ffe4e6;
+  padding: 4px 12px;
+  border-radius: 999px;
+  margin-bottom: 12px;
+}
+.soft-paywall-title {
+  font-size: 1.55rem;
+  font-weight: 850;
+  letter-spacing: -0.03em;
+  color: #17191D;
+  margin: 0 0 10px 0;
+}
+.soft-paywall-desc {
+  font-size: 0.94rem;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0 auto 24px auto;
+  max-width: 460px;
+}
+.soft-paywall-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.btn-paywall-upgrade {
+  background: #E50920;
+  color: #ffffff;
+  padding: 12px 28px;
+  font-weight: 750;
+  font-size: 0.94rem;
+  border-radius: 7px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(229, 9, 32, 0.28);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.btn-paywall-upgrade:hover {
+  background: #cc081c;
+  transform: translateY(-1px);
+}
+.btn-paywall-secondary {
+  background: #f8fafc;
+  color: #334155;
+  padding: 12px 22px;
+  font-weight: 650;
+  font-size: 0.92rem;
+  border-radius: 7px;
+  border: 1.5px solid #cbd5e1;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+.btn-paywall-secondary:hover {
+  background: #f1f5f9;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SIDEBAR & TOPBAR SUBSCRIPTION BADGES
+   ═══════════════════════════════════════════════════════════════════════════ */
+.nav-plan-lock-badge {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #fff1f2;
+  color: #E50920;
+  border: 1px solid #fecdd3;
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.sidebar-plan-card {
+  margin: auto 16px 16px 16px;
+  background: #fff5f7;
+  border: 1.5px solid #fcd5db;
+  border-radius: 10px;
+  padding: 14px 14px;
+}
+.sidebar-plan-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.sidebar-plan-label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #E50920;
+}
+.sidebar-plan-status {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #166534;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+.sidebar-plan-name {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #17191D;
+  margin-bottom: 4px;
+}
+.sidebar-plan-price {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-bottom: 12px;
+}
+.btn-sidebar-upgrade {
+  width: 100%;
+  padding: 7px 10px;
+  font-size: 0.78rem;
+  font-weight: 750;
+  background: #E50920;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  box-shadow: 0 3px 9px rgba(229, 9, 32, 0.24);
+  transition: background 0.15s ease;
+}
+.btn-sidebar-upgrade:hover {
+  background: #cc081c;
+}
+
+.topbar-plan-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.78rem;
+  font-weight: 750;
+  color: #17191D;
+  background: #fff5f7;
+  border: 1.5px solid #fcd5db;
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.topbar-plan-pill:hover {
+  background: #feecef;
+  border-color: #E50920;
+}
+.topbar-plan-upgrade-link {
+  color: #E50920;
+  font-weight: 800;
+  font-size: 0.74rem;
+  text-decoration: underline;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   WHATSAPP & MULTI-CHANNEL INBOX (CRM & BOOKING)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.whatsapp-inbox-grid {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  background: #ffffff;
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  height: 580px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+@media (max-width: 900px) {
+  .whatsapp-inbox-grid {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+}
+.whatsapp-threads-col {
+  border-right: 1px solid var(--border-default);
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.whatsapp-threads-header {
+  padding: 14px 16px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border-default);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.whatsapp-thread-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: #ffffff;
+}
+.whatsapp-thread-item:hover {
+  background: #f8fafc;
+}
+.whatsapp-thread-item.active {
+  background: #f0fdf4;
+  border-left: 3.5px solid #25d366;
+}
+.whatsapp-thread-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.whatsapp-thread-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+.whatsapp-thread-time {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+.whatsapp-thread-snippet {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 250px;
+}
+.whatsapp-channel-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.whatsapp-channel-badge.wa {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+.whatsapp-channel-badge.sms {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #dbeafe;
+}
+.whatsapp-channel-badge.email {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.whatsapp-chat-col {
+  display: flex;
+  flex-direction: column;
+  background: #f8fafc;
+  height: 100%;
+}
+.whatsapp-chat-header {
+  padding: 14px 20px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border-default);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.whatsapp-chat-body {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background-color: #efeae2;
+  background-image: radial-gradient(#d1d5db 0.75px, transparent 0.75px);
+  background-size: 16px 16px;
+}
+.whatsapp-msg {
+  max-width: 75%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  position: relative;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+.whatsapp-msg.client {
+  align-self: flex-start;
+  background: #ffffff;
+  color: #0f172a;
+  border-top-left-radius: 2px;
+}
+.whatsapp-msg.agent {
+  align-self: flex-end;
+  background: #d9fdd3;
+  color: #0f172a;
+  border-top-right-radius: 2px;
+}
+.whatsapp-msg-time {
+  font-size: 0.65rem;
+  color: #64748b;
+  text-align: right;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+}
+.whatsapp-quick-replies-row {
+  padding: 10px 16px;
+  background: #ffffff;
+  border-top: 1px solid var(--border-default);
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.whatsapp-quick-reply-pill {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #1e293b;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.whatsapp-quick-reply-pill:hover {
+  background: #dcfce7;
+  color: #15803d;
+  border-color: #86efac;
+}
+.whatsapp-composer {
+  padding: 12px 16px;
+  background: #ffffff;
+  border-top: 1px solid var(--border-default);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.btn-whatsapp {
+  background: #25D366;
+  color: #ffffff;
+  border: none;
+  font-weight: 750;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(37, 211, 102, 0.28);
+  transition: background 0.15s ease;
+}
+.btn-whatsapp:hover {
+  background: #1ebd5a;
 }
 
 

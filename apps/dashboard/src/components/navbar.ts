@@ -5,6 +5,7 @@
 
 export function renderNavbar(activePage: string): string {
   const navLinks = [
+    { id: 'home', label: 'Home', href: '#/home' },
     { id: 'platform', label: 'Platform', href: '#/platform' },
     { id: 'architecture', label: 'Architecture', href: '#/architecture' },
     { id: 'modules', label: 'Modules', href: '#/modules' },

@@ -13,7 +13,7 @@
  */
 
 import type { Action } from '../schema/rule.js';
-import type { ZexCoreContext } from '@zexcore/core';
+import { type ZexCoreContext, assertSafeUrl } from '@zexcore/core';
 
 export interface ExecutionContext {
   tenantId:  string;
@@ -31,7 +31,7 @@ export interface ExecutionResult {
   errors:     string[];                 // non-fatal errors per action
 }
 
-// ─── Webhook helper (no node-fetch needed, native since Node 18) ──────────────
+// ─── Webhook helper (with SSRF protection & 5s hard cap) ──────────────────────
 
 async function fireWebhook(
   url: string,
@@ -39,6 +39,9 @@ async function fireWebhook(
   headers: Record<string, string> | undefined,
   body: unknown,
 ): Promise<void> {
+  // SSRF defense: enforce private IP & metadata range blocking
+  await assertSafeUrl(url);
+
   const ctrl = new AbortController();
   const timeout = setTimeout(() => ctrl.abort(), 5_000); // 5 s hard cap
 
@@ -80,6 +83,10 @@ export async function executeActions(
           // Write into the mutable context object, not the DB
           // Callers (e.g. route handlers) decide whether to persist
           const parts = action.path.split('.');
+          if (parts.some((p) => p === '__proto__' || p === 'constructor' || p === 'prototype')) {
+            result.errors.push(`Disallowed prototype property in path: ${action.path}`);
+            break;
+          }
           let cur: Record<string, unknown> = result.mutations;
           for (let i = 0; i < parts.length - 1; i++) {
             const part = parts[i]!;

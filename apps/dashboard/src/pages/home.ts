@@ -27,10 +27,10 @@ export interface HeroSlide {
 export const heroSlides: HeroSlide[] = [
   {
     badge: 'MISSION-CRITICAL VERTICAL SAAS',
-    titleHtml: 'Accelerate<br />Industrial<br /><span class="huawei-hero-red">Intelligence.</span>',
+    titleHtml: 'Accelerate<br />Industrial<br /><span class="hz-hero-red">Intelligence.</span>',
     subtext: 'The sovereign multi-tenant operating system for vertical SaaS — power grids, industrial IoT telemetry, deterministic rules automation, and cryptographic compliance vaults.',
-    image: '/hero-engineering.jpg',
-    alt: 'Software engineering team collaborating on mission-critical vertical SaaS platform',
+    image: '/heroes/hero-arrow-real.jpg',
+    alt: 'Industrial chevron composite: smart city, power grid, welding, port logistics, high-speed rail',
     primaryCtaText: 'Launch Console →',
     primaryCtaHref: '#/console',
     secondaryCtaText: 'Explore Solutions',
@@ -38,7 +38,7 @@ export const heroSlides: HeroSlide[] = [
   },
   {
     badge: 'POSTGRESQL 17 ROW-LEVEL SECURITY',
-    titleHtml: '<span class="huawei-hero-red">Sovereign<br />Multi-Tenancy.<br />Zero Leakage.</span>',
+    titleHtml: '<span class="hz-hero-red">Sovereign<br />Multi-Tenancy.<br />Zero Leakage.</span>',
     subtext: 'Enforced mathematically at the PostgreSQL session level using Row-Level Security, composite primary keys, and transaction-isolated database connections. No reliance on software developer discipline.',
     image: '/refinery.jpg',
     alt: 'Industrial plant and refinery operations powered by sovereign multi-tenancy',
@@ -49,7 +49,7 @@ export const heroSlides: HeroSlide[] = [
   },
   {
     badge: 'AST ENGINE • ZERO JAVASCRIPT EVAL',
-    titleHtml: 'Deterministic<br />Rules &amp; Automation.<br /><span class="huawei-hero-red">&lt; 1ms Latency.</span>',
+    titleHtml: 'Deterministic<br />Rules &amp; Automation.<br /><span class="hz-hero-red">&lt; 1ms Latency.</span>',
     subtext: 'Compile conditional business logic into secure Abstract Syntax Tree graphs. Trigger real-time alert pipelines and dispatch state machines across the EventBus mesh with predictable microsecond execution.',
     image: '/solutions/automation.jpg',
     alt: 'Industrial robotic manufacturing automation with deterministic execution',
@@ -71,64 +71,43 @@ export function renderHomePage(): string {
         <!-- ═══════════════════════════════════════════════════════════════
              FLAGSHIP HUAWEI-STYLE HERO BANNER
              ═══════════════════════════════════════════════════════════════ -->
-        <section class="huawei-flagship-hero" id="home-flagship-hero">
-          <div id="hero-half-backdrop" class="huawei-half-backdrop" style="display: none; opacity: 0;"></div>
-          <div class="site-container">
-            <div class="huawei-hero-grid">
-              
-              <!-- Left Visual: Industrial Chevron Showcase (Active on Slide 0) -->
-              <div class="huawei-hero-visual-col" id="hero-chevron-col">
-                <div class="huawei-chevron-frame">
-                  <img
-                    id="hero-slide-img"
-                    src="${defaultSlide.image}"
-                    alt="${defaultSlide.alt}"
-                    class="huawei-chevron-img"
-                    loading="eager"
-                  />
-                  <div class="huawei-chevron-overlay-glow"></div>
-                </div>
+        <!-- ═══ FULL-WIDTH HUAWEI-STYLE HERO: SEAMLESS FADED BACKDROP + RIGHT COPY ═══ -->
+        <section class="hz-hero" id="home-flagship-hero">
+
+          <!-- Left-Half Blended Backdrop Image with Soft Gradient Mask -->
+          <div class="hz-hero-backdrop" id="hero-backdrop-wrap">
+            <img
+              id="hero-slide-img"
+              src="${defaultSlide.image}"
+              alt="${defaultSlide.alt}"
+              class="hz-hero-arrow-img"
+              loading="eager"
+            />
+          </div>
+
+          <!-- Content Column: sits over the right half on continuous background -->
+          <div class="site-container hz-hero-site-container">
+            <div class="hz-hero-copy">
+              <!-- Geometric play-arrow brand mark -->
+              <div class="hz-brand-mark hz-anim-fade-up" style="animation-delay: 0.05s">
+                <svg width="42" height="36" viewBox="0 0 42 36" fill="none">
+                  <polygon points="0,0 18,18 0,36" fill="#E50920"/>
+                  <polygon points="16,0 34,18 16,36" fill="#0f172a" opacity="0.75"/>
+                </svg>
               </div>
 
-              <!-- Right Copy: Enterprise Headline & Actions -->
-              <div class="huawei-hero-copy-col">
-                <div class="huawei-brand-geometric-symbol">
-                  <svg width="44" height="44" viewBox="0 0 32 32" fill="none">
-                    <polygon points="4,4 16,16 4,28" fill="#E50920" />
-                    <polygon points="14,4 26,16 14,28" fill="#17191D" />
-                  </svg>
-                </div>
+              <h1 class="hz-hero-title hz-anim-fade-up" style="animation-delay: 0.15s" id="hero-slide-title">${defaultSlide.titleHtml}</h1>
 
-                <h1 class="huawei-hero-title" id="hero-slide-title">
-                  ${defaultSlide.titleHtml}
-                </h1>
+              <p class="hz-hero-desc hz-anim-fade-up" style="animation-delay: 0.28s" id="hero-slide-desc">${defaultSlide.subtext}</p>
 
-                <p class="huawei-hero-desc" id="hero-slide-desc">
-                  ${defaultSlide.subtext}
-                </p>
-
-                <div class="huawei-hero-actions" id="hero-slide-actions" style="display: flex; gap: 12px; flex-wrap: wrap;">
-                  <a href="${defaultSlide.primaryCtaHref}" class="btn btn-primary btn-lg" id="btn-hero-primary">
-                    ${defaultSlide.primaryCtaText}
-                  </a>
-                  <a href="${defaultSlide.secondaryCtaHref}" class="btn btn-outline btn-lg" id="btn-hero-secondary">
-                    ${defaultSlide.secondaryCtaText}
-                  </a>
-                  <a href="#/docs#what-is-zexcore" class="btn btn-secondary btn-lg" id="btn-hero-what-is-zexcore" style="background: #fff; border: 1px solid #d1d5db; color: #1e293b; font-weight: 700;">
-                    What ZexCore is All About &rarr;
-                  </a>
-                </div>
+              <div class="hz-hero-actions hz-anim-fade-up" style="animation-delay: 0.4s" id="hero-slide-actions">
+                <a href="${defaultSlide.primaryCtaHref}" class="hz-btn-primary" id="btn-hero-primary">${defaultSlide.primaryCtaText}</a>
+                <a href="${defaultSlide.secondaryCtaHref}" class="hz-btn-outline" id="btn-hero-secondary">${defaultSlide.secondaryCtaText}</a>
+                <a href="#/docs#what-is-zexcore" class="hz-btn-ghost" id="btn-hero-what-is-zexcore">What ZexCore is All About &rarr;</a>
               </div>
-
-            </div>
-
-            <!-- Slide Pagination Indicators Matching Huawei Reference -->
-            <div class="huawei-slider-indicators" aria-label="Hero carousel pagination">
-              <button class="huawei-slide-pill active" data-slide-index="0" aria-label="Go to slide 1"></button>
-              <button class="huawei-slide-pill" data-slide-index="1" aria-label="Go to slide 2"></button>
-              <button class="huawei-slide-pill" data-slide-index="2" aria-label="Go to slide 3"></button>
             </div>
           </div>
+
         </section>
 
         <!-- ═══════════════════════════════════════════════════════════════
@@ -194,7 +173,7 @@ export function renderHomePage(): string {
         <!-- ═══════════════════════════════════════════════════════════════
              UP IN 10 MINUTES — FIRST-RUN ONBOARDING SHOWCASE
              ═══════════════════════════════════════════════════════════════ -->
-        <section class="section-white section-padded" style="padding: 88px 0 96px; border-bottom: 1px solid var(--border-subtle);">
+        <section class="section-tinted-red section-padded" style="padding: 88px 0 96px;">
           <div class="site-container">
 
             <div style="text-align:center;">
@@ -306,7 +285,7 @@ export function renderHomePage(): string {
         <!-- ═══════════════════════════════════════════════════════════════
              "WHAT'S NEW" SECTION (MATCHING HUAWEI REFERENCE DESIGN)
              ═══════════════════════════════════════════════════════════════ -->
-        <section class="section-gray section-padded whats-new-section" style="padding: 72px 0 84px 0;">
+        <section class="section-white section-padded whats-new-section" style="padding: 72px 0 84px 0; border-bottom: 1px solid #f3e5e8;">
           <div class="site-container">
             <!-- Header with Red Underline Accent Bar -->
             <div class="whats-new-header text-center">
@@ -387,7 +366,7 @@ export function renderHomePage(): string {
         <!-- ═══════════════════════════════════════════════════════════════
              SECTION 3: ENGINEERED FOR STRICT SOVEREIGN MULTI-TENANCY
              ═══════════════════════════════════════════════════════════════ -->
-        <section class="section-white section-padded" style="padding: 80px 0;">
+        <section class="section-tinted-red section-padded" style="padding: 80px 0;">
           <div class="site-container">
             <div class="multi-tenant-split-grid">
               <!-- Left Column: Copy & Button -->
@@ -475,7 +454,7 @@ export function renderHomePage(): string {
         <!-- ═══════════════════════════════════════════════════════════════
              SECTION 4: POWERING THE NEXT GENERATION OF VERTICAL SAAS
              ═══════════════════════════════════════════════════════════════ -->
-        <section class="section-gray section-padded" style="padding: 80px 0;">
+        <section class="section-white section-padded" style="padding: 80px 0; border-bottom: 1px solid #f3e5e8;">
           <div class="site-container">
             <div class="powering-saas-grid">
               <!-- Left Column: Industrial Plant Photo -->
@@ -513,7 +492,7 @@ export function renderHomePage(): string {
         <!-- ═══════════════════════════════════════════════════════════════
              SECTION 5: TRUSTED BY FORWARD-THINKING TEAMS
              ═══════════════════════════════════════════════════════════════ -->
-        <section class="section-white section-padded" style="padding: 56px 0 68px 0; border-top: 1px solid var(--border-default);">
+        <section class="section-ambient-red section-padded" style="padding: 56px 0 68px 0;">
           <div class="site-container">
             <div class="trust-bar-header" style="text-align: center; margin-bottom: 32px;">
               <span class="trust-bar-title" style="font-size: 0.98rem; font-weight: 750; color: var(--text-main); letter-spacing: 0.02em;">
@@ -566,89 +545,70 @@ export function renderHomePage(): string {
  * Attaches interactive carousel handlers for the flagship hero slider
  */
 export function setupHomePageEvents(): void {
-  const pills = document.querySelectorAll<HTMLButtonElement>('.huawei-slide-pill');
-  if (!pills.length) return;
+  const heroEl = document.getElementById('home-flagship-hero');
+  if (!heroEl) return;
 
   let currentSlide = 0;
-  let autoTimer: ReturnType<typeof setInterval> | null = null;
+
+  // Clear any existing timer to avoid multiple stacked timers across views
+  if ((window as any).__zexcore_hero_timer) {
+    clearInterval((window as any).__zexcore_hero_timer);
+    (window as any).__zexcore_hero_timer = null;
+  }
 
   function setSlide(index: number) {
     if (index < 0 || index >= heroSlides.length) return;
     currentSlide = index;
     const slide = heroSlides[index];
 
-    // Update active pill
-    pills.forEach((p, idx) => {
-      p.classList.toggle('active', idx === index);
-    });
-
-    // Update DOM elements with smooth transition
     const img = document.getElementById('hero-slide-img') as HTMLImageElement | null;
-    const chevronCol = document.getElementById('hero-chevron-col');
-    const halfBackdrop = document.getElementById('hero-half-backdrop');
-    const badgeText = document.getElementById('hero-badge-text');
+    const copy = document.querySelector('.hz-hero-copy') as HTMLElement | null;
     const title = document.getElementById('hero-slide-title');
     const desc = document.getElementById('hero-slide-desc');
     const btnPrimary = document.getElementById('btn-hero-primary') as HTMLAnchorElement | null;
     const btnSecondary = document.getElementById('btn-hero-secondary') as HTMLAnchorElement | null;
 
-    if (index === 0) {
-      // Slide 0: Accelerate slide remains the classic chevron frame
-      if (halfBackdrop) {
-        halfBackdrop.style.opacity = '0';
-        setTimeout(() => { halfBackdrop.style.display = 'none'; }, 200);
-      }
-      if (chevronCol) {
-        chevronCol.style.display = 'block';
-        chevronCol.style.visibility = 'visible';
-        chevronCol.style.opacity = '1';
-      }
+    // Crossfade: start fade out
+    if (img) {
+      img.style.opacity = '0';
+      img.style.transform = 'scale(1.03)';
+    }
+    if (copy) {
+      copy.style.opacity = '0';
+      copy.style.transform = 'translateY(6px)';
+    }
+
+    setTimeout(() => {
       if (img) {
         img.src = slide.image;
         img.alt = slide.alt;
+        img.style.opacity = '1';
+        img.style.transform = 'scale(1)';
       }
-    } else {
-      // Slides 1 & 2: Occupies left half of hero section, fading smoothly into right
-      if (chevronCol) {
-        chevronCol.style.opacity = '0';
-        chevronCol.style.visibility = 'hidden';
-      }
-      if (halfBackdrop) {
-        halfBackdrop.style.display = 'block';
-        halfBackdrop.style.backgroundImage = `url('${slide.image}')`;
-        setTimeout(() => { halfBackdrop.style.opacity = '1'; }, 50);
-      }
-    }
 
-    if (badgeText) badgeText.textContent = slide.badge;
-    if (title) title.innerHTML = slide.titleHtml;
-    if (desc) desc.textContent = slide.subtext;
+      if (title) title.innerHTML = slide.titleHtml;
+      if (desc) desc.textContent = slide.subtext;
 
-    if (btnPrimary) {
-      btnPrimary.textContent = slide.primaryCtaText;
-      btnPrimary.href = slide.primaryCtaHref;
-    }
-    if (btnSecondary) {
-      btnSecondary.textContent = slide.secondaryCtaText;
-      btnSecondary.href = slide.secondaryCtaHref;
-    }
+      if (btnPrimary) {
+        btnPrimary.textContent = slide.primaryCtaText;
+        btnPrimary.href = slide.primaryCtaHref;
+      }
+      if (btnSecondary) {
+        btnSecondary.textContent = slide.secondaryCtaText;
+        btnSecondary.href = slide.secondaryCtaHref;
+      }
+
+      if (copy) {
+        copy.style.opacity = '1';
+        copy.style.transform = 'translateY(0)';
+      }
+    }, 220);
   }
 
-  pills.forEach((pill) => {
-    pill.addEventListener('click', () => {
-      const idx = parseInt(pill.getAttribute('data-slide-index') || '0', 10);
-      setSlide(idx);
-      resetAutoTimer();
-    });
-  });
-
-  function resetAutoTimer() {
-    if (autoTimer) clearInterval(autoTimer);
-    autoTimer = setInterval(() => {
-      const next = (currentSlide + 1) % heroSlides.length;
-      setSlide(next);
-    }, 6000);
-  }
-
-  resetAutoTimer();
+  // Continuous 6-second autoscroll interval, irrespective of touch or clicks
+  (window as any).__zexcore_hero_timer = setInterval(() => {
+    const next = (currentSlide + 1) % heroSlides.length;
+    setSlide(next);
+  }, 6000);
 }
+

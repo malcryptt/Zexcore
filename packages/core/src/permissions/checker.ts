@@ -11,6 +11,13 @@ export interface PrincipalSubject {
 /**
  * Evaluates whether a principal has the requested capability.
  * All actors (users, public, devices, AI agents, platform admins) pass through this check.
+ *
+ * Privilege hierarchy:
+ *   platform_admin / isPlatformAdmin — bypass ALL checks (cross-tenant super-admin)
+ *   tenant_admin                     — bypass all module-level checks within their tenant
+ *   role-based / explicit caps       — evaluated as listed
+ *   device                           — only 'device:ingest'
+ *   ai_agent                         — only 'ai:proposals:create'
  */
 export function hasCapability(
   subject: PrincipalSubject,
@@ -26,12 +33,25 @@ export function hasCapability(
     return requiredCapability === 'device:ingest';
   }
 
+  // Platform admin (flag OR principal type) bypasses all capability checks
+  if (subject.isPlatformAdmin || subject.principalType === 'platform_admin') {
+    return true;
+  }
+
+  // Tenant admin bypasses all capability checks within their own tenant scope
+  if (subject.principalType === 'tenant_admin') {
+    return true;
+  }
+
   // Explicit capability override on subject
   if (subject.capabilities && subject.capabilities.includes(requiredCapability)) {
     return true;
   }
 
-  // Role-based capability resolution
+  // Role-based capability resolution (role: 'admin' also grants full module access)
+  if (subject.role === 'admin' || subject.role === 'owner') {
+    return true;
+  }
   if (subject.role && ROLE_CAPABILITIES[subject.role]?.includes(requiredCapability)) {
     return true;
   }

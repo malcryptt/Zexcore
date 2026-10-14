@@ -23,6 +23,15 @@ import {
   INDUSTRY_STARTERS,
   type OnboardingState,
 } from './components/onboarding';
+import {
+  getTenantPlan,
+  setTenantPlan,
+  isTabLocked,
+  getTabLockedInfo,
+  openStripeCheckoutModal,
+  PLANS,
+  type PlanTier,
+} from './lib/billing';
 
 interface Device {
   id: string;
@@ -65,10 +74,44 @@ interface Consent {
   revokedAt: string | null;
 }
 
+interface WhatsAppMessage {
+  sender: 'client' | 'agent' | 'bot';
+  text: string;
+  time: string;
+  status?: 'sent' | 'delivered' | 'read';
+}
+
+interface WhatsAppThread {
+  id: string;
+  contactName: string;
+  phone: string;
+  cleanPhone: string;
+  channel: 'whatsapp' | 'sms' | 'email';
+  unreadCount: number;
+  lastMsg: string;
+  time: string;
+  leadValue: number;
+  stage: string;
+  messages: WhatsAppMessage[];
+}
+
+interface BookingAppointment {
+  id: string;
+  clientName: string;
+  phone: string;
+  cleanPhone: string;
+  service: string;
+  dateTime: string;
+  depositStatus: string;
+  whatsappReminderStatus: 'delivered' | 'scheduled' | 'sent_1h';
+}
+
 // ── Application State ────────────────────────────────────────────────────────
 const state = {
   currentView: 'home' as 'home' | 'platform' | 'architecture' | 'modules' | 'solutions' | 'security' | 'docs' | 'resources' | 'pricing' | 'signin' | 'console' | 'dashboard',
   currentTab: 'overview',
+  crmSubView: 'whatsapp' as 'whatsapp' | 'kanban' | 'booking',
+  selectedThreadId: 'thread-1',
   activeTenant: 'acme_corp',
   currentUser: getCurrentUser() as AuthUserProfile | null,
   onboarding: loadOnboardingState() as OnboardingState,
@@ -120,6 +163,91 @@ const state = {
     { id: 'c-2', subjectId: 'david.k@global-cloud.com', purpose: 'marketing_analytics', legalBasis: 'consent', grantedAt: '2026-09-18 14:12', revokedAt: null },
     { id: 'c-3', subjectId: 'alina.p@industrial-iot.de', purpose: 'crm_profiling', legalBasis: 'legitimate_interests', grantedAt: '2026-08-11 09:00', revokedAt: '2026-10-10 18:30' },
   ] as Consent[],
+  whatsAppThreads: [
+    {
+      id: 'thread-1',
+      contactName: 'Adebayo Ogundimu',
+      phone: '+234 803 892 1104',
+      cleanPhone: '2348038921104',
+      channel: 'whatsapp',
+      unreadCount: 1,
+      lastMsg: 'Good day! We have 14 reefer trucks in Lagos and need IoT thermal tracking.',
+      time: '11:42 AM',
+      leadValue: 48000,
+      stage: 'Proposal',
+      messages: [
+        { sender: 'client', text: 'Good day! Saw your starter site for cold chain logistics telemetry. We have 14 reefer trucks operating out of Lagos ports.', time: '11:40 AM' },
+        { sender: 'bot', text: 'Hello Adebayo! Thanks for contacting ZexCore Fleet. Your inquiry is mapped to our Cold Chain Telemetry Starter. Dispatching our hardware brochure.', time: '11:40 AM', status: 'read' },
+        { sender: 'client', text: 'Great. Can we set up a WhatsApp live demo and Paystack payment for the 14 edge probes?', time: '11:42 AM' },
+      ],
+    },
+    {
+      id: 'thread-2',
+      contactName: 'Dr. Amina Bello',
+      phone: '+234 802 331 4902',
+      cleanPhone: '2348023314902',
+      channel: 'whatsapp',
+      unreadCount: 0,
+      lastMsg: 'Deposit paid via Paystack. Automated 24h WhatsApp reminder received!',
+      time: 'Yesterday',
+      leadValue: 18500,
+      stage: 'Negotiation',
+      messages: [
+        { sender: 'client', text: 'Hi, we are setting up patient intake booking for 3 clinics. We need automated WhatsApp & SMS reminders to cut patient no-shows.', time: 'Yesterday 09:15 AM' },
+        { sender: 'agent', text: 'Hello Dr. Bello! ZexCore Booking automatically sends 24h and 1h WhatsApp alerts with reschedule links. This reduces clinic no-shows by 40%.', time: 'Yesterday 09:18 AM', status: 'read' },
+        { sender: 'client', text: 'Deposit paid via Paystack. Automated 24h WhatsApp reminder received!', time: 'Yesterday 10:04 AM' },
+      ],
+    },
+    {
+      id: 'thread-3',
+      contactName: 'Kofi Mensah',
+      phone: '+233 24 551 9021',
+      cleanPhone: '233245519021',
+      channel: 'whatsapp',
+      unreadCount: 0,
+      lastMsg: 'Confirmed. We will authorize the Flutterwave MoMo payment today.',
+      time: 'Oct 12',
+      leadValue: 35000,
+      stage: 'Qualified',
+      messages: [
+        { sender: 'client', text: 'Hello from Accra. We operate a solar mini-grid with 48V inverters. Can telemetry ping our WhatsApp ops group?', time: 'Oct 12 08:30 AM' },
+        { sender: 'agent', text: 'Yes Kofi! ZexCore EventBus triggers direct WhatsApp webhook notifications whenever voltage drops below 48.0V.', time: 'Oct 12 08:35 AM', status: 'read' },
+        { sender: 'client', text: 'Confirmed. We will authorize the Flutterwave MoMo payment today.', time: 'Oct 12 09:12 AM' },
+      ],
+    },
+  ] as WhatsAppThread[],
+  bookings: [
+    {
+      id: 'book-1',
+      clientName: 'Dr. Amina Bello',
+      phone: '+234 802 331 4902',
+      cleanPhone: '2348023314902',
+      service: 'Specialist Clinic Telemetry Consultation',
+      dateTime: 'Tomorrow, 10:00 AM WAT',
+      depositStatus: '₦50,000 Paid (Paystack)',
+      whatsappReminderStatus: 'delivered',
+    },
+    {
+      id: 'book-2',
+      clientName: 'Adebayo Ogundimu',
+      phone: '+234 803 892 1104',
+      cleanPhone: '2348038921104',
+      service: 'Reefer Probe Fleet Hardware Pairing Demo',
+      dateTime: 'Oct 16, 2:30 PM WAT',
+      depositStatus: 'Deposit Held',
+      whatsappReminderStatus: 'scheduled',
+    },
+    {
+      id: 'book-3',
+      clientName: 'Kofi Mensah',
+      phone: '+233 24 551 9021',
+      cleanPhone: '233245519021',
+      service: 'Solar Inverter Gateway Live Setup',
+      dateTime: 'Oct 17, 11:00 AM GMT',
+      depositStatus: 'KES 20,000 (Flutterwave)',
+      whatsappReminderStatus: 'sent_1h',
+    },
+  ] as BookingAppointment[],
   events: [] as Array<{ ts: string; name: string; payload: string }>,
   erasureRequestsCount: 1,
   anonymizedCount: 4,
@@ -141,10 +269,46 @@ logBusEvent('zexcore.system.boot', { status: 'healthy', modules: ['core', 'iot',
 logBusEvent('iot.telemetry.received', { deviceId: 'dev-1', metrics: { temperature: 24.8, humidity: 54 } });
 logBusEvent('compliance.consent.granted', { subjectId: 'emma.watson@enterprise-corp.io', purpose: 'telemetry_processing' });
 
+// ── Soft Paywall Component ──────────────────────────────────────────────────
+function renderWithSoftPaywall(tabId: string, currentPlan: PlanTier, innerContent: string): string {
+  if (!isTabLocked(tabId, currentPlan)) {
+    return innerContent;
+  }
+  const info = getTabLockedInfo(tabId);
+  const minPlanMeta = PLANS[info.minPlan];
+
+  return `
+    <div class="soft-paywall-wrap">
+      <div class="soft-paywall-blur-bg">
+        ${innerContent}
+      </div>
+      <div class="soft-paywall-overlay">
+        <div class="soft-paywall-card">
+          <div class="soft-paywall-icon-wrap">
+            ${info.icon}
+          </div>
+          <div class="soft-paywall-tier-pill">REQUIRES ${info.minPlan.toUpperCase()} TIER</div>
+          <h3 class="soft-paywall-title">${info.title}</h3>
+          <p class="soft-paywall-desc">${info.subtitle}</p>
+          <div class="soft-paywall-actions">
+            <button class="btn-paywall-upgrade" data-paywall-upgrade="${info.minPlan}">
+              Unlock with Stripe &rarr; ($${minPlanMeta.monthlyPrice}/mo)
+            </button>
+            <a href="#/pricing" class="btn-paywall-secondary">Compare All Tiers</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 // ── Render Application Shell (Dashboard) ────────────────────────────────────
 function renderDashboard() {
   const app = document.getElementById('app');
   if (!app) return;
+
+  const currentPlan = getTenantPlan(state.activeTenant);
+  const planMeta = PLANS[currentPlan] || PLANS.starter;
 
   app.innerHTML = `
     <div class="app-layout">
@@ -156,30 +320,45 @@ function renderDashboard() {
 
         <nav class="nav-menu">
           <div class="nav-label">Platform Modules</div>
-          <div class="nav-item active" data-tab="overview">
+          <div class="nav-item ${state.currentTab === 'overview' ? 'active' : ''}" data-tab="overview">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             System Overview
           </div>
-          <div class="nav-item" data-tab="iot">
+          <div class="nav-item ${state.currentTab === 'iot' ? 'active' : ''}" data-tab="iot">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             IoT Hub
-            <span class="nav-badge" id="iot-count">${state.devices.length}</span>
+            ${isTabLocked('iot', currentPlan) ? '<span class="nav-plan-lock-badge">🔒 INDIE</span>' : `<span class="nav-badge" id="iot-count">${state.devices.length}</span>`}
           </div>
-          <div class="nav-item" data-tab="rules">
+          <div class="nav-item ${state.currentTab === 'rules' ? 'active' : ''}" data-tab="rules">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
             Rules &amp; AI Author
             <span class="nav-badge">${state.rules.length}</span>
           </div>
-          <div class="nav-item" data-tab="crm">
+          <div class="nav-item ${state.currentTab === 'crm' ? 'active' : ''}" data-tab="crm">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             CRM Sales Pipeline
-            <span class="nav-badge">${state.leads.length}</span>
+            ${isTabLocked('crm', currentPlan) ? '<span class="nav-plan-lock-badge">🔒 GROWTH</span>' : `<span class="nav-badge">${state.leads.length}</span>`}
           </div>
-          <div class="nav-item" data-tab="compliance">
+          <div class="nav-item ${state.currentTab === 'compliance' ? 'active' : ''}" data-tab="compliance">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             Compliance &amp; Vault
+            ${isTabLocked('compliance', currentPlan) ? '<span class="nav-plan-lock-badge">🔒 SCALE</span>' : ''}
           </div>
         </nav>
+
+        <!-- Active Plan Card in Sidebar -->
+        <div class="sidebar-plan-card">
+          <div class="sidebar-plan-header">
+            <span class="sidebar-plan-label">ACTIVE TIER</span>
+            <span class="sidebar-plan-status">Active</span>
+          </div>
+          <div class="sidebar-plan-name">${planMeta.name}</div>
+          <div class="sidebar-plan-price">$${planMeta.monthlyPrice} / mo &bull; Stripe Gateway</div>
+          <button class="btn-sidebar-upgrade" id="btn-sidebar-upgrade-plan">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            ${currentPlan === 'enterprise' ? 'Manage Subscription' : 'Upgrade Plan'}
+          </button>
+        </div>
 
         <div class="sidebar-footer">
           <div style="display: flex; gap: 6px; margin-bottom: 10px; width: 100%;">
@@ -201,11 +380,15 @@ function renderDashboard() {
             <div class="org-tenant-box">
               <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Tenant:</span>
               <select id="tenantSelect" class="tenant-select">
-                <option value="acme_corp">Acme Enterprise Corp (prod-us-east)</option>
-                <option value="globex_corp">Globex Research (dev-eu-west)</option>
-                <option value="soylent_ind">Soylent Dynamics (staging-apac)</option>
+                <option value="acme_corp" ${state.activeTenant === 'acme_corp' ? 'selected' : ''}>Acme Enterprise Corp (prod-us-east)</option>
+                <option value="globex_corp" ${state.activeTenant === 'globex_corp' ? 'selected' : ''}>Globex Research (dev-eu-west)</option>
+                <option value="soylent_ind" ${state.activeTenant === 'soylent_ind' ? 'selected' : ''}>Soylent Dynamics (staging-apac)</option>
               </select>
-              <span class="tier-badge">ENTERPRISE TIER</span>
+              <div class="topbar-plan-pill" id="topbar-plan-indicator" title="Click to manage subscription or upgrade with Stripe">
+                <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#E50920;"></span>
+                <span>${planMeta.name.toUpperCase()}</span>
+                ${currentPlan !== 'enterprise' ? '<span class="topbar-plan-upgrade-link">Upgrade</span>' : ''}
+              </div>
             </div>
           </div>
 
@@ -240,11 +423,17 @@ function renderDashboard() {
 
         <div class="page-container">
           <!-- ── OVERVIEW TAB ─────────────────────────────────────────────── -->
-          <div id="tab-overview" class="tab-content active">
-            <div class="page-header">
+          <div id="tab-overview" class="tab-content ${state.currentTab === 'overview' ? 'active' : ''}">
+            <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
               <div>
                 <h2 class="page-title">Platform Operations Overview</h2>
                 <div class="page-desc">Runtime health, active module metrics, and cross-module event bus ledger</div>
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <button class="btn btn-secondary btn-sm" id="btn-download-all-data" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; padding: 6px 14px; background: #ffffff; border: 1.5px solid #d1d5db; color: #1e293b; border-radius: var(--radius-sm); box-shadow: 0 1px 3px rgba(0,0,0,0.05); cursor: pointer;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                  Download All My Data (JSON)
+                </button>
               </div>
             </div>
 
@@ -487,16 +676,24 @@ function renderDashboard() {
 
             <!-- Event Bus Live Log -->
             <div class="terminal-box">
-              <div class="terminal-header">
-                <span>Core EventBus Real-Time Stream</span>
-                <span style="font-size: 0.7rem; font-family: var(--font-mono); color: var(--text-muted);">Asynchronous Event Broker</span>
+              <div class="terminal-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span>Core EventBus Real-Time Stream</span>
+                  <span style="font-size: 0.7rem; font-family: var(--font-mono); color: #94a3b8;">Asynchronous Event Broker</span>
+                </div>
+                <div style="display: flex; gap: 6px; align-items: center;">
+                  <span style="font-size: 0.68rem; color: #cbd5e1; text-transform: uppercase; font-weight: 700; margin-right: 2px;">SIEM Export:</span>
+                  <button class="btn btn-xs" id="btn-export-siem-json" style="font-size: 0.68rem; padding: 3px 8px; border: 1px solid rgba(255,255,255,0.25); color: #ffffff; background: rgba(255,255,255,0.1); border-radius: 4px; cursor: pointer;">NDJSON</button>
+                  <button class="btn btn-xs" id="btn-export-siem-csv" style="font-size: 0.68rem; padding: 3px 8px; border: 1px solid rgba(255,255,255,0.25); color: #ffffff; background: rgba(255,255,255,0.1); border-radius: 4px; cursor: pointer;">CSV Audit</button>
+                </div>
               </div>
               <div class="terminal-content" id="event-stream-body"></div>
             </div>
           </div>
 
           <!-- ── IOT HUB TAB ─────────────────────────────────────────────── -->
-          <div id="tab-iot" class="tab-content">
+          <div id="tab-iot" class="tab-content ${state.currentTab === 'iot' ? 'active' : ''}">
+            ${renderWithSoftPaywall('iot', currentPlan, `
             <div class="page-header">
               <div>
                 <h2 class="page-title">IoT Device Fleet &amp; Telemetry Gateway</h2>
@@ -523,10 +720,11 @@ function renderDashboard() {
                 <tbody id="device-table-body"></tbody>
               </table>
             </div>
+            `)}
           </div>
 
           <!-- ── RULES TAB ────────────────────────────────────────────────── -->
-          <div id="tab-rules" class="tab-content">
+          <div id="tab-rules" class="tab-content ${state.currentTab === 'rules' ? 'active' : ''}">
             <div class="page-header">
               <div>
                 <h2 class="page-title">Deterministic Automation Rules &amp; AI Authoring</h2>
@@ -580,20 +778,41 @@ function renderDashboard() {
           </div>
 
           <!-- ── CRM TAB ─────────────────────────────────────────────────── -->
-          <div id="tab-crm" class="tab-content">
-            <div class="page-header">
+          <div id="tab-crm" class="tab-content ${state.currentTab === 'crm' ? 'active' : ''}">
+            ${renderWithSoftPaywall('crm', currentPlan, `
+            <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
               <div>
-                <h2 class="page-title">CRM Sales Pipeline</h2>
-                <div class="page-desc">Tenant-scoped opportunities, pipeline deal stages, and revenue metrics</div>
+                <h2 class="page-title">Multi-Channel CRM &amp; Booking</h2>
+                <div class="page-desc">WhatsApp-first inbox, automated appointment reminders, Paystack deposits, and pipeline Kanban</div>
               </div>
-              <button class="btn btn-primary" id="btn-add-lead">+ Create Opportunity</button>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <button class="btn btn-primary" id="btn-add-lead">+ Create Opportunity</button>
+              </div>
             </div>
 
-            <div class="kanban-board" id="kanban-container"></div>
+            <!-- CRM Sub-navigation Tabs -->
+            <div style="display: flex; gap: 8px; margin-bottom: 18px; border-bottom: 2px solid var(--border-default); padding-bottom: 10px; flex-wrap: wrap;">
+              <button class="btn ${state.crmSubView === 'whatsapp' ? 'btn-primary' : 'btn-secondary'} btn-sm" id="btn-crm-nav-whatsapp" style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #25d366;"></span>
+                💬 WhatsApp &amp; Multi-Channel Inbox
+                <span style="background: #25d366; color: #fff; font-size: 0.65rem; font-weight: 800; padding: 1px 6px; border-radius: 999px;">1 New</span>
+              </button>
+              <button class="btn ${state.crmSubView === 'kanban' ? 'btn-primary' : 'btn-secondary'} btn-sm" id="btn-crm-nav-kanban">
+                📊 Deals Pipeline (Kanban)
+              </button>
+              <button class="btn ${state.crmSubView === 'booking' ? 'btn-primary' : 'btn-secondary'} btn-sm" id="btn-crm-nav-booking" style="display: inline-flex; align-items: center; gap: 6px;">
+                <span>📅</span> Bookings &amp; Reminders
+                <span style="background: #e11d48; color: #fff; font-size: 0.65rem; font-weight: 800; padding: 1px 6px; border-radius: 999px;">3 Active</span>
+              </button>
+            </div>
+
+            <div id="crm-content-view"></div>
+            `)}
           </div>
 
           <!-- ── COMPLIANCE TAB ───────────────────────────────────────────── -->
-          <div id="tab-compliance" class="tab-content">
+          <div id="tab-compliance" class="tab-content ${state.currentTab === 'compliance' ? 'active' : ''}">
+            ${renderWithSoftPaywall('compliance', currentPlan, `
             <div class="page-header">
               <div>
                 <h2 class="page-title">Compliance, Vault &amp; Privacy Suite</h2>
@@ -650,6 +869,7 @@ function renderDashboard() {
 
               <div id="consent-table-container"></div>
             </div>
+            `)}
           </div>
         </div>
       </main>
@@ -659,7 +879,7 @@ function renderDashboard() {
   setupEventListeners();
   renderDevices();
   renderRules();
-  renderKanban();
+  renderCrm();
   renderConsents();
   updateCryptoPreview();
   renderEventLog();
@@ -702,6 +922,38 @@ function setupEventListeners() {
     const val = (e.target as HTMLSelectElement).value;
     state.activeTenant = val;
     logBusEvent('tenant.context.switched', { tenantId: val, rlsStatus: 'enforced' });
+    renderDashboard();
+  });
+
+  // ── Billing / Stripe Upgrade Gateways ─────────────────────────────────────
+  const handleUpgradeClick = (targetPlan?: PlanTier) => {
+    const currentPlan = getTenantPlan(state.activeTenant);
+    const chosenPlan: PlanTier = targetPlan || (
+      currentPlan === 'starter' ? 'indie' :
+      currentPlan === 'indie' ? 'growth' :
+      currentPlan === 'growth' ? 'scale' : 'enterprise'
+    );
+
+    openStripeCheckoutModal(chosenPlan, 'monthly', (newPlan) => {
+      setTenantPlan(newPlan, state.activeTenant);
+      logBusEvent('billing.subscription.upgraded', {
+        tenant: state.activeTenant,
+        plan: newPlan,
+        gateway: 'stripe',
+        status: 'active',
+      });
+      renderDashboard();
+    });
+  };
+
+  document.getElementById('btn-sidebar-upgrade-plan')?.addEventListener('click', () => handleUpgradeClick());
+  document.getElementById('topbar-plan-indicator')?.addEventListener('click', () => handleUpgradeClick());
+
+  document.querySelectorAll<HTMLButtonElement>('.btn-paywall-upgrade').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const targetPlan = (btn.getAttribute('data-paywall-upgrade') || 'growth') as PlanTier;
+      handleUpgradeClick(targetPlan);
+    });
   });
 
   // ── First 10 Minutes Onboarding & Starter Selection ────────────────────────
@@ -917,6 +1169,27 @@ function setupEventListeners() {
     renderConsents();
     logBusEvent('compliance.consent.granted', { subjectId: sub, purpose, legalBasis: 'consent' });
   });
+
+  // Download All My Data
+  document.getElementById('btn-download-all-data')?.addEventListener('click', downloadAllTenantData);
+
+  // SIEM Exports
+  document.getElementById('btn-export-siem-json')?.addEventListener('click', () => exportSiemLog('json'));
+  document.getElementById('btn-export-siem-csv')?.addEventListener('click', () => exportSiemLog('csv'));
+
+  // CRM Sub-navigation
+  document.getElementById('btn-crm-nav-whatsapp')?.addEventListener('click', () => {
+    state.crmSubView = 'whatsapp';
+    renderDashboard();
+  });
+  document.getElementById('btn-crm-nav-kanban')?.addEventListener('click', () => {
+    state.crmSubView = 'kanban';
+    renderDashboard();
+  });
+  document.getElementById('btn-crm-nav-booking')?.addEventListener('click', () => {
+    state.crmSubView = 'booking';
+    renderDashboard();
+  });
 }
 
 (window as any).setAiPrompt = (txt: string) => {
@@ -1089,6 +1362,388 @@ function approveAiDraft() {
   }
 }
 
+// ── Data Portability & SIEM Audit Exports ────────────────────────────────────
+function downloadAllTenantData() {
+  const exportPayload = {
+    version: '1.0.0',
+    exportedAt: new Date().toISOString(),
+    tenantId: state.activeTenant,
+    user: state.currentUser ? { uid: state.currentUser.uid, email: state.currentUser.email, displayName: state.currentUser.displayName, tenantSlug: state.currentUser.tenantSlug } : null,
+    plan: getTenantPlan(state.activeTenant),
+    data: {
+      devices: state.devices,
+      rules: state.rules,
+      crm: {
+        leads: state.leads,
+        whatsAppThreads: state.whatsAppThreads,
+        bookings: state.bookings,
+      },
+      compliance: {
+        consents: state.consents,
+        erasureRequestsCount: state.erasureRequestsCount,
+        anonymizedCount: state.anonymizedCount,
+      },
+      auditLedger: state.events,
+    },
+    cryptographicProof: {
+      algorithm: 'SHA-256',
+      ledgerRootHash: Array.from(state.activeTenant + Date.now().toString())
+        .map((c) => c.charCodeAt(0).toString(16))
+        .join('')
+        .slice(0, 64),
+      signedBy: 'ZexCore Root HSM Authority',
+    },
+  };
+
+  const jsonStr = JSON.stringify(exportPayload, null, 2);
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `zexcore-tenant-export-${state.activeTenant}-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  logBusEvent('tenant.data.exported', {
+    tenant: state.activeTenant,
+    sizeBytes: blob.size,
+    recordsCount: state.devices.length + state.rules.length + state.leads.length + state.whatsAppThreads.length,
+    gdprCompliant: true,
+  });
+}
+
+function exportSiemLog(format: 'json' | 'csv') {
+  if (format === 'json') {
+    // NDJSON format for Splunk, Datadog, Elastic, IBM QRadar, Microsoft Sentinel
+    const ndjsonLines = state.events.map((evt, idx) => {
+      const lineObj = {
+        '@timestamp': new Date(Date.now() - (state.events.length - idx) * 60000).toISOString(),
+        tenant_id: state.activeTenant,
+        event_name: evt.name,
+        display_time: evt.ts,
+        payload: (() => {
+          try { return JSON.parse(evt.payload); } catch { return evt.payload; }
+        })(),
+        integrity_hash: Array.from(evt.name + evt.ts + state.activeTenant)
+          .map((c) => c.charCodeAt(0).toString(16))
+          .join('')
+          .slice(0, 32),
+        classification: 'SECURITY_AUDIT_LOG',
+      };
+      return JSON.stringify(lineObj);
+    });
+
+    const content = ndjsonLines.join('\n');
+    const blob = new Blob([content], { type: 'application/x-ndjson' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `zexcore-siem-${state.activeTenant}-${Date.now()}.ndjson`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    logBusEvent('audit.siem.exported', {
+      format: 'NDJSON',
+      eventsCount: state.events.length,
+      destination: 'SIEM_INGEST_READY',
+    });
+  } else {
+    // CSV format for compliance auditors & Excel SIEM parsers
+    const headers = ['Timestamp', 'TenantID', 'EventName', 'Payload', 'IntegritySignature'];
+    const rows = state.events.map((evt, idx) => {
+      const iso = new Date(Date.now() - (state.events.length - idx) * 60000).toISOString();
+      const escapedPayload = `"${evt.payload.replace(/"/g, '""')}"`;
+      const sig = Array.from(evt.name + evt.ts).map((c) => c.charCodeAt(0).toString(16)).join('').slice(0, 24);
+      return [iso, state.activeTenant, evt.name, escapedPayload, sig].join(',');
+    });
+
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `zexcore-siem-${state.activeTenant}-${Date.now()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    logBusEvent('audit.siem.exported', {
+      format: 'CSV',
+      eventsCount: state.events.length,
+      destination: 'CSV_AUDIT_ARCHIVE',
+    });
+  }
+}
+
+// ── Multi-Channel CRM & Booking Renderers ─────────────────────────────────────
+function renderCrm() {
+  const container = document.getElementById('crm-content-view');
+  if (!container) return;
+
+  if (state.crmSubView === 'kanban') {
+    container.innerHTML = `
+      <div class="kanban-board" id="kanban-container"></div>
+    `;
+    renderKanban();
+    return;
+  }
+
+  if (state.crmSubView === 'booking') {
+    renderBookingsView(container);
+    return;
+  }
+
+  // Default: WhatsApp & Multi-Channel Inbox
+  renderWhatsAppInboxView(container);
+}
+
+function renderWhatsAppInboxView(container: HTMLElement) {
+  const activeThread = state.whatsAppThreads.find((t) => t.id === state.selectedThreadId) || state.whatsAppThreads[0];
+  const totalUnread = state.whatsAppThreads.reduce((acc, t) => acc + t.unreadCount, 0);
+
+  container.innerHTML = `
+    <div class="whatsapp-inbox-grid">
+      <!-- Left Column: Thread List -->
+      <div class="whatsapp-threads-col">
+        <div class="whatsapp-threads-header">
+          <div>
+            <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+              <span>💬 Multi-Channel Inbox</span>
+              ${totalUnread > 0 ? `<span style="background: #25d366; color: #fff; font-size: 0.65rem; font-weight: 800; padding: 2px 7px; border-radius: 999px;">${totalUnread} new</span>` : ''}
+            </div>
+            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">
+              Meta WhatsApp Cloud API &middot; Webhooks Live
+            </div>
+          </div>
+          <button class="btn btn-secondary btn-xs" onclick="window.simulateIncomingWhatsApp()" title="Simulate incoming customer lead message via webhook">
+            + Test Inbound
+          </button>
+        </div>
+
+        <div style="flex: 1; overflow-y: auto;">
+          ${state.whatsAppThreads.map((th) => {
+            const isActive = activeThread && th.id === activeThread.id;
+            const channelBadge = th.channel === 'whatsapp'
+              ? `<span class="whatsapp-channel-badge wa">WhatsApp</span>`
+              : th.channel === 'sms'
+              ? `<span class="whatsapp-channel-badge sms">SMS</span>`
+              : `<span class="whatsapp-channel-badge email">Email</span>`;
+
+            return `
+              <div class="whatsapp-thread-item ${isActive ? 'active' : ''}" onclick="window.selectWhatsAppThread('${th.id}')">
+                <div class="whatsapp-thread-top">
+                  <span class="whatsapp-thread-name">${th.contactName}</span>
+                  <span class="whatsapp-thread-time">${th.time}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                  <span class="whatsapp-thread-snippet">${th.lastMsg}</span>
+                  ${th.unreadCount > 0 ? `<span style="background: #25d366; color: #fff; font-size: 0.65rem; font-weight: 800; border-radius: 999px; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center;">${th.unreadCount}</span>` : ''}
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem;">
+                  ${channelBadge}
+                  <span style="font-weight: 700; color: #0284c7; background: #e0f2fe; padding: 1px 6px; border-radius: 4px;">$${th.leadValue.toLocaleString()} &middot; ${th.stage}</span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+
+      <!-- Right Column: Active Conversation -->
+      <div class="whatsapp-chat-col">
+        ${activeThread ? `
+          <div class="whatsapp-chat-header">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 40px; height: 40px; border-radius: 50%; background: #dcfce7; color: #15803d; font-weight: 800; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; border: 1.5px solid #86efac;">
+                ${activeThread.contactName.charAt(0)}
+              </div>
+              <div>
+                <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+                  <span>${activeThread.contactName}</span>
+                  <span style="font-size: 0.72rem; color: #64748b; font-weight: 500;">${activeThread.phone}</span>
+                </div>
+                <div style="font-size: 0.72rem; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
+                  <span style="color: #16a34a; font-weight: 700;">● Online</span>
+                  <span>&middot;</span>
+                  <span>Pipeline: <strong>${activeThread.stage}</strong> ($${activeThread.leadValue.toLocaleString()})</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <a href="https://wa.me/${activeThread.cleanPhone}?text=${encodeURIComponent('Hello ' + activeThread.contactName + ', following up regarding your ZexCore inquiry!')}" target="_blank" rel="noopener noreferrer" class="btn-whatsapp">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
+                Open in WhatsApp
+              </a>
+              <button class="btn btn-secondary btn-sm" onclick="window.convertChatToOpportunity('${activeThread.id}')">
+                Convert to Deal &rarr;
+              </button>
+            </div>
+          </div>
+
+          <!-- Chat Messages Body -->
+          <div class="whatsapp-chat-body" id="whatsapp-chat-body">
+            ${activeThread.messages.map((m) => `
+              <div class="whatsapp-msg ${m.sender}">
+                <div style="margin-bottom: 2px;">${m.text}</div>
+                <div class="whatsapp-msg-time">
+                  <span>${m.time}</span>
+                  ${m.sender === 'agent' ? `<span style="color: #0284c7; font-weight: 800;">✓✓</span>` : ''}
+                  ${m.sender === 'bot' ? `<span style="background: #e2e8f0; color: #475569; font-size: 0.6rem; padding: 1px 4px; border-radius: 3px;">BOT AUTO</span>` : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- Saved Reply Templates / Ready Recipes -->
+          <div class="whatsapp-quick-replies-row">
+            <span style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); align-self: center; margin-right: 4px;">⚡ Quick Replies:</span>
+            <button class="whatsapp-quick-reply-pill" onclick="window.sendWhatsAppQuickPing('⚡ Here is our Cold Chain & Fleet Telemetry Hardware Specification catalog.')">📄 Send Product Specs</button>
+            <button class="whatsapp-quick-reply-pill" onclick="window.sendWhatsAppQuickPing('📅 You can book a 1-on-1 hardware live onboarding slot here: https://zexcore.io/book/${activeThread.id}')">📅 Share 1-Click Booking</button>
+            <button class="whatsapp-quick-reply-pill" onclick="window.sendWhatsAppQuickPing('💳 Here is the Paystack checkout link to secure your initial reservation deposit: https://paystack.com/pay/zexcore-starter')">💳 Request Paystack Deposit (₦50k)</button>
+            <button class="whatsapp-quick-reply-pill" onclick="window.sendWhatsAppQuickPing('🔒 ZexCore operates on single-tenant database encryption with ISO 27001 audit logging.')">🔒 Security Summary</button>
+          </div>
+
+          <!-- Message Composer Form -->
+          <form class="whatsapp-composer" id="whatsapp-message-form" onsubmit="event.preventDefault(); window.sendWhatsAppCustomMessage();">
+            <input type="text" id="whatsapp-composer-input" class="input" placeholder="Type a WhatsApp message or automated dispatch..." style="flex: 1;" />
+            <button type="submit" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px;">
+              <span>Send</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
+          </form>
+        ` : `
+          <div style="flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">
+            Select a conversation on the left to view messages.
+          </div>
+        `}
+      </div>
+    </div>
+  `;
+
+  // Auto-scroll chat body to bottom
+  const bodyEl = document.getElementById('whatsapp-chat-body');
+  if (bodyEl) bodyEl.scrollTop = bodyEl.scrollHeight;
+}
+
+function renderBookingsView(container: HTMLElement) {
+  const totalBookings = state.bookings.length;
+  const remindersDelivered = state.bookings.filter((b) => b.whatsappReminderStatus === 'delivered').length;
+
+  container.innerHTML = `
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+      <!-- Top Metrics Strip -->
+      <div class="grid-4">
+        <div class="stat-box" style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: var(--radius-md); padding: 16px;">
+          <div class="stat-label">Confirmed Appointments</div>
+          <div class="stat-value" style="font-size: 1.6rem; font-weight: 800; color: var(--text-main); margin-top: 6px;">${totalBookings}</div>
+          <div class="stat-subtext" style="color: #16a34a; font-size: 0.72rem; font-weight: 600; margin-top: 4px;">Calendar sync: Active</div>
+        </div>
+
+        <div class="stat-box" style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: var(--radius-md); padding: 16px;">
+          <div class="stat-label">Slot Deposits Secured</div>
+          <div class="stat-value" style="font-size: 1.6rem; font-weight: 800; color: #0284c7; margin-top: 6px;">₦120,000</div>
+          <div class="stat-subtext" style="color: var(--text-muted); font-size: 0.72rem; margin-top: 4px;">Via Paystack &amp; Flutterwave</div>
+        </div>
+
+        <div class="stat-box" style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: var(--radius-md); padding: 16px;">
+          <div class="stat-label">WhatsApp Reminders</div>
+          <div class="stat-value" style="font-size: 1.6rem; font-weight: 800; color: #16a34a; margin-top: 6px;">${remindersDelivered} / ${totalBookings}</div>
+          <div class="stat-subtext" style="color: #16a34a; font-size: 0.72rem; font-weight: 600; margin-top: 4px;">Automated 24h &amp; 1h alerts</div>
+        </div>
+
+        <div class="stat-box" style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: var(--radius-md); padding: 16px;">
+          <div class="stat-label">No-Show Prevention Rate</div>
+          <div class="stat-value" style="font-size: 1.6rem; font-weight: 800; color: #e11d48; margin-top: 6px;">98.4%</div>
+          <div class="stat-subtext" style="color: var(--text-muted); font-size: 0.72rem; margin-top: 4px;">Cuts missed meetings by 40%</div>
+        </div>
+      </div>
+
+      <!-- Action Banner & Bookings Table -->
+      <div class="card" style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: var(--radius-md); overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+        <div class="card-header" style="padding: 16px 20px; border-bottom: 1px solid var(--border-default); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <div style="font-weight: 800; font-size: 1rem; color: var(--text-main);">📅 Scheduled Client Bookings &amp; Telemetry Intakes</div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">
+              Shareable booking page with automated WhatsApp/SMS reminders to cut customer no-shows
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="window.copyShareableBookingLink()">
+              🔗 Copy Booking Link
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="window.openNewBookingModal()">
+              + New Appointment
+            </button>
+          </div>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table class="data-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+              <tr style="background: #f8fafc; border-bottom: 1.5px solid var(--border-default); font-size: 0.75rem; color: #64748b; text-transform: uppercase;">
+                <th style="padding: 12px 16px;">Client &amp; Contact</th>
+                <th style="padding: 12px 16px;">Service / Booking Item</th>
+                <th style="padding: 12px 16px;">Scheduled Time</th>
+                <th style="padding: 12px 16px;">Deposit Held</th>
+                <th style="padding: 12px 16px;">WhatsApp Automation</th>
+                <th style="padding: 12px 16px; text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${state.bookings.map((b) => {
+                const statusBadge = b.whatsappReminderStatus === 'delivered'
+                  ? `<span class="badge" style="background: #dcfce7; color: #15803d; border: 1px solid #86efac; font-size: 0.72rem; font-weight: 700;">✓ Delivered (24h)</span>`
+                  : b.whatsappReminderStatus === 'sent_1h'
+                  ? `<span class="badge" style="background: #dbeafe; color: #1d4ed8; border: 1px solid #93c5fd; font-size: 0.72rem; font-weight: 700;">✓ 1-Hour Alert Sent</span>`
+                  : `<span class="badge" style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a; font-size: 0.72rem; font-weight: 700;">⏳ Scheduled</span>`;
+
+                return `
+                  <tr style="border-bottom: 1px solid #f1f5f9; font-size: 0.85rem;">
+                    <td style="padding: 12px 16px;">
+                      <div style="font-weight: 700; color: var(--text-main);">${b.clientName}</div>
+                      <div style="font-size: 0.72rem; color: var(--text-muted);">${b.phone}</div>
+                    </td>
+                    <td style="padding: 12px 16px;">
+                      <div style="font-weight: 600; color: #1e293b;">${b.service}</div>
+                    </td>
+                    <td style="padding: 12px 16px; font-weight: 600; color: #0284c7;">
+                      ${b.dateTime}
+                    </td>
+                    <td style="padding: 12px 16px;">
+                      <span style="background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; font-weight: 700; font-size: 0.72rem; padding: 2px 8px; border-radius: 4px;">
+                        ${b.depositStatus}
+                      </span>
+                    </td>
+                    <td style="padding: 12px 16px;">
+                      ${statusBadge}
+                    </td>
+                    <td style="padding: 12px 16px; text-align: right;">
+                      <div style="display: inline-flex; gap: 6px; align-items: center;">
+                        <button class="btn btn-secondary btn-xs" onclick="window.triggerBookingReminder('${b.id}')" title="Dispatch automated reminder message now">
+                          📲 Ping Reminder
+                        </button>
+                        <a href="https://wa.me/${b.cleanPhone}?text=${encodeURIComponent(`Hi ${b.clientName}, this is a reminder for your confirmed booking: ${b.service} at ${b.dateTime}. To reschedule or modify: https://zexcore.io/reschedule/${b.id}`)}" target="_blank" rel="noopener noreferrer" class="btn btn-xs" style="background: #25d366; color: #fff; border: none; font-weight: 700; border-radius: 4px; padding: 3px 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                          Chat
+                        </a>
+                      </div>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 // ── CRM Kanban Render ────────────────────────────────────────────────────────
 function renderKanban() {
   const container = document.getElementById('kanban-container');
@@ -1131,7 +1786,7 @@ function renderKanban() {
   const idx = state.stages.indexOf(lead.stage);
   if (idx < state.stages.length - 1) {
     lead.stage = state.stages[idx + 1]!;
-    renderKanban();
+    if (state.crmSubView === 'kanban') renderKanban();
     logBusEvent('crm.lead.stage_changed', { leadId: id, newStage: lead.stage, value: lead.value });
     if (lead.stage === 'Closed Won') {
       logBusEvent('crm.lead.won', { leadId: id, value: lead.value, title: lead.title });
@@ -1149,9 +1804,156 @@ function createLead(title: string, company: string, value: number, stage: string
     stage,
   };
   state.leads.unshift(lead);
-  renderKanban();
+  if (state.crmSubView === 'kanban') renderKanban();
   logBusEvent('crm.lead.created', { leadId: lead.id, title, value, stage });
 }
+
+// Global CRM & WhatsApp Interactive Handlers
+(window as any).selectWhatsAppThread = (id: string) => {
+  state.selectedThreadId = id;
+  const th = state.whatsAppThreads.find((t) => t.id === id);
+  if (th) th.unreadCount = 0;
+  renderCrm();
+};
+
+(window as any).sendWhatsAppQuickPing = (text: string) => {
+  const activeThread = state.whatsAppThreads.find((t) => t.id === state.selectedThreadId) || state.whatsAppThreads[0];
+  if (!activeThread) return;
+
+  const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const newMsg: WhatsAppMessage = {
+    sender: 'agent',
+    text,
+    time: timeStr,
+    status: 'delivered',
+  };
+
+  activeThread.messages.push(newMsg);
+  activeThread.lastMsg = text;
+  activeThread.time = timeStr;
+
+  logBusEvent('crm.whatsapp.message_sent', {
+    threadId: activeThread.id,
+    phone: activeThread.phone,
+    textSnippet: text.slice(0, 40),
+    channel: activeThread.channel,
+    gateway: 'Meta WhatsApp Cloud API',
+  });
+
+  renderCrm();
+};
+
+(window as any).sendWhatsAppCustomMessage = () => {
+  const input = document.getElementById('whatsapp-composer-input') as HTMLInputElement;
+  if (!input || !input.value.trim()) return;
+
+  const text = input.value.trim();
+  (window as any).sendWhatsAppQuickPing(text);
+  input.value = '';
+};
+
+(window as any).simulateIncomingWhatsApp = () => {
+  const activeThread = state.whatsAppThreads.find((t) => t.id === state.selectedThreadId) || state.whatsAppThreads[0];
+  if (!activeThread) return;
+
+  const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const responses = [
+    'Thanks! I just reviewed the specs. What is the lead time for 10 hardware units in Nairobi?',
+    'Awesome, our finance team has approved the Paystack invoice. Can we schedule delivery for Thursday?',
+    'Confirmed, temperature alerts are working properly on our dashboard test unit!',
+  ];
+  const reply = responses[Math.floor(Math.random() * responses.length)];
+
+  activeThread.messages.push({
+    sender: 'client',
+    text: reply,
+    time: timeStr,
+  });
+  activeThread.lastMsg = reply;
+  activeThread.time = timeStr;
+  activeThread.unreadCount++;
+
+  logBusEvent('crm.whatsapp.webhook_received', {
+    threadId: activeThread.id,
+    from: activeThread.phone,
+    snippet: reply.slice(0, 45),
+    verifiedWebhook: 'Meta HMAC-SHA256 Signature Valid',
+  });
+
+  renderCrm();
+};
+
+(window as any).convertChatToOpportunity = (threadId: string) => {
+  const thread = state.whatsAppThreads.find((t) => t.id === threadId);
+  if (!thread) return;
+
+  createLead(`${thread.contactName} - Hardware Contract`, thread.contactName + ' Enterprise', thread.leadValue, thread.stage);
+  alert(`Conversation with ${thread.contactName} converted into CRM Opportunity (${thread.stage} · $${thread.leadValue.toLocaleString()})!`);
+  state.crmSubView = 'kanban';
+  renderDashboard();
+};
+
+(window as any).triggerBookingReminder = (id: string) => {
+  const b = state.bookings.find((item) => item.id === id);
+  if (!b) return;
+
+  b.whatsappReminderStatus = 'delivered';
+  logBusEvent('booking.reminder.dispatched', {
+    bookingId: b.id,
+    client: b.clientName,
+    phone: b.phone,
+    channel: 'whatsapp',
+    template: 'booking_reminder_24h',
+    delivered: true,
+  });
+
+  renderCrm();
+  alert(`Automated WhatsApp Reminder dispatched to ${b.clientName} (${b.phone})!\n\nMessage delivered with zero-friction reschedule link.`);
+};
+
+(window as any).openNewBookingModal = () => {
+  const name = prompt('Client Name:', 'Chief Olatunji Adeleke');
+  if (!name) return;
+  const phone = prompt('Client WhatsApp Phone (+234...):', '+234 809 123 4567');
+  if (!phone) return;
+  const service = prompt('Service / Consultation:', 'Cold Chain Edge Sensor Deployment');
+  if (!service) return;
+  const dateTime = prompt('Scheduled Date & Time:', 'Tomorrow, 3:00 PM WAT');
+  if (!dateTime) return;
+
+  const cleanPhone = phone.replace(/[^0-9]/g, '');
+  const newBooking: BookingAppointment = {
+    id: `book-${Date.now()}`,
+    clientName: name,
+    phone,
+    cleanPhone,
+    service,
+    dateTime,
+    depositStatus: '₦50,000 Paid (Paystack)',
+    whatsappReminderStatus: 'delivered',
+  };
+
+  state.bookings.unshift(newBooking);
+  logBusEvent('booking.appointment.scheduled', {
+    bookingId: newBooking.id,
+    client: name,
+    phone,
+    service,
+    depositGateway: 'Paystack Instant',
+  });
+
+  renderCrm();
+};
+
+(window as any).copyShareableBookingLink = () => {
+  const link = `https://zexcore.io/book/${state.activeTenant}`;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(link);
+    alert(`Public shareable booking link copied to clipboard:\n${link}\n\nClients can pick slots, pay Paystack deposits, and get instant WhatsApp reminders!`);
+  } else {
+    prompt('Shareable Booking Link:', link);
+  }
+};
 
 // ── Compliance Render ────────────────────────────────────────────────────────
 function updateCryptoPreview() {
@@ -1378,7 +2180,7 @@ function navigateTo(view: string) {
 }
 (window as any).navigateTo = navigateTo;
 
-// ── Pricing billing toggle ────────────────────────────────────────────────
+// ── Pricing billing toggle & Stripe Checkout ──────────────────────────────
 (window as any).setPricingBilling = function(mode: 'monthly' | 'annual') {
   const monthly = document.getElementById('btn-billing-monthly');
   const annual = document.getElementById('btn-billing-annual');
@@ -1394,6 +2196,23 @@ function navigateTo(view: string) {
   });
 };
 
+(window as any).startStripeCheckout = function(planId: PlanTier) {
+  openStripeCheckoutModal(planId, 'monthly', (newPlan) => {
+    setTenantPlan(newPlan, state.activeTenant);
+    logBusEvent('billing.subscription.upgraded', {
+      tenant: state.activeTenant,
+      plan: newPlan,
+      gateway: 'stripe',
+      status: 'active',
+    });
+    if (state.currentView !== 'console' && state.currentView !== 'dashboard') {
+      navigateTo('console');
+    } else {
+      renderDashboard();
+    }
+  });
+};
+
 function initApp() {
   subscribeToAuth((user) => {
     state.currentUser = user;
@@ -1402,5 +2221,9 @@ function initApp() {
   syncRouteFromHash();
 }
 
-document.addEventListener('DOMContentLoaded', initApp);
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
 

@@ -34,6 +34,7 @@ export const crmModule: ZexModule = {
           custom_fields  JSONB        NOT NULL DEFAULT '{}'::jsonb,
           created_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
           updated_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+          CONSTRAINT crm_contacts_tenant_id_unique UNIQUE (tenant_id, id),
           CONSTRAINT crm_contacts_tenant_email_unique UNIQUE (tenant_id, email)
         );
         CREATE INDEX IF NOT EXISTS crm_contacts_tenant_idx ON crm_contacts(tenant_id);
@@ -52,6 +53,7 @@ export const crmModule: ZexModule = {
           position    INTEGER NOT NULL DEFAULT 0,
           is_default  BOOLEAN NOT NULL DEFAULT FALSE,
           created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          CONSTRAINT crm_stages_tenant_id_unique UNIQUE (tenant_id, id),
           CONSTRAINT crm_stages_tenant_name_unique UNIQUE (tenant_id, name)
         );
         CREATE INDEX IF NOT EXISTS crm_stages_tenant_idx ON crm_stages(tenant_id, position);

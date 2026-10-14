@@ -27,7 +27,7 @@ export function renderSecurityPage(): string {
         </section>
 
         <!-- ── 2x2 SECURITY GRID ─────────────────────────────────────────── -->
-        <section class="section-gray section-padded" style="padding: 48px 0 64px 0;">
+        <section class="section-white section-padded" style="padding: 48px 0 64px 0;">
           <div class="site-container">
             <div class="security-2x2-grid">
 
@@ -182,7 +182,7 @@ export function renderSecurityPage(): string {
         </section>
 
         <!-- CTA Section -->
-        <section class="section-white final-cta-section" style="border-top: 1px solid var(--border-default);">
+        <section class="section-tinted-red final-cta-section">
           <div class="site-container final-cta-inner">
             <h2 class="final-cta-headline">Audit ZexCore in Your Security Sandbox</h2>
             <p class="final-cta-subtext">

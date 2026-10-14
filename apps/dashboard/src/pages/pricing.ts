@@ -89,18 +89,9 @@ export function renderPricingPage(): string {
                 One Core.<br />
                 <span class="text-brand">Right-Sized Pricing.</span>
               </h1>
-              <p class="page-intro-desc" style="max-width:680px;margin-bottom:24px;">
+              <p class="page-intro-desc" style="max-width:680px;margin-bottom:0;">
                 ZexCore licenses align to your operational scale — from solo builders shipping their first SaaS module, to enterprise organizations running mission-critical multi-tenant infrastructure.
               </p>
-              <div class="pricing-trust-row">
-                <div class="trust-fact"><strong>Flexible deployment</strong><span>Self-hosted or managed</span></div>
-                <div class="trust-divider"></div>
-                <div class="trust-fact"><strong>Clear plan boundaries</strong><span>Predictable capabilities</span></div>
-                <div class="trust-divider"></div>
-                <div class="trust-fact"><strong>Security-focused</strong><span>PostgreSQL 17 RLS native</span></div>
-                <div class="trust-divider"></div>
-                <div class="trust-fact"><strong>Scalable modularity</strong><span>Independent domain packs</span></div>
-              </div>
             </div>
           </div>
         </section>
@@ -131,11 +122,11 @@ export function renderPricingPage(): string {
                   <div class="pricing-tier-label">STARTER</div>
                   <div class="pricing-price-block">
                     <span class="pricing-currency">$</span>
-                    <span class="pricing-amount" data-monthly="0" data-annual="0">0</span>
+                    <span class="pricing-amount" data-monthly="49" data-annual="44">49</span>
                     <span class="pricing-period">/ mo</span>
                   </div>
-                  <p class="pricing-desc">Local development and evaluation. Great for learning ZexCore with limited but real capabilities.</p>
-                  <a href="#/signin" class="btn btn-secondary" style="width:100%;justify-content:center;margin-top:20px;" id="btn-pricing-start-starter">Get Started Free</a>
+                  <p class="pricing-desc">Local development and evaluation. Great for learning ZexCore with core micro-kernel and deterministic rules.</p>
+                  <button class="btn btn-secondary" style="width:100%;justify-content:center;margin-top:20px;" onclick="window.startStripeCheckout('starter')">Start Starter &rarr;</button>
                 </div>
                 <div class="pricing-features-list">
                   <div class="pricing-feature-section-title">Core Platform</div>
@@ -165,11 +156,11 @@ export function renderPricingPage(): string {
                   <div class="pricing-tier-label">INDIE</div>
                   <div class="pricing-price-block">
                     <span class="pricing-currency">$</span>
-                    <span class="pricing-amount" data-monthly="30" data-annual="27">30</span>
+                    <span class="pricing-amount" data-monthly="149" data-annual="134">149</span>
                     <span class="pricing-period">/ mo</span>
                   </div>
-                  <p class="pricing-desc">Solo builders and small teams shipping their first production SaaS product on ZexCore.</p>
-                  <a href="#/signin" class="btn btn-secondary" style="width:100%;justify-content:center;margin-top:20px;" id="btn-pricing-start-indie">Start Indie →</a>
+                  <p class="pricing-desc">Solo builders and small teams shipping their first production SaaS product with IoT fleet telemetry.</p>
+                  <button class="btn btn-secondary" style="width:100%;justify-content:center;margin-top:20px;" onclick="window.startStripeCheckout('indie')">Unlock Indie &rarr;</button>
                 </div>
                 <div class="pricing-features-list">
                   <div class="pricing-feature-section-title">Core Platform</div>
@@ -200,11 +191,11 @@ export function renderPricingPage(): string {
                   <div class="pricing-tier-label" style="color:#fff;opacity:0.7;">GROWTH</div>
                   <div class="pricing-price-block">
                     <span class="pricing-currency" style="color:#fff;">$</span>
-                    <span class="pricing-amount" data-monthly="79" data-annual="71" style="color:#fff;">79</span>
+                    <span class="pricing-amount" data-monthly="499" data-annual="449" style="color:#fff;">499</span>
                     <span class="pricing-period" style="color:rgba(255,255,255,0.7);">/ mo</span>
                   </div>
-                  <p class="pricing-desc" style="color:rgba(255,255,255,0.8);">Teams scaling their SaaS product with full module access, dev &amp; staging workflows, and managed infrastructure.</p>
-                  <a href="#/console" class="btn" style="width:100%;justify-content:center;margin-top:20px;background:#fff;color:var(--primary);border-color:#fff;font-weight:700;" id="btn-pricing-start-growth">Explore Growth →</a>
+                  <p class="pricing-desc" style="color:rgba(255,255,255,0.8);">Teams scaling their SaaS product with full CRM sales pipelines, IoT telemetry, and automated triggers.</p>
+                  <button class="btn" style="width:100%;justify-content:center;margin-top:20px;background:#fff;color:var(--primary);border-color:#fff;font-weight:700;" onclick="window.startStripeCheckout('growth')">Upgrade to Growth &rarr;</button>
                 </div>
                 <div class="pricing-features-list">
                   <div class="pricing-feature-section-title" style="color:rgba(255,255,255,0.6);">Core Platform</div>
@@ -234,11 +225,11 @@ export function renderPricingPage(): string {
                   <div class="pricing-tier-label">SCALE</div>
                   <div class="pricing-price-block">
                     <span class="pricing-currency">$</span>
-                    <span class="pricing-amount" data-monthly="149" data-annual="134">149</span>
+                    <span class="pricing-amount" data-monthly="1299" data-annual="1169">1299</span>
                     <span class="pricing-period">/ mo</span>
                   </div>
-                  <p class="pricing-desc">Production SaaS companies needing compliance tooling, multi-region infrastructure, and priority support.</p>
-                  <a href="#/console" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:20px;" id="btn-pricing-start-scale">Start Scale →</a>
+                  <p class="pricing-desc">Production SaaS companies needing complete compliance vault, GDPR erasure, and multi-region infrastructure.</p>
+                  <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:20px;" onclick="window.startStripeCheckout('scale')">Unlock Scale &rarr;</button>
                 </div>
                 <div class="pricing-features-list">
                   <div class="pricing-feature-section-title">Core Platform</div>
@@ -268,10 +259,12 @@ export function renderPricingPage(): string {
                   <div style="flex:1;min-width:220px;">
                     <div class="pricing-tier-label">ENTERPRISE</div>
                     <div class="pricing-price-block">
-                      <span class="pricing-amount" style="font-size:2rem;letter-spacing:-0.01em;">Custom</span>
+                      <span class="pricing-currency">$</span>
+                      <span class="pricing-amount" data-monthly="3500" data-annual="3150">3500</span>
+                      <span class="pricing-period">/ mo</span>
                     </div>
-                    <p class="pricing-desc">Dedicated infrastructure, compliance vault, multi-region, and 99.99% SLA. For regulated industries at scale.</p>
-                    <a href="#/signin" class="btn btn-primary" style="margin-top:20px;padding:11px 28px;" id="btn-pricing-start-enterprise">Contact Sales →</a>
+                    <p class="pricing-desc">Dedicated infrastructure, compliance vault, multi-region active-active, and 99.99% SLA. For regulated industries.</p>
+                    <button class="btn btn-primary" style="margin-top:20px;padding:11px 28px;" onclick="window.startStripeCheckout('enterprise')">Subscribe Enterprise &rarr;</button>
                   </div>
                   <div style="flex:2;min-width:280px;display:grid;grid-template-columns:repeat(3,1fr);gap:0 24px;">
                     <div>
@@ -312,7 +305,7 @@ export function renderPricingPage(): string {
         </section>
 
         <!-- COMPARISON TABLE -->
-        <section class="section-gray section-padded" style="padding:80px 0;">
+        <section class="section-tinted-red section-padded" style="padding:80px 0;">
           <div class="site-container">
             <div class="section-header-block">
               <div class="section-eyebrow">DETAILED COMPARISON</div>
@@ -388,7 +381,7 @@ export function renderPricingPage(): string {
         </section>
 
         <!-- ENTERPRISE CTA -->
-        <section class="section-gray" style="padding:80px 0;border-top:1px solid var(--border-default);">
+        <section class="section-tinted-red" style="padding:80px 0;">
           <div class="site-container">
             <div class="enterprise-contact-block">
               <div class="enterprise-contact-text">

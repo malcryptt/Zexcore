@@ -9,12 +9,10 @@ import {
   loginWithGoogle,
   sendPasswordReset,
   loginDemoTenant,
-  isFirebaseConfigured,
   type AuthUserProfile,
 } from '../lib/firebase';
 
 export function renderSignInPage(activeTenant: string): string {
-  const isFbLive = isFirebaseConfigured();
 
   return `
     <div class="signin-split-page">
@@ -30,7 +28,6 @@ export function renderSignInPage(activeTenant: string): string {
           </a>
 
           <div class="signin-brand-content">
-            <div class="signin-eyebrow"><span class="signin-eyebrow-dot"></span> ENTERPRISE INFRASTRUCTURE PLATFORM</div>
             <img src="/zexcore-logo-horizontal.png" alt="ZexCore" class="signin-brand-logo" />
             <h2 class="signin-brand-headline">
               The Operating System for<br />Vertical SaaS.
@@ -61,19 +58,7 @@ export function renderSignInPage(activeTenant: string): string {
               <div class="signin-layer-caption"><b>ZexCore Core</b><small>Tenant isolation · RBAC · Firebase Auth</small></div>
             </div>
 
-            <div style="margin-top: 18px;">
-              ${
-                isFbLive
-                  ? `<div class="auth-provider-chip live" style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.75rem; color: #166534; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 6px 12px; border-radius: 999px;">
-                      <span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e;"></span>
-                      Connected to Live Firebase Auth
-                    </div>`
-                  : `<div class="auth-provider-chip demo" style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.75rem; color: #b45309; background: #fffbeb; border: 1px solid #fde68a; padding: 6px 12px; border-radius: 999px;">
-                      <span style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;"></span>
-                      Interactive Demo Auth (Add Firebase keys in .env for live project)
-                    </div>`
-              }
-            </div>
+
           </div>
         </div>
       </div>
@@ -84,7 +69,7 @@ export function renderSignInPage(activeTenant: string): string {
           <div class="signin-form-header">
             <div class="signin-form-kicker">SECURE WORKSPACE ACCESS</div>
             <h1 class="signin-form-title" id="auth-title">Welcome back.</h1>
-            <p class="signin-form-subtitle" id="auth-subtitle">Sign in to your ZexCore control console with Firebase Auth.</p>
+            <p class="signin-form-subtitle" id="auth-subtitle">Sign in to your ZexCore workspace.</p>
           </div>
 
           <!-- Auth Mode Switcher Tab -->
@@ -187,36 +172,9 @@ export function renderSignInPage(activeTenant: string): string {
             <span style="flex: 1; border-bottom: 1px solid #e5e7eb;"></span>
           </div>
 
-          <div style="display: flex; flex-direction: column; gap: 10px;">
-            <button type="button" class="btn btn-secondary signin-demo-btn" id="btn-demo-acme" style="justify-content: space-between; text-align: left;">
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <div class="signin-demo-icon">🏭</div>
-                <div>
-                  <div style="font-weight: 700; font-size: 0.88rem;">Acme Enterprise Corp</div>
-                  <div style="font-size: 0.74rem; color: var(--text-secondary); font-family: var(--font-mono);">prod-us-east · Industrial IoT</div>
-                </div>
-              </div>
-              <span style="font-size: 0.75rem; color: #e50920; font-weight: 600;">Launch →</span>
-            </button>
-            <button type="button" class="btn btn-secondary signin-demo-btn" id="btn-demo-globex" style="justify-content: space-between; text-align: left;">
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <div class="signin-demo-icon">🔬</div>
-                <div>
-                  <div style="font-weight: 700; font-size: 0.88rem;">Globex Research</div>
-                  <div style="font-size: 0.74rem; color: var(--text-secondary); font-family: var(--font-mono);">dev-eu-west · CRM Pipeline</div>
-                </div>
-              </div>
-              <span style="font-size: 0.75rem; color: #e50920; font-weight: 600;">Launch →</span>
-            </button>
-            <button type="button" class="btn btn-secondary signin-demo-btn" id="btn-demo-soylent" style="justify-content: space-between; text-align: left;">
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <div class="signin-demo-icon">🌱</div>
-                <div>
-                  <div style="font-weight: 700; font-size: 0.88rem;">Soylent Dynamics</div>
-                  <div style="font-size: 0.74rem; color: var(--text-secondary); font-family: var(--font-mono);">staging-apac · Compliance</div>
-                </div>
-              </div>
-              <span style="font-size: 0.75rem; color: #e50920; font-weight: 600;">Launch →</span>
+          <div style="margin-top: 20px;">
+            <button type="button" class="btn btn-secondary" id="btn-demo-acme" style="width: 100%; padding: 13px 20px; justify-content: center; font-size: 0.9rem; font-weight: 700; border: 1.5px solid #d1d5db; border-radius: 7px;">
+              Check Demo Workspace &rarr;
             </button>
           </div>
 
