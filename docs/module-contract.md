@@ -48,8 +48,8 @@ export interface ZexModule {
 
 ### Rule 1: No Cross-Module Imports
 Modules must **NEVER** import directly from another module.
-- ❌ `import { Contact } from '@zexcore/module-crm';` inside `module-cms`
-- ✅ Communicate via Core Event Bus:
+- **Disallowed:** `import { Contact } from '@zexcore/module-crm';` inside `module-cms`
+- **Allowed:** Communicate via Core Event Bus:
   ```typescript
   core.events.emit('lead.created', { tenantId, leadId, ... });
   ```

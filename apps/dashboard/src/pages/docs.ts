@@ -25,10 +25,10 @@ export const docArticles: Record<string, DocArticle> = {
     title: 'What ZexCore is All About',
     intro: 'The sovereign multi-tenant backend engine and operating system for vertical SaaS — why it exists, what it solves, and how it transforms industry software.',
     contentHtml: `
-      <div class="doc-callout-box" style="background: linear-gradient(135deg, #fff1f2 0%, #fff 100%); border-left: 4px solid #e50920; padding: 20px; border-radius: 8px; margin-bottom: 28px; box-shadow: 0 4px 12px rgba(229,9,32,0.05);">
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-          <span style="background: #e50920; color: #fff; font-size: 0.68rem; font-weight: 800; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.05em;">EXECUTIVE THESIS</span>
-          <span style="font-size: 0.8rem; color: #9f1239; font-weight: 700;">ONE CORE. INFINITE POSSIBILITIES.</span>
+      <div class="doc-callout-box" style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #0f172a; padding: 20px; border-radius: 8px; margin-bottom: 28px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <span style="background: #0f172a; color: #ffffff; font-size: 0.68rem; font-weight: 800; padding: 3px 8px; border-radius: 4px; letter-spacing: 0.05em;">EXECUTIVE THESIS</span>
+          <span style="font-size: 0.8rem; color: #64748b; font-weight: 700; letter-spacing: 0.03em;">ONE CORE. INFINITE POSSIBILITIES.</span>
         </div>
         <p style="margin: 0; color: #334155; font-size: 0.95rem; line-height: 1.65;">
           <b>ZexCore is the operating system for vertical SaaS.</b> Instead of spending 12 to 18 months re-inventing multi-tenancy, cryptographic vaults, IoT telemetry queues, deterministic business rules, and sales pipeline mechanics, founders and enterprise teams build their entire vertical software stack on top of a single, kernel-isolated engine.
@@ -53,7 +53,11 @@ export const docArticles: Record<string, DocArticle> = {
       <h3 class="doc-subhead" style="font-size: 1.3rem; margin-top: 36px;">2. The 6 Pillars of ZexCore</h3>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 24px 0;">
         <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-          <div style="font-size: 1.6rem; margin-bottom: 8px;">🛡️</div>
+          <div style="width: 38px; height: 38px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e50920" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
           <div style="font-weight: 700; color: #0f172a; font-size: 1rem; margin-bottom: 6px;">1. Kernel-Enforced Tenancy</div>
           <p style="font-size: 0.86rem; color: #64748b; line-height: 1.55; margin: 0;">
             Database-level PostgreSQL 17 <code>FORCE ROW LEVEL SECURITY</code>. Isolation is mathematically enforced by the database session within transactions, eliminating reliance on developer discipline.
@@ -61,7 +65,11 @@ export const docArticles: Record<string, DocArticle> = {
         </div>
 
         <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-          <div style="font-size: 1.6rem; margin-bottom: 8px;">⚡</div>
+          <div style="width: 38px; height: 38px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e50920" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+          </div>
           <div style="font-weight: 700; color: #0f172a; font-size: 1rem; margin-bottom: 6px;">2. Deterministic AST Rules Engine</div>
           <p style="font-size: 0.86rem; color: #64748b; line-height: 1.55; margin: 0;">
             Sub-millisecond condition evaluations using safe Abstract Syntax Tree graphs. Zero <code>eval()</code>, prototype pollution guards, and hard ReDoS timeouts.
@@ -69,7 +77,12 @@ export const docArticles: Record<string, DocArticle> = {
         </div>
 
         <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-          <div style="font-size: 1.6rem; margin-bottom: 8px;">🔐</div>
+          <div style="width: 38px; height: 38px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e50920" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
           <div style="font-weight: 700; color: #0f172a; font-size: 1rem; margin-bottom: 6px;">3. Cryptographic Privacy Vault</div>
           <p style="font-size: 0.86rem; color: #64748b; line-height: 1.55; margin: 0;">
             Authenticated AES-256-GCM envelope encryption with unique random IVs, HMAC-SHA256 tenant subkeys, and blind indexing for searchable encrypted fields.
@@ -77,7 +90,12 @@ export const docArticles: Record<string, DocArticle> = {
         </div>
 
         <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-          <div style="font-size: 1.6rem; margin-bottom: 8px;">📡</div>
+          <div style="width: 38px; height: 38px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e50920" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="2"/>
+              <path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/>
+            </svg>
+          </div>
           <div style="font-weight: 700; color: #0f172a; font-size: 1rem; margin-bottom: 6px;">4. Edge &amp; Fleet IoT Hub</div>
           <p style="font-size: 0.86rem; color: #64748b; line-height: 1.55; margin: 0;">
             Hardware authentication via SHA-256 device tokens, high-throughput burst rate limits (5,000 req/min), timeseries telemetry, and automated incident alarms.
@@ -85,7 +103,12 @@ export const docArticles: Record<string, DocArticle> = {
         </div>
 
         <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-          <div style="font-size: 1.6rem; margin-bottom: 8px;">💼</div>
+          <div style="width: 38px; height: 38px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e50920" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+            </svg>
+          </div>
           <div style="font-weight: 700; color: #0f172a; font-size: 1rem; margin-bottom: 6px;">5. Built-In CRM Pipeline</div>
           <p style="font-size: 0.86rem; color: #64748b; line-height: 1.55; margin: 0;">
             Multi-stage deal flow, contact relationship management, composite-key invariants, and automated quotation dispatching.
@@ -93,7 +116,13 @@ export const docArticles: Record<string, DocArticle> = {
         </div>
 
         <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-          <div style="font-size: 1.6rem; margin-bottom: 8px;">🚀</div>
+          <div style="width: 38px; height: 38px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e50920" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+              <polyline points="2 17 12 22 22 17"/>
+              <polyline points="2 12 12 17 22 12"/>
+            </svg>
+          </div>
           <div style="font-weight: 700; color: #0f172a; font-size: 1rem; margin-bottom: 6px;">6. "Great First 10 Minutes"</div>
           <p style="font-size: 0.86rem; color: #64748b; line-height: 1.55; margin: 0;">
             A business owner signs up, answers one question ("What do you do?"), and instantly receives a working, good-looking niche site, sample listings, an inquiry form, and instant automated follow-up.
