@@ -5,6 +5,7 @@ import type { PrincipalType, TenantRole } from '@zexcore/core';
 
 export interface RequestUser {
   userId: string;
+  tenantId?: string;
   principalType: PrincipalType;
   role?: TenantRole;
   isPlatformAdmin: boolean;
@@ -22,6 +23,7 @@ const authPluginAsync: FastifyPluginAsync = async (server) => {
         request.user = {
           id: payload.userId,
           userId: payload.userId,
+          tenantId: payload.tenantId,
           principalType: payload.principalType,
           role: payload.role,
           isPlatformAdmin: Boolean(payload.isPlatformAdmin),
@@ -44,10 +46,20 @@ const authPluginAsync: FastifyPluginAsync = async (server) => {
     }
   });
 
-  // Decorator: require active authentication
+  // Decorator: require active authentication with cross-tenant context verification
   server.decorate('authenticate', async (request: FastifyRequest, reply: FastifyReply) => {
     if (!request.user || request.user.principalType === 'public') {
       return reply.status(401).send({ error: 'Authentication required' });
+    }
+
+    // Cross-tenant defense: ensure token tenant matches request tenant context
+    if (
+      request.tenant &&
+      request.user.tenantId &&
+      !request.user.isPlatformAdmin &&
+      request.user.tenantId !== request.tenant.id
+    ) {
+      return reply.status(403).send({ error: 'Tenant context mismatch: Access to foreign tenant is forbidden' });
     }
   });
 

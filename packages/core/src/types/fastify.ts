@@ -4,6 +4,7 @@ import type { PrincipalType, TenantRole } from '../db/schema/memberships.js';
 export interface RequestUser {
   id: string;
   userId: string;
+  tenantId?: string;
   principalType: PrincipalType;
   role?: TenantRole;
   isPlatformAdmin: boolean;

@@ -15,9 +15,24 @@ import { createCipheriv, createDecipheriv, randomBytes, createHmac, scryptSync }
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12; // 96 bits for GCM
 
+let cachedMasterKey: Buffer | null = null;
+
 function getMasterKey(): Buffer {
-  const raw = process.env.COMPLIANCE_ENCRYPTION_KEY || process.env.JWT_SECRET || 'zexcore-compliance-default-master-key-32b';
-  return scryptSync(raw, 'zexcore-compliance-salt', 32);
+  if (cachedMasterKey) return cachedMasterKey;
+  const isProduction = process.env.NODE_ENV === 'production';
+  const explicitKey = process.env.COMPLIANCE_ENCRYPTION_KEY;
+
+  if (isProduction) {
+    if (!explicitKey || explicitKey.length < 32 || explicitKey.includes('default-master-key')) {
+      throw new Error(
+        '[FATAL SECURITY CONFIGURATION] In production mode, COMPLIANCE_ENCRYPTION_KEY must be explicitly set to at least 32 random characters. Default fallback keys are strictly rejected.'
+      );
+    }
+  }
+
+  const raw = explicitKey || process.env.JWT_SECRET || 'zexcore-compliance-default-master-key-32b';
+  cachedMasterKey = scryptSync(raw, 'zexcore-compliance-salt', 32);
+  return cachedMasterKey;
 }
 
 /**
