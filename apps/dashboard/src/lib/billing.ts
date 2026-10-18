@@ -27,14 +27,15 @@ export const PLANS: Record<PlanTier, PlanMetadata> = {
     annualPrice: 0,
     tagline: 'Trying it out — 1 workspace, CMS only, 1 user.',
     whoItsFor: 'Trying it out',
-    mainLimits: '1 workspace, CMS only, ZexCore subdomain, ZexCore branding, 1 user',
-    allowedTabs: ['overview'],
+    mainLimits: '1 workspace, CMS only, ZexCore subdomain, ZexCore branding, 1 user, Audit Basic included',
+    allowedTabs: ['overview', 'audit'],
     features: [
       '1 workspace',
       'CMS & public site builder only',
       'ZexCore subdomain (*.zexcore.io)',
       'ZexCore branding footer',
       '1 team user',
+      'Audit Basic (5 security posture checks)',
     ],
   },
   starter: {
@@ -44,8 +45,8 @@ export const PLANS: Record<PlanTier, PlanMetadata> = {
     annualPrice: 190,
     tagline: 'One small business getting started with CMS plus basic CRM.',
     whoItsFor: 'One small business',
-    mainLimits: 'CMS plus basic CRM, 1 custom domain, 3 users, 1,000 contacts',
-    allowedTabs: ['overview', 'crm'],
+    mainLimits: 'CMS plus basic CRM, 1 custom domain, 3 users, 1,000 contacts, Audit Basic included',
+    allowedTabs: ['overview', 'crm', 'audit'],
     features: [
       'CMS plus basic CRM',
       '1 custom domain',
@@ -177,11 +178,31 @@ export function isTabLocked(tabId: string, currentPlan: PlanTier): boolean {
   return !plan.allowedTabs.includes(tabId);
 }
 
+export type AuditLevel = 'basic' | 'essentials' | 'business' | 'enterprise';
+
+export function getAuditTierForPlan(plan: PlanTier): AuditLevel {
+  switch (plan) {
+    case 'free':
+    case 'starter':
+      return 'basic';
+    case 'growth':
+    case 'agency':
+      return 'essentials';
+    case 'enterprise':
+      return 'business';
+    case 'dedicated':
+      return 'enterprise';
+    default:
+      return 'basic';
+  }
+}
+
 export function getRequiredPlanForTab(tabId: string): PlanTier {
   if (tabId === 'compliance') return 'dedicated';
   if (tabId === 'iot') return 'agency';
   if (tabId === 'rules') return 'growth';
   if (tabId === 'crm') return 'starter';
+  if (tabId === 'audit') return 'free';
   return 'free';
 }
 

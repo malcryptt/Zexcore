@@ -15,6 +15,7 @@ import { renderResourcesPage } from './pages/resources';
 import { renderPricingPage } from './pages/pricing';
 import { renderSignInPage, setupSignInEvents } from './pages/signin';
 import { setupNavbarEvents } from './components/navbar';
+import { renderConsoleAuditView, setupConsoleAuditEvents } from './pages/consoleAudit';
 import { getCurrentUser, logoutUser, subscribeToAuth, type AuthUserProfile } from './lib/firebase';
 import {
   loadOnboardingState,
@@ -1152,7 +1153,12 @@ function renderDashboard() {
           <a href="#/console/compliance" class="nav-item ${state.currentTab === 'compliance' ? 'active' : ''}" data-tab="compliance">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             Compliance &amp; Vault
-            ${isTabLocked('compliance', currentPlan) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> SCALE</span>` : ''}
+            ${isTabLocked('compliance', currentPlan) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> DEDICATED</span>` : ''}
+          </a>
+          <a href="#/console/audit" class="nav-item ${state.currentTab === 'audit' ? 'active' : ''}" data-tab="audit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+            Audit &amp; Finance
+            <span class="nav-badge" style="background: rgba(229, 9, 32, 0.12); color: var(--primary); font-weight: 800;">5</span>
           </a>
         </nav>
 
@@ -1236,7 +1242,8 @@ function renderDashboard() {
             state.currentTab === 'iot' ? renderConsoleIotView(currentPlan) :
             state.currentTab === 'rules' ? renderConsoleRulesView(currentPlan) :
             state.currentTab === 'crm' ? renderConsoleCrmView(currentPlan) :
-            renderConsoleComplianceView(currentPlan)
+            state.currentTab === 'compliance' ? renderConsoleComplianceView(currentPlan) :
+            renderConsoleAuditView(currentPlan)
           }
         </div>
       </main>
@@ -1257,6 +1264,8 @@ function renderDashboard() {
   } else if (state.currentTab === 'compliance') {
     renderConsents();
     updateCryptoPreview();
+  } else if (state.currentTab === 'audit') {
+    setupConsoleAuditEvents(currentPlan, () => renderDashboard());
   }
 }
 
@@ -1494,8 +1503,7 @@ function setupEventListeners() {
 
   document.getElementById('btn-quick-view-audit')?.addEventListener('click', () => {
     logBusEvent('audit.viewed', { actor: 'admin@enterprise.org', tenantId: state.activeTenant });
-    const tabCompliance = document.querySelector('[data-tab="compliance"]') as HTMLElement;
-    tabCompliance?.click();
+    window.location.hash = '#/console/audit';
   });
 
   document.getElementById('btn-quick-encrypt')?.addEventListener('click', () => {
@@ -3053,7 +3061,7 @@ function syncRouteFromHash() {
     state.currentView = 'signin';
   } else if (route === 'console' || route === 'dashboard' || route === 'app') {
     state.currentView = 'console';
-    const validTabs = ['overview', 'iot', 'rules', 'crm', 'compliance'];
+    const validTabs = ['overview', 'iot', 'rules', 'crm', 'compliance', 'audit'];
     state.currentTab = validTabs.includes(subParam) ? subParam : 'overview';
   } else if (route === 'platform') {
     state.currentView = 'platform';
@@ -3097,6 +3105,7 @@ function syncRouteFromHash() {
       rules: 'Deterministic Automation & AI Authoring — ZexCore Console',
       crm: 'Multi-Channel CRM & Revenue Ops — ZexCore Console',
       compliance: 'Compliance Vault & GDPR Privacy — ZexCore Console',
+      audit: 'Audit & Financial Health Suite — ZexCore Console',
     };
     document.title = consoleTitles[state.currentTab] || 'ZexCore Control — Operational Console';
   } else {
