@@ -4457,7 +4457,7 @@ body {
   font-size: 0.72rem;
   font-weight: 700;
   padding: 3px 10px;
-  border-radius: 9999px;
+  border-radius: 4px;
   border: 1px solid #A7F3D0;
 }
 
@@ -5880,7 +5880,7 @@ body { background: #fff; letter-spacing: -.008em; }
 .signin-brand-back:hover { color: #e50920 !important; }
 .signin-brand-content { justify-content: center !important; padding: 8px 0 24px !important; }
 .signin-eyebrow { display: flex; align-items: center; gap: 9px; margin-bottom: 18px; color: #e50920; font-size: .7rem; font-weight: 800; letter-spacing: .095em; }
-.signin-eyebrow-dot { width: 7px; height: 7px; border-radius: 50%; background: #e50920; box-shadow: 0 0 0 4px #fee2e5; }
+.signin-eyebrow-dot { display: none !important; }
 .signin-brand-logo { width: 240px !important; max-width: 100% !important; height: 80px !important; object-fit: contain !important; object-position: left center !important; filter: none !important; margin-bottom: 32px !important; }
 .signin-brand-headline { color: #17191d !important; max-width: 520px !important; font-size: clamp(2.1rem, 3.1vw, 3.05rem) !important; line-height: 1.08 !important; letter-spacing: -.055em !important; margin-bottom: 18px !important; }
 .signin-brand-headline br { display: block; }
@@ -6092,27 +6092,15 @@ body { background: #fff; letter-spacing: -.008em; }
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: rgba(229, 9, 32, 0.08);
-  border: 1px solid rgba(229, 9, 32, 0.22);
   color: var(--primary);
   font-size: 0.76rem;
   font-weight: 800;
   letter-spacing: 0.09em;
-  padding: 6px 16px;
-  border-radius: 9999px;
   margin-bottom: 22px;
+  text-transform: uppercase;
 }
 .hero-eyebrow-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--primary);
-  box-shadow: 0 0 8px rgba(229, 9, 32, 0.6);
-  animation: pulse-dot 2s infinite ease-in-out;
-}
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.45; transform: scale(0.85); }
+  display: none !important;
 }
 .hero-headline {
   font-size: clamp(2.8rem, 4.3vw, 3.8rem) !important;
@@ -8253,19 +8241,64 @@ body { background: #fff; letter-spacing: -.008em; }
   border-color: rgba(229, 9, 32, 0.35);
 }
 
+.onboard-step-label {
+  font-size: 0.76rem;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  color: #e50920;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
 .onboard-v2-badge {
+  display: none !important;
+}
+
+/* Interactive Console Status Toggle Buttons */
+.badge-status-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  color: #e50920;
-  background: rgba(229, 9, 32, 0.08);
+  font-size: 0.74rem;
+  font-weight: 750;
   padding: 4px 10px;
-  border-radius: 6px;
-  width: fit-content;
-  margin-bottom: 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  user-select: none;
+}
+.badge-status-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+.badge-status-btn:active {
+  transform: translateY(0);
+}
+.badge-status-btn.online,
+.badge-status-btn.operational,
+.badge-status-btn.live,
+.badge-status-btn.active,
+.badge-status-btn.enabled {
+  background: #ECFDF5 !important;
+  color: #15803D !important;
+  border-color: #86EFAC !important;
+}
+.badge-status-btn.offline,
+.badge-status-btn.unoperational,
+.badge-status-btn.disabled,
+.badge-status-btn.revoked {
+  background: #FEE2E2 !important;
+  color: #B91C1C !important;
+  border-color: #FCA5A5 !important;
+}
+.badge-status-btn.degraded {
+  background: #FEF3C7 !important;
+  color: #B45309 !important;
+  border-color: #FDE68A !important;
 }
 
 .onboard-v2-title {
@@ -8370,19 +8403,7 @@ body { background: #fff; letter-spacing: -.008em; }
 }
 
 .home-final-cta-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: #FEE2E2;
-  border: 1px solid #FCA5A5;
-  color: #E50920 !important;
-  font-size: 0.74rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  padding: 5px 14px;
-  border-radius: 100px;
-  margin-bottom: 22px;
-  text-transform: uppercase;
+  display: none !important;
 }
 
 .home-final-cta-title,

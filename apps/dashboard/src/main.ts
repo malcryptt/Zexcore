@@ -114,6 +114,8 @@ const state = {
   crmSubView: 'whatsapp' as 'whatsapp' | 'kanban' | 'booking',
   selectedThreadId: 'thread-1',
   activeTenant: 'acme_corp',
+  systemStatus: 'operational' as 'operational' | 'offline',
+  crmWebhookStatus: 'live' as 'live' | 'offline',
   currentUser: getCurrentUser() as AuthUserProfile | null,
   onboarding: loadOnboardingState() as OnboardingState,
   devices: [
@@ -380,9 +382,13 @@ function renderConsoleOverviewView(currentPlan: PlanTier): string {
         <div class="stat-box">
           <div class="stat-label">Platform Health</div>
           <div style="margin: 8px 0 4px 0;">
-            <span class="badge" style="background: #ECFDF5; color: #168447; border: 1px solid #A7F3D0; font-size: 0.95rem; font-weight: 700; padding: 4px 12px; border-radius: 9999px;">Operational</span>
+            <button id="overview-status-btn" class="badge-status-btn ${state.systemStatus}" onclick="window.toggleSystemStatus()" title="Click to toggle system operational status" style="font-size: 0.88rem; padding: 5px 14px;">
+              ${state.systemStatus === 'operational' ? 'Operational' : 'Offline / Maintenance'}
+            </button>
           </div>
-          <div class="stat-subtext" style="color: var(--text-muted); font-size: 0.72rem;">Micro-kernel &amp; 5 modules &bull; 99.99% Uptime</div>
+          <div class="stat-subtext" id="overview-status-subtext" style="color: var(--text-muted); font-size: 0.72rem;">
+            ${state.systemStatus === 'operational' ? 'Micro-kernel &amp; 5 modules &bull; 99.99% Uptime' : 'Maintenance window active &bull; Unoperational'}
+          </div>
         </div>
         <div class="stat-box">
           <div class="stat-label">Fleet Nodes</div>
@@ -508,7 +514,50 @@ function renderConsoleOverviewView(currentPlan: PlanTier): string {
 }
 
 // ── 2. Console View: IoT Device Fleet ─────────────────────────────────────────
+function getFleetAverages() {
+  const online = state.devices.filter((d) => d.status === 'online');
+  if (online.length === 0) {
+    return {
+      avgTemp: '0.0',
+      avgHum: 0,
+      avgVolt: '0.0',
+      tempStatus: 'Offline &bull; 0 active nodes',
+      humStatus: 'Offline &bull; 0 active nodes',
+      voltStatus: 'Offline &bull; 0 active nodes',
+    };
+  }
+  const avgTemp = (online.reduce((acc, d) => acc + d.temperature, 0) / online.length).toFixed(1);
+  const avgHum = Math.round(online.reduce((acc, d) => acc + d.humidity, 0) / online.length);
+  const avgVolt = (online.reduce((acc, d) => acc + d.voltage, 0) / online.length).toFixed(1);
+  const isHighTemp = parseFloat(avgTemp) > 75;
+  return {
+    avgTemp,
+    avgHum,
+    avgVolt,
+    tempStatus: isHighTemp ? 'Alert &bull; Exceeds Threshold' : 'Nominal &bull; Threshold &le; 75.0&deg;C',
+    humStatus: 'Nominal &bull; Threshold &le; 80%',
+    voltStatus: 'Regulated &bull; Tolerance &plusmn;0.5V',
+  };
+}
+
+function updateFleetOscilloscope() {
+  const fleet = getFleetAverages();
+  const elTemp = document.getElementById('fleet-avg-temp');
+  const elHum = document.getElementById('fleet-avg-hum');
+  const elVolt = document.getElementById('fleet-avg-volt');
+  const elTempStat = document.getElementById('fleet-temp-status');
+  const elHumStat = document.getElementById('fleet-hum-status');
+  const elVoltStat = document.getElementById('fleet-volt-status');
+  if (elTemp) elTemp.innerHTML = `${fleet.avgTemp} &deg;C`;
+  if (elHum) elHum.innerText = `${fleet.avgHum} %`;
+  if (elVolt) elVolt.innerText = `${fleet.avgVolt} V`;
+  if (elTempStat) elTempStat.innerHTML = fleet.tempStatus;
+  if (elHumStat) elHumStat.innerHTML = fleet.humStatus;
+  if (elVoltStat) elVoltStat.innerHTML = fleet.voltStatus;
+}
+
 function renderConsoleIotView(currentPlan: PlanTier): string {
+  const fleet = getFleetAverages();
   const innerIot = `
     <div class="console-page-wrapper" id="page-console-iot">
       <div class="console-page-toolbar">
@@ -525,27 +574,26 @@ function renderConsoleIotView(currentPlan: PlanTier): string {
       <!-- Telemetry Stream Oscilloscope / Sparklines -->
       <div class="telemetry-oscilloscope-wrap">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-          <span style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: #10b981; display: flex; align-items: center; gap: 6px;">
-            <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+          <span style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: #10b981;">
             LIVE FLEET TELEMETRY WAVEFORM (0.5s JITTER MONITOR)
           </span>
           <span style="font-family: var(--font-mono); font-size: 0.72rem; color: #64748b;">Protocol: MQTT over TLS 1.3 / WSS</span>
         </div>
-        <div class="oscilloscope-grid">
+        <div class="oscilloscope-grid" id="iot-oscilloscope-grid">
           <div class="oscilloscope-metric-card">
             <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Avg Fleet Temp</div>
-            <div class="oscilloscope-metric-val" style="color: #38bdf8;">41.8 &deg;C</div>
-            <div style="font-size: 0.7rem; color: #10b981;">● Nominal &bull; Threshold &le; 75.0&deg;C</div>
+            <div class="oscilloscope-metric-val" id="fleet-avg-temp" style="color: #38bdf8;">${fleet.avgTemp} &deg;C</div>
+            <div id="fleet-temp-status" style="font-size: 0.7rem; color: #10b981;">${fleet.tempStatus}</div>
           </div>
           <div class="oscilloscope-metric-card">
             <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Relative Humidity</div>
-            <div class="oscilloscope-metric-val" style="color: #a78bfa;">52 %</div>
-            <div style="font-size: 0.7rem; color: #10b981;">● Nominal &bull; Threshold &le; 80%</div>
+            <div class="oscilloscope-metric-val" id="fleet-avg-hum" style="color: #a78bfa;">${fleet.avgHum} %</div>
+            <div id="fleet-hum-status" style="font-size: 0.7rem; color: #10b981;">${fleet.humStatus}</div>
           </div>
           <div class="oscilloscope-metric-card">
             <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">DC Rail Voltage</div>
-            <div class="oscilloscope-metric-val" style="color: #f59e0b;">24.2 V</div>
-            <div style="font-size: 0.7rem; color: #10b981;">● Regulated &bull; Tolerance &plusmn;0.5V</div>
+            <div class="oscilloscope-metric-val" id="fleet-avg-volt" style="color: #f59e0b;">${fleet.avgVolt} V</div>
+            <div id="fleet-volt-status" style="font-size: 0.7rem; color: #10b981;">${fleet.voltStatus}</div>
           </div>
         </div>
       </div>
@@ -990,6 +1038,12 @@ function renderDashboard() {
           </div>
 
           <div class="topbar-right">
+            <!-- Interactive System Status Toggle -->
+            <button class="badge-status-btn ${state.systemStatus}" id="topbar-status-btn" onclick="window.toggleSystemStatus()" title="Click to toggle system state (Operational / Offline)" style="margin-right: 6px; font-size: 0.72rem; padding: 4px 10px;">
+              <span>●</span>
+              <span>${state.systemStatus === 'operational' ? 'OPERATIONAL' : 'OFFLINE'}</span>
+            </button>
+
             <!-- Authenticated User Profile Badge -->
             <div class="auth-user-badge" style="display: flex; align-items: center; gap: 8px; padding: 4px 10px; background: #fff; border: 1px solid var(--border-default); border-radius: 20px; font-size: 0.76rem;">
               <div style="width: 24px; height: 24px; border-radius: 50%; background: #e50920; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.7rem;">
@@ -1361,7 +1415,9 @@ function renderDevices() {
       </td>
       <td style="color: var(--text-secondary); font-size: 0.8rem;"><code>${d.kind}</code></td>
       <td>
-        <span class="badge-status ${d.status}">${d.status}</span>
+        <button class="badge-status-btn ${d.status === 'online' ? 'live' : 'offline'}" onclick="window.toggleDeviceStatus('${d.id}')" title="Click to switch status (LIVE / OFFLINE)">
+          ${d.status === 'online' ? 'LIVE' : 'OFFLINE'}
+        </button>
       </td>
       <td>
         <strong style="color: ${d.temperature > 70 ? 'var(--primary)' : 'var(--text-main)'}; font-family: var(--font-mono);">
@@ -1385,6 +1441,49 @@ function renderDevices() {
   const statOnline = document.getElementById('stat-online-devices');
   if (statOnline) statOnline.innerText = `${onlineCount} / ${state.devices.length}`;
 }
+
+(window as any).toggleDeviceStatus = (id: string) => {
+  const dev = state.devices.find((d) => d.id === id);
+  if (!dev) return;
+  dev.status = dev.status === 'online' ? 'offline' : 'online';
+  dev.lastSeen = dev.status === 'online' ? 'Just now' : 'Disconnected';
+  logBusEvent(dev.status === 'online' ? 'iot.device.online' : 'iot.device.offline', {
+    deviceId: dev.id,
+    key: dev.key,
+    name: dev.name,
+    temperature: dev.temperature,
+    voltage: dev.voltage,
+  });
+  renderDevices();
+  updateFleetOscilloscope();
+};
+
+(window as any).toggleSystemStatus = () => {
+  state.systemStatus = state.systemStatus === 'operational' ? 'offline' : 'operational';
+  logBusEvent('system.health.status_changed', {
+    status: state.systemStatus,
+    activeTenant: state.activeTenant,
+    timestamp: new Date().toISOString(),
+  });
+
+  const topbarBtn = document.getElementById('topbar-status-btn');
+  if (topbarBtn) {
+    topbarBtn.className = `badge-status-btn ${state.systemStatus}`;
+    topbarBtn.innerHTML = `<span>●</span> <span>${state.systemStatus === 'operational' ? 'OPERATIONAL' : 'OFFLINE'}</span>`;
+  }
+
+  const overviewBtn = document.getElementById('overview-status-btn');
+  const overviewSub = document.getElementById('overview-status-subtext');
+  if (overviewBtn) {
+    overviewBtn.className = `badge-status-btn ${state.systemStatus}`;
+    overviewBtn.innerText = state.systemStatus === 'operational' ? 'Operational' : 'Offline / Maintenance';
+  }
+  if (overviewSub) {
+    overviewSub.innerHTML = state.systemStatus === 'operational'
+      ? 'Micro-kernel &amp; 5 modules &bull; 99.99% Uptime'
+      : 'Maintenance window active &bull; Unoperational';
+  }
+};
 
 (window as any).pingDevice = (id: string) => {
   const dev = state.devices.find((d) => d.id === id);
@@ -1411,6 +1510,7 @@ function renderDevices() {
     d.lastSeen = 'Just now (Token Rotated)';
   });
   renderDevices();
+  updateFleetOscilloscope();
   logBusEvent('iot.fleet.tokens_rotated', {
     tenant: state.activeTenant,
     count: state.devices.length,
@@ -1504,6 +1604,7 @@ function triggerTelemetryPing(deviceId: string, temp: number, humidity: number, 
     dev.lastSeen = 'Just now';
   }
   renderDevices();
+  updateFleetOscilloscope();
 
   logBusEvent('iot.telemetry.received', { deviceId, metrics: { temperature: temp, humidity, voltage } });
 
@@ -1531,7 +1632,10 @@ function renderRules() {
       <div>
         <div style="display: flex; align-items: center; gap: 8px;">
           <strong style="font-size: 0.9rem; color: var(--text-main);">${r.name}</strong>
-          ${r.approved ? '<span class="badge-status online">ACTIVE</span>' : '<span class="badge-status" style="background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning-border);">PENDING APPROVAL</span>'}
+          <button class="badge-status-btn ${r.enabled ? 'enabled' : 'disabled'}" onclick="window.toggleRule('${r.id}')" title="Click to toggle ENABLE / DISABLE">
+            ${r.enabled ? 'ENABLED' : 'DISABLED'}
+          </button>
+          ${!r.approved ? '<span class="badge-status" style="background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning-border); font-size: 0.68rem; padding: 2px 6px;">PENDING APPROVAL</span>' : ''}
         </div>
         <div style="font-family: var(--font-mono); font-size: 0.76rem; color: var(--text-secondary); margin-top: 4px;">
           <span>Trigger: <strong style="color: var(--text-main);">${r.trigger}</strong></span> |
@@ -1771,8 +1875,12 @@ function renderWhatsAppInboxView(container: HTMLElement) {
               <span>Multi-Channel Inbox</span>
               ${totalUnread > 0 ? `<span style="background: #25d366; color: #fff; font-size: 0.65rem; font-weight: 800; padding: 2px 7px; border-radius: 999px;">${totalUnread} new</span>` : ''}
             </div>
-            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">
-              Meta WhatsApp Cloud API &middot; Webhooks Live
+            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; display: flex; align-items: center; gap: 6px;">
+              <span>Meta WhatsApp Cloud API</span>
+              <span>&bull;</span>
+              <button class="badge-status-btn ${state.crmWebhookStatus === 'live' ? 'live' : 'offline'}" onclick="window.toggleCrmWebhook()" title="Click to toggle Webhook Live / Offline" style="padding: 2px 8px; font-size: 0.65rem;">
+                ${state.crmWebhookStatus === 'live' ? 'LIVE' : 'OFFLINE'}
+              </button>
             </div>
           </div>
           <button class="btn btn-secondary btn-xs" onclick="window.simulateIncomingWhatsApp()" title="Simulate incoming customer lead message via webhook">
@@ -2051,6 +2159,16 @@ function renderKanban() {
   }
 };
 
+(window as any).toggleCrmWebhook = () => {
+  state.crmWebhookStatus = state.crmWebhookStatus === 'live' ? 'offline' : 'live';
+  logBusEvent(state.crmWebhookStatus === 'live' ? 'crm.webhook.connected' : 'crm.webhook.disconnected', {
+    channel: 'whatsapp_cloud_api',
+    status: state.crmWebhookStatus,
+    timestamp: new Date().toISOString(),
+  });
+  renderCrm();
+};
+
 function createLead(title: string, company: string, value: number, stage: string) {
   const lead: Lead = {
     id: `lead-${Date.now()}`,
@@ -2213,20 +2331,65 @@ function createLead(title: string, company: string, value: number, stage: string
 };
 
 // ── Compliance Render ────────────────────────────────────────────────────────
-function updateCryptoPreview() {
-  const input = document.getElementById('pii-input') as HTMLInputElement;
-  const val = input ? input.value : 'user@example.com';
+let cachedAesKey: CryptoKey | null = null;
+let cachedHmacKey: CryptoKey | null = null;
 
-  const hex = Array.from(val).map((c) => c.charCodeAt(0).toString(16)).join('');
-  const iv = '4a9f1c7e8b02';
-  const tag = '9b2c3d4e5f6a7b8c';
-  const envelope = `enc:v1:${iv}:${tag}:${hex.substring(0, 40)}`;
-  const blind = `blind:${hex.substring(0, 16)}fa79c02d4`;
+async function getCryptoKeys() {
+  if (!cachedAesKey) {
+    cachedAesKey = await window.crypto.subtle.generateKey(
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['encrypt', 'decrypt']
+    );
+  }
+  if (!cachedHmacKey) {
+    cachedHmacKey = await window.crypto.subtle.generateKey(
+      { name: 'HMAC', hash: { name: 'SHA-256' } },
+      false,
+      ['sign']
+    );
+  }
+  return { aesKey: cachedAesKey, hmacKey: cachedHmacKey };
+}
+
+function bufToHex(buffer: ArrayBuffer): string {
+  return Array.from(new Uint8Array(buffer))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+async function updateCryptoPreview() {
+  const input = document.getElementById('pii-input') as HTMLInputElement;
+  const val = input && input.value.trim() ? input.value : 'operator@tenant-sovereign.io';
 
   const envEl = document.getElementById('crypto-envelope-display');
   const blnEl = document.getElementById('crypto-blind-display');
-  if (envEl) envEl.innerText = envelope;
-  if (blnEl) blnEl.innerText = blind;
+
+  try {
+    const { aesKey, hmacKey } = await getCryptoKeys();
+    const encoder = new TextEncoder();
+    const data = encoder.encode(val);
+
+    // Real 96-bit random IV for AES-256-GCM
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+    const encrypted = await window.crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv, tagLength: 128 },
+      aesKey,
+      data
+    );
+
+    // Real HMAC-SHA256 blind index for zero-knowledge lookup
+    const signature = await window.crypto.subtle.sign('HMAC', hmacKey, data);
+
+    const ivHex = bufToHex(iv.buffer);
+    const cipherHex = bufToHex(encrypted);
+    const blindHex = bufToHex(signature).substring(0, 32);
+
+    if (envEl) envEl.innerText = `enc:v1:aes256gcm:${ivHex}:${cipherHex}`;
+    if (blnEl) blnEl.innerText = `blind:hmac_sha256:${blindHex}`;
+  } catch (err) {
+    console.error('Web Crypto API error:', err);
+  }
 }
 
 function renderConsents() {
@@ -2253,10 +2416,14 @@ function renderConsents() {
             <td><span class="badge-status active" style="font-size: 0.68rem;">${c.legalBasis}</span></td>
             <td style="color: var(--text-secondary); font-size: 0.78rem;">${c.grantedAt}</td>
             <td>
-              ${c.revokedAt ? '<span class="badge-status" style="background: var(--error-bg); color: var(--error); border: 1px solid var(--error-border);">REVOKED</span>' : '<span class="badge-status online">ACTIVE</span>'}
+              <button class="badge-status-btn ${c.revokedAt ? 'revoked' : 'active'}" onclick="window.toggleConsent('${c.id}')" title="Click to toggle ACTIVE / REVOKED">
+                ${c.revokedAt ? 'REVOKED' : 'ACTIVE'}
+              </button>
             </td>
             <td style="text-align: right;">
-              ${!c.revokedAt ? `<button class="btn btn-danger btn-sm" onclick="window.revokeConsent('${c.id}')">Revoke</button>` : '<span style="color: var(--text-muted); font-size: 0.74rem;">Archived</span>'}
+              <button class="btn ${c.revokedAt ? 'btn-secondary' : 'btn-danger'} btn-sm" onclick="window.toggleConsent('${c.id}')">
+                ${c.revokedAt ? 'Reactivate' : 'Revoke'}
+              </button>
             </td>
           </tr>
         `).join('')}
@@ -2265,14 +2432,20 @@ function renderConsents() {
   `;
 }
 
-(window as any).revokeConsent = (id: string) => {
+(window as any).toggleConsent = (id: string) => {
   const c = state.consents.find((item) => item.id === id);
   if (c) {
-    c.revokedAt = new Date().toISOString().replace('T', ' ').substring(0, 16);
+    if (c.revokedAt) {
+      c.revokedAt = null;
+      logBusEvent('compliance.consent.reactivated', { subjectId: c.subjectId, purpose: c.purpose });
+    } else {
+      c.revokedAt = new Date().toISOString().replace('T', ' ').substring(0, 16);
+      logBusEvent('compliance.consent.revoked', { subjectId: c.subjectId, purpose: c.purpose });
+    }
     renderConsents();
-    logBusEvent('compliance.consent.revoked', { subjectId: c.subjectId, purpose: c.purpose });
   }
 };
+(window as any).revokeConsent = (window as any).toggleConsent;
 
 function executeSubjectErasure(subjectId: string) {
   state.erasureRequestsCount++;

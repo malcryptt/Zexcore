@@ -173,7 +173,6 @@ export function renderHomePage(): string {
           <div class="site-container">
 
             <div style="text-align:center; max-width: 720px; margin: 0 auto 52px auto;">
-              <span class="onboard-v2-badge">ZERO-CODE INITIALIZATION</span>
               <h2 class="section-title" style="margin-bottom: 14px; font-size: 2.3rem;">
                 Up and running in <span class="text-brand">ten minutes.</span>
               </h2>
@@ -187,7 +186,7 @@ export function renderHomePage(): string {
 
               <!-- Step 1: Industry Blueprint -->
               <div class="onboard-v2-card">
-                <span class="onboard-v2-badge">STEP 01</span>
+                <div class="onboard-step-label">STEP 01</div>
                 <h3 class="onboard-v2-title">Select Your Industry Blueprint</h3>
                 <p class="onboard-v2-desc">
                   Choose your vertical — clinic, logistics, property, or field services. ZexCore deploys pre-configured PostgreSQL schemas, state machines, and RLS policies tailored to your domain.
@@ -216,7 +215,7 @@ export function renderHomePage(): string {
 
               <!-- Step 2: Instant Working Showcase -->
               <div class="onboard-v2-card">
-                <span class="onboard-v2-badge">STEP 02</span>
+                <div class="onboard-step-label">STEP 02</div>
                 <h3 class="onboard-v2-title">Instant Live Customer Portal</h3>
                 <p class="onboard-v2-desc">
                   Immediately receive a live customer-facing portal loaded with realistic sample listings, booking calendars, and service fees. Fully editable and branded to your business.
@@ -242,7 +241,7 @@ export function renderHomePage(): string {
 
               <!-- Step 3: Direct WhatsApp Leads -->
               <div class="onboard-v2-card">
-                <span class="onboard-v2-badge">STEP 03</span>
+                <div class="onboard-step-label">STEP 03</div>
                 <h3 class="onboard-v2-title">WhatsApp Leads &amp; Instant Deposits</h3>
                 <p class="onboard-v2-desc">
                   Customer bookings dispatch automated notifications directly to your WhatsApp. Accept deposits via Mobile Money or Stripe without customer friction.
@@ -250,7 +249,6 @@ export function renderHomePage(): string {
                 <div class="onboard-v2-mockup">
                   <div class="onboard-v2-mockup-header">
                     <span style="color: #15803d; font-weight: 700;">WhatsApp Business Webhook</span>
-                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e;"></span>
                   </div>
                   <div style="background: #dcf8c6; border: 1px solid #bbf7d0; border-radius: 8px 8px 0 8px; padding: 10px; margin-left: 12px;">
                     <div style="font-size: 0.78rem; font-weight: 700; color: #14532d; margin-bottom: 4px;">New Patient Appointment #482</div>
@@ -548,7 +546,6 @@ export function renderHomePage(): string {
         <section class="home-final-cta-section">
           <div class="site-container">
             <div class="home-final-cta-inner">
-              <span class="home-final-cta-badge">ENGINEERED FOR SCALE &bull; DESIGNED FOR FOUNDERS</span>
               <h2 class="home-final-cta-title">Build Your Sovereign Vertical SaaS on ZexCore</h2>
               <p class="home-final-cta-desc">
                 Deploy mathematically isolated multi-tenancy, real-time IoT telemetry, and direct WhatsApp customer pipelines today. Zero vendor lock-in. Full PostgreSQL data sovereignty.
