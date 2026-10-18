@@ -109,6 +109,7 @@ interface BookingAppointment {
 // ── Application State ────────────────────────────────────────────────────────
 const state = {
   currentView: 'home' as 'home' | 'platform' | 'architecture' | 'modules' | 'solutions' | 'security' | 'docs' | 'resources' | 'pricing' | 'signin' | 'console' | 'dashboard',
+  platformModule: 'core',
   currentTab: 'overview',
   crmSubView: 'whatsapp' as 'whatsapp' | 'kanban' | 'booking',
   selectedThreadId: 'thread-1',
@@ -325,9 +326,9 @@ function renderDashboard() {
             System Overview
           </div>
           <div class="nav-item ${state.currentTab === 'iot' ? 'active' : ''}" data-tab="iot">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
             IoT Hub
-            ${isTabLocked('iot', currentPlan) ? '<span class="nav-plan-lock-badge">🔒 INDIE</span>' : `<span class="nav-badge" id="iot-count">${state.devices.length}</span>`}
+            ${isTabLocked('iot', currentPlan) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> INDIE</span>` : `<span class="nav-badge" id="iot-count">${state.devices.length}</span>`}
           </div>
           <div class="nav-item ${state.currentTab === 'rules' ? 'active' : ''}" data-tab="rules">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
@@ -336,13 +337,13 @@ function renderDashboard() {
           </div>
           <div class="nav-item ${state.currentTab === 'crm' ? 'active' : ''}" data-tab="crm">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            CRM Sales Pipeline
-            ${isTabLocked('crm', currentPlan) ? '<span class="nav-plan-lock-badge">🔒 GROWTH</span>' : `<span class="nav-badge">${state.leads.length}</span>`}
+            CRM &amp; Pipeline
+            ${isTabLocked('crm', currentPlan) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> GROWTH</span>` : `<span class="nav-badge">${state.leads.length}</span>`}
           </div>
           <div class="nav-item ${state.currentTab === 'compliance' ? 'active' : ''}" data-tab="compliance">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             Compliance &amp; Vault
-            ${isTabLocked('compliance', currentPlan) ? '<span class="nav-plan-lock-badge">🔒 SCALE</span>' : ''}
+            ${isTabLocked('compliance', currentPlan) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> SCALE</span>` : ''}
           </div>
         </nav>
 
@@ -393,13 +394,6 @@ function renderDashboard() {
           </div>
 
           <div class="topbar-right">
-            <div class="module-status-group">
-              <span class="module-chip"><span class="dot"></span>core</span>
-              <span class="module-chip"><span class="dot"></span>iot</span>
-              <span class="module-chip"><span class="dot"></span>rules</span>
-              <span class="module-chip"><span class="dot"></span>crm</span>
-              <span class="module-chip"><span class="dot"></span>compliance</span>
-            </div>
 
             <!-- Authenticated User Profile Badge -->
             <div class="auth-user-badge" style="display: flex; align-items: center; gap: 8px; padding: 4px 10px; background: #fff; border: 1px solid var(--border-default); border-radius: 20px; font-size: 0.76rem;">
@@ -793,16 +787,16 @@ function renderDashboard() {
             <!-- CRM Sub-navigation Tabs -->
             <div style="display: flex; gap: 8px; margin-bottom: 18px; border-bottom: 2px solid var(--border-default); padding-bottom: 10px; flex-wrap: wrap;">
               <button class="btn ${state.crmSubView === 'whatsapp' ? 'btn-primary' : 'btn-secondary'} btn-sm" id="btn-crm-nav-whatsapp" style="display: inline-flex; align-items: center; gap: 6px;">
-                <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #25d366;"></span>
-                💬 WhatsApp &amp; Multi-Channel Inbox
-                <span style="background: #25d366; color: #fff; font-size: 0.65rem; font-weight: 800; padding: 1px 6px; border-radius: 999px;">1 New</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Inbox &amp; Channels
               </button>
-              <button class="btn ${state.crmSubView === 'kanban' ? 'btn-primary' : 'btn-secondary'} btn-sm" id="btn-crm-nav-kanban">
-                📊 Deals Pipeline (Kanban)
+              <button class="btn ${state.crmSubView === 'kanban' ? 'btn-primary' : 'btn-secondary'} btn-sm" id="btn-crm-nav-kanban" style="display: inline-flex; align-items: center; gap: 6px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                Deals Pipeline
               </button>
               <button class="btn ${state.crmSubView === 'booking' ? 'btn-primary' : 'btn-secondary'} btn-sm" id="btn-crm-nav-booking" style="display: inline-flex; align-items: center; gap: 6px;">
-                <span>📅</span> Bookings &amp; Reminders
-                <span style="background: #e11d48; color: #fff; font-size: 0.65rem; font-weight: 800; padding: 1px 6px; border-radius: 999px;">3 Active</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                Bookings
               </button>
             </div>
 
@@ -1222,7 +1216,10 @@ function renderDevices() {
       <td style="font-size: 0.75rem; color: var(--text-secondary); font-family: var(--font-mono);">${d.firmware}</td>
       <td style="font-size: 0.78rem; color: var(--text-secondary);">${d.lastSeen}</td>
       <td style="text-align: right;">
-        <button class="btn btn-secondary btn-sm" onclick="window.pingDevice('${d.id}')">📡 Ingest Ping</button>
+        <button class="btn btn-secondary btn-sm" onclick="window.pingDevice('${d.id}')" style="display:inline-flex;align-items:center;gap:5px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+          Ingest Ping
+        </button>
       </td>
     </tr>
   `).join('');
@@ -1513,7 +1510,8 @@ function renderWhatsAppInboxView(container: HTMLElement) {
         <div class="whatsapp-threads-header">
           <div>
             <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
-              <span>💬 Multi-Channel Inbox</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#25d366" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <span>Multi-Channel Inbox</span>
               ${totalUnread > 0 ? `<span style="background: #25d366; color: #fff; font-size: 0.65rem; font-weight: 800; padding: 2px 7px; border-radius: 999px;">${totalUnread} new</span>` : ''}
             </div>
             <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">
@@ -1602,11 +1600,11 @@ function renderWhatsAppInboxView(container: HTMLElement) {
 
           <!-- Saved Reply Templates / Ready Recipes -->
           <div class="whatsapp-quick-replies-row">
-            <span style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); align-self: center; margin-right: 4px;">⚡ Quick Replies:</span>
-            <button class="whatsapp-quick-reply-pill" onclick="window.sendWhatsAppQuickPing('⚡ Here is our Cold Chain & Fleet Telemetry Hardware Specification catalog.')">📄 Send Product Specs</button>
-            <button class="whatsapp-quick-reply-pill" onclick="window.sendWhatsAppQuickPing('📅 You can book a 1-on-1 hardware live onboarding slot here: https://zexcore.io/book/${activeThread.id}')">📅 Share 1-Click Booking</button>
-            <button class="whatsapp-quick-reply-pill" onclick="window.sendWhatsAppQuickPing('💳 Here is the Paystack checkout link to secure your initial reservation deposit: https://paystack.com/pay/zexcore-starter')">💳 Request Paystack Deposit (₦50k)</button>
-            <button class="whatsapp-quick-reply-pill" onclick="window.sendWhatsAppQuickPing('🔒 ZexCore operates on single-tenant database encryption with ISO 27001 audit logging.')">🔒 Security Summary</button>
+            <span style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); align-self: center; margin-right: 4px;">Quick Replies:</span>
+            <button class="whatsapp-quick-reply-pill" onclick="window.sendWhatsAppQuickPing('Here is our Cold Chain & Fleet Telemetry Hardware Specification catalog.')">Send Spec Sheet</button>
+            <button class="whatsapp-quick-reply-pill" onclick="window.sendWhatsAppQuickPing('You can book a 1-on-1 hardware live onboarding slot here: https://zexcore.io/book/${activeThread.id}')">Share Booking Link</button>
+            <button class="whatsapp-quick-reply-pill" onclick="window.sendWhatsAppQuickPing('Here is the Paystack checkout link to secure your initial reservation deposit: https://paystack.com/pay/zexcore-starter')">Request Deposit (₦50k)</button>
+            <button class="whatsapp-quick-reply-pill" onclick="window.sendWhatsAppQuickPing('ZexCore operates on single-tenant database encryption with ISO 27001 audit logging.')">Security Summary</button>
           </div>
 
           <!-- Message Composer Form -->
@@ -1668,14 +1666,15 @@ function renderBookingsView(container: HTMLElement) {
       <div class="card" style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: var(--radius-md); overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
         <div class="card-header" style="padding: 16px 20px; border-bottom: 1px solid var(--border-default); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
           <div>
-            <div style="font-weight: 800; font-size: 1rem; color: var(--text-main);">📅 Scheduled Client Bookings &amp; Telemetry Intakes</div>
+            <div style="font-weight: 800; font-size: 1rem; color: var(--text-main);">Scheduled Client Bookings &amp; Appointments</div>
             <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">
               Shareable booking page with automated WhatsApp/SMS reminders to cut customer no-shows
             </div>
           </div>
           <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-            <button class="btn btn-secondary btn-sm" onclick="window.copyShareableBookingLink()">
-              🔗 Copy Booking Link
+            <button class="btn btn-secondary btn-sm" onclick="window.copyShareableBookingLink()" style="display:inline-flex;align-items:center;gap:5px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              Copy Booking Link
             </button>
             <button class="btn btn-primary btn-sm" onclick="window.openNewBookingModal()">
               + New Appointment
@@ -1725,8 +1724,9 @@ function renderBookingsView(container: HTMLElement) {
                     </td>
                     <td style="padding: 12px 16px; text-align: right;">
                       <div style="display: inline-flex; gap: 6px; align-items: center;">
-                        <button class="btn btn-secondary btn-xs" onclick="window.triggerBookingReminder('${b.id}')" title="Dispatch automated reminder message now">
-                          📲 Ping Reminder
+                        <button class="btn btn-secondary btn-xs" onclick="window.triggerBookingReminder('${b.id}')" title="Dispatch automated reminder message now" style="display:inline-flex;align-items:center;gap:4px;">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"/></svg>
+                          Ping Reminder
                         </button>
                         <a href="https://wa.me/${b.cleanPhone}?text=${encodeURIComponent(`Hi ${b.clientName}, this is a reminder for your confirmed booking: ${b.service} at ${b.dateTime}. To reschedule or modify: https://zexcore.io/reschedule/${b.id}`)}" target="_blank" rel="noopener noreferrer" class="btn btn-xs" style="background: #25d366; color: #fff; border: none; font-weight: 700; border-radius: 4px; padding: 3px 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
                           Chat
@@ -2071,7 +2071,7 @@ function renderApp() {
       setupHomePageEvents();
       break;
     case 'platform':
-      app.innerHTML = renderPlatformPage();
+      app.innerHTML = renderPlatformPage(state.platformModule);
       setupNavbarEvents();
       break;
     case 'architecture':
@@ -2125,7 +2125,9 @@ function renderApp() {
 
 function syncRouteFromHash() {
   const rawHash = window.location.hash.replace(/^#\/?/, '').split('?')[0].split('#')[0];
-  const route = rawHash.toLowerCase();
+  const parts = rawHash.split('/');
+  const route = parts[0]?.toLowerCase() || '';
+  const subParam = parts[1]?.toLowerCase() || '';
 
   if (route === 'signin' || route === 'login') {
     state.currentView = 'signin';
@@ -2133,6 +2135,7 @@ function syncRouteFromHash() {
     state.currentView = 'console';
   } else if (route === 'platform') {
     state.currentView = 'platform';
+    state.platformModule = subParam || 'core';
   } else if (route === 'architecture') {
     state.currentView = 'architecture';
   } else if (route === 'modules') {

@@ -46,11 +46,30 @@ export interface IndustryStarter {
   }>;
 }
 
+export function getIndustrySvgIcon(verticalId: string, size = 22, strokeColor = '#E50920'): string {
+  switch (verticalId) {
+    case 'logistics':
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${strokeColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>`;
+    case 'industrial':
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${strokeColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M17 18h1"/><path d="M12 18h1"/><path d="M7 18h1"/></svg>`;
+    case 'crm':
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${strokeColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`;
+    case 'services':
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${strokeColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`;
+    case 'fintech_agency':
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${strokeColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>`;
+    case 'clinic_booking':
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${strokeColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`;
+    default:
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${strokeColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>`;
+  }
+}
+
 export const INDUSTRY_STARTERS: Record<string, IndustryStarter> = {
   logistics: {
     id: 'logistics',
     name: 'Cold Chain Logistics & Fleet',
-    icon: '🚚',
+    icon: 'logistics',
     tagline: 'Precision refrigerated freight & telemetry tracking',
     companyDefault: 'Polaris Fleet Logistics',
     listingTitle: 'Cold Storage Reefer Unit 40ft (Tri-Temp)',
@@ -256,14 +275,16 @@ export function renderOnboardingBanner(state: OnboardingState): string {
           ${Object.values(INDUSTRY_STARTERS)
             .map(
               (ind) => `
-            <div class="industry-choice-card" data-vertical="${ind.id}" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; justify-content: space-between;">
+            <div class="industry-choice-card" data-vertical="${ind.id}" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; justify-content: space-between;">
               <div>
-                <div style="font-size: 1.8rem; margin-bottom: 8px;">${ind.icon}</div>
+                <div style="width: 42px; height: 42px; border-radius: 8px; background: #fff1f2; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+                  ${getIndustrySvgIcon(ind.id, 22, '#e50920')}
+                </div>
                 <div style="font-weight: 700; color: #1e293b; font-size: 0.95rem; margin-bottom: 4px;">${ind.name}</div>
                 <div style="font-size: 0.78rem; color: #64748b; line-height: 1.4;">${ind.tagline}</div>
               </div>
               <button class="btn btn-primary btn-sm" style="margin-top: 14px; width: 100%; justify-content: center; background: #e50920; border-color: #e50920;">
-                Select &amp; Launch Site →
+                Select &amp; Launch Site &rarr;
               </button>
             </div>
           `
@@ -279,8 +300,8 @@ export function renderOnboardingBanner(state: OnboardingState): string {
     <div class="onboarding-active-card" style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #e50920; border-radius: 10px; padding: 20px; margin-bottom: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
       <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px;">
         <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="width: 44px; height: 44px; border-radius: 10px; background: #fee2e5; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
-            ${activePreset?.icon}
+          <div style="width: 44px; height: 44px; border-radius: 10px; background: #fee2e5; display: flex; align-items: center; justify-content: center;">
+            ${activePreset ? getIndustrySvgIcon(activePreset.id, 22, '#e50920') : ''}
           </div>
           <div>
             <div style="display: flex; align-items: center; gap: 8px;">
@@ -294,11 +315,13 @@ export function renderOnboardingBanner(state: OnboardingState): string {
         </div>
 
         <div style="display: flex; align-items: center; gap: 8px;">
-          <button type="button" class="btn btn-secondary btn-sm" id="btn-open-sample-site" style="font-weight: 600;">
-            👁️ View Sample Site &amp; Form
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-open-sample-site" style="font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            Preview Sample Site
           </button>
-          <button type="button" class="btn btn-secondary btn-sm" id="btn-onboarding-undo" style="color: #64748b;" title="Undo everything and pick another industry">
-            ↺ Undo &amp; Switch Field
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-onboarding-undo" style="color: #64748b; display: inline-flex; align-items: center; gap: 6px;" title="Undo everything and pick another industry">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+            Switch Niche
           </button>
         </div>
       </div>
@@ -338,7 +361,9 @@ export function renderOnboardingBanner(state: OnboardingState): string {
         <!-- Modal Header -->
         <div style="display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; background: #fff; z-index: 10;">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 1.4rem;">${activePreset?.icon}</span>
+            <div style="width: 32px; height: 32px; border-radius: 6px; background: #fee2e5; display: flex; align-items: center; justify-content: center;">
+              ${activePreset ? getIndustrySvgIcon(activePreset.id, 18, '#e50920') : ''}
+            </div>
             <div>
               <div style="font-weight: 700; font-size: 1.05rem; color: #0f172a;">${state.companyName} — Public Preview</div>
               <div style="font-size: 0.74rem; color: #64748b;">Live editable sample site ready for clients</div>
@@ -386,7 +411,10 @@ export function renderOnboardingBanner(state: OnboardingState): string {
               </div>
 
               <div id="enquiry-success-banner" style="display: none; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 12px; border-radius: 8px; margin-bottom: 14px; font-size: 0.85rem; line-height: 1.5;">
-                <div style="font-weight: 700; margin-bottom: 2px;">⚡ Enquiry Received &amp; Lead Created!</div>
+                <div style="font-weight: 700; margin-bottom: 2px; display: flex; align-items: center; gap: 6px;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  Enquiry Received &amp; Lead Created
+                </div>
                 <div>${activePreset?.followUpMsg}</div>
               </div>
 

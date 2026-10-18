@@ -265,9 +265,9 @@ export function openStripeCheckoutModal(
         </div>
 
         <div style="display: flex; gap: 6px; margin-bottom: 14px;">
-          <button type="button" class="btn btn-sm ${paystackChannel === 'card' ? 'btn-primary' : 'btn-secondary'}" id="ps-chan-card" style="flex: 1; font-size: 0.74rem;">💳 Card / Verve</button>
-          <button type="button" class="btn btn-sm ${paystackChannel === 'bank_transfer' ? 'btn-primary' : 'btn-secondary'}" id="ps-chan-transfer" style="flex: 1; font-size: 0.74rem;">🏛️ Bank Transfer</button>
-          <button type="button" class="btn btn-sm ${paystackChannel === 'ussd' ? 'btn-primary' : 'btn-secondary'}" id="ps-chan-ussd" style="flex: 1; font-size: 0.74rem;">📱 USSD (*737#)</button>
+          <button type="button" class="btn btn-sm ${paystackChannel === 'card' ? 'btn-primary' : 'btn-secondary'}" id="ps-chan-card" style="flex: 1; font-size: 0.74rem;">Card / Verve</button>
+          <button type="button" class="btn btn-sm ${paystackChannel === 'bank_transfer' ? 'btn-primary' : 'btn-secondary'}" id="ps-chan-transfer" style="flex: 1; font-size: 0.74rem;">Bank Transfer</button>
+          <button type="button" class="btn btn-sm ${paystackChannel === 'ussd' ? 'btn-primary' : 'btn-secondary'}" id="ps-chan-ussd" style="flex: 1; font-size: 0.74rem;">USSD (*737#)</button>
         </div>
 
         ${paystackChannel === 'bank_transfer' ? `
@@ -333,7 +333,7 @@ export function openStripeCheckoutModal(
           <label>Mobile Money Wallet Phone Number</label>
           <input type="text" id="flw-phone" value="${flwNetwork === 'mpesa' ? '+254 712 908 112' : flwNetwork === 'mtn' ? '+233 24 551 9021' : '+256 77 123 4567'}" class="stripe-input" required />
           <div style="font-size: 0.72rem; color: #64748b; margin-top: 5px;">
-            ⚡ An automated STK Push notification will appear on your phone to authorize this subscription.
+            An automated STK Push notification will appear on your phone to authorize this subscription.
           </div>
         </div>
 
