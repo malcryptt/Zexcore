@@ -254,10 +254,12 @@ export function getTabLockedInfo(tabId: string): { title: string; subtitle: stri
   }
 }
 
-export type PaymentGateway = 'stripe' | 'paystack' | 'flutterwave';
+export type PaymentMethod = 'card' | 'transfer';
 
 /**
- * Opens an interactive multi-gateway Checkout modal supporting Stripe, Paystack, and Flutterwave.
+ * Modern Clean Multi-Method Checkout Modal
+ * Inspired by streamlined African & global fintech checkout flows.
+ * Supports Card and Direct Bank Transfer with zero third-party watermark badges.
  */
 export function openStripeCheckoutModal(
   targetPlan: PlanTier,
@@ -270,9 +272,8 @@ export function openStripeCheckoutModal(
 
   const plan = PLANS[targetPlan] || PLANS.growth;
   let currentCycle = initialCycle;
-  let currentGateway: PaymentGateway = 'stripe';
-  let paystackChannel: 'card' | 'bank_transfer' | 'ussd' = 'card';
-  let flwNetwork: 'mpesa' | 'mtn' | 'airtel' = 'mpesa';
+  let activeMethod: PaymentMethod = 'card';
+  const tenantEmail = 'engineer@enterprise.io';
 
   const modalWrap = document.createElement('div');
   modalWrap.id = 'stripe-checkout-modal-wrap';
@@ -280,224 +281,185 @@ export function openStripeCheckoutModal(
 
   function renderModalHtml(): string {
     const price = currentCycle === 'annual' ? plan.annualPrice : plan.monthlyPrice;
-    const billedLabel = currentCycle === 'annual'
-      ? (plan.annualPrice === 0 ? 'Free forever' : `billed annually ($${plan.annualPrice}/yr)`)
-      : (plan.monthlyPrice === 0 ? 'Free tier' : 'billed monthly');
     const ngnPrice = price * 1500;
-    const kesPrice = price * 130;
-
-    let gatewayContent = '';
-
-    if (currentGateway === 'stripe') {
-      gatewayContent = `
-        <div class="stripe-form-group">
-          <label>Email Address</label>
-          <input type="email" id="checkout-input-email" required value="engineer@enterprise.io" class="stripe-input" />
-        </div>
-
-        <div class="stripe-form-group">
-          <label>Card Information (Stripe Global)</label>
-          <div class="stripe-card-field-wrap">
-            <div class="stripe-card-input-row">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-              <input type="text" id="stripe-input-card" value="4242 4242 4242 4242" class="stripe-card-number-input" required maxlength="19" />
-              <span class="stripe-card-brand">VISA</span>
-            </div>
-            <div class="stripe-card-meta-row">
-              <input type="text" id="stripe-input-exp" value="12/28" placeholder="MM/YY" class="stripe-meta-input" required maxlength="5" />
-              <input type="text" id="stripe-input-cvc" value="382" placeholder="CVC" class="stripe-meta-input" required maxlength="4" />
-            </div>
-          </div>
-        </div>
-
-        <div class="stripe-form-group">
-          <label>Country or Region</label>
-          <select class="stripe-input" id="stripe-input-country">
-            <option value="US" selected>United States (USD)</option>
-            <option value="GB">United Kingdom (GBP)</option>
-            <option value="EU">European Union (EUR)</option>
-            <option value="CA">Canada (CAD)</option>
-            <option value="AU">Australia (AUD)</option>
-          </select>
-        </div>
-
-        <button type="submit" class="stripe-submit-btn" id="stripe-submit-btn">
-          <span>Pay $${price} &amp; Activate ${plan.name}</span>
-        </button>
-
-        <div class="stripe-secure-note">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          Encrypted via Stripe PCI-DSS Level 1 compliance. Cancel anytime.
-        </div>
-      `;
-    } else if (currentGateway === 'paystack') {
-      gatewayContent = `
-        <div style="background: #f0fdfa; border: 1px solid #ccfbf1; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 0.74rem; font-weight: 700; color: #0f766e; text-transform: uppercase;">Paystack NGN Conversion</div>
-            <div style="font-size: 1.15rem; font-weight: 900; color: #042f2e;">₦${ngnPrice.toLocaleString()} <span style="font-size: 0.75rem; font-weight: 500; color: #0f766e;">/ mo (1 USD = ₦1,500)</span></div>
-          </div>
-          <span style="font-weight: 900; color: #00C3F7; font-size: 1.1rem; letter-spacing: -0.04em;">paystack</span>
-        </div>
-
-        <div style="display: flex; gap: 6px; margin-bottom: 14px;">
-          <button type="button" class="btn btn-sm ${paystackChannel === 'card' ? 'btn-primary' : 'btn-secondary'}" id="ps-chan-card" style="flex: 1; font-size: 0.74rem;">Card / Verve</button>
-          <button type="button" class="btn btn-sm ${paystackChannel === 'bank_transfer' ? 'btn-primary' : 'btn-secondary'}" id="ps-chan-transfer" style="flex: 1; font-size: 0.74rem;">Bank Transfer</button>
-          <button type="button" class="btn btn-sm ${paystackChannel === 'ussd' ? 'btn-primary' : 'btn-secondary'}" id="ps-chan-ussd" style="flex: 1; font-size: 0.74rem;">USSD (*737#)</button>
-        </div>
-
-        ${paystackChannel === 'bank_transfer' ? `
-          <div style="background: #ffffff; border: 1.5px dashed #00C3F7; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
-            <div style="font-size: 0.74rem; font-weight: 700; color: #64748b; margin-bottom: 4px;">Paystack Dedicated Virtual Account:</div>
-            <div style="font-size: 1.25rem; font-weight: 900; font-family: var(--font-mono); color: #0f172a; margin-bottom: 4px;">9920 1488 21</div>
-            <div style="font-size: 0.78rem; color: #334155;"><strong>Bank:</strong> Wema Bank / Titan Trust &bull; <strong>Name:</strong> ZexCore Cloud [${plan.name}]</div>
-            <div style="font-size: 0.72rem; color: #16a34a; margin-top: 6px; display: flex; align-items: center; gap: 5px;">
-              <span class="status-dot green"></span> Live webhook listener waiting for transfer
-            </div>
-          </div>
-        ` : `
-          <div class="stripe-form-group">
-            <label>Nigerian Phone &amp; Email</label>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-              <input type="text" id="ps-phone" value="+234 803 892 1104" class="stripe-input" required />
-              <input type="email" id="checkout-input-email" value="billing@africonnect.ng" class="stripe-input" required />
-            </div>
-          </div>
-
-          <div class="stripe-form-group">
-            <label>Card Details (Verve / Mastercard / Visa)</label>
-            <div class="stripe-card-field-wrap">
-              <div class="stripe-card-input-row">
-                <input type="text" id="stripe-input-card" value="5061 0244 8812 9012" class="stripe-card-number-input" required maxlength="19" />
-                <span class="stripe-card-brand" style="background:#f0fdfa; color:#0f766e; border-color:#ccfbf1;">VERVE</span>
-              </div>
-              <div class="stripe-card-meta-row">
-                <input type="text" id="stripe-input-exp" value="09/27" placeholder="MM/YY" class="stripe-meta-input" required />
-                <input type="text" id="stripe-input-cvc" value="819" placeholder="CVV" class="stripe-meta-input" required />
-              </div>
-            </div>
-          </div>
-        `}
-
-        <button type="submit" class="stripe-submit-btn" id="stripe-submit-btn" style="background: #00C3F7;">
-          <span>Pay ₦${ngnPrice.toLocaleString()} with Paystack</span>
-        </button>
-
-        <div class="stripe-secure-note">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          Secured by Paystack (a Stripe company). Instant automated NGN activation.
-        </div>
-      `;
-    } else {
-      // Flutterwave
-      gatewayContent = `
-        <div style="background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 0.74rem; font-weight: 700; color: #b45309; text-transform: uppercase;">Flutterwave Mobile Money</div>
-            <div style="font-size: 1.15rem; font-weight: 900; color: #78350f;">KES ${kesPrice.toLocaleString()} <span style="font-size: 0.75rem; font-weight: 500; color: #b45309;">/ mo ($${price} USD)</span></div>
-          </div>
-          <span style="font-weight: 900; color: #F5A623; font-size: 1.1rem; letter-spacing: -0.04em;">Flutterwave</span>
-        </div>
-
-        <div style="display: flex; gap: 6px; margin-bottom: 14px;">
-          <button type="button" class="btn btn-sm ${flwNetwork === 'mpesa' ? 'btn-primary' : 'btn-secondary'}" id="flw-net-mpesa" style="flex: 1; font-size: 0.74rem;">M-Pesa (KE)</button>
-          <button type="button" class="btn btn-sm ${flwNetwork === 'mtn' ? 'btn-primary' : 'btn-secondary'}" id="flw-net-mtn" style="flex: 1; font-size: 0.74rem;">MTN MoMo (GH)</button>
-          <button type="button" class="btn btn-sm ${flwNetwork === 'airtel' ? 'btn-primary' : 'btn-secondary'}" id="flw-net-airtel" style="flex: 1; font-size: 0.74rem;">Airtel Money (UG)</button>
-        </div>
-
-        <div class="stripe-form-group">
-          <label>Mobile Money Wallet Phone Number</label>
-          <input type="text" id="flw-phone" value="${flwNetwork === 'mpesa' ? '+254 712 908 112' : flwNetwork === 'mtn' ? '+233 24 551 9021' : '+256 77 123 4567'}" class="stripe-input" required />
-          <div style="font-size: 0.72rem; color: #64748b; margin-top: 5px;">
-            An automated STK Push notification will appear on your phone to authorize this subscription.
-          </div>
-        </div>
-
-        <div class="stripe-form-group">
-          <label>Full Name &amp; Work Email</label>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-            <input type="text" id="flw-name" value="Kofi Mensah" class="stripe-input" required />
-            <input type="email" id="checkout-input-email" value="kofi@pan-african.io" class="stripe-input" required />
-          </div>
-        </div>
-
-        <button type="submit" class="stripe-submit-btn" id="stripe-submit-btn" style="background: #F5A623;">
-          <span>Authorize KES ${kesPrice.toLocaleString()} with Flutterwave</span>
-        </button>
-
-        <div class="stripe-secure-note">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          Secured by Flutterwave ISO 27001 &amp; PCI Level 1 gateway.
-        </div>
-      `;
-    }
+    const formattedPrice = `$${price}.00`;
+    const formattedNgn = `₦${ngnPrice.toLocaleString()}`;
 
     return `
-      <div class="stripe-modal-box">
-        <!-- Stripe Header -->
-        <div class="stripe-header">
-          <div class="stripe-brand-left">
-            <img src="/zexcore-logo-horizontal.png" alt="ZexCore" class="stripe-merchant-logo" />
-          </div>
-          <div class="stripe-brand-right">
-            <div class="stripe-powered-pill">
-              <span>Powered by</span>
-              <svg width="48" height="20" viewBox="0 0 60 25" fill="#635BFF" xmlns="http://www.w3.org/2000/svg" style="display:inline-block; vertical-align: middle;">
-                <path fill-rule="evenodd" clip-rule="evenodd" d="M59.64 14.28c0-4.48-2.18-8-6.43-8-4.28 0-6.87 3.52-6.87 8 0 5.28 3.12 7.94 7.45 7.94 2.11 0 3.7-.48 4.9-.99v-3.32c-1.2.48-2.52.8-3.99.8-1.74 0-3.23-.74-3.41-2.69h8.28c.03-.4.07-1.34.07-1.74zm-8.35-1.57c0-1.75 1.07-2.48 2.22-2.48 1.12 0 2.15.73 2.15 2.48h-4.37zM38.8 6.28c-1.68 0-2.77.78-3.35 1.33l-.22-1.05h-4.3v21.57l4.77-1.02.01-4.73c.59.48 1.54 1.12 3.03 1.12 3.18 0 6.07-2.54 6.07-8.58 0-5.74-2.97-8.64-6.01-8.64zm-1.12 12.39c-1.04 0-1.92-.37-2.46-.96v-5.91c.56-.63 1.45-1.01 2.46-1.01 1.76 0 2.87 1.62 2.87 3.93 0 2.37-1.1 3.95-2.87 3.95zM25.76 5.23l4.79-1.03v-4.2H25.76v5.23zm0 1.33h4.79v15.17h-4.79V6.56zm-4.75 3.06l-.26-3.06h-4.3v15.17h4.76V12.9c1.13-1.48 3.04-1.2 3.65-1.01V7.55c-.64-.24-2.72-.6-3.85 2.07zM10.99 8.04c0-.79.65-1.1 1.72-1.1 1.54 0 3.49.48 5.01 1.31V3.91c-1.66-.67-3.33-.91-5.01-.91-4.14 0-6.9 2.17-6.9 5.8 0 5.68 7.82 4.77 7.82 7.22 0 .93-.81 1.24-1.94 1.24-1.69 0-3.88-.7-5.59-1.66v4.44c1.88.81 3.81 1.15 5.59 1.15 4.25 0 7.15-2.11 7.15-5.83 0-6.04-7.85-4.99-7.85-7.32z"/>
-              </svg>
+      <div class="stripe-modal-box" style="max-width: 680px; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+        <!-- Top Clean Merchant Bar -->
+        <div style="background: #ffffff; border-bottom: 1px solid #f1f5f9; padding: 14px 22px; display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 28px; height: 28px; border-radius: 6px; background: #E50920; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 0.85rem;">
+              Z
             </div>
-            <button class="stripe-modal-close" id="btn-close-stripe-modal" title="Close">&times;</button>
+            <div>
+              <span style="font-weight: 800; font-size: 0.92rem; color: #0f172a; letter-spacing: -0.01em;">ZexCore Checkout</span>
+              <span style="font-size: 0.72rem; color: #64748b; margin-left: 6px; font-weight: 600;">(${plan.name} Tier)</span>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="text-align: right; line-height: 1.2;">
+              <div style="font-size: 0.72rem; color: #64748b; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">${tenantEmail}</div>
+              <div style="font-size: 0.86rem; font-weight: 850; color: #0f172a;">
+                Pay <span style="color: #0d9488;">${formattedPrice}</span>
+              </div>
+            </div>
+            <button class="stripe-modal-close" id="btn-close-checkout-modal" title="Close" style="font-size: 1.4rem; padding: 0 6px; line-height: 1; color: #94a3b8; background: transparent; border: none; cursor: pointer;">&times;</button>
           </div>
         </div>
 
-        <div class="stripe-modal-body">
-          <!-- Plan Summary Column -->
-          <div class="stripe-plan-summary">
-            <div class="stripe-plan-kicker">SUBSCRIBE TO ZEXCORE</div>
-            <h3 class="stripe-plan-name">${plan.name}</h3>
-            <p class="stripe-plan-tagline">${plan.tagline}</p>
+        <!-- Main Modal Body: Left "PAY WITH" & Right Content -->
+        <div style="display: grid; grid-template-columns: 190px 1fr; min-height: 440px; background: #ffffff;">
+          
+          <!-- Left Sidebar: PAY WITH Options -->
+          <div style="background: #f8fafc; border-right: 1px solid #f1f5f9; padding: 20px 12px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="font-size: 0.68rem; font-weight: 800; color: #94a3b8; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 12px; padding-left: 8px;">
+                PAY WITH
+              </div>
 
-            <div class="stripe-price-display">
-              <span class="stripe-currency">$</span>
-              <span class="stripe-amount">${price}</span>
-              <span class="stripe-term">/ month</span>
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <!-- Option 1: Card -->
+                <button type="button" class="btn-checkout-method ${activeMethod === 'card' ? 'active' : ''}" id="btn-method-card" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid ${activeMethod === 'card' ? '#cbd5e1' : 'transparent'}; background: ${activeMethod === 'card' ? '#ffffff' : 'transparent'}; color: ${activeMethod === 'card' ? '#0f172a' : '#64748b'}; font-weight: ${activeMethod === 'card' ? '750' : '600'}; font-size: 0.84rem; cursor: pointer; text-align: left; transition: all 0.15s ease; ${activeMethod === 'card' ? 'box-shadow: 0 2px 6px rgba(0,0,0,0.04); border-left: 3px solid #0d9488;' : ''}">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${activeMethod === 'card' ? '#0d9488' : 'currentColor'}" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                  <span>Card</span>
+                </button>
+
+                <!-- Option 2: Transfer -->
+                <button type="button" class="btn-checkout-method ${activeMethod === 'transfer' ? 'active' : ''}" id="btn-method-transfer" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid ${activeMethod === 'transfer' ? '#cbd5e1' : 'transparent'}; background: ${activeMethod === 'transfer' ? '#ffffff' : 'transparent'}; color: ${activeMethod === 'transfer' ? '#0f172a' : '#64748b'}; font-weight: ${activeMethod === 'transfer' ? '750' : '600'}; font-size: 0.84rem; cursor: pointer; text-align: left; transition: all 0.15s ease; ${activeMethod === 'transfer' ? 'box-shadow: 0 2px 6px rgba(0,0,0,0.04); border-left: 3px solid #0d9488;' : ''}">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${activeMethod === 'transfer' ? '#0d9488' : 'currentColor'}" stroke-width="2"><path d="M3 21h18"/><path d="M3 10h18"/><path d="M5 6l7-3 7 3"/><path d="M4 10v11"/><path d="M20 10v11"/><path d="M8 14v4"/><path d="M12 14v4"/><path d="M16 14v4"/></svg>
+                  <span>Transfer</span>
+                </button>
+              </div>
             </div>
-            <div class="stripe-billed-note">${billedLabel}</div>
 
-            <!-- Billing Cycle Switcher inside modal -->
-            <div class="stripe-cycle-toggle">
-              <button type="button" class="stripe-cycle-btn ${currentCycle === 'monthly' ? 'active' : ''}" id="stripe-btn-monthly">Monthly</button>
-              <button type="button" class="stripe-cycle-btn ${currentCycle === 'annual' ? 'active' : ''}" id="stripe-btn-annual">Annual (Save 10%)</button>
-            </div>
-
-            <div class="stripe-plan-features-list">
-              <div class="stripe-features-heading">Included with your subscription:</div>
-              ${plan.features.map(f => `<div class="stripe-feat-item"><span class="stripe-feat-check">✓</span><span>${f}</span></div>`).join('')}
+            <!-- Left Sidebar Footer: Plan & Billing Cycle -->
+            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 0.74rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-weight: 700; color: #0f172a;">${plan.name}</span>
+                <span style="font-weight: 800; color: #0d9488;">${formattedPrice}</span>
+              </div>
+              <div style="display: flex; gap: 4px; background: #f1f5f9; padding: 2px; border-radius: 4px; margin-bottom: 6px;">
+                <button type="button" id="btn-checkout-cycle-monthly" style="flex: 1; border: none; padding: 3px 6px; font-size: 0.68rem; font-weight: 700; border-radius: 3px; cursor: pointer; background: ${currentCycle === 'monthly' ? '#fff' : 'transparent'}; color: ${currentCycle === 'monthly' ? '#0f172a' : '#64748b'};">Mo</button>
+                <button type="button" id="btn-checkout-cycle-annual" style="flex: 1; border: none; padding: 3px 6px; font-size: 0.68rem; font-weight: 700; border-radius: 3px; cursor: pointer; background: ${currentCycle === 'annual' ? '#fff' : 'transparent'}; color: ${currentCycle === 'annual' ? '#0f172a' : '#64748b'};">Yr (-10%)</button>
+              </div>
+              <div style="font-size: 0.68rem; color: #94a3b8; text-align: center;">Cancel subscription anytime</div>
             </div>
           </div>
 
-          <!-- Checkout Card Column -->
-          <div class="stripe-payment-form">
-            <!-- Gateway Picker -->
-            <div style="font-size: 0.78rem; font-weight: 750; color: #334155; margin-bottom: 8px;">Select Payment Gateway</div>
-            <div class="checkout-gateway-tabs" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 18px;">
-              <button type="button" class="gateway-tab-btn ${currentGateway === 'stripe' ? 'active' : ''}" id="tab-gw-stripe">
-                <span style="font-weight: 800; color: #635bff;">Stripe</span>
-                <span class="gw-badge-sub">Global Cards</span>
-              </button>
-              <button type="button" class="gateway-tab-btn ${currentGateway === 'paystack' ? 'active' : ''}" id="tab-gw-paystack">
-                <span style="font-weight: 800; color: #00C3F7;">Paystack</span>
-                <span class="gw-badge-sub">NGN / Bank</span>
-              </button>
-              <button type="button" class="gateway-tab-btn ${currentGateway === 'flutterwave' ? 'active' : ''}" id="tab-gw-flutterwave">
-                <span style="font-weight: 800; color: #F5A623;">Flutterwave</span>
-                <span class="gw-badge-sub">MoMo / Africa</span>
-              </button>
-            </div>
+          <!-- Right Content Area -->
+          <div style="padding: 28px 32px; display: flex; flex-direction: column; justify-content: space-between;">
+            
+            ${activeMethod === 'transfer' ? `
+              <!-- Transfer View (Inspired by second screenshot) -->
+              <div>
+                <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin-bottom: 2px;">
+                  Transfer ${formattedPrice} to ZEXCORE CHECKOUT
+                </div>
+                <div style="font-size: 0.76rem; color: #64748b; margin-bottom: 18px;">
+                  Equivalent: <strong style="color: #0f172a;">${formattedNgn} NGN</strong> &bull; Automated webhook settlement
+                </div>
 
-            <form id="stripe-checkout-form">
-              ${gatewayContent}
-            </form>
+                <!-- Account Box -->
+                <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 18px 20px; margin-bottom: 16px;">
+                  <div style="margin-bottom: 14px;">
+                    <div style="font-size: 0.68rem; font-weight: 750; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">BANK NAME</div>
+                    <div style="font-size: 1rem; font-weight: 850; color: #0f172a;">Titan Trust Bank / Wema</div>
+                  </div>
+
+                  <div style="margin-bottom: 14px;">
+                    <div style="font-size: 0.68rem; font-weight: 750; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">ACCOUNT NUMBER</div>
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                      <span style="font-family: var(--font-mono); font-size: 1.3rem; font-weight: 900; color: #0f172a; letter-spacing: 0.05em;">9983826819</span>
+                      <button type="button" id="btn-copy-account-num" style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px 10px; font-size: 0.72rem; font-weight: 700; color: #0f172a; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        <span id="copy-text-account">Copy</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style="font-size: 0.68rem; font-weight: 750; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">AMOUNT</div>
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                      <span style="font-family: var(--font-mono); font-size: 1.15rem; font-weight: 850; color: #0d9488;">${formattedPrice} (${formattedNgn})</span>
+                      <button type="button" id="btn-copy-amount" style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px 10px; font-size: 0.72rem; font-weight: 700; color: #0f172a; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        <span id="copy-text-amount">Copy</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="font-size: 0.75rem; color: #64748b; line-height: 1.45; margin-bottom: 20px;">
+                  Use this account for this transaction only. This account is dedicated to your workspace and expires in <strong style="color: #0d9488;">29:48</strong>.
+                </div>
+              </div>
+
+              <div>
+                <button type="button" class="btn btn-primary" id="btn-confirm-transfer" style="width: 100%; padding: 13px; font-weight: 800; font-size: 0.92rem; border-radius: 6px; justify-content: center; background: #0f172a; border-color: #0f172a;">
+                  I've sent the money
+                </button>
+
+                <div style="font-size: 0.7rem; color: #94a3b8; text-align: center; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                  <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #16a34a;"></span>
+                  <span>Automated Bank Transfer Listener Active &bull; Instant Activation</span>
+                </div>
+              </div>
+            ` : `
+              <!-- Card View -->
+              <form id="checkout-card-form" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
+                <div>
+                  <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin-bottom: 2px;">
+                    Enter your card details to pay
+                  </div>
+                  <div style="font-size: 0.76rem; color: #64748b; margin-bottom: 18px;">
+                    Supports Mastercard, Visa, Verve &amp; Global Cards
+                  </div>
+
+                  <div style="margin-bottom: 14px;">
+                    <label style="display: block; font-size: 0.76rem; font-weight: 700; color: #334155; margin-bottom: 6px;">CARD NUMBER</label>
+                    <div style="position: relative; display: flex; align-items: center;">
+                      <input type="text" id="card-input-number" class="input" value="4242 4242 4242 4242" required maxlength="19" style="width: 100%; font-family: var(--font-mono); font-size: 0.88rem; padding: 10px 12px; padding-right: 90px; border-radius: 6px;" />
+                      <div style="position: absolute; right: 10px; display: flex; gap: 4px; pointer-events: none;">
+                        <span style="font-size: 0.65rem; font-weight: 800; color: #0284c7; background: #e0f2fe; padding: 2px 6px; border-radius: 3px;">VISA</span>
+                        <span style="font-size: 0.65rem; font-weight: 800; color: #b45309; background: #fef3c7; padding: 2px 6px; border-radius: 3px;">MC</span>
+                        <span style="font-size: 0.65rem; font-weight: 800; color: #0f766e; background: #ccfbf1; padding: 2px 6px; border-radius: 3px;">VERVE</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                    <div>
+                      <label style="display: block; font-size: 0.76rem; font-weight: 700; color: #334155; margin-bottom: 6px;">CARD EXPIRY</label>
+                      <input type="text" id="card-input-expiry" class="input" value="12/28" placeholder="MM / YY" required maxlength="5" style="width: 100%; font-family: var(--font-mono); font-size: 0.88rem; padding: 10px 12px; border-radius: 6px;" />
+                    </div>
+                    <div>
+                      <label style="display: block; font-size: 0.76rem; font-weight: 700; color: #334155; margin-bottom: 6px;">CVV</label>
+                      <input type="text" id="card-input-cvv" class="input" value="382" placeholder="123" required maxlength="4" style="width: 100%; font-family: var(--font-mono); font-size: 0.88rem; padding: 10px 12px; border-radius: 6px;" />
+                    </div>
+                  </div>
+
+                  <div style="margin-bottom: 18px;">
+                    <label style="display: block; font-size: 0.76rem; font-weight: 700; color: #334155; margin-bottom: 6px;">BILLING EMAIL</label>
+                    <input type="email" id="card-input-email" class="input" value="${tenantEmail}" required style="width: 100%; font-size: 0.84rem; padding: 10px 12px; border-radius: 6px;" />
+                  </div>
+                </div>
+
+                <div>
+                  <button type="submit" class="btn btn-primary" id="btn-submit-card" style="width: 100%; padding: 13px; font-weight: 800; font-size: 0.92rem; border-radius: 6px; justify-content: center;">
+                    Pay ${formattedPrice} &amp; Activate ${plan.name}
+                  </button>
+
+                  <div style="font-size: 0.7rem; color: #94a3b8; text-align: center; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    <span>256-bit Encrypted Checkout &bull; PCI-DSS Compliant &bull; Instant Activation</span>
+                  </div>
+                </div>
+              </form>
+            `}
+
           </div>
         </div>
       </div>
@@ -509,98 +471,96 @@ export function openStripeCheckoutModal(
 
   // Attach dynamic handlers
   function attachModalEvents() {
-    document.getElementById('btn-close-stripe-modal')?.addEventListener('click', () => {
+    // Close button & overlay click
+    document.getElementById('btn-close-checkout-modal')?.addEventListener('click', () => {
       modalWrap.remove();
-    });
-
-    document.getElementById('stripe-btn-monthly')?.addEventListener('click', () => {
-      currentCycle = 'monthly';
-      setBillingCycle('monthly');
-      modalWrap.innerHTML = renderModalHtml();
-      attachModalEvents();
-    });
-
-    document.getElementById('stripe-btn-annual')?.addEventListener('click', () => {
-      currentCycle = 'annual';
-      setBillingCycle('annual');
-      modalWrap.innerHTML = renderModalHtml();
-      attachModalEvents();
-    });
-
-    // Gateway tabs
-    document.getElementById('tab-gw-stripe')?.addEventListener('click', () => {
-      currentGateway = 'stripe';
-      modalWrap.innerHTML = renderModalHtml();
-      attachModalEvents();
-    });
-
-    document.getElementById('tab-gw-paystack')?.addEventListener('click', () => {
-      currentGateway = 'paystack';
-      modalWrap.innerHTML = renderModalHtml();
-      attachModalEvents();
-    });
-
-    document.getElementById('tab-gw-flutterwave')?.addEventListener('click', () => {
-      currentGateway = 'flutterwave';
-      modalWrap.innerHTML = renderModalHtml();
-      attachModalEvents();
-    });
-
-    // Paystack channel buttons
-    document.getElementById('ps-chan-card')?.addEventListener('click', () => {
-      paystackChannel = 'card';
-      modalWrap.innerHTML = renderModalHtml();
-      attachModalEvents();
-    });
-    document.getElementById('ps-chan-transfer')?.addEventListener('click', () => {
-      paystackChannel = 'bank_transfer';
-      modalWrap.innerHTML = renderModalHtml();
-      attachModalEvents();
-    });
-    document.getElementById('ps-chan-ussd')?.addEventListener('click', () => {
-      paystackChannel = 'ussd';
-      modalWrap.innerHTML = renderModalHtml();
-      attachModalEvents();
-    });
-
-    // Flutterwave network buttons
-    document.getElementById('flw-net-mpesa')?.addEventListener('click', () => {
-      flwNetwork = 'mpesa';
-      modalWrap.innerHTML = renderModalHtml();
-      attachModalEvents();
-    });
-    document.getElementById('flw-net-mtn')?.addEventListener('click', () => {
-      flwNetwork = 'mtn';
-      modalWrap.innerHTML = renderModalHtml();
-      attachModalEvents();
-    });
-    document.getElementById('flw-net-airtel')?.addEventListener('click', () => {
-      flwNetwork = 'airtel';
-      modalWrap.innerHTML = renderModalHtml();
-      attachModalEvents();
     });
 
     modalWrap.addEventListener('click', (e) => {
       if (e.target === modalWrap) modalWrap.remove();
     });
 
-    const form = document.getElementById('stripe-checkout-form');
-    form?.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const btn = document.getElementById('stripe-submit-btn') as HTMLButtonElement | null;
+    // Method Switchers (Card vs Transfer)
+    document.getElementById('btn-method-card')?.addEventListener('click', () => {
+      activeMethod = 'card';
+      modalWrap.innerHTML = renderModalHtml();
+      attachModalEvents();
+    });
+
+    document.getElementById('btn-method-transfer')?.addEventListener('click', () => {
+      activeMethod = 'transfer';
+      modalWrap.innerHTML = renderModalHtml();
+      attachModalEvents();
+    });
+
+    // Billing Cycle Switchers
+    document.getElementById('btn-checkout-cycle-monthly')?.addEventListener('click', () => {
+      currentCycle = 'monthly';
+      setBillingCycle('monthly');
+      modalWrap.innerHTML = renderModalHtml();
+      attachModalEvents();
+    });
+
+    document.getElementById('btn-checkout-cycle-annual')?.addEventListener('click', () => {
+      currentCycle = 'annual';
+      setBillingCycle('annual');
+      modalWrap.innerHTML = renderModalHtml();
+      attachModalEvents();
+    });
+
+    // Copy Account Number button
+    document.getElementById('btn-copy-account-num')?.addEventListener('click', () => {
+      navigator.clipboard?.writeText('9983826819');
+      const text = document.getElementById('copy-text-account');
+      if (text) {
+        text.innerText = 'Copied!';
+        setTimeout(() => {
+          if (text) text.innerText = 'Copy';
+        }, 1800);
+      }
+    });
+
+    // Copy Amount button
+    document.getElementById('btn-copy-amount')?.addEventListener('click', () => {
+      const price = currentCycle === 'annual' ? plan.annualPrice : plan.monthlyPrice;
+      navigator.clipboard?.writeText(price.toString());
+      const text = document.getElementById('copy-text-amount');
+      if (text) {
+        text.innerText = 'Copied!';
+        setTimeout(() => {
+          if (text) text.innerText = 'Copy';
+        }, 1800);
+      }
+    });
+
+    // Transfer Payment submission ("I've sent the money")
+    document.getElementById('btn-confirm-transfer')?.addEventListener('click', () => {
+      const btn = document.getElementById('btn-confirm-transfer') as HTMLButtonElement | null;
       if (btn) {
         btn.disabled = true;
-        btn.innerHTML = `<span class="stripe-spinner"></span> Authorizing via ${currentGateway.toUpperCase()}...`;
+        btn.innerHTML = `<span class="stripe-spinner"></span> Checking transfer confirmation...`;
       }
 
       setTimeout(() => {
-        // Upgrade active tenant
         setTenantPlan(targetPlan);
-
-        // Remove modal
         modalWrap.remove();
+        if (onSuccess) onSuccess(targetPlan);
+      }, 900);
+    });
 
-        // Trigger callback
+    // Card Form submission
+    const cardForm = document.getElementById('checkout-card-form');
+    cardForm?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btn-submit-card') as HTMLButtonElement | null;
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<span class="stripe-spinner"></span> Authorizing card payment...`;
+      }
+
+      setTimeout(() => {
+        setTenantPlan(targetPlan);
+        modalWrap.remove();
         if (onSuccess) onSuccess(targetPlan);
       }, 900);
     });
@@ -764,12 +724,10 @@ export function openSelfServeUpgradeModal(
 
         <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-default); display: flex; justify-content: space-between; align-items: center; font-size: 0.76rem; color: var(--text-secondary);">
           <div style="display: flex; align-items: center; gap: 14px;">
-            <span>Supported Gateways:</span>
-            <strong>Stripe</strong>
+            <span>Supported Channels:</span>
+            <strong>Cards (Visa, Mastercard, Verve)</strong>
             <span>&bull;</span>
-            <strong>Paystack (Card, Bank, USSD)</strong>
-            <span>&bull;</span>
-            <strong>Flutterwave (M-Pesa, Mobile Money)</strong>
+            <strong>Automated Bank Transfer</strong>
           </div>
           <span>Instant upgrade with zero downtime &bull; Postgres 17 RLS Enforced</span>
         </div>

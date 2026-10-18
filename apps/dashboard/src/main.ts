@@ -473,7 +473,7 @@ function renderWithSoftPaywall(tabId: string, currentPlan: PlanTier, innerConten
           <p class="soft-paywall-desc">${info.subtitle}</p>
           <div class="soft-paywall-actions">
             <button class="btn-paywall-upgrade" data-paywall-upgrade="${info.minPlan}">
-              Unlock with Stripe &rarr; ($${minPlanMeta.monthlyPrice}/mo)
+              Unlock ${minPlanMeta.name} &rarr; ($${minPlanMeta.monthlyPrice}/mo)
             </button>
             <a href="#/pricing" class="btn-paywall-secondary">Compare All Tiers</a>
           </div>
@@ -1588,7 +1588,7 @@ function renderDashboard() {
             <span class="sidebar-plan-status">Active</span>
           </div>
           <div class="sidebar-plan-name">${planMeta.name}</div>
-          <div class="sidebar-plan-price">$${planMeta.monthlyPrice} / mo &bull; Stripe Gateway</div>
+          <div class="sidebar-plan-price">$${planMeta.monthlyPrice} / mo &bull; Active Tier</div>
           <button class="btn-sidebar-upgrade" id="btn-sidebar-upgrade-plan">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
             ${currentPlan === 'enterprise' ? 'Manage Subscription' : 'Upgrade Plan'}
@@ -1619,7 +1619,7 @@ function renderDashboard() {
                 <option value="globex_corp" ${state.activeTenant === 'globex_corp' ? 'selected' : ''}>Globex Research (dev-eu-west)</option>
                 <option value="soylent_ind" ${state.activeTenant === 'soylent_ind' ? 'selected' : ''}>Soylent Dynamics (staging-apac)</option>
               </select>
-              <div class="topbar-plan-pill" id="topbar-plan-indicator" title="Click to manage subscription or upgrade with Stripe">
+              <div class="topbar-plan-pill" id="topbar-plan-indicator" title="Click to manage subscription or upgrade plan">
                 <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#E50920;"></span>
                 <span>${planMeta.name.toUpperCase()}</span>
                 ${currentPlan !== 'enterprise' ? '<span class="topbar-plan-upgrade-link">Upgrade</span>' : ''}
