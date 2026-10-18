@@ -324,9 +324,9 @@ export function openStripeCheckoutModal(
         </div>
 
         <div style="display: flex; gap: 6px; margin-bottom: 14px;">
-          <button type="button" class="btn btn-sm ${flwNetwork === 'mpesa' ? 'btn-primary' : 'btn-secondary'}" id="flw-net-mpesa" style="flex: 1; font-size: 0.74rem;">🇰🇪 M-Pesa</button>
-          <button type="button" class="btn btn-sm ${flwNetwork === 'mtn' ? 'btn-primary' : 'btn-secondary'}" id="flw-net-mtn" style="flex: 1; font-size: 0.74rem;">🇬🇭 MTN MoMo</button>
-          <button type="button" class="btn btn-sm ${flwNetwork === 'airtel' ? 'btn-primary' : 'btn-secondary'}" id="flw-net-airtel" style="flex: 1; font-size: 0.74rem;">🇺🇬 Airtel Money</button>
+          <button type="button" class="btn btn-sm ${flwNetwork === 'mpesa' ? 'btn-primary' : 'btn-secondary'}" id="flw-net-mpesa" style="flex: 1; font-size: 0.74rem;">M-Pesa (KE)</button>
+          <button type="button" class="btn btn-sm ${flwNetwork === 'mtn' ? 'btn-primary' : 'btn-secondary'}" id="flw-net-mtn" style="flex: 1; font-size: 0.74rem;">MTN MoMo (GH)</button>
+          <button type="button" class="btn btn-sm ${flwNetwork === 'airtel' ? 'btn-primary' : 'btn-secondary'}" id="flw-net-airtel" style="flex: 1; font-size: 0.74rem;">Airtel Money (UG)</button>
         </div>
 
         <div class="stripe-form-group">

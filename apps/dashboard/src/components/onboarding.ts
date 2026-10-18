@@ -94,7 +94,7 @@ export const INDUSTRY_STARTERS: Record<string, IndustryStarter> = {
   industrial: {
     id: 'industrial',
     name: 'Industrial Machinery & Edge IoT',
-    icon: '🏭',
+    icon: 'industrial',
     tagline: 'Predictive maintenance & edge vibration telemetry',
     companyDefault: 'Vanguard Industrial Automation',
     listingTitle: '5-Axis CNC Precision Edge Telemetry Station',
@@ -116,7 +116,7 @@ export const INDUSTRY_STARTERS: Record<string, IndustryStarter> = {
   crm: {
     id: 'crm',
     name: 'B2B Tech & Advisory Services',
-    icon: '💼',
+    icon: 'crm',
     tagline: 'High-ticket pipeline, SLA escalation & contracts',
     companyDefault: 'Apex Cloud Advisory Group',
     listingTitle: 'Enterprise Cloud Modernization & Sovereignty Sprint',
@@ -138,7 +138,7 @@ export const INDUSTRY_STARTERS: Record<string, IndustryStarter> = {
   services: {
     id: 'services',
     name: 'Local Services & Equipment Rentals',
-    icon: '🛠️',
+    icon: 'services',
     tagline: 'Instant inquiry capture, booking & WhatsApp response',
     companyDefault: 'Evergreen Commercial Services',
     listingTitle: 'Commercial HVAC Preventive Maintenance Plan',
@@ -159,7 +159,7 @@ export const INDUSTRY_STARTERS: Record<string, IndustryStarter> = {
   fintech_agency: {
     id: 'fintech_agency',
     name: 'Fintech & Agency Commerce',
-    icon: '💳',
+    icon: 'fintech_agency',
     tagline: 'Paystack, Flutterwave & WhatsApp agency onboarding',
     companyDefault: 'AfriPay Digital Agency',
     listingTitle: 'Turnkey Merchant Gateway & WhatsApp Checkout',
@@ -182,7 +182,7 @@ export const INDUSTRY_STARTERS: Record<string, IndustryStarter> = {
   clinic_booking: {
     id: 'clinic_booking',
     name: 'Healthcare & Clinic Booking',
-    icon: '🩺',
+    icon: 'clinic_booking',
     tagline: 'Patient scheduling with automated WhatsApp reminders that cut no-shows',
     companyDefault: 'Apex Specialist Clinic',
     listingTitle: 'Specialist Medical Consultation & Diagnostics',
