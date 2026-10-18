@@ -289,21 +289,16 @@ export function openStripeCheckoutModal(
       <div class="stripe-modal-box" style="max-width: 680px; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
         <!-- Top Clean Merchant Bar -->
         <div style="background: #ffffff; border-bottom: 1px solid #f1f5f9; padding: 14px 22px; display: flex; align-items: center; justify-content: space-between;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 28px; height: 28px; border-radius: 6px; background: #E50920; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 0.85rem;">
-              Z
-            </div>
-            <div>
-              <span style="font-weight: 800; font-size: 0.92rem; color: #0f172a; letter-spacing: -0.01em;">ZexCore Checkout</span>
-              <span style="font-size: 0.72rem; color: #64748b; margin-left: 6px; font-weight: 600;">(${plan.name} Tier)</span>
-            </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <img src="/zexcore-logo-horizontal.png" alt="ZexCore" style="height: 24px; width: auto; max-width: 130px; object-fit: contain;" />
+            <span style="font-size: 0.74rem; color: #64748b; font-weight: 600; padding-left: 10px; border-left: 1.5px solid #e2e8f0;">${plan.name} Tier</span>
           </div>
 
           <div style="display: flex; align-items: center; gap: 14px;">
             <div style="text-align: right; line-height: 1.35; margin-right: 4px;">
-              <div style="font-size: 0.72rem; color: #64748b; font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin-bottom: 2px;">${tenantEmail}</div>
+              <div style="font-size: 0.72rem; color: #64748b; font-family: inherit; margin-bottom: 2px;">${tenantEmail}</div>
               <div style="font-size: 0.86rem; font-weight: 850; color: #0f172a;">
-                Pay <span style="color: #0d9488;">${formattedPrice}</span>
+                Pay <span style="color: #E50920;">${formattedPrice}</span>
               </div>
             </div>
             <button class="stripe-modal-close" id="btn-close-checkout-modal" title="Close" style="font-size: 1.4rem; padding: 0 6px; line-height: 1; color: #94a3b8; background: transparent; border: none; cursor: pointer;">&times;</button>
@@ -322,14 +317,14 @@ export function openStripeCheckoutModal(
 
               <div style="display: flex; flex-direction: column; gap: 6px;">
                 <!-- Option 1: Card -->
-                <button type="button" class="btn-checkout-method ${activeMethod === 'card' ? 'active' : ''}" id="btn-method-card" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid ${activeMethod === 'card' ? '#cbd5e1' : 'transparent'}; background: ${activeMethod === 'card' ? '#ffffff' : 'transparent'}; color: ${activeMethod === 'card' ? '#0f172a' : '#64748b'}; font-weight: ${activeMethod === 'card' ? '750' : '600'}; font-size: 0.84rem; cursor: pointer; text-align: left; transition: all 0.15s ease; ${activeMethod === 'card' ? 'box-shadow: 0 2px 6px rgba(0,0,0,0.04); border-left: 3px solid #0d9488;' : ''}">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${activeMethod === 'card' ? '#0d9488' : 'currentColor'}" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                <button type="button" class="btn-checkout-method ${activeMethod === 'card' ? 'active' : ''}" id="btn-method-card" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid ${activeMethod === 'card' ? '#fca5a5' : 'transparent'}; background: ${activeMethod === 'card' ? '#ffffff' : 'transparent'}; color: ${activeMethod === 'card' ? '#0f172a' : '#64748b'}; font-weight: ${activeMethod === 'card' ? '750' : '600'}; font-size: 0.84rem; cursor: pointer; text-align: left; transition: all 0.15s ease; ${activeMethod === 'card' ? 'box-shadow: 0 2px 6px rgba(0,0,0,0.04); border-left: 3px solid #E50920;' : ''}">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${activeMethod === 'card' ? '#E50920' : 'currentColor'}" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                   <span>Card</span>
                 </button>
 
                 <!-- Option 2: Transfer -->
-                <button type="button" class="btn-checkout-method ${activeMethod === 'transfer' ? 'active' : ''}" id="btn-method-transfer" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid ${activeMethod === 'transfer' ? '#cbd5e1' : 'transparent'}; background: ${activeMethod === 'transfer' ? '#ffffff' : 'transparent'}; color: ${activeMethod === 'transfer' ? '#0f172a' : '#64748b'}; font-weight: ${activeMethod === 'transfer' ? '750' : '600'}; font-size: 0.84rem; cursor: pointer; text-align: left; transition: all 0.15s ease; ${activeMethod === 'transfer' ? 'box-shadow: 0 2px 6px rgba(0,0,0,0.04); border-left: 3px solid #0d9488;' : ''}">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${activeMethod === 'transfer' ? '#0d9488' : 'currentColor'}" stroke-width="2"><path d="M3 21h18"/><path d="M3 10h18"/><path d="M5 6l7-3 7 3"/><path d="M4 10v11"/><path d="M20 10v11"/><path d="M8 14v4"/><path d="M12 14v4"/><path d="M16 14v4"/></svg>
+                <button type="button" class="btn-checkout-method ${activeMethod === 'transfer' ? 'active' : ''}" id="btn-method-transfer" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid ${activeMethod === 'transfer' ? '#fca5a5' : 'transparent'}; background: ${activeMethod === 'transfer' ? '#ffffff' : 'transparent'}; color: ${activeMethod === 'transfer' ? '#0f172a' : '#64748b'}; font-weight: ${activeMethod === 'transfer' ? '750' : '600'}; font-size: 0.84rem; cursor: pointer; text-align: left; transition: all 0.15s ease; ${activeMethod === 'transfer' ? 'box-shadow: 0 2px 6px rgba(0,0,0,0.04); border-left: 3px solid #E50920;' : ''}">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${activeMethod === 'transfer' ? '#E50920' : 'currentColor'}" stroke-width="2"><path d="M3 21h18"/><path d="M3 10h18"/><path d="M5 6l7-3 7 3"/><path d="M4 10v11"/><path d="M20 10v11"/><path d="M8 14v4"/><path d="M12 14v4"/><path d="M16 14v4"/></svg>
                   <span>Transfer</span>
                 </button>
               </div>
@@ -339,7 +334,7 @@ export function openStripeCheckoutModal(
             <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 0.74rem;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                 <span style="font-weight: 700; color: #0f172a;">${plan.name}</span>
-                <span style="font-weight: 800; color: #0d9488;">${formattedPrice}</span>
+                <span style="font-weight: 800; color: #E50920;">${formattedPrice}</span>
               </div>
               <div style="display: flex; gap: 4px; background: #f1f5f9; padding: 2px; border-radius: 4px; margin-bottom: 6px;">
                 <button type="button" id="btn-checkout-cycle-monthly" style="flex: 1; border: none; padding: 3px 6px; font-size: 0.68rem; font-weight: 700; border-radius: 3px; cursor: pointer; background: ${currentCycle === 'monthly' ? '#fff' : 'transparent'}; color: ${currentCycle === 'monthly' ? '#0f172a' : '#64748b'};">Mo</button>
@@ -372,7 +367,7 @@ export function openStripeCheckoutModal(
                   <div style="margin-bottom: 14px;">
                     <div style="font-size: 0.68rem; font-weight: 750; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">ACCOUNT NUMBER</div>
                     <div style="display: flex; align-items: center; justify-content: space-between;">
-                      <span style="font-family: var(--font-mono); font-size: 1.3rem; font-weight: 900; color: #0f172a; letter-spacing: 0.05em;">9983826819</span>
+                      <span style="font-family: inherit; font-size: 1.3rem; font-weight: 800; color: #0f172a; letter-spacing: 0.03em;">9983826819</span>
                       <button type="button" id="btn-copy-account-num" style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px 10px; font-size: 0.72rem; font-weight: 700; color: #0f172a; cursor: pointer; display: flex; align-items: center; gap: 4px;">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                         <span id="copy-text-account">Copy</span>
@@ -383,7 +378,7 @@ export function openStripeCheckoutModal(
                   <div>
                     <div style="font-size: 0.68rem; font-weight: 750; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">AMOUNT</div>
                     <div style="display: flex; align-items: center; justify-content: space-between;">
-                      <span style="font-family: var(--font-mono); font-size: 1.15rem; font-weight: 850; color: #0d9488;">${formattedPrice} (${formattedNgn})</span>
+                      <span style="font-family: inherit; font-size: 1.15rem; font-weight: 800; color: #0f172a;">${formattedPrice} <span style="color: #64748b; font-size: 0.92rem; font-weight: 600;">(${formattedNgn})</span></span>
                       <button type="button" id="btn-copy-amount" style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px 10px; font-size: 0.72rem; font-weight: 700; color: #0f172a; cursor: pointer; display: flex; align-items: center; gap: 4px;">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                         <span id="copy-text-amount">Copy</span>
@@ -393,12 +388,12 @@ export function openStripeCheckoutModal(
                 </div>
 
                 <div style="font-size: 0.75rem; color: #64748b; line-height: 1.45; margin-bottom: 20px;">
-                  Use this account for this transaction only. This account is dedicated to your workspace and expires in <strong style="color: #0d9488;">29:48</strong>.
+                  Use this account for this transaction only. This account is dedicated to your workspace and expires in <strong style="color: #E50920;">29:48</strong>.
                 </div>
               </div>
 
               <div>
-                <button type="button" class="btn btn-primary" id="btn-confirm-transfer" style="width: 100%; padding: 13px; font-weight: 800; font-size: 0.92rem; border-radius: 6px; justify-content: center; background: #0f172a; border-color: #0f172a;">
+                <button type="button" class="btn btn-primary" id="btn-confirm-transfer" style="width: 100%; padding: 13px; font-weight: 800; font-size: 0.92rem; border-radius: 6px; justify-content: center; background: #E50920; border-color: #E50920; color: #ffffff;">
                   I've sent the money
                 </button>
 
@@ -420,28 +415,28 @@ export function openStripeCheckoutModal(
 
                   <div style="margin-bottom: 14px;">
                     <label style="display: block; font-size: 0.76rem; font-weight: 700; color: #334155; margin-bottom: 6px;">CARD NUMBER</label>
-                    <input type="text" id="card-input-number" class="input" value="4242 4242 4242 4242" required maxlength="19" style="width: 100%; font-family: var(--font-mono); font-size: 0.88rem; padding: 10px 12px; border-radius: 6px;" />
+                    <input type="text" id="card-input-number" class="input" value="4242 4242 4242 4242" required maxlength="19" style="width: 100%; font-family: inherit; font-size: 0.88rem; padding: 10px 12px; border-radius: 6px;" />
                   </div>
 
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
                     <div>
                       <label style="display: block; font-size: 0.76rem; font-weight: 700; color: #334155; margin-bottom: 6px;">CARD EXPIRY</label>
-                      <input type="text" id="card-input-expiry" class="input" value="12/28" placeholder="MM / YY" required maxlength="5" style="width: 100%; font-family: var(--font-mono); font-size: 0.88rem; padding: 10px 12px; border-radius: 6px;" />
+                      <input type="text" id="card-input-expiry" class="input" value="12/28" placeholder="MM / YY" required maxlength="5" style="width: 100%; font-family: inherit; font-size: 0.88rem; padding: 10px 12px; border-radius: 6px;" />
                     </div>
                     <div>
                       <label style="display: block; font-size: 0.76rem; font-weight: 700; color: #334155; margin-bottom: 6px;">CVV</label>
-                      <input type="text" id="card-input-cvv" class="input" value="382" placeholder="123" required maxlength="4" style="width: 100%; font-family: var(--font-mono); font-size: 0.88rem; padding: 10px 12px; border-radius: 6px;" />
+                      <input type="text" id="card-input-cvv" class="input" value="382" placeholder="123" required maxlength="4" style="width: 100%; font-family: inherit; font-size: 0.88rem; padding: 10px 12px; border-radius: 6px;" />
                     </div>
                   </div>
 
                   <div style="margin-bottom: 18px;">
                     <label style="display: block; font-size: 0.76rem; font-weight: 700; color: #334155; margin-bottom: 6px;">BILLING EMAIL</label>
-                    <input type="email" id="card-input-email" class="input" value="${tenantEmail}" required style="width: 100%; font-size: 0.84rem; padding: 10px 12px; border-radius: 6px;" />
+                    <input type="email" id="card-input-email" class="input" value="${tenantEmail}" required style="width: 100%; font-family: inherit; font-size: 0.84rem; padding: 10px 12px; border-radius: 6px;" />
                   </div>
                 </div>
 
                 <div>
-                  <button type="submit" class="btn btn-primary" id="btn-submit-card" style="width: 100%; padding: 13px; font-weight: 800; font-size: 0.92rem; border-radius: 6px; justify-content: center;">
+                  <button type="submit" class="btn btn-primary" id="btn-submit-card" style="width: 100%; padding: 13px; font-weight: 800; font-size: 0.92rem; border-radius: 6px; justify-content: center; background: #E50920; border-color: #E50920; color: #ffffff;">
                     Pay ${formattedPrice} &amp; Activate ${plan.name}
                   </button>
 
