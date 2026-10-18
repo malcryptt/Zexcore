@@ -55,7 +55,7 @@ export function renderSignInPage(activeTenant: string): string {
               <div class="signin-layer signin-layer-top"><span></span><span></span><span></span></div>
               <div class="signin-layer signin-layer-mid"><span></span><span></span><span></span></div>
               <div class="signin-layer signin-layer-base"><span></span><span></span><span></span></div>
-              <div class="signin-layer-caption"><b>ZexCore Core</b><small>Tenant isolation · RBAC · Firebase Auth</small></div>
+              <div class="signin-layer-caption"><b>ZexCore Core</b><small>Tenant isolation · RBAC · Sovereign Auth</small></div>
             </div>
 
 
@@ -63,7 +63,7 @@ export function renderSignInPage(activeTenant: string): string {
         </div>
       </div>
 
-      <!-- RIGHT: Credential & Firebase Form Panel -->
+      <!-- RIGHT: Credential & Auth Form Panel -->
       <div class="signin-form-panel">
         <div class="signin-form-inner">
           <div class="signin-form-header">
@@ -236,7 +236,7 @@ export function setupSignInEvents(onSuccess: (tenant: string, user: AuthUserProf
 
       if (groupName) groupName.style.display = 'none';
       if (authTitle) authTitle.textContent = 'Welcome back.';
-      if (authSubtitle) authSubtitle.textContent = 'Sign in to your ZexCore control console with Firebase Auth.';
+      if (authSubtitle) authSubtitle.textContent = 'Sign in to your ZexCore control console.';
       if (btnSubmit) btnSubmit.textContent = 'Sign In to Workspace →';
     }
   };
@@ -279,7 +279,7 @@ export function setupSignInEvents(onSuccess: (tenant: string, user: AuthUserProf
         onSuccess(cleanTenant, user);
       }, 350);
     } catch (err: unknown) {
-      console.error('Firebase Auth error:', err);
+      console.error('Auth error:', err);
       let msg = 'Authentication failed. Please check your credentials.';
       if (err instanceof Error) {
         const raw = err.message;

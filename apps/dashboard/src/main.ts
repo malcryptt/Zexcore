@@ -1000,7 +1000,7 @@ function renderDashboard() {
                   ${state.currentUser?.displayName || state.currentUser?.email || 'Operator'}
                 </span>
                 <span style="font-size: 0.65rem; color: ${state.currentUser?.isDemo ? '#d97706' : '#16a34a'}; font-family: var(--font-mono);">
-                  ${state.currentUser?.isDemo ? 'Demo Session' : 'Firebase Live'}
+                  ${state.currentUser?.isDemo ? 'Demo Session' : 'Active Session'}
                 </span>
               </div>
             </div>
