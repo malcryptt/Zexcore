@@ -46,14 +46,15 @@ export function renderFooter(): string {
           <div class="footer-col">
             <h4 class="footer-col-title">Modules &amp; Packs</h4>
             <ul class="footer-list">
-              <li><a href="#/modules">All Core Modules</a></li>
               <li><a href="#/modules#iot">@zexcore/module-iot</a></li>
               <li><a href="#/modules#rules">@zexcore/rules</a></li>
               <li><a href="#/modules#crm">@zexcore/module-crm</a></li>
               <li><a href="#/modules#compliance">@zexcore/compliance</a></li>
+              <li><a href="#/modules#audit">@zexcore/module-audit</a></li>
+              <li><a href="#/solutions#solutions-agency">Agency SaaS in a Box ($149)</a></li>
+              <li><a href="#/solutions#solutions-regulated">Regulated Verticals ($1,500)</a></li>
               <li><a href="#/solutions#industrial">Industrial IoT Pack</a></li>
               <li><a href="#/solutions#logistics">Logistics Fleet Pack</a></li>
-              <li><a href="#/solutions#crm">Sovereign CRM Pack</a></li>
             </ul>
           </div>
 

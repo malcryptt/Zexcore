@@ -74,7 +74,39 @@ export function renderNavbar(activePage: string): string {
             </div>
           </div>
 
-          <a href="#/solutions" class="nav-link ${activePage === 'solutions' ? 'active' : ''}">Solutions</a>
+          <!-- Solutions Dropdown -->
+          <div class="nav-dropdown-item">
+            <button class="nav-dropdown-btn ${activePage === 'solutions' ? 'active' : ''}">
+              <span>Solutions</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="nav-dropdown-menu">
+              <a href="#/solutions#solutions-agency" class="nav-dropdown-link">
+                <div class="nav-dropdown-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.26L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                </div>
+                <div>
+                  <div class="nav-dropdown-title">Web &amp; Digital Agencies</div>
+                  <div class="nav-dropdown-desc">Turnkey SaaS, 25 client workspaces &amp; white-labeling</div>
+                </div>
+              </a>
+              <a href="#/solutions#solutions-regulated" class="nav-dropdown-link">
+                <div class="nav-dropdown-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                <div>
+                  <div class="nav-dropdown-title">Regulated Verticals</div>
+                  <div class="nav-dropdown-desc">Healthcare &amp; fintech compliance with AES-256 vault</div>
+                </div>
+              </a>
+              <div style="border-top: 1px solid var(--border-default); margin: 6px 0; padding-top: 6px;">
+                <a href="#/solutions" class="nav-dropdown-link" style="padding: 6px 12px;">
+                  <span style="font-size: 0.78rem; font-weight: 700; color: #E50920;">Explore All Solutions &rarr;</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
           <a href="#/platform" class="nav-link ${activePage === 'platform' ? 'active' : ''}">Platform</a>
           <a href="#/architecture" class="nav-link ${activePage === 'architecture' ? 'active' : ''}">Architecture</a>
           <a href="#/security" class="nav-link ${activePage === 'security' ? 'active' : ''}">Security</a>

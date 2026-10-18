@@ -84,7 +84,7 @@ export const PLANS: Record<PlanTier, PlanMetadata> = {
     tagline: 'Agencies running multi-tenant ZexCore infrastructure for clients.',
     whoItsFor: 'Agencies running ZexCore for clients',
     mainLimits: 'Up to 25 client workspaces, white-label, Audit Essentials per workspace, 25,000 contacts total',
-    allowedTabs: ['overview', 'crm', 'rules', 'iot', 'audit'],
+    allowedTabs: ['overview', 'crm', 'rules', 'iot', 'audit', 'whitelabel'],
     features: [
       'Growth features across client workspaces (booking, rules, SMS/email)',
       'Up to 25 client workspaces',
@@ -104,7 +104,7 @@ export const PLANS: Record<PlanTier, PlanMetadata> = {
     whoItsFor: 'Larger organisations',
     mainLimits: 'Unlimited users, SSO, SLA, priority support, Audit Business included, custom limits',
     fromPrice: true,
-    allowedTabs: ['overview', 'crm', 'rules', 'iot', 'audit'],
+    allowedTabs: ['overview', 'crm', 'rules', 'iot', 'audit', 'whitelabel'],
     features: [
       'Unlimited users',
       'Single Sign-On (SSO / SAML)',
@@ -123,7 +123,7 @@ export const PLANS: Record<PlanTier, PlanMetadata> = {
     whoItsFor: 'Clinics and compliance-heavy clients',
     mainLimits: 'Dedicated instance, hardened tier, field encryption, signed agreements',
     fromPrice: true,
-    allowedTabs: ['overview', 'crm', 'rules', 'iot', 'compliance', 'audit'],
+    allowedTabs: ['overview', 'crm', 'rules', 'iot', 'compliance', 'audit', 'whitelabel'],
     features: [
       'Dedicated cloud instance',
       'Hardened security tier',
@@ -199,6 +199,7 @@ export function getAuditTierForPlan(plan: PlanTier): AuditLevel {
 
 export function getRequiredPlanForTab(tabId: string): PlanTier {
   if (tabId === 'compliance') return 'dedicated';
+  if (tabId === 'whitelabel') return 'agency';
   if (tabId === 'iot') return 'agency';
   if (tabId === 'rules') return 'growth';
   if (tabId === 'crm') return 'starter';
@@ -208,6 +209,13 @@ export function getRequiredPlanForTab(tabId: string): PlanTier {
 
 export function getTabLockedInfo(tabId: string): { title: string; subtitle: string; icon: string; minPlan: PlanTier } {
   switch (tabId) {
+    case 'whitelabel':
+      return {
+        title: 'Agency White-Label Branding Studio',
+        subtitle: 'Provision up to 25 isolated client workspaces under your custom CNAME domain, upload agency logos, configure brand colors, and remove all ZexCore watermarks.',
+        icon: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.26L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`,
+        minPlan: 'agency',
+      };
     case 'compliance':
       return {
         title: 'Cryptographic Compliance Vault & Field Encryption',
@@ -599,4 +607,205 @@ export function openStripeCheckoutModal(
   }
 
   attachModalEvents();
+}
+
+/**
+ * Self-Serve Plan Upgrade Modal
+ * Frictionless tier selector allowing operators to inspect all 6 tiers
+ * and launch instant Stripe / Paystack / Flutterwave activation.
+ */
+export function openSelfServeUpgradeModal(
+  currentPlan: PlanTier,
+  onSuccess?: (newPlan: PlanTier) => void
+): void {
+  document.getElementById('self-serve-upgrade-modal-wrap')?.remove();
+
+  let activeCycle: BillingCycle = 'monthly';
+
+  const modalWrap = document.createElement('div');
+  modalWrap.id = 'self-serve-upgrade-modal-wrap';
+  modalWrap.className = 'stripe-modal-backdrop';
+
+  const renderContent = () => {
+    const tierCards: Array<{
+      id: PlanTier;
+      name: string;
+      price: number;
+      tagline: string;
+      badge?: string;
+      isCurrent: boolean;
+      features: string[];
+      cta: string;
+      color: string;
+    }> = [
+      {
+        id: 'free',
+        name: 'Free Sandbox',
+        price: 0,
+        tagline: 'Evaluation & local sandbox development',
+        isCurrent: currentPlan === 'free',
+        features: ['1 User & 500 records', 'Audit Basic (5 checks)', 'Postgres RLS sandbox', 'Standard telemetry test'],
+        cta: 'Active Plan',
+        color: '#64748b',
+      },
+      {
+        id: 'starter',
+        name: 'Starter',
+        price: activeCycle === 'annual' ? 190 : 19,
+        tagline: 'Solopreneurs & micro-operations',
+        isCurrent: currentPlan === 'starter',
+        features: ['1,000 Contacts & CRM', 'Audit Basic (5 checks)', 'Custom domain support', 'Email support'],
+        cta: currentPlan === 'starter' ? 'Current Tier' : 'Select Starter',
+        color: '#0284c7',
+      },
+      {
+        id: 'growth',
+        name: 'Growth',
+        price: activeCycle === 'annual' ? 490 : 49,
+        tagline: 'Growing businesses with booking & automation',
+        badge: 'MOST POPULAR',
+        isCurrent: currentPlan === 'growth',
+        features: ['10 Team users & 10k contacts', 'Client booking & slot deposits', 'Rules AST Engine & triggers', 'Audit Essentials (90 days)'],
+        cta: currentPlan === 'growth' ? 'Current Tier' : 'Upgrade to Growth',
+        color: '#e11d48',
+      },
+      {
+        id: 'agency',
+        name: 'Agency',
+        price: activeCycle === 'annual' ? 1490 : 149,
+        tagline: 'Web agencies managing client portals',
+        badge: 'BEST FOR AGENCIES',
+        isCurrent: currentPlan === 'agency',
+        features: ['25 Client workspaces', 'White-label customisation & CNAME', 'Audit Essentials per workspace', 'IoT fleet & sensor hub'],
+        cta: currentPlan === 'agency' ? 'Current Tier' : 'Deploy Agency',
+        color: '#0d9488',
+      },
+      {
+        id: 'enterprise',
+        name: 'Enterprise',
+        price: activeCycle === 'annual' ? 4990 : 499,
+        tagline: 'High volume & mission-critical teams',
+        isCurrent: currentPlan === 'enterprise',
+        features: ['Unlimited users & SSO/SAML', 'Audit Business (3-yr & SIEM)', '99.9% Uptime SLA', 'Priority 24/7 dedicated desk'],
+        cta: currentPlan === 'enterprise' ? 'Current Tier' : 'Upgrade Enterprise',
+        color: '#4f46e5',
+      },
+      {
+        id: 'dedicated',
+        name: 'Dedicated / Regulated',
+        price: activeCycle === 'annual' ? 15000 : 1500,
+        tagline: 'Healthcare, fintech & regulated sovereign',
+        badge: 'REGULATED',
+        isCurrent: currentPlan === 'dedicated',
+        features: ['Dedicated cloud instance', 'AES-256-GCM Vault & blind index', 'Signed BAA, DPA & SLA', 'Right-to-be-Forgotten deletion'],
+        cta: currentPlan === 'dedicated' ? 'Current Tier' : 'Deploy Dedicated',
+        color: '#1e293b',
+      },
+    ];
+
+    return `
+      <div class="stripe-modal-card" style="max-width: 980px; width: 95vw; max-height: 90vh; overflow-y: auto; padding: 28px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="badge" style="background: rgba(229, 9, 32, 0.1); color: var(--primary); font-weight: 800;">SELF-SERVE UPGRADE</span>
+              <span style="font-size: 0.8rem; color: var(--text-secondary);">Instant Activation &bull; No Contract Lock-in</span>
+            </div>
+            <h2 style="margin: 6px 0 2px; font-size: 1.45rem; font-weight: 850; color: var(--text-main);">
+              Choose Your Production Tier
+            </h2>
+            <p style="margin: 0; font-size: 0.86rem; color: var(--text-secondary);">
+              Current Workspace Tier: <strong style="color: var(--primary);">${currentPlan.toUpperCase()}</strong>
+            </p>
+          </div>
+          <button class="stripe-close-btn" id="btn-selfserve-close">&times;</button>
+        </div>
+
+        <!-- Billing Cycle Switcher -->
+        <div style="display: flex; justify-content: center; margin-bottom: 24px;">
+          <div style="display: inline-flex; background: #f1f5f9; padding: 4px; border-radius: 8px; border: 1px solid var(--border-default); gap: 4px;">
+            <button id="btn-cycle-monthly" class="btn btn-sm ${activeCycle === 'monthly' ? 'btn-primary' : 'btn-secondary'}" style="border: none; padding: 6px 16px;">
+              Monthly Billing
+            </button>
+            <button id="btn-cycle-annual" class="btn btn-sm ${activeCycle === 'annual' ? 'btn-primary' : 'btn-secondary'}" style="border: none; padding: 6px 16px;">
+              Yearly (2 Months Free)
+            </button>
+          </div>
+        </div>
+
+        <!-- Grid of Plans -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+          ${tierCards
+            .map((c) => `
+            <div style="border: 2px solid ${c.isCurrent ? 'var(--primary)' : 'var(--border-default)'}; border-radius: 10px; padding: 20px; background: ${c.isCurrent ? '#fff9f9' : '#fff'}; display: flex; flex-direction: column; justify-content: space-between; position: relative;">
+              ${c.badge ? `<span style="position: absolute; top: -10px; right: 14px; background: ${c.color}; color: #fff; font-size: 0.65rem; font-weight: 800; padding: 2px 8px; border-radius: 10px; letter-spacing: 0.04em;">${c.badge}</span>` : ''}
+              <div>
+                <div style="font-weight: 800; font-size: 1.05rem; color: var(--text-main); margin-bottom: 2px;">${c.name}</div>
+                <div style="font-size: 0.74rem; color: var(--text-secondary); min-height: 32px; margin-bottom: 12px;">${c.tagline}</div>
+                <div style="display: flex; align-items: baseline; gap: 4px; margin-bottom: 14px;">
+                  <span style="font-size: 1.6rem; font-weight: 900; color: var(--text-main);">$${c.price}</span>
+                  <span style="font-size: 0.75rem; color: var(--text-secondary);">${activeCycle === 'annual' ? '/ year' : '/ month'}</span>
+                </div>
+                <ul style="list-style: none; padding: 0; margin: 0 0 16px; font-size: 0.76rem; color: var(--text-secondary); line-height: 1.8;">
+                  ${c.features.map(f => `<li style="display: flex; align-items: center; gap: 6px;"><span style="color: ${c.color}; font-weight: 800;">✓</span> ${f}</li>`).join('')}
+                </ul>
+              </div>
+              <button
+                class="btn btn-sm ${c.isCurrent ? 'btn-secondary' : 'btn-primary'}"
+                data-tier="${c.id}"
+                style="width: 100%; justify-content: center; font-weight: 700; ${c.isCurrent ? 'opacity: 0.7; cursor: default;' : ''}"
+                ${c.isCurrent ? 'disabled' : ''}
+              >
+                ${c.cta}
+              </button>
+            </div>
+          `).join('')}
+        </div>
+
+        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-default); display: flex; justify-content: space-between; align-items: center; font-size: 0.76rem; color: var(--text-secondary);">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <span>Supported Gateways:</span>
+            <strong>Stripe</strong>
+            <span>&bull;</span>
+            <strong>Paystack (Card, Bank, USSD)</strong>
+            <span>&bull;</span>
+            <strong>Flutterwave (M-Pesa, Mobile Money)</strong>
+          </div>
+          <span>Instant upgrade with zero downtime &bull; Postgres 17 RLS Enforced</span>
+        </div>
+      </div>
+    `;
+  };
+
+  const attachEvents = () => {
+    modalWrap.querySelector('#btn-selfserve-close')?.addEventListener('click', () => modalWrap.remove());
+    modalWrap.addEventListener('click', (e) => {
+      if (e.target === modalWrap) modalWrap.remove();
+    });
+
+    modalWrap.querySelector('#btn-cycle-monthly')?.addEventListener('click', () => {
+      activeCycle = 'monthly';
+      modalWrap.innerHTML = renderContent();
+      attachEvents();
+    });
+
+    modalWrap.querySelector('#btn-cycle-annual')?.addEventListener('click', () => {
+      activeCycle = 'annual';
+      modalWrap.innerHTML = renderContent();
+      attachEvents();
+    });
+
+    modalWrap.querySelectorAll<HTMLButtonElement>('button[data-tier]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const targetTier = btn.getAttribute('data-tier') as PlanTier;
+        if (!targetTier || targetTier === currentPlan) return;
+        modalWrap.remove();
+        openStripeCheckoutModal(targetTier, activeCycle, onSuccess);
+      });
+    });
+  };
+
+  modalWrap.innerHTML = renderContent();
+  document.body.appendChild(modalWrap);
+  attachEvents();
 }

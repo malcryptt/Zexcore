@@ -143,6 +143,80 @@ export function renderSolutionsPage(): string {
                 </div>
               </div>
 
+              <!-- Solution E: Web & Digital Agencies (SaaS in a Box) -->
+              <div class="solution-h-card" id="solutions-agency" style="border-left: 4px solid #E50920;">
+                <div class="solution-h-img-col">
+                  <img
+                    src="/heroes/hero-solutions.jpg"
+                    alt="Agency team collaborating on client multi-tenant portals"
+                    class="solution-h-img"
+                    loading="lazy"
+                  />
+                  <div class="sol-fallback-box" style="display: none;">
+                    <span class="sol-fallback-tag">TIER: AGENCY</span>
+                    <span class="sol-fallback-title">Agency Turnkey SaaS</span>
+                  </div>
+                </div>
+                <div class="solution-h-body-col">
+                  <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                    <span class="badge badge-accent">AGENCY TIER &bull; $149/MO</span>
+                    <span style="font-size: 0.72rem; font-weight: 700; color: #15803d; background: #dcfce7; padding: 2px 8px; border-radius: 12px;">25 Workspaces Included</span>
+                  </div>
+                  <h3 class="solution-h-title">Web &amp; Digital Agencies: Turnkey SaaS in a Box</h3>
+                  <p style="font-size: 0.9rem; color: #475569; line-height: 1.6; margin-bottom: 12px;">
+                    Stop building one-off custom backends. Provision isolated, branded client workspaces for dentists, contractors, and local retail in 60 seconds with zero infrastructure maintenance.
+                  </p>
+                  <ul class="solution-h-bullets">
+                    <li><strong>25 Client Workspaces:</strong> Dedicated PostgreSQL RLS isolation per client.</li>
+                    <li><strong>White-Label Customization:</strong> Upload agency logo, custom colors, and custom subdomains.</li>
+                    <li><strong>Audit Essentials per Workspace:</strong> Automatically generate security &amp; uptime reports for clients.</li>
+                    <li><strong>Instant ROI:</strong> Bill each client $50–$100/mo maintenance while your platform cost is capped at $149/mo.</li>
+                  </ul>
+                  <div style="display: flex; gap: 10px; margin-top: 14px;">
+                    <button class="btn btn-primary btn-sm" onclick="window.startStripeCheckout('agency')">Deploy Agency Tier &rarr;</button>
+                    <a href="#/console/whitelabel" class="btn btn-secondary btn-sm">Preview White-Label Studio</a>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Solution F: Regulated Verticals (Healthcare & Financial Compliance) -->
+              <div class="solution-h-card" id="solutions-regulated" style="border-left: 4px solid #1e293b;">
+                <div class="solution-h-img-col">
+                  <img
+                    src="/heroes/hero-security.jpg"
+                    alt="Regulated banking vault and healthcare encryption compliance infrastructure"
+                    class="solution-h-img"
+                    loading="lazy"
+                  />
+                  <div class="sol-fallback-box" style="display: none;">
+                    <span class="sol-fallback-tag">TIER: REGULATED</span>
+                    <span class="sol-fallback-title">Regulated Verticals</span>
+                  </div>
+                </div>
+                <div class="solution-h-body-col">
+                  <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                    <span class="badge" style="background: #1e293b; color: #fff;">DEDICATED &bull; FROM $1,500/MO</span>
+                    <span style="font-size: 0.72rem; font-weight: 700; color: #1e293b; background: #e2e8f0; padding: 2px 8px; border-radius: 12px;">Signed BAA &amp; DPA</span>
+                  </div>
+                  <h3 class="solution-h-title">Regulated Verticals: Healthcare &amp; Financial Infrastructure</h3>
+                  <p style="font-size: 0.9rem; color: #475569; line-height: 1.6; margin-bottom: 12px;">
+                    Built for medical clinics, clinical research, fintech payment routers, and compliance-heavy organizations that require physical tenancy isolation and mathematical non-repudiation.
+                  </p>
+                  <ul class="solution-h-bullets">
+                    <li><strong>Cryptographic Privacy Vault:</strong> AES-256-GCM field encryption with unique tenant Data Encryption Keys (DEKs).</li>
+                    <li><strong>HMAC Blind Index Queries:</strong> Perform exact-match searches over encrypted PII without decrypting tables.</li>
+                    <li><strong>GDPR Article 17 Key Shredding:</strong> Irreversible Right-to-be-Forgotten PII erasure with signed certificate proofs.</li>
+                    <li><strong>Triple Financial Reconciliation:</strong> Automated invoice-to-gateway matching with invoice sequence gap detection.</li>
+                    <li><strong>Legal Commitments:</strong> Signed Business Associate Agreement (BAA), Data Processing Addendum (DPA), and 99.95% SLA.</li>
+                  </ul>
+                  <div style="display: flex; gap: 10px; margin-top: 14px;">
+                    <button class="btn btn-primary btn-sm" onclick="window.startStripeCheckout('dedicated')">Deploy Dedicated Instance &rarr;</button>
+                    <a href="#/security" class="btn btn-secondary btn-sm">Inspect Security Architecture</a>
+                  </div>
+                </div>
+              </div>
+
+
             </div>
           </div>
         </section>

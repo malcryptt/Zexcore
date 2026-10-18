@@ -1079,8 +1079,37 @@ function renderAuditReconciliationTab(_currentPlan: PlanTier, auditLevel: string
 
 // ── Tab 5: Reports & Tamper-Proof Hash Chain ─────────────────────────────────
 
+// ── Tab 5: Reports & Tamper-Proof Hash Chain ─────────────────────────────────
+
 function renderAuditReportsTab(_currentPlan: PlanTier, _auditLevel: string): string {
+  const rootHash = auditState.hashChain[auditState.hashChain.length - 1]?.blockHash || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+
   return `
+    <!-- Sticky Lock Continuity Status Alert -->
+    <div style="background: linear-gradient(90deg, #1e293b 0%, #0f172a 100%); border-left: 4px solid var(--primary); border-radius: 8px; padding: 16px 20px; margin-bottom: 24px; color: #fff; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(229, 9, 32, 0.2); display: flex; align-items: center; justify-content: center; color: var(--primary);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <strong style="font-size: 0.95rem; letter-spacing: 0.02em;">CRYPTOGRAPHIC STICKY LOCK: ACTIVE</strong>
+            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 8px #22c55e;"></span>
+            <span style="font-size: 0.72rem; color: #86efac; font-weight: 700; text-transform: uppercase;">Irreversible Chain</span>
+          </div>
+          <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 3px;">
+            Every ledger transaction, configuration modification, and rule execution is mathematically sealed into SHA-256 blocks. Audit continuity cannot be retroactively purged or spoofed.
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button class="btn btn-sm btn-primary" id="btn-open-continuity-cert" style="font-size: 0.78rem;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+          Export Continuity Certificate
+        </button>
+      </div>
+    </div>
+
     <div class="grid-2" style="margin-bottom: 20px;">
       <!-- Monthly Health Report Card -->
       <div class="card">
@@ -1119,6 +1148,9 @@ function renderAuditReportsTab(_currentPlan: PlanTier, _auditLevel: string): str
           <button class="btn btn-secondary btn-sm" id="btn-download-monthly-summary">
             Download Executive PDF / Summary
           </button>
+          <button class="btn btn-secondary btn-sm" id="btn-export-evidence-pack">
+            Export Evidence Pack
+          </button>
         </div>
       </div>
 
@@ -1154,6 +1186,73 @@ function renderAuditReportsTab(_currentPlan: PlanTier, _auditLevel: string): str
           `
             )
             .join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- Embeddable Trust Badge Studio & Verification Seal -->
+    <div class="card" style="margin-bottom: 24px;">
+      <div class="card-header">
+        <div>
+          <div class="card-title" style="display: flex; align-items: center; gap: 8px;">
+            <span>Embeddable Public Trust Badge Generator</span>
+            <span class="badge badge-accent">Sticky Lock Marketing</span>
+          </div>
+          <div class="card-subtitle">Embed verified cryptographic non-repudiation seals on your landing pages, customer checkout, or client portals</div>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="btn-verify-trust-seal-modal">
+          Preview Public Verification Modal
+        </button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding-top: 8px;">
+        <!-- Left: Live Badge Preview -->
+        <div style="background: var(--bg-subtle); border: 1px solid var(--border-default); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="font-size: 0.76rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 12px;">Live Badge Preview (Click to Test Verification)</div>
+            
+            <div id="trust-badge-preview-container" style="display: flex; justify-content: center; align-items: center; min-height: 90px; padding: 14px; background: #fff; border: 1px dashed var(--border-default); border-radius: 8px; cursor: pointer;">
+              <div class="zex-trust-badge dark" id="preview-badge-element" style="display: inline-flex; align-items: center; gap: 10px; background: #0f172a; color: #fff; padding: 8px 16px; border-radius: 24px; border: 1px solid #334155; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
+                <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 6px #22c55e; animation: pulse 2s infinite;"></span>
+                <div style="display: flex; flex-direction: column; line-height: 1.15; text-align: left;">
+                  <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;">Protected &amp; Reconciled by</span>
+                  <span style="font-size: 0.78rem; font-weight: 800; color: #fff;">ZexCore Cryptographic Ledger</span>
+                </div>
+                <span style="font-family: var(--font-mono); font-size: 0.62rem; color: #38bdf8; background: rgba(56, 189, 248, 0.15); padding: 2px 6px; border-radius: 4px;">#420 SEALED</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top: 16px; display: flex; gap: 8px; align-items: center;">
+            <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-main);">Badge Style:</label>
+            <select id="badge-style-select" class="input" style="font-size: 0.78rem; padding: 4px 8px; width: auto; flex: 1;">
+              <option value="dark">Dark Ledger Seal (Recommended)</option>
+              <option value="light">Light Security Shield</option>
+              <option value="minimal">Minimalist Chain Pill</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Right: Embed Snippet -->
+        <div style="display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="font-size: 0.76rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px;">Copyable HTML / Script Embed</div>
+            <p style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 10px;">
+              Place this tag anywhere on your website or portal. When clicked, it renders a tamper-proof verification modal cryptographically signed by your tenant's append-only ledger.
+            </p>
+            <textarea id="trust-badge-code-input" class="input" style="font-family: var(--font-mono); font-size: 0.72rem; height: 80px; width: 100%; padding: 8px; resize: none;" readonly>&lt;!-- ZexCore Ledger Trust Badge --&gt;
+&lt;div class="zexcore-trust-badge" data-tenant="acme_corp" data-chain-root="${rootHash.slice(0, 16)}..." data-theme="dark"&gt;&lt;/div&gt;
+&lt;script src="https://zexcore.io/ledger/trust-badge.js" async&gt;&lt;/script&gt;</textarea>
+          </div>
+
+          <div style="margin-top: 14px; display: flex; gap: 8px;">
+            <button class="btn btn-primary btn-sm" id="btn-copy-trust-badge-code">
+              Copy Embed Code
+            </button>
+            <button class="btn btn-secondary btn-sm" id="btn-test-verification-flow">
+              Test Seal Verification
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1312,6 +1411,79 @@ export function setupConsoleAuditEvents(_currentPlan: PlanTier, triggerRerender:
     btn.addEventListener('click', () => {
       openStripeCheckoutModal('enterprise', 'monthly');
     });
+  });
+
+  // 15. Export Continuity Certificate
+  container.querySelector('#btn-open-continuity-cert')?.addEventListener('click', () => {
+    openContinuityCertificateModal();
+  });
+
+  // 16. Trust Badge & Verification Modal handlers
+  const openSealModal = () => openPublicTrustVerificationModal();
+  container.querySelector('#btn-verify-trust-seal-modal')?.addEventListener('click', openSealModal);
+  container.querySelector('#btn-test-verification-flow')?.addEventListener('click', openSealModal);
+  container.querySelector('#preview-badge-element')?.addEventListener('click', openSealModal);
+
+  // 17. Copy Trust Badge Code
+  container.querySelector('#btn-copy-trust-badge-code')?.addEventListener('click', () => {
+    const input = container.querySelector('#trust-badge-code-input') as HTMLTextAreaElement | null;
+    if (input) {
+      navigator.clipboard?.writeText(input.value);
+      showToastNotification('Embed snippet copied to clipboard! Paste into your site HTML.', 'success');
+    }
+  });
+
+  // 18. Badge Style Selector
+  const styleSelect = container.querySelector('#badge-style-select') as HTMLSelectElement | null;
+  const badgePreview = container.querySelector('#preview-badge-element') as HTMLElement | null;
+  const codeInput = container.querySelector('#trust-badge-code-input') as HTMLTextAreaElement | null;
+
+  styleSelect?.addEventListener('change', () => {
+    const val = styleSelect.value;
+    const rootHash = auditState.hashChain[auditState.hashChain.length - 1]?.blockHash || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+
+    if (badgePreview) {
+      if (val === 'light') {
+        badgePreview.style.background = '#ffffff';
+        badgePreview.style.border = '1.5px solid #e2e8f0';
+        badgePreview.style.color = '#0f172a';
+        badgePreview.innerHTML = `
+          <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: #fee2e2; color: #E50920;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+          </span>
+          <div style="display: flex; flex-direction: column; line-height: 1.15; text-align: left;">
+            <span style="font-size: 0.65rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Cryptographic Audit</span>
+            <span style="font-size: 0.78rem; font-weight: 800; color: #0f172a;">Reconciled by ZexCore</span>
+          </div>
+          <span style="font-family: var(--font-mono); font-size: 0.62rem; color: #16a34a; background: #dcfce7; padding: 2px 6px; border-radius: 4px; font-weight: 700;">100% CLEAN</span>
+        `;
+      } else if (val === 'minimal') {
+        badgePreview.style.background = '#f8fafc';
+        badgePreview.style.border = '1px solid #cbd5e1';
+        badgePreview.style.color = '#334155';
+        badgePreview.innerHTML = `
+          <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #16a34a;"></span>
+          <span style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: #0f172a;">ZEXCORE-AUDIT-CHAIN #420</span>
+          <span style="font-size: 0.68rem; color: #64748b;">(Verified)</span>
+        `;
+      } else {
+        badgePreview.style.background = '#0f172a';
+        badgePreview.style.border = '1px solid #334155';
+        badgePreview.style.color = '#fff';
+        badgePreview.innerHTML = `
+          <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 6px #22c55e;"></span>
+          <div style="display: flex; flex-direction: column; line-height: 1.15; text-align: left;">
+            <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;">Protected &amp; Reconciled by</span>
+            <span style="font-size: 0.78rem; font-weight: 800; color: #fff;">ZexCore Cryptographic Ledger</span>
+          </div>
+          <span style="font-family: var(--font-mono); font-size: 0.62rem; color: #38bdf8; background: rgba(56, 189, 248, 0.15); padding: 2px 6px; border-radius: 4px;">#420 SEALED</span>
+        `;
+      }
+    }
+
+    if (codeInput) {
+      codeInput.value = `<!-- ZexCore Ledger Trust Badge -->\n<div class="zexcore-trust-badge" data-tenant="acme_corp" data-chain-root="${rootHash.slice(0, 16)}..." data-theme="${val}"></div>\n<script src="https://zexcore.io/ledger/trust-badge.js" async></script>`;
+    }
   });
 }
 
@@ -1719,3 +1891,165 @@ function exportEvidencePackModal() {
     ],
   });
 }
+
+function openContinuityCertificateModal() {
+  const certId = `ZEX-CERT-2026-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+  const rootHash = auditState.hashChain[auditState.hashChain.length - 1]?.blockHash || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+  const issueDate = new Date().toISOString().slice(0, 10);
+
+  const contentHtml = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0f172a;">
+      <div style="border: 2px solid #E50920; border-radius: 8px; padding: 24px; background: #fff; position: relative; box-shadow: 0 8px 30px rgba(0,0,0,0.06);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #f1f5f9; padding-bottom: 16px; margin-bottom: 16px;">
+          <div>
+            <div style="font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; color: #E50920; text-transform: uppercase;">
+              ZexCore Cryptographic Trust Authority
+            </div>
+            <h2 style="margin: 4px 0 0; font-size: 1.25rem; font-weight: 900; color: #0f172a;">
+              Certificate of Audit Continuity &amp; Non-Repudiation
+            </h2>
+            <div style="font-size: 0.76rem; color: #64748b; margin-top: 2px;">
+              Attestation Standard: SOC 2 CC6.1 / ISO 27001 / NDPR Art. 2.6
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <span style="font-size: 0.65rem; color: #64748b; text-transform: uppercase; font-weight: 700;">Certificate No.</span>
+            <div style="font-family: var(--font-mono); font-size: 0.78rem; font-weight: 800; color: #0f172a;">${certId}</div>
+            <span class="badge badge-accent" style="margin-top: 4px; display: inline-block;">CONTINUOUS SEAL</span>
+          </div>
+        </div>
+
+        <div style="font-size: 0.82rem; line-height: 1.6; color: #334155; margin-bottom: 16px;">
+          This document certifies that the workspace below has maintained uninterrupted, append-only cryptographic ledger evaluation with zero retroactive history alteration or sequence breaks.
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 14px; margin-bottom: 16px; font-size: 0.78rem;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div>
+              <span style="color: #64748b; font-size: 0.7rem; text-transform: uppercase; display: block;">Certified Organization</span>
+              <strong style="color: #0f172a;">Acme Enterprise Corp (acme_corp)</strong>
+            </div>
+            <div>
+              <span style="color: #64748b; font-size: 0.7rem; text-transform: uppercase; display: block;">Issue Timestamp</span>
+              <strong style="color: #0f172a;">${issueDate} 12:00:00 UTC</strong>
+            </div>
+            <div>
+              <span style="color: #64748b; font-size: 0.7rem; text-transform: uppercase; display: block;">Evaluated Invariants</span>
+              <strong style="color: #0f172a;">12 Deterministic AST Rules (v1 - v3)</strong>
+            </div>
+            <div>
+              <span style="color: #64748b; font-size: 0.7rem; text-transform: uppercase; display: block;">Chain Continuity Status</span>
+              <strong style="color: #16a34a;">100% Non-Repudiated (0 Gaps)</strong>
+            </div>
+          </div>
+          <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #cbd5e1;">
+            <span style="color: #64748b; font-size: 0.7rem; text-transform: uppercase; display: block;">Ledger Root SHA-256 Hash</span>
+            <code style="font-family: var(--font-mono); font-size: 0.72rem; color: #0284c7; word-break: break-all;">${rootHash}</code>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid #f1f5f9; font-size: 0.72rem; color: #64748b;">
+          <div>
+            Dual-signed by: <strong>ZexCore Root HSM Authority</strong> &bull; <strong>compliance-officer@zexcore.io</strong>
+          </div>
+          <div style="font-weight: 700; color: #16a34a;">
+            ● Mathematical Immutability Enforced
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  openAuditModal({
+    title: 'Verifiable Certificate of Audit Continuity',
+    contentHtml,
+    buttons: [
+      { text: 'Close' },
+      {
+        text: 'Print / Save PDF',
+        primary: true,
+        onClick: () => {
+          window.print();
+        },
+      },
+      {
+        text: 'Download Attestation (.json)',
+        primary: false,
+        onClick: () => {
+          const certPayload = {
+            certificateId: certId,
+            issuedTo: 'acme_corp',
+            issueDate,
+            rootHash,
+            status: 'valid',
+            attestationEngine: 'ZexCore module-audit v2.4.0',
+            evaluatedRules: auditState.rules.length,
+            chainBlocks: auditState.hashChain.length,
+          };
+          const blob = new Blob([JSON.stringify(certPayload, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${certId}_Continuity_Attestation.json`;
+          a.click();
+          URL.revokeObjectURL(url);
+          showToastNotification('Cryptographic Attestation JSON exported.', 'success');
+        },
+      },
+    ],
+  });
+}
+
+function openPublicTrustVerificationModal() {
+  const rootHash = auditState.hashChain[auditState.hashChain.length - 1]?.blockHash || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+
+  const contentHtml = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div style="display: inline-flex; align-items: center; justify-content: center; width: 54px; height: 54px; border-radius: 50%; background: #dcfce7; color: #16a34a; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2);">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h3 style="margin: 0; font-size: 1.2rem; font-weight: 850; color: #0f172a;">Cryptographic Audit Seal Verified</h3>
+        <p style="margin: 4px 0 0; font-size: 0.8rem; color: #64748b;">
+          Public Ledger Verification Service &bull; ZexCore Trust Network
+        </p>
+      </div>
+
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 18px; font-size: 0.8rem; line-height: 1.6;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+          <span style="color: #64748b;">Verified Tenant:</span>
+          <strong style="color: #0f172a;">Acme Enterprise Corp (acme_corp)</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+          <span style="color: #64748b;">Audit Status:</span>
+          <strong style="color: #16a34a;">CONTINUOUS &bull; ZERO SEQUENCE GAPS</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+          <span style="color: #64748b;">Append-Only Blocks:</span>
+          <strong>Blocks #418 - #420 Validated</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+          <span style="color: #64748b;">Reconciliation Score:</span>
+          <strong style="color: #16a34a;">98.4% Bank Webhook Verified</strong>
+        </div>
+        <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #cbd5e1;">
+          <span style="color: #64748b; font-size: 0.72rem; display: block; margin-bottom: 2px;">Cryptographic Ledger Root:</span>
+          <code style="font-family: var(--font-mono); font-size: 0.74rem; color: #0284c7; word-break: break-all;">${rootHash}</code>
+        </div>
+      </div>
+
+      <div style="font-size: 0.76rem; color: #64748b; line-height: 1.5; text-align: center;">
+        This workspace guarantees mathematical non-repudiation. All customer records and accounting reconciliations are immutably preserved under PostgreSQL 17 tenant isolation.
+      </div>
+    </div>
+  `;
+
+  openAuditModal({
+    title: 'Public Ledger Verification Seal',
+    contentHtml,
+    buttons: [
+      { text: 'Close', primary: true },
+    ],
+  });
+}
+

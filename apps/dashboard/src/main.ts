@@ -30,6 +30,7 @@ import {
   isTabLocked,
   getTabLockedInfo,
   openStripeCheckoutModal,
+  openSelfServeUpgradeModal,
   PLANS,
   type PlanTier,
 } from './lib/billing';
@@ -344,6 +345,17 @@ const state = {
   events: [] as Array<{ ts: string; name: string; payload: string }>,
   erasureRequestsCount: 1,
   anonymizedCount: 4,
+  agencyBranding: {
+    agencyName: 'Apex Digital Agency',
+    customDomain: 'portal.apexdigital.com',
+    primaryColor: '#0d9488',
+    logoUrl: '/zexcore-logo-light.png',
+    removeWatermark: true,
+    customFavicon: true,
+    clientEmailBranding: true,
+    isolatedSubWorkspaces: 25,
+    previewMode: 'desktop' as 'desktop' | 'mobile',
+  },
 };
 
 function logBusEvent(name: string, payload: Record<string, unknown>) {
@@ -1113,6 +1125,408 @@ function renderConsoleComplianceView(currentPlan: PlanTier): string {
   return renderWithSoftPaywall('compliance', currentPlan, innerCompliance);
 }
 
+// ── Agency White-Label Branding Studio ──────────────────────────────────────
+function renderConsoleWhiteLabelView(currentPlan: PlanTier): string {
+  const branding = state.agencyBranding;
+
+  const innerWhiteLabel = `
+    <div class="console-page-wrapper" id="page-console-whitelabel">
+      <div class="console-page-toolbar">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h2 class="page-title" style="margin: 0; font-size: 1.35rem; font-weight: 850;">Agency White-Label Branding Studio</h2>
+            <span class="badge" style="background: rgba(13, 148, 136, 0.15); color: #0d9488; font-weight: 800;">25 Client Workspaces</span>
+          </div>
+          <div class="page-desc" style="margin-top: 2px;">Deliver turnkey SaaS to your clients under your own agency brand, custom CNAME domain, and corporate color palette.</div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-primary btn-sm" id="btn-save-agency-branding">
+            Save Agency Branding
+          </button>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1.25fr; gap: 24px;">
+        <!-- Left Column: Agency Brand Settings -->
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div class="card">
+            <div class="card-title">Brand Identity &amp; Portal Domain</div>
+            <div class="card-subtitle" style="margin-bottom: 14px;">Define how your clients identify and access their workspace</div>
+
+            <div style="margin-bottom: 12px;">
+              <label style="font-size: 0.76rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Agency Business Name</label>
+              <input type="text" id="agency-name-input" class="input" value="${branding.agencyName}" style="margin-top: 4px;" placeholder="e.g. Apex Growth Partners" />
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <label style="font-size: 0.76rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Custom CNAME Domain</label>
+              <input type="text" id="agency-domain-input" class="input" value="${branding.customDomain}" style="margin-top: 4px; font-family: var(--font-mono); font-size: 0.8rem;" placeholder="portal.youragency.com" />
+              <div style="display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 0.72rem; color: #16a34a; font-family: var(--font-mono);">
+                <span>● DNS CNAME Status: Active</span> &bull; <span>SSL: Cloudflare Wildcard Valid</span>
+              </div>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <label style="font-size: 0.76rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Agency Logo URL</label>
+              <div style="display: flex; gap: 8px; margin-top: 4px;">
+                <input type="text" id="agency-logo-input" class="input" value="${branding.logoUrl}" style="flex: 1;" />
+                <div style="width: 38px; height: 38px; border: 1px solid var(--border-default); border-radius: 6px; background: #f8fafc; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 2px;">
+                  <img src="${branding.logoUrl}" id="agency-logo-preview-img" alt="Logo preview" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-bottom: 8px;">
+              <label style="font-size: 0.76rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 6px;">Primary Brand Color</label>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <input type="color" id="agency-color-picker" value="${branding.primaryColor}" style="width: 38px; height: 38px; border: 1px solid var(--border-default); border-radius: 6px; cursor: pointer; padding: 2px; background: #fff;" />
+                <input type="text" id="agency-color-hex" class="input" value="${branding.primaryColor}" style="width: 100px; font-family: var(--font-mono); font-size: 0.8rem;" />
+                <div style="display: flex; gap: 4px;">
+                  <button type="button" class="btn-color-preset" data-color="#0d9488" style="width: 24px; height: 24px; border-radius: 50%; background: #0d9488; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2); cursor: pointer;" title="Teal"></button>
+                  <button type="button" class="btn-color-preset" data-color="#2563eb" style="width: 24px; height: 24px; border-radius: 50%; background: #2563eb; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2); cursor: pointer;" title="Royal Blue"></button>
+                  <button type="button" class="btn-color-preset" data-color="#059669" style="width: 24px; height: 24px; border-radius: 50%; background: #059669; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2); cursor: pointer;" title="Emerald"></button>
+                  <button type="button" class="btn-color-preset" data-color="#E50920" style="width: 24px; height: 24px; border-radius: 50%; background: #E50920; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2); cursor: pointer;" title="ZexCore Crimson"></button>
+                  <button type="button" class="btn-color-preset" data-color="#7c3aed" style="width: 24px; height: 24px; border-radius: 50%; background: #7c3aed; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2); cursor: pointer;" title="Purple"></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- White-Label Policies & Watermark Controls -->
+          <div class="card">
+            <div class="card-title">White-Label Policies &amp; Client Access</div>
+            <div class="card-subtitle" style="margin-bottom: 12px;">Ensure zero vendor leakage for your client base</div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.8rem;">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="chk-remove-watermark" ${branding.removeWatermark ? 'checked' : ''} />
+                <span>Remove all <strong>"Powered by ZexCore"</strong> watermarks and badge links</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="chk-custom-favicon" ${branding.customFavicon ? 'checked' : ''} />
+                <span>Override browser favicon and HTML title tags with agency identity</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="chk-client-email" ${branding.clientEmailBranding ? 'checked' : ''} />
+                <span>Route transactional email &amp; SMS notifications via agency sender signature</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" checked disabled />
+                <span style="color: #64748b;">Postgres 17 RLS Sub-Tenant Isolation (Enforced across all 25 client databases)</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Interactive Live Client Portal Sandbox -->
+        <div>
+          <div class="card" style="padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div>
+                <div class="card-title" style="margin: 0;">Live Client Portal Sandbox Preview</div>
+                <div class="card-subtitle">Real-time simulation of how your clients see their branded workspace</div>
+              </div>
+              <div style="display: flex; gap: 4px; background: #f1f5f9; padding: 3px; border-radius: 6px;">
+                <button class="btn btn-sm ${branding.previewMode === 'desktop' ? 'btn-primary' : 'btn-secondary'}" id="btn-preview-desktop" style="padding: 4px 10px; font-size: 0.72rem; border: none;">Desktop</button>
+                <button class="btn btn-sm ${branding.previewMode === 'mobile' ? 'btn-primary' : 'btn-secondary'}" id="btn-preview-mobile" style="padding: 4px 10px; font-size: 0.72rem; border: none;">Mobile</button>
+              </div>
+            </div>
+
+            <!-- Browser Mockup Window -->
+            <div id="sandbox-mock-window" style="background: #fff; border: 1.5px solid #cbd5e1; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.08); transition: max-width 0.3s ease; margin: 0 auto; ${branding.previewMode === 'mobile' ? 'max-width: 375px;' : 'max-width: 100%;'}">
+              <!-- Browser Header -->
+              <div style="background: #f1f5f9; border-bottom: 1px solid #cbd5e1; padding: 8px 12px; display: flex; align-items: center; gap: 8px;">
+                <div style="display: flex; gap: 5px;">
+                  <span style="width: 9px; height: 9px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
+                  <span style="width: 9px; height: 9px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
+                  <span style="width: 9px; height: 9px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+                </div>
+                <div style="flex: 1; background: #fff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 2px 10px; font-family: var(--font-mono); font-size: 0.7rem; color: #475569; display: flex; align-items: center; justify-content: space-between;">
+                  <span>🔒 https://<span id="preview-url-domain">${branding.customDomain}</span>/dashboard</span>
+                  <span style="color: #16a34a; font-weight: 700; font-size: 0.65rem;">SSL ENCRYPTED</span>
+                </div>
+              </div>
+
+              <!-- Inner Branded App Preview -->
+              <div style="min-height: 400px; background: #f8fafc; display: flex; flex-direction: column;">
+                <!-- Client Portal Topbar -->
+                <div style="background: #fff; border-bottom: 1px solid #e2e8f0; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center;">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <img src="${branding.logoUrl}" id="preview-client-logo" alt="Logo" style="height: 22px; max-width: 80px; object-fit: contain;" />
+                    <span id="preview-client-agency-name" style="font-weight: 800; font-size: 0.85rem; color: #0f172a;">${branding.agencyName}</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <select id="preview-client-workspace-select" style="font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff;">
+                      <option>Client 1: Dr. Bello Specialist Clinic</option>
+                      <option>Client 2: Polaris Cold Fleet</option>
+                      <option>Client 3: GreenLeaf Organics</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Client Body Content -->
+                <div style="padding: 16px; flex: 1;">
+                  <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                      <h4 id="preview-workspace-headline" style="margin: 0; font-size: 0.95rem; font-weight: 800; color: #0f172a;">Dr. Bello Specialist Clinic</h4>
+                      <p style="margin: 2px 0 0; font-size: 0.72rem; color: #64748b;">Client Dedicated Workspace &bull; PostgreSQL RLS Isolated</p>
+                    </div>
+                    <button class="btn btn-sm" id="preview-action-btn" style="background: ${branding.primaryColor}; color: #fff; border: none; font-size: 0.72rem; padding: 5px 12px; border-radius: 4px; font-weight: 700;">
+                      New Appointment
+                    </button>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px;">
+                    <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px;">
+                      <span style="font-size: 0.68rem; color: #64748b; text-transform: uppercase; font-weight: 600;">Active Bookings</span>
+                      <div id="preview-metric-bookings" style="font-size: 1.15rem; font-weight: 900; color: ${branding.primaryColor}; margin-top: 2px;">28</div>
+                    </div>
+                    <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px;">
+                      <span style="font-size: 0.68rem; color: #64748b; text-transform: uppercase; font-weight: 600;">SMS Reminders</span>
+                      <div style="font-size: 1.15rem; font-weight: 900; color: #0f172a; margin-top: 2px;">99.4%</div>
+                    </div>
+                    <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px;">
+                      <span style="font-size: 0.68rem; color: #64748b; text-transform: uppercase; font-weight: 600;">Audit Health</span>
+                      <div style="font-size: 1.15rem; font-weight: 900; color: #16a34a; margin-top: 2px;">Clean</div>
+                    </div>
+                  </div>
+
+                  <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px;">
+                    <div style="font-size: 0.75rem; font-weight: 700; color: #0f172a; margin-bottom: 8px;">Recent Automated Follow-ups</div>
+                    <div style="font-size: 0.7rem; color: #475569; display: flex; flex-direction: column; gap: 6px;">
+                      <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px;">
+                        <span>WhatsApp 24h Reminder sent to Dr. Bello patient #1029</span>
+                        <span style="color: #16a34a; font-weight: 700;">Delivered</span>
+                      </div>
+                      <div style="display: flex; justify-content: space-between;">
+                        <span>Paystack consultation slot deposit confirmed (₦50,000)</span>
+                        <span style="color: #0284c7; font-weight: 700;">Reconciled</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Client Footer (White-Labeled) -->
+                <div style="background: #fff; border-top: 1px solid #e2e8f0; padding: 8px 16px; font-size: 0.68rem; color: #94a3b8; display: flex; justify-content: space-between; align-items: center;">
+                  <span>Managed &amp; Hosted by <strong id="preview-footer-agency" style="color: #64748b;">${branding.agencyName}</strong></span>
+                  <span style="font-family: var(--font-mono); font-size: 0.64rem;">Tenant RLS Enforced</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  return renderWithSoftPaywall('whitelabel', currentPlan, innerWhiteLabel);
+}
+
+function showToastNotification(message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') {
+  let container = document.getElementById('zexcore-toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'zexcore-toast-container';
+    container.className = 'zex-toast-container';
+    document.body.appendChild(container);
+  }
+  const toast = document.createElement('div');
+  toast.className = `zex-toast ${type}`;
+  toast.innerText = message;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity 0.25s';
+    setTimeout(() => toast.remove(), 250);
+  }, 3400);
+}
+
+// ── Vertical 1-Click Starter Kits Modal ──────────────────────────────────────
+function openVerticalStarterKitsModal() {
+  document.getElementById('zexcore-starter-kits-modal')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'zexcore-starter-kits-modal';
+  overlay.className = 'stripe-modal-backdrop';
+
+  const kits = [
+    {
+      id: 'solar_iot',
+      name: 'Solar & Industrial IoT Fleet',
+      badge: 'MQTT / LoRaWAN',
+      tagline: 'Mini-grid inverter telemetry, battery voltage & remote kill-switches',
+      icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`,
+      stats: '4 Devices &bull; 3 Rules &bull; 2 Deals',
+      sample: '12kW Solar array, 48V inverters, DC voltage trigger, USSD reconnect rule',
+      companyDefault: 'Helios Solar Mini-Grids',
+      devices: [
+        { id: 'dev-sol-1', name: 'Accra West Mini-Grid Array (12kW)', key: 'sol_array_accra_01', kind: 'power_gateway', status: 'online', temperature: 41.2, humidity: 36, voltage: 48.4, firmware: 'v3.1.2', lastSeen: 'Just now' },
+        { id: 'dev-sol-2', name: 'Inverter Cluster Alpha (5000W Pure Sine)', key: 'sol_inv_alpha', kind: 'power_gateway', status: 'online', temperature: 46.8, humidity: 31, voltage: 48.2, firmware: 'v2.8.0', lastSeen: '1m ago' },
+        { id: 'dev-sol-3', name: 'LiFePO4 Battery Bank B (10kWh)', key: 'sol_bat_bank_b', kind: 'power_gateway', status: 'online', temperature: 33.1, humidity: 40, voltage: 51.2, firmware: 'v2.1.0', lastSeen: 'Just now' },
+        { id: 'dev-sol-4', name: 'Remote USSD Disconnect Node', key: 'sol_ussd_node_04', kind: 'network_gateway', status: 'online', temperature: 29.0, humidity: 45, voltage: 12.0, firmware: 'v1.4.1', lastSeen: '3m ago' },
+      ],
+      rules: [
+        { id: 'r-sol-1', name: 'Low Battery Voltage Shutdown (< 44.0V)', trigger: 'iot.telemetry.received', conditions: 'metrics.voltage < 44.0', action: 'emit: solar.load_shedding.activated', approved: true, enabled: true },
+        { id: 'r-sol-2', name: 'Inverter Overheating Fan Override (> 65°C)', trigger: 'iot.telemetry.received', conditions: 'metrics.temperature > 65.0', action: 'emit: solar.fan.speed_100', approved: true, enabled: true },
+        { id: 'r-sol-3', name: 'USSD Remote Top-Up Auto-Reconnect', trigger: 'commerce.order.paid', conditions: 'payment.status == "success"', action: 'emit: iot.relay.closed', approved: true, enabled: true },
+      ],
+      leads: [
+        { id: 'lead-sol-1', title: 'Commercial Cold-Storage Mini-Grid Supply', company: 'Kano Agro Cold Hub', value: 92000, currency: 'USD', stage: 'Negotiation' },
+        { id: 'lead-sol-2', title: 'Off-Grid Hospital Inverter Backup', company: 'Mercy Specialist Center', value: 38000, currency: 'USD', stage: 'Proposal' },
+      ],
+    },
+    {
+      id: 'clinic_booking',
+      name: 'Healthcare & Clinic Intake Booking',
+      badge: 'HIPAA / GDPR Vault',
+      tagline: 'Patient intake calendar, slot deposits, automated WhatsApp/SMS alerts',
+      icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`,
+      stats: '3 Doctors &bull; AES-256 Vault &bull; 2 Chiller Probes',
+      sample: 'Vaccine storage temperature monitor, automated 24h & 1h reminder bot, Paystack slot deposit',
+      companyDefault: 'Apex Specialist Clinic',
+      devices: [
+        { id: 'dev-cln-1', name: 'Vaccine Chiller Unit 01 (2°C to 8°C)', key: 'cln_vaccine_chiller_01', kind: 'chiller_probe', status: 'online', temperature: 3.8, humidity: 55, voltage: 220.0, firmware: 'v2.4.0', lastSeen: 'Just now' },
+        { id: 'dev-cln-2', name: 'Pathology Lab Cold Vault', key: 'cln_lab_vault', kind: 'temperature_probe', status: 'online', temperature: -19.5, humidity: 70, voltage: 220.0, firmware: 'v2.1.0', lastSeen: '1m ago' },
+      ],
+      rules: [
+        { id: 'r-cln-1', name: 'Vaccine Chiller Thermal Breach Warning (> 8°C)', trigger: 'iot.telemetry.received', conditions: 'metrics.temperature > 8.0', action: 'emit: medical.alert.vaccine_temp_breach', approved: true, enabled: true },
+        { id: 'r-cln-2', name: 'Automated 24h WhatsApp Reminder on Appointment', trigger: 'booking.appointment.scheduled', conditions: 'appointment.status == "confirmed"', action: 'emit: whatsapp.reminder.scheduled', approved: true, enabled: true },
+      ],
+      leads: [
+        { id: 'lead-cln-1', title: 'Corporate Health Screening Program', company: 'Consolidated Energy Ltd', value: 24000, currency: 'USD', stage: 'Negotiation' },
+      ],
+    },
+    {
+      id: 'fintech_agency',
+      name: 'Field Sales & WhatsApp Commerce',
+      badge: 'Paystack / Flutterwave',
+      tagline: 'Omnichannel WhatsApp inbox, mobile money checkout & instant receipts',
+      icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>`,
+      stats: '5 Chat Threads &bull; Paystack &bull; Automated Receipts',
+      sample: 'Direct WhatsApp customer chat, Paystack payment link generation, automated invoice PDF',
+      companyDefault: 'AfriPay Digital Merchants',
+      devices: [
+        { id: 'dev-fin-1', name: 'Point of Sale Mobile Terminal POS-01', key: 'pos_terminal_01', kind: 'network_gateway', status: 'online', temperature: 28.2, humidity: 45, voltage: 5.0, firmware: 'v3.0.0', lastSeen: 'Just now' },
+      ],
+      rules: [
+        { id: 'r-fin-1', name: 'Instant WhatsApp Receipt on Paystack / MoMo Success', trigger: 'commerce.order.paid', conditions: 'payment.status == "success"', action: 'emit: whatsapp.receipt.dispatched', approved: true, enabled: true },
+        { id: 'r-fin-2', name: 'High-Value Invoice Escalation (> $5,000)', trigger: 'crm.lead.created', conditions: 'lead.value >= 5000', action: 'emit: crm.high_ticket.alert', approved: true, enabled: true },
+      ],
+      leads: [
+        { id: 'lead-fin-1', title: 'Multi-Store Paystack Payment Router', company: 'Zenith Supermarkets', value: 65000, currency: 'USD', stage: 'Proposal' },
+      ],
+    },
+    {
+      id: 'logistics',
+      name: 'Cold Chain Logistics & Reefer Telemetry',
+      badge: 'ISO 9001 Reefer',
+      tagline: 'Refrigerated container freight tracking, GPS geofencing & thermal alerts',
+      icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>`,
+      stats: '3 Reefer Units &bull; Sub-Zero Probes &bull; GPS Routing',
+      sample: 'Sub-zero pharmaceutical transit, real-time temperature graph, breach push notifications',
+      companyDefault: 'Polaris Fleet Logistics',
+      devices: [
+        { id: 'dev-log-1', name: 'Reefer Trailer 40ft Tri-Temp Alpha', key: 'reefer_alpha_40ft', kind: 'chiller_probe', status: 'online', temperature: -18.4, humidity: 85, voltage: 24.0, firmware: 'v2.4.1', lastSeen: 'Just now' },
+        { id: 'dev-log-2', name: 'GPS & Telemetry Gateway Hub #402', key: 'gps_gw_402', kind: 'network_gateway', status: 'online', temperature: 21.0, humidity: 42, voltage: 12.6, firmware: 'v2.3.0', lastSeen: '1m ago' },
+        { id: 'dev-log-3', name: 'Depot Cold Storage Vault B', key: 'vault_b_depot', kind: 'temperature_probe', status: 'online', temperature: -22.1, humidity: 88, voltage: 220.0, firmware: 'v1.8.4', lastSeen: 'Just now' },
+      ],
+      rules: [
+        { id: 'r-log-1', name: 'Thermal Breach In Transit (> -10°C)', trigger: 'iot.telemetry.received', conditions: 'metrics.temperature > -10.0', action: 'emit: logistics.alert.thermal_breach', approved: true, enabled: true },
+        { id: 'r-log-2', name: 'Freight Dispatch WhatsApp Auto-Notification', trigger: 'crm.lead.created', conditions: 'lead.value >= 1000', action: 'emit: dispatch.whatsapp.driver_assigned', approved: true, enabled: true },
+      ],
+      leads: [
+        { id: 'lead-log-1', title: 'Pharma Cold Chain Monthly Contract', company: 'BioMed Logistics', value: 48000, currency: 'USD', stage: 'Negotiation' },
+      ],
+    },
+  ];
+
+  overlay.innerHTML = `
+    <div class="stripe-modal-card" style="max-width: 880px; width: 95vw; max-height: 90vh; overflow-y: auto; padding: 28px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="badge badge-accent">TURNKEY VERTICAL BLUEPRINTS</span>
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">1-Click Workspace Provisioning</span>
+          </div>
+          <h2 style="margin: 6px 0 2px; font-size: 1.45rem; font-weight: 850; color: var(--text-main);">
+            Deploy 1-Click Starter Kits
+          </h2>
+          <p style="margin: 0; font-size: 0.86rem; color: var(--text-secondary);">
+            Instantly populate your console with connected hardware devices, deterministic automation rules, CRM deals, and workflows.
+          </p>
+        </div>
+        <button class="stripe-close-btn" id="btn-starter-kits-close">&times;</button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        ${kits
+          .map(
+            (k) => `
+          <div style="border: 1px solid var(--border-default); border-radius: 10px; padding: 20px; background: #fff; display: flex; flex-direction: column; justify-content: space-between; hover:border-color: var(--primary);">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                <div style="width: 44px; height: 44px; border-radius: 8px; background: rgba(229, 9, 32, 0.08); display: flex; align-items: center; justify-content: center;">
+                  ${k.icon}
+                </div>
+                <span style="font-size: 0.68rem; font-weight: 700; color: #0284c7; background: #e0f2fe; padding: 2px 8px; border-radius: 10px;">
+                  ${k.badge}
+                </span>
+              </div>
+              <h3 style="margin: 0 0 4px; font-size: 1.05rem; font-weight: 800; color: var(--text-main);">${k.name}</h3>
+              <p style="margin: 0 0 10px; font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4;">${k.tagline}</p>
+              
+              <div style="background: var(--bg-subtle); border-radius: 6px; padding: 8px 12px; margin-bottom: 14px; font-size: 0.74rem;">
+                <div style="font-weight: 700; color: var(--text-main); margin-bottom: 2px;">Includes: ${k.stats}</div>
+                <div style="color: var(--text-secondary);">${k.sample}</div>
+              </div>
+            </div>
+
+            <button class="btn btn-primary btn-sm btn-deploy-kit" data-kit-id="${k.id}" style="width: 100%; justify-content: center; font-weight: 700;">
+              Deploy ${k.name.split('&')[0].trim()} Kit &rarr;
+            </button>
+          </div>
+        `
+          )
+          .join('')}
+      </div>
+
+      <div style="margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border-default); font-size: 0.76rem; color: var(--text-secondary); text-align: center;">
+        Deploying a kit populates demo devices, automation rules, and pipeline stages in your active tenant with zero data loss.
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('#btn-starter-kits-close')?.addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+
+  overlay.querySelectorAll<HTMLButtonElement>('.btn-deploy-kit').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const kid = btn.getAttribute('data-kit-id');
+      const selectedKit = kits.find((k) => k.id === kid);
+      if (!selectedKit) return;
+
+      btn.disabled = true;
+      btn.innerHTML = `<span class="stripe-spinner"></span> Initializing schema...`;
+
+      setTimeout(() => {
+        state.devices = [...(selectedKit.devices as any)];
+        state.rules = [...selectedKit.rules];
+        state.leads = [...selectedKit.leads];
+        state.onboarding.verticalKey = selectedKit.id;
+        state.onboarding.companyName = selectedKit.companyDefault;
+
+        overlay.remove();
+        showToastNotification(`Starter kit "${selectedKit.name}" deployed! Devices paired, rules armed.`, 'success');
+        renderDashboard();
+      }, 700);
+    });
+  });
+}
+
 // ── Render Application Shell (Dashboard) ────────────────────────────────────
 function renderDashboard() {
   const app = document.getElementById('app');
@@ -1154,6 +1568,11 @@ function renderDashboard() {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             Compliance &amp; Vault
             ${isTabLocked('compliance', currentPlan) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> DEDICATED</span>` : ''}
+          </a>
+          <a href="#/console/whitelabel" class="nav-item ${state.currentTab === 'whitelabel' ? 'active' : ''}" data-tab="whitelabel">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.26L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            Agency White-Label
+            ${isTabLocked('whitelabel', currentPlan) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> AGENCY</span>` : '<span class="nav-badge" style="background: rgba(13, 148, 136, 0.15); color: #0d9488; font-weight: 800;">25</span>'}
           </a>
           <a href="#/console/audit" class="nav-item ${state.currentTab === 'audit' ? 'active' : ''}" data-tab="audit">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
@@ -1209,6 +1628,12 @@ function renderDashboard() {
           </div>
 
           <div class="topbar-right">
+            <!-- 1-Click Starter Kits Launcher -->
+            <button class="btn btn-secondary btn-sm" id="btn-topbar-starter-kits" style="margin-right: 4px; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-color: #cbd5e1; color: #0f172a;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span>1-Click Starter Kits</span>
+            </button>
+
             <!-- Interactive System Status Toggle -->
             <button class="badge-status-btn ${state.systemStatus}" id="topbar-status-btn" onclick="window.toggleSystemStatus()" title="Click to toggle system state (Operational / Offline)" style="margin-right: 6px; font-size: 0.72rem; padding: 4px 10px;">
               <span>●</span>
@@ -1243,6 +1668,7 @@ function renderDashboard() {
             state.currentTab === 'rules' ? renderConsoleRulesView(currentPlan) :
             state.currentTab === 'crm' ? renderConsoleCrmView(currentPlan) :
             state.currentTab === 'compliance' ? renderConsoleComplianceView(currentPlan) :
+            state.currentTab === 'whitelabel' ? renderConsoleWhiteLabelView(currentPlan) :
             renderConsoleAuditView(currentPlan)
           }
         </div>
@@ -1286,6 +1712,11 @@ function setupEventListeners() {
   document.getElementById('btn-topbar-home')?.addEventListener('click', () => navigateTo('home'));
   document.getElementById('btn-sidebar-home')?.addEventListener('click', () => navigateTo('home'));
 
+  // 1-Click Starter Kits
+  document.getElementById('btn-topbar-starter-kits')?.addEventListener('click', () => {
+    openVerticalStarterKitsModal();
+  });
+
   const handleSignOut = async () => {
     await logoutUser();
     state.currentUser = null;
@@ -1307,14 +1738,21 @@ function setupEventListeners() {
   // ── Billing / Stripe Upgrade Gateways ─────────────────────────────────────
   const handleUpgradeClick = (targetPlan?: PlanTier) => {
     const currentPlan = getTenantPlan(state.activeTenant);
-    const chosenPlan: PlanTier = targetPlan || (
-      currentPlan === 'free' ? 'starter' :
-      currentPlan === 'starter' ? 'growth' :
-      currentPlan === 'growth' ? 'agency' :
-      currentPlan === 'agency' ? 'enterprise' : 'dedicated'
-    );
+    if (!targetPlan) {
+      openSelfServeUpgradeModal(currentPlan, (newPlan) => {
+        setTenantPlan(newPlan, state.activeTenant);
+        logBusEvent('billing.subscription.upgraded', {
+          tenant: state.activeTenant,
+          plan: newPlan,
+          gateway: 'stripe',
+          status: 'active',
+        });
+        renderDashboard();
+      });
+      return;
+    }
 
-    openStripeCheckoutModal(chosenPlan, 'monthly', (newPlan) => {
+    openStripeCheckoutModal(targetPlan, 'monthly', (newPlan) => {
       setTenantPlan(newPlan, state.activeTenant);
       logBusEvent('billing.subscription.upgraded', {
         tenant: state.activeTenant,
@@ -1325,6 +1763,101 @@ function setupEventListeners() {
       renderDashboard();
     });
   };
+
+  document.getElementById('btn-sidebar-upgrade-plan')?.addEventListener('click', () => handleUpgradeClick());
+  document.getElementById('topbar-plan-indicator')?.addEventListener('click', () => handleUpgradeClick());
+
+  document.querySelectorAll<HTMLButtonElement>('.btn-paywall-upgrade').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const targetPlan = (btn.getAttribute('data-paywall-upgrade') || 'growth') as PlanTier;
+      handleUpgradeClick(targetPlan);
+    });
+  });
+
+  // ── Agency White-Label Branding Handlers ──────────────────────────────────
+  if (state.currentTab === 'whitelabel') {
+    const nameInput = document.getElementById('agency-name-input') as HTMLInputElement | null;
+    const domainInput = document.getElementById('agency-domain-input') as HTMLInputElement | null;
+    const logoInput = document.getElementById('agency-logo-input') as HTMLInputElement | null;
+    const colorPicker = document.getElementById('agency-color-picker') as HTMLInputElement | null;
+    const colorHex = document.getElementById('agency-color-hex') as HTMLInputElement | null;
+
+    // Real-time preview bindings
+    nameInput?.addEventListener('input', () => {
+      const val = nameInput.value || 'Agency Portal';
+      state.agencyBranding.agencyName = val;
+      const previewAgency = document.getElementById('preview-client-agency-name');
+      const previewFooter = document.getElementById('preview-footer-agency');
+      if (previewAgency) previewAgency.innerText = val;
+      if (previewFooter) previewFooter.innerText = val;
+    });
+
+    domainInput?.addEventListener('input', () => {
+      const val = domainInput.value || 'portal.agency.com';
+      state.agencyBranding.customDomain = val;
+      const previewDomain = document.getElementById('preview-url-domain');
+      if (previewDomain) previewDomain.innerText = val;
+    });
+
+    logoInput?.addEventListener('input', () => {
+      const val = logoInput.value || '/zexcore-logo-light.png';
+      state.agencyBranding.logoUrl = val;
+      const previewLogo = document.getElementById('preview-client-logo') as HTMLImageElement | null;
+      const thumb = document.getElementById('agency-logo-preview-img') as HTMLImageElement | null;
+      if (previewLogo) previewLogo.src = val;
+      if (thumb) thumb.src = val;
+    });
+
+    const updateColor = (hex: string) => {
+      state.agencyBranding.primaryColor = hex;
+      if (colorPicker) colorPicker.value = hex;
+      if (colorHex) colorHex.value = hex;
+      const actionBtn = document.getElementById('preview-action-btn');
+      const metricBookings = document.getElementById('preview-metric-bookings');
+      if (actionBtn) actionBtn.style.background = hex;
+      if (metricBookings) metricBookings.style.color = hex;
+    };
+
+    colorPicker?.addEventListener('input', () => updateColor(colorPicker.value));
+    colorHex?.addEventListener('input', () => updateColor(colorHex.value));
+
+    document.querySelectorAll<HTMLButtonElement>('.btn-color-preset').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const c = btn.getAttribute('data-color');
+        if (c) updateColor(c);
+      });
+    });
+
+    // Preview Mode Toggle (Desktop / Mobile)
+    const mockWindow = document.getElementById('sandbox-mock-window');
+    document.getElementById('btn-preview-desktop')?.addEventListener('click', () => {
+      state.agencyBranding.previewMode = 'desktop';
+      if (mockWindow) mockWindow.style.maxWidth = '100%';
+      document.getElementById('btn-preview-desktop')?.classList.replace('btn-secondary', 'btn-primary');
+      document.getElementById('btn-preview-mobile')?.classList.replace('btn-primary', 'btn-secondary');
+    });
+
+    document.getElementById('btn-preview-mobile')?.addEventListener('click', () => {
+      state.agencyBranding.previewMode = 'mobile';
+      if (mockWindow) mockWindow.style.maxWidth = '375px';
+      document.getElementById('btn-preview-mobile')?.classList.replace('btn-secondary', 'btn-primary');
+      document.getElementById('btn-preview-desktop')?.classList.replace('btn-primary', 'btn-secondary');
+    });
+
+    // Client workspace switcher in preview
+    const wsSelect = document.getElementById('preview-client-workspace-select') as HTMLSelectElement | null;
+    wsSelect?.addEventListener('change', () => {
+      const headline = document.getElementById('preview-workspace-headline');
+      if (headline && wsSelect) {
+        headline.innerText = wsSelect.value.split(':')[1]?.trim() || wsSelect.value;
+      }
+    });
+
+    // Save Branding button
+    document.getElementById('btn-save-agency-branding')?.addEventListener('click', () => {
+      showToastNotification('Agency branding saved! Client portals updated.', 'success');
+    });
+  }
 
   document.getElementById('btn-sidebar-upgrade-plan')?.addEventListener('click', () => handleUpgradeClick());
   document.getElementById('topbar-plan-indicator')?.addEventListener('click', () => handleUpgradeClick());
@@ -3061,7 +3594,7 @@ function syncRouteFromHash() {
     state.currentView = 'signin';
   } else if (route === 'console' || route === 'dashboard' || route === 'app') {
     state.currentView = 'console';
-    const validTabs = ['overview', 'iot', 'rules', 'crm', 'compliance', 'audit'];
+    const validTabs = ['overview', 'iot', 'rules', 'crm', 'compliance', 'whitelabel', 'audit'];
     state.currentTab = validTabs.includes(subParam) ? subParam : 'overview';
   } else if (route === 'platform') {
     state.currentView = 'platform';
@@ -3105,6 +3638,7 @@ function syncRouteFromHash() {
       rules: 'Deterministic Automation & AI Authoring — ZexCore Console',
       crm: 'Multi-Channel CRM & Revenue Ops — ZexCore Console',
       compliance: 'Compliance Vault & GDPR Privacy — ZexCore Console',
+      whitelabel: 'Agency White-Label Branding Studio — ZexCore Console',
       audit: 'Audit & Financial Health Suite — ZexCore Console',
     };
     document.title = consoleTitles[state.currentTab] || 'ZexCore Control — Operational Console';
