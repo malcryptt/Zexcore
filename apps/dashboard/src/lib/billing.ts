@@ -290,7 +290,7 @@ export function openStripeCheckoutModal(
         <!-- Top Clean Merchant Bar -->
         <div style="background: #ffffff; border-bottom: 1px solid #f1f5f9; padding: 14px 22px; display: flex; align-items: center; justify-content: space-between;">
           <div style="display: flex; align-items: center; gap: 12px;">
-            <img src="/zexcore-logo-horizontal.png" alt="ZexCore" style="height: 24px; width: auto; max-width: 130px; object-fit: contain;" />
+            <img src="/zexcore-logo-light.png" alt="ZexCore" style="height: 34px; width: auto; max-width: 150px; object-fit: contain; display: block;" />
             <span style="font-size: 0.74rem; color: #64748b; font-weight: 600; padding-left: 10px; border-left: 1.5px solid #e2e8f0;">${plan.name} Tier</span>
           </div>
 
