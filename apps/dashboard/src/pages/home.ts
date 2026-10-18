@@ -554,24 +554,24 @@ export function renderHomePage(): string {
                 Deploy mathematically isolated multi-tenancy, real-time IoT telemetry, and direct WhatsApp customer pipelines today. Zero vendor lock-in. Full PostgreSQL data sovereignty.
               </p>
               <div class="home-final-cta-actions">
-                <a href="#/console" class="btn btn-primary btn-lg" style="padding: 14px 32px; font-size: 1.05rem; font-weight: 800; box-shadow: 0 4px 20px rgba(229, 9, 32, 0.45);">
+                <a href="#/console" class="btn btn-primary btn-lg" style="padding: 14px 32px; font-size: 1.05rem; font-weight: 800; box-shadow: 0 4px 18px rgba(229, 9, 32, 0.32);">
                   Launch Console Free &rarr;
                 </a>
-                <a href="#/pricing" class="btn btn-secondary btn-lg" style="padding: 14px 28px; font-size: 1.05rem; background: rgba(255, 255, 255, 0.1); color: #ffffff; border-color: rgba(255, 255, 255, 0.25);">
+                <a href="#/pricing" class="btn btn-secondary btn-lg" style="padding: 14px 28px; font-size: 1.05rem; background: #ffffff; color: #17191d; border: 1.5px solid #d0d6de; font-weight: 700;">
                   View Sovereign Tiers
                 </a>
               </div>
               <div class="home-final-cta-guarantees">
                 <span class="home-final-guarantee-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e50920" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                   PostgreSQL 17 Row-Level Security
                 </span>
                 <span class="home-final-guarantee-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e50920" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                   AES-256-GCM Data Vault
                 </span>
                 <span class="home-final-guarantee-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e50920" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                   No Credit Card Required
                 </span>
               </div>
