@@ -2,7 +2,7 @@
  * Client-Side Billing, Stripe Subscription Gateway & Feature Gating
  */
 
-export type PlanTier = 'starter' | 'indie' | 'growth' | 'scale' | 'enterprise';
+export type PlanTier = 'free' | 'starter' | 'growth' | 'agency' | 'enterprise' | 'dedicated';
 export type BillingCycle = 'monthly' | 'annual';
 
 export interface PlanMetadata {
@@ -11,88 +11,124 @@ export interface PlanMetadata {
   monthlyPrice: number;
   annualPrice: number;
   tagline: string;
+  whoItsFor: string;
+  mainLimits: string;
   badge?: string;
   allowedTabs: string[];
   features: string[];
+  fromPrice?: boolean;
 }
 
 export const PLANS: Record<PlanTier, PlanMetadata> = {
-  starter: {
-    id: 'starter',
-    name: 'Starter Plan',
-    monthlyPrice: 49,
-    annualPrice: 44,
-    tagline: 'Ideal for single-tenant prototypes and developer exploration.',
-    allowedTabs: ['overview', 'rules', 'audit'],
+  free: {
+    id: 'free',
+    name: 'Free',
+    monthlyPrice: 0,
+    annualPrice: 0,
+    tagline: 'Trying it out — 1 workspace, CMS only, 1 user.',
+    whoItsFor: 'Trying it out',
+    mainLimits: '1 workspace, CMS only, ZexCore subdomain, ZexCore branding, 1 user',
+    allowedTabs: ['overview'],
     features: [
-      'Up to 5 isolated tenants',
-      'Deterministic AST Rules Engine',
-      'Append-only cryptographic audit ledger',
-      'Session-bound RLS tenant enforcement',
+      '1 workspace',
+      'CMS & public site builder only',
+      'ZexCore subdomain (*.zexcore.io)',
+      'ZexCore branding footer',
+      '1 team user',
     ],
   },
-  indie: {
-    id: 'indie',
-    name: 'Indie Plan',
-    monthlyPrice: 149,
-    annualPrice: 134,
-    tagline: 'For independent software vendors scaling vertical SaaS products.',
-    allowedTabs: ['overview', 'iot', 'rules', 'audit'],
+  starter: {
+    id: 'starter',
+    name: 'Starter',
+    monthlyPrice: 19,
+    annualPrice: 190,
+    tagline: 'One small business getting started with CMS plus basic CRM.',
+    whoItsFor: 'One small business',
+    mainLimits: 'CMS plus basic CRM, 1 custom domain, 3 users, 1,000 contacts',
+    allowedTabs: ['overview', 'crm'],
     features: [
-      'Up to 25 isolated tenants',
-      'IoT Device Fleet & Telemetry Ingestion Gateway',
-      'Token-authenticated device rotation',
-      'Deterministic AST Rules Engine',
-      'Append-only cryptographic audit ledger',
+      'CMS plus basic CRM',
+      '1 custom domain',
+      '3 users',
+      '1,000 contacts',
+      'Lead stage tracking & notes',
+      'Standard email support',
     ],
   },
   growth: {
     id: 'growth',
-    name: 'Growth Plan',
-    monthlyPrice: 499,
-    annualPrice: 449,
-    tagline: 'High-growth platforms requiring full CRM pipelines and deal tracking.',
-    badge: 'RECOMMENDED',
-    allowedTabs: ['overview', 'iot', 'rules', 'crm', 'audit'],
+    name: 'Growth',
+    monthlyPrice: 49,
+    annualPrice: 490,
+    tagline: 'A growing business scaling appointments, automations, and omnichannel alerts.',
+    whoItsFor: 'A growing business',
+    mainLimits: 'Everything in Starter plus booking, automation rules, SMS and email, 10 users, 10,000 contacts, Audit Essentials included',
+    badge: 'MOST POPULAR',
+    allowedTabs: ['overview', 'crm', 'rules', 'audit'],
     features: [
-      'Unlimited isolated tenants',
-      'CRM Sales Pipeline with multi-currency tracking',
-      'Automated pipeline stage triggers',
-      'AES-256-GCM envelope encryption',
-      'HMAC-SHA256 blind indexing',
-      'IoT Device Fleet & Rules Engine',
+      'Everything in Starter',
+      'Booking & appointment scheduling',
+      'Automation rules & event triggers',
+      'SMS & email delivery',
+      '10 users',
+      '10,000 contacts',
+      'Audit Essentials included',
     ],
   },
-  scale: {
-    id: 'scale',
-    name: 'Scale Plan',
-    monthlyPrice: 1299,
-    annualPrice: 1169,
-    tagline: 'Full multi-tenant sovereign stack with complete GDPR compliance vault.',
-    allowedTabs: ['overview', 'iot', 'rules', 'crm', 'compliance', 'audit'],
+  agency: {
+    id: 'agency',
+    name: 'Agency',
+    monthlyPrice: 149,
+    annualPrice: 1490,
+    tagline: 'Agencies running multi-tenant ZexCore infrastructure for clients.',
+    whoItsFor: 'Agencies running ZexCore for clients',
+    mainLimits: 'Up to 25 client workspaces, white-label, Audit Basic per workspace',
+    allowedTabs: ['overview', 'crm', 'rules', 'iot', 'audit'],
     features: [
-      'Unlimited isolated tenants',
-      'GDPR Article 17 Cryptographic Erasure Vault',
-      'Key destruction pipeline for Right-to-be-Forgotten',
-      'Full CRM, IoT, and Rules engines',
-      'Point-in-time backup recovery',
-      'Priority 24h SLA support',
+      'Everything in Growth',
+      'Up to 25 client workspaces',
+      'Full white-label branding',
+      'Audit Basic per workspace',
+      'IoT fleet & telemetry hub',
+      'Agency team collaboration',
     ],
   },
   enterprise: {
     id: 'enterprise',
-    name: 'Enterprise Plan',
-    monthlyPrice: 3500,
-    annualPrice: 3150,
-    tagline: 'Mission-critical deployments with dedicated clusters and custom SLA.',
-    allowedTabs: ['overview', 'iot', 'rules', 'crm', 'compliance', 'audit'],
+    name: 'Enterprise',
+    monthlyPrice: 499,
+    annualPrice: 4990,
+    tagline: 'Larger organisations requiring unlimited users, SSO, and SLAs.',
+    whoItsFor: 'Larger organisations',
+    mainLimits: 'Unlimited users, SSO, SLA, priority support, Audit Business included, custom limits',
+    fromPrice: true,
+    allowedTabs: ['overview', 'crm', 'rules', 'iot', 'audit'],
     features: [
-      'Everything in Scale',
-      'Dedicated PostgreSQL 17 cluster',
-      'Multi-region active-active replication',
-      'Custom SOC 2 / HIPAA compliance audits',
-      '99.99% uptime guarantee with 4h SLA',
-      'Dedicated solutions engineer',
+      'Unlimited users',
+      'SSO & SAML authentication',
+      '99.9% uptime SLA guarantee',
+      'Priority 24/7 support',
+      'Audit Business included',
+      'Custom limits & dedicated manager',
+    ],
+  },
+  dedicated: {
+    id: 'dedicated',
+    name: 'Dedicated / Regulated',
+    monthlyPrice: 1500,
+    annualPrice: 15000,
+    tagline: 'Clinics, hospitals, and compliance-heavy sovereign deployments.',
+    whoItsFor: 'Clinics and compliance-heavy clients',
+    mainLimits: 'Dedicated instance, hardened tier, field encryption, signed agreements',
+    fromPrice: true,
+    allowedTabs: ['overview', 'crm', 'rules', 'iot', 'compliance', 'audit'],
+    features: [
+      'Dedicated cloud instance',
+      'Hardened security tier',
+      'Field-level AES-256-GCM encryption & blind indexes',
+      'GDPR Article 17 Cryptographic Erasure Vault',
+      'Signed agreements (BAA, DPA & custom SLA)',
+      'Dedicated compliance engineer',
     ],
   },
 };
@@ -141,39 +177,47 @@ export function isTabLocked(tabId: string, currentPlan: PlanTier): boolean {
 }
 
 export function getRequiredPlanForTab(tabId: string): PlanTier {
-  if (tabId === 'compliance') return 'scale';
-  if (tabId === 'crm') return 'growth';
-  if (tabId === 'iot') return 'indie';
-  return 'starter';
+  if (tabId === 'compliance') return 'dedicated';
+  if (tabId === 'iot') return 'agency';
+  if (tabId === 'rules') return 'growth';
+  if (tabId === 'crm') return 'starter';
+  return 'free';
 }
 
 export function getTabLockedInfo(tabId: string): { title: string; subtitle: string; icon: string; minPlan: PlanTier } {
   switch (tabId) {
+    case 'compliance':
+      return {
+        title: 'Cryptographic Compliance Vault & Field Encryption',
+        subtitle: 'Dedicated instances, hardened security tier, AES-256-GCM field encryption, and signed compliance agreements (NDPR / GDPR / HIPAA).',
+        icon: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+        minPlan: 'dedicated',
+      };
     case 'iot':
       return {
-        title: 'IoT Fleet & Telemetry Ingestion Hub',
-        subtitle: 'Ingest high-frequency sensor streams, rotate hardware-isolated tokens, and monitor temperature/voltage telemetry thresholds.',
+        title: 'IoT Fleet Telemetry & Multi-Client Hub',
+        subtitle: 'Manage client hardware fleets across up to 25 workspaces with white-label branding, automated device rotation, and sensor streams.',
         icon: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
-        minPlan: 'indie',
+        minPlan: 'agency',
+      };
+    case 'rules':
+      return {
+        title: 'Automation Rules & Omnichannel Engine',
+        subtitle: 'Automate booking reminders, deterministic multi-event triggers, and SMS/Email messaging workflows with Audit Essentials.',
+        icon: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/></svg>`,
+        minPlan: 'growth',
       };
     case 'crm':
       return {
-        title: 'CRM Sales Pipeline & Deal Automation',
-        subtitle: 'Enterprise opportunity ledgers, multi-currency deal forecasting, stage transition triggers, and tenant-scoped customer records.',
+        title: 'CRM Sales Pipeline & Contact Management',
+        subtitle: 'Manage up to 1,000 customer contacts, track deals through pipeline stages, and connect your custom domain.',
         icon: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
-        minPlan: 'growth',
-      };
-    case 'compliance':
-      return {
-        title: 'GDPR Article 17 Cryptographic Compliance Vault',
-        subtitle: 'Enforce mathematical Right-to-be-Forgotten erasure pipelines with key destruction, consent logging, and HMAC blind index queries.',
-        icon: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
-        minPlan: 'scale',
+        minPlan: 'starter',
       };
     default:
       return {
-        title: 'Advanced Infrastructure Module',
-        subtitle: 'This engine requires an upgraded vertical SaaS tier.',
+        title: 'Advanced Module Access',
+        subtitle: 'Upgrade to unlock advanced platform capabilities.',
         icon: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/></svg>`,
         minPlan: 'growth',
       };
@@ -206,7 +250,9 @@ export function openStripeCheckoutModal(
 
   function renderModalHtml(): string {
     const price = currentCycle === 'annual' ? plan.annualPrice : plan.monthlyPrice;
-    const billedLabel = currentCycle === 'annual' ? `billed annually ($${price * 12}/yr)` : 'billed monthly';
+    const billedLabel = currentCycle === 'annual'
+      ? (plan.annualPrice === 0 ? 'Free forever' : `billed annually ($${plan.annualPrice}/yr)`)
+      : (plan.monthlyPrice === 0 ? 'Free tier' : 'billed monthly');
     const ngnPrice = price * 1500;
     const kesPrice = price * 130;
 

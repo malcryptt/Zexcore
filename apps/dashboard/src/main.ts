@@ -478,7 +478,7 @@ function renderTierFeatureLock(
   currentPlan: PlanTier,
   innerPreviewHtml: string
 ): string {
-  const planOrder: PlanTier[] = ['starter', 'indie', 'growth', 'scale', 'enterprise'];
+  const planOrder: PlanTier[] = ['free', 'starter', 'growth', 'agency', 'enterprise', 'dedicated'];
   const isUnlocked = planOrder.indexOf(currentPlan) >= planOrder.indexOf(minPlan);
 
   if (isUnlocked) {
@@ -910,9 +910,9 @@ function renderConsoleRulesView(currentPlan: PlanTier): string {
         `
       )}
 
-      <!-- Advanced Feature 2: Dual-Operator Cryptographic Sign-Off Gate (Requires Scale+) -->
+      <!-- Advanced Feature 2: Dual-Operator Cryptographic Sign-Off Gate (Requires Enterprise+) -->
       ${renderTierFeatureLock(
-        'scale',
+        'enterprise',
         'Dual-Operator Cryptographic Sign-Off Gate (Multi-Sig)',
         'Requires two independent operators (SecOps Officer + Lead Automation Engineer) to digitally sign AI-generated rule deployments using tenant HMAC keys.',
         currentPlan,
@@ -984,9 +984,9 @@ function renderConsoleCrmView(currentPlan: PlanTier): string {
 
       <div id="crm-content-view"></div>
 
-      <!-- Advanced Feature 1: Automated WhatsApp Drip Sequences (Requires Scale+) -->
+      <!-- Advanced Feature 1: Automated WhatsApp Drip Sequences (Requires Agency+) -->
       ${renderTierFeatureLock(
-        'scale',
+        'agency',
         'Automated WhatsApp Drip Sequences & AI Sentiment Scoring',
         'Trigger personalized multi-stage WhatsApp messaging sequences based on deal stage transitions with real-time sentiment scoring.',
         currentPlan,
@@ -1299,9 +1299,10 @@ function setupEventListeners() {
   const handleUpgradeClick = (targetPlan?: PlanTier) => {
     const currentPlan = getTenantPlan(state.activeTenant);
     const chosenPlan: PlanTier = targetPlan || (
-      currentPlan === 'starter' ? 'indie' :
-      currentPlan === 'indie' ? 'growth' :
-      currentPlan === 'growth' ? 'scale' : 'enterprise'
+      currentPlan === 'free' ? 'starter' :
+      currentPlan === 'starter' ? 'growth' :
+      currentPlan === 'growth' ? 'agency' :
+      currentPlan === 'agency' ? 'enterprise' : 'dedicated'
     );
 
     openStripeCheckoutModal(chosenPlan, 'monthly', (newPlan) => {

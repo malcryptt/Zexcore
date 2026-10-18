@@ -2984,12 +2984,29 @@ body {
   align-items: start;
 }
 
-/* ── 2-column pricing grid ── */
+/* ── 2-column & 3-column pricing grid ── */
 .pricing-grid-2col {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 24px;
   align-items: start;
+}
+
+.pricing-grid-3col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  align-items: stretch;
+}
+@media (max-width: 1024px) {
+  .pricing-grid-3col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 680px) {
+  .pricing-grid-3col {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Enterprise card spans both columns */
@@ -8046,10 +8063,16 @@ body { background: #fff; letter-spacing: -.008em; }
   border-radius: 999px;
 }
 
-.tier-badge-pill.indie {
-  background: #e0f2fe;
-  color: #0369a1;
-  border: 1px solid #bae6fd;
+.tier-badge-pill.free {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+.tier-badge-pill.starter {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
 }
 
 .tier-badge-pill.growth {
@@ -8058,16 +8081,22 @@ body { background: #fff; letter-spacing: -.008em; }
   border: 1px solid #fecdd3;
 }
 
-.tier-badge-pill.scale {
-  background: #fdf4ff;
-  color: #a21caf;
-  border: 1px solid #f5d0fe;
+.tier-badge-pill.agency {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
 }
 
 .tier-badge-pill.enterprise {
   background: #17191d;
   color: #ffffff;
   border: 1px solid #334155;
+}
+
+.tier-badge-pill.dedicated {
+  background: #fdf4ff;
+  color: #86198f;
+  border: 1px solid #f5d0fe;
 }
 
 .tier-lock-overlay {
