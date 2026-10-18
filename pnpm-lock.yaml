@@ -50,6 +50,9 @@ importers:
       '@zexcore/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@zexcore/module-audit':
+        specifier: workspace:*
+        version: link:../../packages/module-audit
       '@zexcore/module-cms':
         specifier: workspace:*
         version: link:../../packages/module-cms

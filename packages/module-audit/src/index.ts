@@ -1,4 +1,4 @@
-import type { ZexModule, ZexCoreContext } from '@zexcore/core';
+import { applyRlsToTable, type ZexModule, type ZexCoreContext } from '@zexcore/core';
 import type { FastifyInstance } from 'fastify';
 import { auditCapabilityDefinitions } from './permissions.js';
 
@@ -72,7 +72,7 @@ export const auditModule: ZexModule = {
       text: `
         CREATE TABLE IF NOT EXISTS audit_runs (
           id                 VARCHAR(64) PRIMARY KEY,
-          tenant_id          VARCHAR(64) NOT NULL,
+          tenant_id          UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
           started_at         TIMESTAMPTZ NOT NULL,
           finished_at        TIMESTAMPTZ NOT NULL,
           duration_ms        INTEGER NOT NULL,
@@ -87,13 +87,14 @@ export const auditModule: ZexModule = {
         CREATE INDEX IF NOT EXISTS audit_runs_tenant_idx ON audit_runs(tenant_id, started_at DESC);
       `,
     });
+    await applyRlsToTable('audit_runs');
 
     // ── audit_findings ──────────────────────────────────────────────────────────
     await core.db.execute({
       text: `
         CREATE TABLE IF NOT EXISTS audit_findings (
           id               VARCHAR(64) PRIMARY KEY,
-          tenant_id        VARCHAR(64) NOT NULL,
+          tenant_id        UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
           rule_key         VARCHAR(128) NOT NULL,
           rule_name        VARCHAR(255) NOT NULL,
           rule_version     INTEGER NOT NULL,
@@ -114,6 +115,7 @@ export const auditModule: ZexModule = {
         CREATE INDEX IF NOT EXISTS audit_findings_severity ON audit_findings(tenant_id, severity);
       `,
     });
+    await applyRlsToTable('audit_findings');
 
     // ── audit_finding_events (Append-only) ──────────────────────────────────────
     await core.db.execute({
@@ -137,7 +139,7 @@ export const auditModule: ZexModule = {
       text: `
         CREATE TABLE IF NOT EXISTS ledger_entries (
           id                VARCHAR(64) PRIMARY KEY,
-          tenant_id         VARCHAR(64) NOT NULL,
+          tenant_id         UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
           kind              VARCHAR(32) NOT NULL, -- 'charge', 'refund', 'payout', etc.
           amount_minor      BIGINT NOT NULL,
           currency          VARCHAR(8) NOT NULL DEFAULT 'USD',
@@ -157,13 +159,14 @@ export const auditModule: ZexModule = {
         CREATE INDEX IF NOT EXISTS ledger_entries_ref ON ledger_entries(tenant_id, reference);
       `,
     });
+    await applyRlsToTable('ledger_entries');
 
     // ── audit_hash_chain (Tamper-Resistant Cryptographic Chain) ───────────────────
     await core.db.execute({
       text: `
         CREATE TABLE IF NOT EXISTS audit_hash_chain (
           block_number  BIGINT NOT NULL,
-          tenant_id     VARCHAR(64) NOT NULL,
+          tenant_id     UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
           timestamp     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
           action_type   VARCHAR(64) NOT NULL,
           record_id     VARCHAR(64) NOT NULL,
@@ -174,6 +177,7 @@ export const auditModule: ZexModule = {
         CREATE UNIQUE INDEX IF NOT EXISTS audit_hash_chain_tenant_seq ON audit_hash_chain(tenant_id, block_number);
       `,
     });
+    await applyRlsToTable('audit_hash_chain');
 
     // ── Event Bus Integrations ──────────────────────────────────────────────────
     // Listen to financial and privileged events to trigger auto-checks

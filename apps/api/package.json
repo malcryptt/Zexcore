@@ -15,6 +15,7 @@
     "@zexcore/module-iot": "workspace:*",
     "@zexcore/compliance": "workspace:*",
     "@zexcore/rules": "workspace:*",
+    "@zexcore/module-audit": "workspace:*",
     "dotenv": "^16.4.7",
     "fastify": "^5.2.1",
     "fastify-plugin": "^5.0.1",
