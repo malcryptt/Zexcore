@@ -117,7 +117,7 @@ export function renderResourcesPage(): string {
               </div>
               <div class="resource-banner-form">
                 <input type="email" placeholder="engineer@enterprise.io" class="input" style="max-width: 280px;" />
-                <button class="btn btn-primary" onclick="alert('Thank you for subscribing to ZexCore Engineering updates.')">Subscribe</button>
+                <button class="btn btn-primary" onclick="if (window.showToast) { window.showToast('Thank you for subscribing to ZexCore Engineering updates.', 'success'); }">Subscribe</button>
               </div>
             </div>
           </div>

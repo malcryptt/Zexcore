@@ -74,11 +74,15 @@ interface Consent {
   revokedAt: string | null;
 }
 
+export type OmnichannelType = 'whatsapp' | 'sms' | 'email' | 'webchat' | 'telegram' | 'instagram' | 'voice';
+
 interface WhatsAppMessage {
   sender: 'client' | 'agent' | 'bot';
   text: string;
   time: string;
-  status?: 'sent' | 'delivered' | 'read';
+  channel?: OmnichannelType;
+  status?: 'sent' | 'delivered' | 'read' | 'failed';
+  providerConfirmed?: boolean;
 }
 
 interface WhatsAppThread {
@@ -86,12 +90,18 @@ interface WhatsAppThread {
   contactName: string;
   phone: string;
   cleanPhone: string;
-  channel: 'whatsapp' | 'sms' | 'email';
+  email?: string;
+  telegramHandle?: string;
+  instagramId?: string;
+  channel: OmnichannelType;
+  activeChannel?: OmnichannelType;
+  fallbackChannel?: OmnichannelType;
   unreadCount: number;
   lastMsg: string;
   time: string;
   leadValue: number;
   stage: string;
+  windowStatus?: string;
   messages: WhatsAppMessage[];
 }
 
@@ -100,10 +110,13 @@ interface BookingAppointment {
   clientName: string;
   phone: string;
   cleanPhone: string;
+  email?: string;
+  primaryChannel?: OmnichannelType;
+  fallbackChannel?: OmnichannelType;
   service: string;
   dateTime: string;
   depositStatus: string;
-  whatsappReminderStatus: 'delivered' | 'scheduled' | 'sent_1h';
+  whatsappReminderStatus: 'delivered' | 'scheduled' | 'sent_1h' | 'fallback_sms_sent';
 }
 
 // ── Application State ────────────────────────────────────────────────────────
@@ -113,6 +126,8 @@ const state = {
   currentTab: 'overview',
   crmSubView: 'whatsapp' as 'whatsapp' | 'kanban' | 'booking',
   selectedThreadId: 'thread-1',
+  selectedChannelFilter: 'all' as 'all' | OmnichannelType,
+  activeReplyChannel: 'whatsapp' as OmnichannelType,
   activeTenant: 'acme_corp',
   systemStatus: 'operational' as 'operational' | 'offline',
   crmWebhookStatus: 'live' as 'live' | 'offline',
@@ -152,6 +167,15 @@ const state = {
       approved: false,
       enabled: true,
     },
+    {
+      id: 'rule-4',
+      name: 'Multi-Channel Fallback Automation Rule',
+      trigger: 'crm.whatsapp.undelivered_10m',
+      conditions: 'message.status == "undelivered" && elapsed_minutes >= 10',
+      action: 'dispatch: crm.sms.fallback_sent',
+      approved: true,
+      enabled: true,
+    },
   ] as Rule[],
   stages: ['New', 'Qualified', 'Proposal', 'Negotiation', 'Closed Won'],
   leads: [
@@ -172,16 +196,20 @@ const state = {
       contactName: 'Adebayo Ogundimu',
       phone: '+234 803 892 1104',
       cleanPhone: '2348038921104',
+      email: 'adebayo.ogundimu@reefer-trans.ng',
       channel: 'whatsapp',
+      activeChannel: 'whatsapp',
+      fallbackChannel: 'sms',
+      windowStatus: '24h Window Active',
       unreadCount: 1,
       lastMsg: 'Good day! We have 14 reefer trucks in Lagos and need IoT thermal tracking.',
       time: '11:42 AM',
       leadValue: 48000,
       stage: 'Proposal',
       messages: [
-        { sender: 'client', text: 'Good day! Saw your starter site for cold chain logistics telemetry. We have 14 reefer trucks operating out of Lagos ports.', time: '11:40 AM' },
-        { sender: 'bot', text: 'Hello Adebayo! Thanks for contacting ZexCore Fleet. Your inquiry is mapped to our Cold Chain Telemetry Starter. Dispatching our hardware brochure.', time: '11:40 AM', status: 'read' },
-        { sender: 'client', text: 'Great. Can we set up a WhatsApp live demo and Paystack payment for the 14 edge probes?', time: '11:42 AM' },
+        { sender: 'client', text: 'Good day! Saw your starter site for cold chain logistics telemetry. We have 14 reefer trucks operating out of Lagos ports.', time: '11:40 AM', channel: 'whatsapp' },
+        { sender: 'bot', text: 'Hello Adebayo! Thanks for contacting ZexCore Fleet. Your inquiry is mapped to our Cold Chain Telemetry Starter. Dispatching our hardware brochure.', time: '11:40 AM', channel: 'whatsapp', status: 'read', providerConfirmed: true },
+        { sender: 'client', text: 'Great. Can we set up a live demo and simulated Paystack reservation for the 14 edge probes?', time: '11:42 AM', channel: 'whatsapp' },
       ],
     },
     {
@@ -189,16 +217,20 @@ const state = {
       contactName: 'Dr. Amina Bello',
       phone: '+234 802 331 4902',
       cleanPhone: '2348023314902',
+      email: 'dr.amina@metromedical.org',
       channel: 'whatsapp',
+      activeChannel: 'whatsapp',
+      fallbackChannel: 'email',
+      windowStatus: '24h Window Active',
       unreadCount: 0,
-      lastMsg: 'Deposit paid via Paystack. Automated 24h WhatsApp reminder received!',
+      lastMsg: 'Deposit confirmed (Paystack Sandbox). Automated 24h WhatsApp reminder received!',
       time: 'Yesterday',
       leadValue: 18500,
       stage: 'Negotiation',
       messages: [
-        { sender: 'client', text: 'Hi, we are setting up patient intake booking for 3 clinics. We need automated WhatsApp & SMS reminders to cut patient no-shows.', time: 'Yesterday 09:15 AM' },
-        { sender: 'agent', text: 'Hello Dr. Bello! ZexCore Booking automatically sends 24h and 1h WhatsApp alerts with reschedule links. This reduces clinic no-shows by 40%.', time: 'Yesterday 09:18 AM', status: 'read' },
-        { sender: 'client', text: 'Deposit paid via Paystack. Automated 24h WhatsApp reminder received!', time: 'Yesterday 10:04 AM' },
+        { sender: 'client', text: 'Hi, we are setting up patient intake booking for 3 clinics. We need automated WhatsApp & SMS reminders to cut missed appointments.', time: 'Yesterday 09:15 AM', channel: 'whatsapp' },
+        { sender: 'agent', text: 'Hello Dr. Bello! ZexCore Booking automatically sends 24h and 1h multi-channel alerts with instant reschedule links to ensure confirmed attendance.', time: 'Yesterday 09:18 AM', channel: 'whatsapp', status: 'read', providerConfirmed: true },
+        { sender: 'client', text: 'Deposit confirmed (Paystack Sandbox). Automated 24h WhatsApp reminder received!', time: 'Yesterday 10:04 AM', channel: 'whatsapp' },
       ],
     },
     {
@@ -206,16 +238,64 @@ const state = {
       contactName: 'Kofi Mensah',
       phone: '+233 24 551 9021',
       cleanPhone: '233245519021',
-      channel: 'whatsapp',
+      email: 'kofi@accra-solargrid.gh',
+      telegramHandle: '@kofi_solar_grid',
+      channel: 'telegram',
+      activeChannel: 'telegram',
+      fallbackChannel: 'whatsapp',
+      windowStatus: 'Always Open (Bot API)',
       unreadCount: 0,
-      lastMsg: 'Confirmed. We will authorize the Flutterwave MoMo payment today.',
+      lastMsg: 'Confirmed. We will authorize the Flutterwave MoMo payment test today.',
       time: 'Oct 12',
       leadValue: 35000,
       stage: 'Qualified',
       messages: [
-        { sender: 'client', text: 'Hello from Accra. We operate a solar mini-grid with 48V inverters. Can telemetry ping our WhatsApp ops group?', time: 'Oct 12 08:30 AM' },
-        { sender: 'agent', text: 'Yes Kofi! ZexCore EventBus triggers direct WhatsApp webhook notifications whenever voltage drops below 48.0V.', time: 'Oct 12 08:35 AM', status: 'read' },
-        { sender: 'client', text: 'Confirmed. We will authorize the Flutterwave MoMo payment today.', time: 'Oct 12 09:12 AM' },
+        { sender: 'client', text: 'Hello from Accra. We operate a solar mini-grid with 48V inverters. Can telemetry ping our Telegram ops channel?', time: 'Oct 12 08:30 AM', channel: 'telegram' },
+        { sender: 'agent', text: 'Yes Kofi! ZexCore EventBus triggers direct Telegram bot notifications and fallback WhatsApp alerts whenever DC voltage drops below 48.0V.', time: 'Oct 12 08:35 AM', channel: 'telegram', status: 'read', providerConfirmed: true },
+        { sender: 'client', text: 'Confirmed. We will authorize the Flutterwave MoMo payment test today.', time: 'Oct 12 09:12 AM', channel: 'telegram' },
+      ],
+    },
+    {
+      id: 'thread-4',
+      contactName: 'Fatima Zahra',
+      phone: '+234 812 409 3881',
+      cleanPhone: '2348124093881',
+      email: 'fatima@ecofleet.ng',
+      channel: 'webchat',
+      activeChannel: 'webchat',
+      fallbackChannel: 'sms',
+      windowStatus: 'Visitor Online (Web Chat Widget)',
+      unreadCount: 1,
+      lastMsg: 'Can this fall back to SMS or email if our field delivery reps are offline?',
+      time: '02:15 PM',
+      leadValue: 28000,
+      stage: 'New',
+      messages: [
+        { sender: 'client', text: 'Hello! Inquiring via tenant web chat widget regarding cold chain telemetry alerts.', time: '02:10 PM', channel: 'webchat' },
+        { sender: 'bot', text: 'Welcome Fatima! ZexCore Web Chat is linked directly to your tenant multi-channel router.', time: '02:11 PM', channel: 'webchat', status: 'read', providerConfirmed: true },
+        { sender: 'client', text: 'Can this fall back to SMS or email if our field delivery reps are offline?', time: '02:15 PM', channel: 'webchat' },
+      ],
+    },
+    {
+      id: 'thread-5',
+      contactName: 'Marcus Vance',
+      phone: '+44 7700 900142',
+      cleanPhone: '447700900142',
+      email: 'm.vance@vanceproperties.co.uk',
+      instagramId: '@vance_realty',
+      channel: 'sms',
+      activeChannel: 'sms',
+      fallbackChannel: 'email',
+      windowStatus: 'Direct Carrier Route (Nigeria / Global)',
+      unreadCount: 0,
+      lastMsg: 'SMS reminder received. Reservation deposit confirmed via Stripe Sandbox.',
+      time: 'Oct 10',
+      leadValue: 64000,
+      stage: 'Proposal',
+      messages: [
+        { sender: 'client', text: 'Following up via SMS. Are enterprise NDPR and GDPR consent logs exportable to SIEM?', time: 'Oct 10 11:20 AM', channel: 'sms' },
+        { sender: 'agent', text: 'Yes Marcus. All consent grants and revocations stream to tamper-evident audit logs and RFC5424 SIEM endpoints.', time: 'Oct 10 11:24 AM', channel: 'sms', status: 'delivered', providerConfirmed: true },
+        { sender: 'client', text: 'SMS reminder received. Reservation deposit confirmed via Stripe Sandbox.', time: 'Oct 10 01:10 PM', channel: 'sms' },
       ],
     },
   ] as WhatsAppThread[],
@@ -225,9 +305,12 @@ const state = {
       clientName: 'Dr. Amina Bello',
       phone: '+234 802 331 4902',
       cleanPhone: '2348023314902',
+      email: 'dr.amina@metromedical.org',
+      primaryChannel: 'whatsapp',
+      fallbackChannel: 'email',
       service: 'Specialist Clinic Telemetry Consultation',
       dateTime: 'Tomorrow, 10:00 AM WAT',
-      depositStatus: '₦50,000 Paid (Paystack)',
+      depositStatus: '₦50,000 (Paystack Sandbox)',
       whatsappReminderStatus: 'delivered',
     },
     {
@@ -235,9 +318,12 @@ const state = {
       clientName: 'Adebayo Ogundimu',
       phone: '+234 803 892 1104',
       cleanPhone: '2348038921104',
+      email: 'adebayo.ogundimu@reefer-trans.ng',
+      primaryChannel: 'whatsapp',
+      fallbackChannel: 'sms',
       service: 'Reefer Probe Fleet Hardware Pairing Demo',
       dateTime: 'Oct 16, 2:30 PM WAT',
-      depositStatus: 'Deposit Held',
+      depositStatus: 'Deposit Held (Sandbox)',
       whatsappReminderStatus: 'scheduled',
     },
     {
@@ -245,9 +331,12 @@ const state = {
       clientName: 'Kofi Mensah',
       phone: '+233 24 551 9021',
       cleanPhone: '233245519021',
+      email: 'kofi@accra-solargrid.gh',
+      primaryChannel: 'telegram',
+      fallbackChannel: 'whatsapp',
       service: 'Solar Inverter Gateway Live Setup',
       dateTime: 'Oct 17, 11:00 AM GMT',
-      depositStatus: 'KES 20,000 (Flutterwave)',
+      depositStatus: 'KES 20,000 (Flutterwave Test)',
       whatsappReminderStatus: 'sent_1h',
     },
   ] as BookingAppointment[],
@@ -265,6 +354,82 @@ function logBusEvent(name: string, payload: Record<string, unknown>) {
   });
   if (state.events.length > 20) state.events.pop();
   renderEventLog();
+}
+
+// ── In-Page Toast & Modal Dialog Engine (Never uses browser prompt/alert) ────
+function showToast(message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') {
+  let container = document.getElementById('zexcore-toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'zexcore-toast-container';
+    container.className = 'zex-toast-container';
+    document.body.appendChild(container);
+  }
+  const toast = document.createElement('div');
+  toast.className = `zex-toast ${type}`;
+  toast.innerText = message;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity 0.25s';
+    setTimeout(() => toast.remove(), 250);
+  }, 3400);
+}
+
+function openModal(options: {
+  title: string;
+  subtitle?: string;
+  contentHtml: string;
+  confirmText?: string;
+  cancelText?: string;
+  onConfirm?: () => boolean | void;
+}) {
+  let overlay = document.getElementById('zexcore-modal-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'zexcore-modal-overlay';
+    overlay.className = 'zex-modal-overlay';
+    document.body.appendChild(overlay);
+  }
+
+  overlay.style.display = 'flex';
+  overlay.innerHTML = `
+    <div class="zex-modal-card">
+      <div class="zex-modal-header">
+        <div>
+          <h3 class="zex-modal-title">${options.title}</h3>
+          ${options.subtitle ? `<div class="zex-modal-subtitle">${options.subtitle}</div>` : ''}
+        </div>
+        <button class="zex-modal-close-btn" id="zex-modal-btn-close">&times;</button>
+      </div>
+      <div class="zex-modal-body">
+        ${options.contentHtml}
+      </div>
+      <div class="zex-modal-footer">
+        <button class="btn btn-secondary btn-sm" id="zex-modal-btn-cancel">${options.cancelText || 'Cancel'}</button>
+        <button class="btn btn-primary btn-sm" id="zex-modal-btn-confirm">${options.confirmText || 'Save Changes'}</button>
+      </div>
+    </div>
+  `;
+
+  const closeModal = () => {
+    if (overlay) overlay.style.display = 'none';
+  };
+
+  document.getElementById('zex-modal-btn-close')?.addEventListener('click', closeModal);
+  document.getElementById('zex-modal-btn-cancel')?.addEventListener('click', closeModal);
+  overlay.onclick = (e) => {
+    if (e.target === overlay) closeModal();
+  };
+
+  document.getElementById('zex-modal-btn-confirm')?.addEventListener('click', () => {
+    if (options.onConfirm) {
+      const res = options.onConfirm();
+      if (res !== false) closeModal();
+    } else {
+      closeModal();
+    }
+  });
 }
 
 // Initial Events
@@ -1053,8 +1218,8 @@ function renderDashboard() {
                 <span style="font-weight: 600; color: var(--text-primary); max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                   ${state.currentUser?.displayName || state.currentUser?.email || 'Operator'}
                 </span>
-                <span style="font-size: 0.65rem; color: ${state.currentUser?.isDemo ? '#d97706' : '#16a34a'}; font-family: var(--font-mono);">
-                  ${state.currentUser?.isDemo ? 'Demo Session' : 'Active Session'}
+                <span style="font-size: 0.65rem; color: ${state.currentUser?.isDemo ? '#d97706' : '#16a34a'}; font-family: var(--font-mono); font-weight: 700;">
+                  ${state.currentUser?.isDemo ? 'Demo Preview / Sandbox' : 'Production Active'}
                 </span>
               </div>
             </div>
@@ -1229,27 +1394,60 @@ function setupEventListeners() {
     renderKanban();
   });
 
-  // Checklist actions
+  // Checklist actions (In-page modal editing without browser prompts)
   document.getElementById('check-action-name')?.addEventListener('click', () => {
-    const newName = prompt('Enter your company or brand name:', state.onboarding.companyName);
-    if (newName && newName.trim()) {
-      state.onboarding.companyName = newName.trim();
-      state.onboarding.checklist.namedCompany = true;
-      saveOnboardingState(state.onboarding);
-      renderDashboard();
-    }
+    openModal({
+      title: 'Edit Brand & Workspace Name',
+      subtitle: 'Set your customer-facing business name across customer portals and invoices',
+      contentHtml: `
+        <div class="zex-modal-form-group">
+          <label class="zex-modal-form-label">Brand or Company Name</label>
+          <input type="text" id="modal-brand-name" class="zex-modal-input" value="${state.onboarding.companyName}" placeholder="e.g. Acme Health Logistics" />
+        </div>
+      `,
+      confirmText: 'Save Brand Name',
+      onConfirm: () => {
+        const val = (document.getElementById('modal-brand-name') as HTMLInputElement)?.value.trim();
+        if (val) {
+          state.onboarding.companyName = val;
+          state.onboarding.checklist.namedCompany = true;
+          saveOnboardingState(state.onboarding);
+          renderDashboard();
+          showToast(`Workspace name updated to "${val}"!`, 'success');
+          return true;
+        }
+        return false;
+      },
+    });
   });
 
   document.getElementById('check-action-listing')?.addEventListener('click', () => {
-    const newTitle = prompt('Enter your first listing or service title:', state.onboarding.listingTitle);
-    if (newTitle && newTitle.trim()) {
-      const newPrice = prompt('Enter price (e.g. $1,250 / mo):', state.onboarding.listingPrice);
-      state.onboarding.listingTitle = newTitle.trim();
-      if (newPrice && newPrice.trim()) state.onboarding.listingPrice = newPrice.trim();
-      state.onboarding.checklist.editedListing = true;
-      saveOnboardingState(state.onboarding);
-      renderDashboard();
-    }
+    openModal({
+      title: 'Edit Starter Catalog Listing',
+      subtitle: 'Update your first catalog service or product package',
+      contentHtml: `
+        <div class="zex-modal-form-group">
+          <label class="zex-modal-form-label">Listing or Service Title</label>
+          <input type="text" id="modal-listing-title" class="zex-modal-input" value="${state.onboarding.listingTitle}" placeholder="e.g. Cold Chain Telemetry Starter" />
+        </div>
+        <div class="zex-modal-form-group">
+          <label class="zex-modal-form-label">Pricing / Monthly Fee</label>
+          <input type="text" id="modal-listing-price" class="zex-modal-input" value="${state.onboarding.listingPrice}" placeholder="e.g. $1,250 / mo" />
+        </div>
+      `,
+      confirmText: 'Save Listing',
+      onConfirm: () => {
+        const t = (document.getElementById('modal-listing-title') as HTMLInputElement)?.value.trim();
+        const p = (document.getElementById('modal-listing-price') as HTMLInputElement)?.value.trim();
+        if (t) state.onboarding.listingTitle = t;
+        if (p) state.onboarding.listingPrice = p;
+        state.onboarding.checklist.editedListing = true;
+        saveOnboardingState(state.onboarding);
+        renderDashboard();
+        showToast('Catalog listing updated successfully!', 'success');
+        return true;
+      },
+    });
   });
 
   document.getElementById('check-action-enquiry')?.addEventListener('click', () => {
@@ -1258,36 +1456,37 @@ function setupEventListeners() {
 
   document.getElementById('check-action-share')?.addEventListener('click', () => {
     const shareUrl = window.location.origin + '/#/console';
-    navigator.clipboard.writeText(shareUrl).then(() => {
-      alert(`Link copied to clipboard!\nShare this link to showcase your site and enquiry flow:\n${shareUrl}`);
-      state.onboarding.checklist.sharedLink = true;
-      saveOnboardingState(state.onboarding);
-      renderDashboard();
-    }).catch(() => {
-      alert(`Share this link to showcase your site and enquiry flow:\n${shareUrl}`);
-    });
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        showToast('Showcase link copied to clipboard!', 'success');
+        state.onboarding.checklist.sharedLink = true;
+        saveOnboardingState(state.onboarding);
+        renderDashboard();
+      }).catch(() => {
+        showToast('Showcase link ready: ' + shareUrl, 'info');
+      });
+    } else {
+      showToast('Showcase link: ' + shareUrl, 'info');
+    }
   });
 
   // Quick actions
   document.getElementById('btn-quick-reg-device')?.addEventListener('click', () => {
-    const modal = document.getElementById('register-device-modal');
-    if (modal) modal.style.display = 'flex';
-    else {
-      const tabIot = document.querySelector('[data-tab="iot"]') as HTMLElement;
-      tabIot?.click();
-    }
+    document.getElementById('btn-open-register-device')?.click();
   });
 
   document.getElementById('btn-quick-telemetry')?.addEventListener('click', () => {
     triggerTelemetryPing('dev-1', 79.4, 55, 3.2);
+    showToast('Telemetry ping ingested: 79.4°C threshold alert triggered.', 'warning');
   });
 
   document.getElementById('btn-quick-lead')?.addEventListener('click', () => {
-    createLead('Enterprise Analytics Platform', 'CloudScale Inc', 95000, 'Qualified');
+    document.getElementById('btn-add-lead')?.click();
   });
 
   document.getElementById('btn-quick-eval-rule')?.addEventListener('click', () => {
     logBusEvent('rules.eval.requested', { ruleId: 'rule-temp-alert', tenantId: state.activeTenant, result: 'PASSED' });
+    showToast('Deterministic AST rule graph evaluated in 0.42ms (PASSED).', 'success');
     const tabRules = document.querySelector('[data-tab="rules"]') as HTMLElement;
     tabRules?.click();
   });
@@ -1303,6 +1502,7 @@ function setupEventListeners() {
     if (input) {
       input.value = `confidential_${Date.now()}@secure-enterprise.org`;
       updateCryptoPreview();
+      showToast('Real Web Crypto AES-256-GCM envelope re-encrypted with fresh 96-bit IV.', 'success');
     }
   });
 
@@ -1324,55 +1524,163 @@ function setupEventListeners() {
     executeSubjectErasure(subject);
   });
 
-  // Device register
+  // Device register (In-page modal without browser prompts)
   document.getElementById('btn-open-register-device')?.addEventListener('click', () => {
-    const name = prompt('Enter edge device name:', 'Warehouse Environmental Monitor');
-    if (!name) return;
-    const key = `iot_${name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${Math.floor(Math.random() * 100)}`;
-    state.devices.push({
-      id: `dev-${Date.now()}`,
-      name,
-      key,
-      kind: 'multi_sensor',
-      status: 'online',
-      temperature: 22.0,
-      humidity: 50,
-      voltage: 3.3,
-      firmware: 'v2.2.0',
-      lastSeen: 'Just now',
+    openModal({
+      title: 'Register Edge Device Node',
+      subtitle: 'Provision a new IoT sensor probe or edge gateway on your sovereign tenant',
+      contentHtml: `
+        <div class="zex-modal-form-group">
+          <label class="zex-modal-form-label">Device Name</label>
+          <input type="text" id="modal-dev-name" class="zex-modal-input" value="Warehouse Cold Chain Monitor 05" placeholder="e.g. Reefer Cold Chiller Probe 05" />
+        </div>
+        <div class="zex-modal-form-group">
+          <label class="zex-modal-form-label">Sensor Hardware Kind</label>
+          <select id="modal-dev-kind" class="zex-modal-select">
+            <option value="temperature_probe" selected>Temperature Probe (PT100/Thermistor)</option>
+            <option value="chiller_probe">Chiller / Freezer Sensor (-40°C rated)</option>
+            <option value="power_gateway">Power &amp; Voltage Inverter Gateway</option>
+            <option value="network_gateway">Industrial LTE / Mesh Gateway</option>
+            <option value="multi_sensor">Environmental Multi-Sensor Node</option>
+          </select>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="zex-modal-form-group">
+            <label class="zex-modal-form-label">Operating Voltage (V)</label>
+            <input type="number" step="0.1" id="modal-dev-volt" class="zex-modal-input" value="3.3" />
+          </div>
+          <div class="zex-modal-form-group">
+            <label class="zex-modal-form-label">Firmware Release</label>
+            <input type="text" id="modal-dev-firmware" class="zex-modal-input" value="v2.3.1" />
+          </div>
+        </div>
+      `,
+      confirmText: 'Register Device Node',
+      onConfirm: () => {
+        const name = (document.getElementById('modal-dev-name') as HTMLInputElement)?.value.trim() || 'Edge Node';
+        const kind = (document.getElementById('modal-dev-kind') as HTMLSelectElement)?.value || 'temperature_probe';
+        const volt = parseFloat((document.getElementById('modal-dev-volt') as HTMLInputElement)?.value) || 3.3;
+        const firmware = (document.getElementById('modal-dev-firmware') as HTMLInputElement)?.value.trim() || 'v2.3.1';
+        const key = `iot_${name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${Math.floor(Math.random() * 100)}`;
+
+        state.devices.push({
+          id: `dev-${Date.now()}`,
+          name,
+          key,
+          kind,
+          status: 'online',
+          temperature: 23.5,
+          humidity: 48,
+          voltage: volt,
+          firmware,
+          lastSeen: 'Just now',
+        });
+        const token = `zex_dev_${Math.random().toString(36).substring(2)}${Math.random().toString(36).substring(2)}`;
+        renderDevices();
+        updateFleetOscilloscope();
+        logBusEvent('iot.device.registered', { deviceKey: key, tokenHash: 'sha256_verified' });
+        showToast(`Device "${name}" registered! Secret token: ${token.slice(0, 16)}...`, 'success');
+        return true;
+      },
     });
-    const token = `zex_dev_${Math.random().toString(36).substring(2)}${Math.random().toString(36).substring(2)}`;
-    renderDevices();
-    logBusEvent('iot.device.registered', { deviceKey: key, tokenHash: 'sha256_verified' });
-    alert(`Device registered successfully!\n\nSingle-Use Secret Token:\n${token}\n\n(Stored securely with SHA-256 token hashing)`);
   });
 
-  // Add lead
+  // Add lead (In-page modal without browser prompts)
   document.getElementById('btn-add-lead')?.addEventListener('click', () => {
-    const title = prompt('Opportunity Name:', 'Smart Metering Expansion');
-    if (!title) return;
-    const company = prompt('Company Name:', 'Metropolis Energy');
-    if (!company) return;
-    const val = parseInt(prompt('Estimated Deal Value ($):', '65000') || '65000', 10);
-    createLead(title, company, val, 'New');
+    openModal({
+      title: 'Create CRM Opportunity / Deal',
+      subtitle: 'Add a prospective client deal to your multi-channel sales pipeline',
+      contentHtml: `
+        <div class="zex-modal-form-group">
+          <label class="zex-modal-form-label">Opportunity Title</label>
+          <input type="text" id="modal-lead-title" class="zex-modal-input" value="Smart Metering &amp; Telemetry Expansion" placeholder="e.g. Cold Chain Fleet Pilot" />
+        </div>
+        <div class="zex-modal-form-group">
+          <label class="zex-modal-form-label">Client Company Name</label>
+          <input type="text" id="modal-lead-company" class="zex-modal-input" value="Metropolis Energy Corp" placeholder="e.g. Apex Logistics" />
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="zex-modal-form-group">
+            <label class="zex-modal-form-label">Estimated Deal Value ($ USD)</label>
+            <input type="number" id="modal-lead-value" class="zex-modal-input" value="65000" />
+          </div>
+          <div class="zex-modal-form-group">
+            <label class="zex-modal-form-label">Pipeline Stage</label>
+            <select id="modal-lead-stage" class="zex-modal-select">
+              <option value="New" selected>New Inquiry</option>
+              <option value="Qualified">Qualified Lead</option>
+              <option value="Proposal">Proposal Submitted</option>
+              <option value="Negotiation">Negotiation</option>
+              <option value="Closed Won">Closed Won</option>
+            </select>
+          </div>
+        </div>
+      `,
+      confirmText: 'Create Opportunity',
+      onConfirm: () => {
+        const title = (document.getElementById('modal-lead-title') as HTMLInputElement)?.value.trim() || 'New Deal';
+        const company = (document.getElementById('modal-lead-company') as HTMLInputElement)?.value.trim() || 'Client Org';
+        const value = parseInt((document.getElementById('modal-lead-value') as HTMLInputElement)?.value, 10) || 50000;
+        const stage = (document.getElementById('modal-lead-stage') as HTMLSelectElement)?.value || 'New';
+
+        createLead(title, company, value, stage);
+        showToast(`Opportunity "${title}" created for ${company}!`, 'success');
+        return true;
+      },
+    });
   });
 
-  // Grant consent
+  // Grant consent (In-page modal without browser prompts)
   document.getElementById('btn-grant-consent')?.addEventListener('click', () => {
-    const sub = prompt('Subject Email or ID:', 'patricia.miller@global-enterprise.com');
-    if (!sub) return;
-    const purpose = prompt('Purpose (e.g. telemetry_processing, data_analytics):', 'telemetry_processing');
-    if (!purpose) return;
-    state.consents.unshift({
-      id: `c-${Date.now()}`,
-      subjectId: sub,
-      purpose,
-      legalBasis: 'consent',
-      grantedAt: new Date().toISOString().replace('T', ' ').substring(0, 16),
-      revokedAt: null,
+    openModal({
+      title: 'Grant GDPR / NDPR Subject Consent',
+      subtitle: 'Record lawful basis and cryptographic consent audit entry in immutable ledger',
+      contentHtml: `
+        <div class="zex-modal-form-group">
+          <label class="zex-modal-form-label">Subject Email or Identifier</label>
+          <input type="email" id="modal-consent-sub" class="zex-modal-input" value="patricia.miller@global-enterprise.com" placeholder="user@company.com" />
+        </div>
+        <div class="zex-modal-form-group">
+          <label class="zex-modal-form-label">Data Processing Purpose</label>
+          <select id="modal-consent-purpose" class="zex-modal-select">
+            <option value="telemetry_processing" selected>telemetry_processing (IoT Ingestion &amp; Analysis)</option>
+            <option value="marketing_analytics">marketing_analytics (Transactional Reminders &amp; Outreach)</option>
+            <option value="crm_profiling">crm_profiling (Multi-Channel Pipeline Records)</option>
+          </select>
+        </div>
+        <div class="zex-modal-form-group">
+          <label class="zex-modal-form-label">Lawful Basis (Article 6)</label>
+          <select id="modal-consent-basis" class="zex-modal-select">
+            <option value="contract" selected>contract (Performance of a Service Contract)</option>
+            <option value="consent">consent (Explicit Data Subject Consent)</option>
+            <option value="legitimate_interests">legitimate_interests (Commercial Operations)</option>
+          </select>
+        </div>
+      `,
+      confirmText: 'Record Consent Entry',
+      onConfirm: () => {
+        const sub = (document.getElementById('modal-consent-sub') as HTMLInputElement)?.value.trim();
+        const purpose = (document.getElementById('modal-consent-purpose') as HTMLSelectElement)?.value;
+        const legalBasis = (document.getElementById('modal-consent-basis') as HTMLSelectElement)?.value;
+        if (!sub) {
+          showToast('Please enter subject email.', 'error');
+          return false;
+        }
+
+        state.consents.unshift({
+          id: `c-${Date.now()}`,
+          subjectId: sub,
+          purpose,
+          legalBasis,
+          grantedAt: new Date().toISOString().replace('T', ' ').substring(0, 16),
+          revokedAt: null,
+        });
+        renderConsents();
+        logBusEvent('compliance.consent.granted', { subjectId: sub, purpose, legalBasis });
+        showToast(`Consent recorded for ${sub}!`, 'success');
+        return true;
+      },
     });
-    renderConsents();
-    logBusEvent('compliance.consent.granted', { subjectId: sub, purpose, legalBasis: 'consent' });
   });
 
   // Download All My Data
@@ -1502,7 +1810,7 @@ function renderDevices() {
     eventsBatched: 1,
     status: 200,
   });
-  alert(`Test SIEM Heartbeat Dispatched!\n\nDestination: ${endpoint}\nSignature: HMAC-SHA256 (verified)\nStatus: 200 OK`);
+  showToast(`Test SIEM Heartbeat Dispatched to ${endpoint} (HMAC-SHA256 verified, HTTP 200 OK)`, 'success');
 };
 
 (window as any).rotateAllDeviceTokens = () => {
@@ -1516,7 +1824,7 @@ function renderDevices() {
     count: state.devices.length,
     cryptoMethod: 'SHA-256 Single-Use Salted Hash',
   });
-  alert(`All ${state.devices.length} edge device authentication tokens rotated successfully with fresh single-use cryptographic secrets.`);
+  showToast(`All ${state.devices.length} edge device authentication tokens rotated with fresh cryptographic secrets.`, 'success');
 };
 
 (window as any).dispatchEdgeCommand = () => {
@@ -1552,7 +1860,7 @@ function renderDevices() {
     contradictions: 0,
     meshHealth: 'VERIFIED_DETERMINISTIC',
   });
-  alert('Static Mesh Analysis Complete:\n\nEvaluated ' + state.rules.length + ' rules against 5 event schemas.\n- Circular Dependency Loops: 0\n- Race Condition Cascades: 0\n- Deadlocks: 0\n\nResult: 100% Deterministic Safety Verified.');
+  showToast(`Static Mesh Analysis Complete: ${state.rules.length} rules checked. Zero deadlocks or cascades. 100% deterministic.`, 'success');
 };
 
 (window as any).signRuleOpsLead = () => {
@@ -1570,7 +1878,7 @@ function renderDevices() {
     signers: ['secops@enterprise-corp.io', 'lead-engineer@enterprise-corp.io'],
     status: 'DEPLOYED_PRODUCTION',
   });
-  alert('Dual-Operator Cryptographic Sign-Off Complete!\nBoth SecOps and Lead Engineer signatures recorded in the append-only ledger.');
+  showToast('Dual-Operator Cryptographic Sign-Off Complete! Both signatures ledgered.', 'success');
 };
 
 (window as any).triggerDripSequence = () => {
@@ -1580,7 +1888,7 @@ function renderDevices() {
     channel: 'whatsapp_meta_cloud',
     status: 'delivered',
   });
-  alert('Automated WhatsApp Drip Message Dispatched via Meta Cloud API webhook.');
+  showToast('Automated WhatsApp & SMS drip sequence dispatched via Meta Cloud API webhook.', 'success');
 };
 
 (window as any).testKmsKeyRotation = () => {
@@ -1591,7 +1899,7 @@ function renderDevices() {
     rotationCycle: '90_day_automated',
     status: 'success',
   });
-  alert('AWS KMS Root Envelope Key Rotation Successful!\nKey re-wrapped in secure HSM enclave with zero plaintext exposure.');
+  showToast('AWS KMS Root Envelope Key rotation successful in HSM enclave.', 'success');
 };
 
 function triggerTelemetryPing(deviceId: string, temp: number, humidity: number, voltage: number) {
@@ -1861,22 +2169,58 @@ function renderCrm() {
 }
 
 function renderWhatsAppInboxView(container: HTMLElement) {
-  const activeThread = state.whatsAppThreads.find((t) => t.id === state.selectedThreadId) || state.whatsAppThreads[0];
+  const currentFilter = state.selectedChannelFilter || 'all';
+  const filteredThreads = currentFilter === 'all'
+    ? state.whatsAppThreads
+    : state.whatsAppThreads.filter((t) => t.channel === currentFilter || t.activeChannel === currentFilter);
+
+  const activeThread = filteredThreads.find((t) => t.id === state.selectedThreadId) || filteredThreads[0] || state.whatsAppThreads[0];
   const totalUnread = state.whatsAppThreads.reduce((acc, t) => acc + t.unreadCount, 0);
 
+  function getChannelBadge(ch?: string) {
+    switch (ch) {
+      case 'whatsapp': return `<span class="whatsapp-channel-badge wa">WhatsApp</span>`;
+      case 'sms': return `<span class="whatsapp-channel-badge sms">SMS</span>`;
+      case 'email': return `<span class="whatsapp-channel-badge email">Email</span>`;
+      case 'telegram': return `<span class="whatsapp-channel-badge telegram">Telegram</span>`;
+      case 'webchat': return `<span class="whatsapp-channel-badge webchat">Web Chat</span>`;
+      case 'instagram': return `<span class="whatsapp-channel-badge instagram">Instagram</span>`;
+      default: return `<span class="whatsapp-channel-badge wa">WhatsApp</span>`;
+    }
+  }
+
   container.innerHTML = `
-    <div class="whatsapp-inbox-grid">
-      <!-- Left Column: Thread List -->
+    <!-- Omnichannel Channel Filter Bar -->
+    <div class="channel-filter-bar">
+      <button class="channel-filter-btn ${currentFilter === 'all' ? 'active' : ''}" onclick="window.setChannelFilter('all')">
+        All Channels (${state.whatsAppThreads.length})
+      </button>
+      <button class="channel-filter-btn ${currentFilter === 'whatsapp' ? 'active' : ''}" onclick="window.setChannelFilter('whatsapp')">
+        WhatsApp (${state.whatsAppThreads.filter(t => t.channel === 'whatsapp' || t.activeChannel === 'whatsapp').length})
+      </button>
+      <button class="channel-filter-btn ${currentFilter === 'sms' ? 'active' : ''}" onclick="window.setChannelFilter('sms')">
+        SMS Fallback (${state.whatsAppThreads.filter(t => t.channel === 'sms' || t.activeChannel === 'sms').length})
+      </button>
+      <button class="channel-filter-btn ${currentFilter === 'email' ? 'active' : ''}" onclick="window.setChannelFilter('email')">
+        Email Receipts (${state.whatsAppThreads.filter(t => t.channel === 'email' || t.activeChannel === 'email').length})
+      </button>
+      <button class="channel-filter-btn ${currentFilter === 'telegram' ? 'active' : ''}" onclick="window.setChannelFilter('telegram')">
+        Telegram Direct (${state.whatsAppThreads.filter(t => t.channel === 'telegram' || t.activeChannel === 'telegram').length})
+      </button>
+    </div>
+
+    <div class="whatsapp-inbox-grid" style="margin-top: 14px;">
+      <!-- Left Column: Unified Contact Threads -->
       <div class="whatsapp-threads-col">
         <div class="whatsapp-threads-header">
           <div>
             <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#25d366" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-              <span>Multi-Channel Inbox</span>
+              <span>Unified Contacts Inbox</span>
               ${totalUnread > 0 ? `<span style="background: #25d366; color: #fff; font-size: 0.65rem; font-weight: 800; padding: 2px 7px; border-radius: 999px;">${totalUnread} new</span>` : ''}
             </div>
             <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; display: flex; align-items: center; gap: 6px;">
-              <span>Meta WhatsApp Cloud API</span>
+              <span>Pluggable Adapter Core</span>
               <span>&bull;</span>
               <button class="badge-status-btn ${state.crmWebhookStatus === 'live' ? 'live' : 'offline'}" onclick="window.toggleCrmWebhook()" title="Click to toggle Webhook Live / Offline" style="padding: 2px 8px; font-size: 0.65rem;">
                 ${state.crmWebhookStatus === 'live' ? 'LIVE' : 'OFFLINE'}
@@ -1889,14 +2233,12 @@ function renderWhatsAppInboxView(container: HTMLElement) {
         </div>
 
         <div style="flex: 1; overflow-y: auto;">
-          ${state.whatsAppThreads.map((th) => {
+          ${filteredThreads.length === 0 ? `
+            <div style="padding: 28px 16px; text-align: center; color: var(--text-muted); font-size: 0.8rem;">
+              No conversations in "${currentFilter}". Select another channel tab above.
+            </div>
+          ` : filteredThreads.map((th) => {
             const isActive = activeThread && th.id === activeThread.id;
-            const channelBadge = th.channel === 'whatsapp'
-              ? `<span class="whatsapp-channel-badge wa">WhatsApp</span>`
-              : th.channel === 'sms'
-              ? `<span class="whatsapp-channel-badge sms">SMS</span>`
-              : `<span class="whatsapp-channel-badge email">Email</span>`;
-
             return `
               <div class="whatsapp-thread-item ${isActive ? 'active' : ''}" onclick="window.selectWhatsAppThread('${th.id}')">
                 <div class="whatsapp-thread-top">
@@ -1908,7 +2250,10 @@ function renderWhatsAppInboxView(container: HTMLElement) {
                   ${th.unreadCount > 0 ? `<span style="background: #25d366; color: #fff; font-size: 0.65rem; font-weight: 800; border-radius: 999px; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center;">${th.unreadCount}</span>` : ''}
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem;">
-                  ${channelBadge}
+                  <div style="display: inline-flex; gap: 4px; align-items: center;">
+                    ${getChannelBadge(th.activeChannel || th.channel)}
+                    ${th.fallbackChannel ? `<span style="font-size: 0.62rem; color: #64748b;">&rarr; ${th.fallbackChannel.toUpperCase()}</span>` : ''}
+                  </div>
                   <span style="font-weight: 700; color: #0284c7; background: #e0f2fe; padding: 1px 6px; border-radius: 4px;">$${th.leadValue.toLocaleString()} &middot; ${th.stage}</span>
                 </div>
               </div>
@@ -1930,10 +2275,16 @@ function renderWhatsAppInboxView(container: HTMLElement) {
                   <span>${activeThread.contactName}</span>
                   <span style="font-size: 0.72rem; color: #64748b; font-weight: 500;">${activeThread.phone}</span>
                 </div>
-                <div style="font-size: 0.72rem; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
+                <div style="font-size: 0.7rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px;">
                   <span style="color: #16a34a; font-weight: 700;">● Online</span>
                   <span>&middot;</span>
                   <span>Pipeline: <strong>${activeThread.stage}</strong> ($${activeThread.leadValue.toLocaleString()})</span>
+                  <span>&middot;</span>
+                  ${activeThread.windowStatus === 'open_24h' 
+                    ? `<span style="background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; font-weight: 700; padding: 1px 6px; border-radius: 3px; font-size: 0.65rem;">Customer 24h Window Active</span>`
+                    : `<span style="background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; font-weight: 700; padding: 1px 6px; border-radius: 3px; font-size: 0.65rem;">Window Closed (Templates Only)</span>`
+                  }
+                  ${activeThread.fallbackChannel ? `<span style="font-size: 0.65rem; color: #64748b;">(Fallback: ${activeThread.fallbackChannel.toUpperCase()})</span>` : ''}
                 </div>
               </div>
             </div>
@@ -1941,7 +2292,7 @@ function renderWhatsAppInboxView(container: HTMLElement) {
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
               <a href="https://wa.me/${activeThread.cleanPhone}?text=${encodeURIComponent('Hello ' + activeThread.contactName + ', following up regarding your ZexCore inquiry!')}" target="_blank" rel="noopener noreferrer" class="btn-whatsapp">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
-                Open in WhatsApp
+                WhatsApp Direct
               </a>
               <button class="btn btn-secondary btn-sm" onclick="window.convertChatToOpportunity('${activeThread.id}')">
                 Convert to Deal &rarr;
@@ -1953,7 +2304,11 @@ function renderWhatsAppInboxView(container: HTMLElement) {
           <div class="whatsapp-chat-body" id="whatsapp-chat-body">
             ${activeThread.messages.map((m) => `
               <div class="whatsapp-msg ${m.sender}">
-                <div style="margin-bottom: 2px;">${m.text}</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.65rem; color: var(--text-muted); margin-bottom: 3px;">
+                  <span style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">${m.channel || activeThread.channel || 'whatsapp'}</span>
+                  ${m.providerConfirmed ? `<span style="color: #16a34a; font-weight: 700;">✓ Provider Confirmed</span>` : ''}
+                </div>
+                <div style="margin-bottom: 3px;">${m.text}</div>
                 <div class="whatsapp-msg-time">
                   <span>${m.time}</span>
                   ${m.sender === 'agent' ? `<span style="color: #0284c7; font-weight: 800;">✓✓</span>` : ''}
@@ -1963,18 +2318,24 @@ function renderWhatsAppInboxView(container: HTMLElement) {
             `).join('')}
           </div>
 
-          <!-- Saved Reply Templates / Ready Recipes -->
+          <!-- Saved Reply Templates / Omnichannel Recipes -->
           <div class="whatsapp-quick-replies-row">
-            <span style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); align-self: center; margin-right: 4px;">Quick Replies:</span>
+            <span style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); align-self: center; margin-right: 4px;">Quick Actions:</span>
             <button class="whatsapp-quick-reply-pill" onclick="window.sendWhatsAppQuickPing('Here is our Cold Chain & Fleet Telemetry Hardware Specification catalog.')">Send Spec Sheet</button>
-            <button class="whatsapp-quick-reply-pill" onclick="window.sendWhatsAppQuickPing('You can book a 1-on-1 hardware live onboarding slot here: https://zexcore.io/book/${activeThread.id}')">Share Booking Link</button>
-            <button class="whatsapp-quick-reply-pill" onclick="window.sendWhatsAppQuickPing('Here is the Paystack checkout link to secure your initial reservation deposit: https://paystack.com/pay/zexcore-starter')">Request Deposit (₦50k)</button>
+            <button class="whatsapp-quick-reply-pill" onclick="window.sendWhatsAppQuickPing('You can book a 1-on-1 hardware onboarding slot here: https://zexcore.io/book/${activeThread.id}')">Share Booking Link</button>
+            <button class="whatsapp-quick-reply-pill" onclick="window.sendWhatsAppQuickPing('Here is the Paystack checkout link to secure your initial reservation deposit (Sandbox Mode): https://paystack.com/pay/zexcore-starter')">Request Deposit (₦50k Sandbox)</button>
             <button class="whatsapp-quick-reply-pill" onclick="window.sendWhatsAppQuickPing('ZexCore operates on single-tenant database encryption with ISO 27001 audit logging.')">Security Summary</button>
           </div>
 
-          <!-- Message Composer Form -->
-          <form class="whatsapp-composer" id="whatsapp-message-form" onsubmit="event.preventDefault(); window.sendWhatsAppCustomMessage();">
-            <input type="text" id="whatsapp-composer-input" class="input" placeholder="Type a WhatsApp message or automated dispatch..." style="flex: 1;" />
+          <!-- Message Composer Form with Channel Adapter Switcher -->
+          <form class="whatsapp-composer" id="whatsapp-message-form" onsubmit="event.preventDefault(); window.sendWhatsAppCustomMessage();" style="display: flex; gap: 8px; align-items: center;">
+            <select id="whatsapp-composer-channel" style="padding: 8px 10px; border-radius: var(--radius-sm); border: 1.5px solid var(--border-default); font-size: 0.75rem; font-weight: 700; background: #fff; color: var(--text-main);">
+              <option value="whatsapp">WhatsApp (In-Window Free)</option>
+              <option value="sms">SMS Fallback (Termii / ~₦4.50)</option>
+              <option value="email">Email (Transactional Receipt)</option>
+              <option value="telegram">Telegram Bot Direct</option>
+            </select>
+            <input type="text" id="whatsapp-composer-input" class="input" placeholder="Type a message or automated dispatch..." style="flex: 1;" />
             <button type="submit" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px;">
               <span>Send</span>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
@@ -2011,19 +2372,19 @@ function renderBookingsView(container: HTMLElement) {
         <div class="stat-box" style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: var(--radius-md); padding: 16px;">
           <div class="stat-label">Slot Deposits Secured</div>
           <div class="stat-value" style="font-size: 1.6rem; font-weight: 800; color: #0284c7; margin-top: 6px;">₦120,000</div>
-          <div class="stat-subtext" style="color: var(--text-muted); font-size: 0.72rem; margin-top: 4px;">Via Paystack &amp; Flutterwave</div>
+          <div class="stat-subtext" style="color: var(--text-muted); font-size: 0.72rem; margin-top: 4px;">Paystack &amp; Flutterwave (Sandbox Mode)</div>
         </div>
 
         <div class="stat-box" style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: var(--radius-md); padding: 16px;">
-          <div class="stat-label">WhatsApp Reminders</div>
+          <div class="stat-label">Omnichannel Reminders</div>
           <div class="stat-value" style="font-size: 1.6rem; font-weight: 800; color: #16a34a; margin-top: 6px;">${remindersDelivered} / ${totalBookings}</div>
-          <div class="stat-subtext" style="color: #16a34a; font-size: 0.72rem; font-weight: 600; margin-top: 4px;">Automated 24h &amp; 1h alerts</div>
+          <div class="stat-subtext" style="color: #16a34a; font-size: 0.72rem; font-weight: 600; margin-top: 4px;">Automated WhatsApp &amp; SMS alerts</div>
         </div>
 
         <div class="stat-box" style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: var(--radius-md); padding: 16px;">
-          <div class="stat-label">No-Show Prevention Rate</div>
-          <div class="stat-value" style="font-size: 1.6rem; font-weight: 800; color: #e11d48; margin-top: 6px;">98.4%</div>
-          <div class="stat-subtext" style="color: var(--text-muted); font-size: 0.72rem; margin-top: 4px;">Cuts missed meetings by 40%</div>
+          <div class="stat-label">Attendance Confirmation</div>
+          <div class="stat-value" style="font-size: 1.6rem; font-weight: 800; color: #0284c7; margin-top: 6px;">98.4%</div>
+          <div class="stat-subtext" style="color: var(--text-muted); font-size: 0.72rem; margin-top: 4px;">Confirmed via automated multi-channel check-ins</div>
         </div>
       </div>
 
@@ -2031,9 +2392,9 @@ function renderBookingsView(container: HTMLElement) {
       <div class="card" style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: var(--radius-md); overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
         <div class="card-header" style="padding: 16px 20px; border-bottom: 1px solid var(--border-default); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
           <div>
-            <div style="font-weight: 800; font-size: 1rem; color: var(--text-main);">Scheduled Client Bookings &amp; Appointments</div>
+            <div style="font-weight: 800; font-size: 1rem; color: var(--text-main);">Scheduled Client Bookings &amp; Consultations</div>
             <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">
-              Shareable booking page with automated WhatsApp/SMS reminders to cut customer no-shows
+              Shareable booking page with automated WhatsApp/SMS reminders and in-place client editing
             </div>
           </div>
           <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
@@ -2055,7 +2416,7 @@ function renderBookingsView(container: HTMLElement) {
                 <th style="padding: 12px 16px;">Service / Booking Item</th>
                 <th style="padding: 12px 16px;">Scheduled Time</th>
                 <th style="padding: 12px 16px;">Deposit Held</th>
-                <th style="padding: 12px 16px;">WhatsApp Automation</th>
+                <th style="padding: 12px 16px;">Omnichannel Alert</th>
                 <th style="padding: 12px 16px; text-align: right;">Action</th>
               </tr>
             </thead>
@@ -2089,6 +2450,10 @@ function renderBookingsView(container: HTMLElement) {
                     </td>
                     <td style="padding: 12px 16px; text-align: right;">
                       <div style="display: inline-flex; gap: 6px; align-items: center;">
+                        <button class="btn btn-secondary btn-xs" onclick="window.editBooking('${b.id}')" title="Edit booking parameters" style="display:inline-flex;align-items:center;gap:3px;">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                          Edit
+                        </button>
                         <button class="btn btn-secondary btn-xs" onclick="window.triggerBookingReminder('${b.id}')" title="Dispatch automated reminder message now" style="display:inline-flex;align-items:center;gap:4px;">
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"/></svg>
                           Ping Reminder
@@ -2183,7 +2548,12 @@ function createLead(title: string, company: string, value: number, stage: string
   logBusEvent('crm.lead.created', { leadId: lead.id, title, value, stage });
 }
 
-// Global CRM & WhatsApp Interactive Handlers
+// Global CRM & Omnichannel Interactive Handlers
+(window as any).setChannelFilter = (filter: string) => {
+  state.selectedChannelFilter = filter as any;
+  renderCrm();
+};
+
 (window as any).selectWhatsAppThread = (id: string) => {
   state.selectedThreadId = id;
   const th = state.whatsAppThreads.find((t) => t.id === id);
@@ -2191,39 +2561,45 @@ function createLead(title: string, company: string, value: number, stage: string
   renderCrm();
 };
 
-(window as any).sendWhatsAppQuickPing = (text: string) => {
+(window as any).sendWhatsAppQuickPing = (text: string, customChannel?: string) => {
   const activeThread = state.whatsAppThreads.find((t) => t.id === state.selectedThreadId) || state.whatsAppThreads[0];
   if (!activeThread) return;
 
+  const targetChannel = customChannel || activeThread.activeChannel || activeThread.channel || 'whatsapp';
   const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const newMsg: WhatsAppMessage = {
     sender: 'agent',
     text,
     time: timeStr,
     status: 'delivered',
+    channel: targetChannel as any,
+    providerConfirmed: true,
   };
 
   activeThread.messages.push(newMsg);
   activeThread.lastMsg = text;
   activeThread.time = timeStr;
 
-  logBusEvent('crm.whatsapp.message_sent', {
+  logBusEvent('crm.message_sent', {
     threadId: activeThread.id,
     phone: activeThread.phone,
     textSnippet: text.slice(0, 40),
-    channel: activeThread.channel,
-    gateway: 'Meta WhatsApp Cloud API',
+    channel: targetChannel,
+    gateway: targetChannel === 'whatsapp' ? 'Meta Cloud API' : targetChannel === 'sms' ? 'Termii / Twilio' : targetChannel === 'telegram' ? 'Telegram Bot API' : 'Resend / SMTP',
   });
 
   renderCrm();
+  showToast(`Message sent via ${targetChannel.toUpperCase()} to ${activeThread.contactName}.`, 'success');
 };
 
 (window as any).sendWhatsAppCustomMessage = () => {
   const input = document.getElementById('whatsapp-composer-input') as HTMLInputElement;
+  const channelSelect = document.getElementById('whatsapp-composer-channel') as HTMLSelectElement;
   if (!input || !input.value.trim()) return;
 
   const text = input.value.trim();
-  (window as any).sendWhatsAppQuickPing(text);
+  const channel = channelSelect ? channelSelect.value : undefined;
+  (window as any).sendWhatsAppQuickPing(text, channel);
   input.value = '';
 };
 
@@ -2243,19 +2619,22 @@ function createLead(title: string, company: string, value: number, stage: string
     sender: 'client',
     text: reply,
     time: timeStr,
+    channel: activeThread.channel,
+    providerConfirmed: true,
   });
   activeThread.lastMsg = reply;
   activeThread.time = timeStr;
   activeThread.unreadCount++;
 
-  logBusEvent('crm.whatsapp.webhook_received', {
+  logBusEvent('crm.webhook_received', {
     threadId: activeThread.id,
     from: activeThread.phone,
     snippet: reply.slice(0, 45),
-    verifiedWebhook: 'Meta HMAC-SHA256 Signature Valid',
+    verifiedWebhook: 'Provider HMAC-SHA256 Signature Valid',
   });
 
   renderCrm();
+  showToast(`Inbound message received from ${activeThread.contactName} (${activeThread.channel.toUpperCase()})`, 'info');
 };
 
 (window as any).convertChatToOpportunity = (threadId: string) => {
@@ -2263,7 +2642,7 @@ function createLead(title: string, company: string, value: number, stage: string
   if (!thread) return;
 
   createLead(`${thread.contactName} - Hardware Contract`, thread.contactName + ' Enterprise', thread.leadValue, thread.stage);
-  alert(`Conversation with ${thread.contactName} converted into CRM Opportunity (${thread.stage} · $${thread.leadValue.toLocaleString()})!`);
+  showToast(`Conversation with ${thread.contactName} converted into CRM Opportunity (${thread.stage} · $${thread.leadValue.toLocaleString()})!`, 'success');
   state.crmSubView = 'kanban';
   renderDashboard();
 };
@@ -2277,56 +2656,166 @@ function createLead(title: string, company: string, value: number, stage: string
     bookingId: b.id,
     client: b.clientName,
     phone: b.phone,
-    channel: 'whatsapp',
+    channel: 'whatsapp_with_sms_fallback',
     template: 'booking_reminder_24h',
     delivered: true,
   });
 
   renderCrm();
-  alert(`Automated WhatsApp Reminder dispatched to ${b.clientName} (${b.phone})!\n\nMessage delivered with zero-friction reschedule link.`);
+  showToast(`Automated WhatsApp & SMS reminder dispatched to ${b.clientName} (${b.phone})! Reschedule link active.`, 'success');
 };
 
 (window as any).openNewBookingModal = () => {
-  const name = prompt('Client Name:', 'Chief Olatunji Adeleke');
-  if (!name) return;
-  const phone = prompt('Client WhatsApp Phone (+234...):', '+234 809 123 4567');
-  if (!phone) return;
-  const service = prompt('Service / Consultation:', 'Cold Chain Edge Sensor Deployment');
-  if (!service) return;
-  const dateTime = prompt('Scheduled Date & Time:', 'Tomorrow, 3:00 PM WAT');
-  if (!dateTime) return;
+  openModal({
+    title: 'New Client Appointment & Booking',
+    subtitle: 'Schedule a client consultation or hardware deployment slot with multi-channel alerts.',
+    confirmText: 'Schedule Appointment',
+    contentHtml: `
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div>
+          <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">Client Name</label>
+          <input type="text" id="modal-booking-name" class="zex-modal-input" placeholder="e.g. Chief Olatunji Adeleke" value="Chief Olatunji Adeleke" />
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">WhatsApp / Phone</label>
+            <input type="text" id="modal-booking-phone" class="zex-modal-input" placeholder="+234 809 123 4567" value="+234 809 123 4567" />
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">Email (Fallback Receipt)</label>
+            <input type="email" id="modal-booking-email" class="zex-modal-input" placeholder="client@company.ng" value="adeleke@agrologistics.ng" />
+          </div>
+        </div>
+        <div>
+          <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">Service / Booking Item</label>
+          <select id="modal-booking-service" class="zex-modal-select">
+            <option value="Cold Chain Edge Telemetry Setup">Cold Chain Edge Telemetry Setup</option>
+            <option value="Fleet IoT Gateway Calibration">Fleet IoT Gateway Calibration</option>
+            <option value="Executive Security &amp; Compliance Audit">Executive Security &amp; Compliance Audit</option>
+            <option value="NDPR / Sovereign Vault Consultation">NDPR / Sovereign Vault Consultation</option>
+          </select>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">Scheduled Date &amp; Time</label>
+            <input type="text" id="modal-booking-time" class="zex-modal-input" placeholder="Tomorrow, 3:00 PM WAT" value="Tomorrow, 3:00 PM WAT" />
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">Deposit Status</label>
+            <select id="modal-booking-deposit" class="zex-modal-select">
+              <option value="₦50,000 Paid (Paystack Sandbox)">₦50,000 Paid (Paystack Sandbox)</option>
+              <option value="₦25,000 Paid (Flutterwave Sandbox)">₦25,000 Paid (Flutterwave Sandbox)</option>
+              <option value="Waived / Enterprise Term Agreement">Waived / Enterprise Term Agreement</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    `,
+    onConfirm: () => {
+      const name = (document.getElementById('modal-booking-name') as HTMLInputElement)?.value.trim();
+      const phone = (document.getElementById('modal-booking-phone') as HTMLInputElement)?.value.trim();
+      const service = (document.getElementById('modal-booking-service') as HTMLSelectElement)?.value;
+      const dateTime = (document.getElementById('modal-booking-time') as HTMLInputElement)?.value.trim();
+      const depositStatus = (document.getElementById('modal-booking-deposit') as HTMLSelectElement)?.value;
 
-  const cleanPhone = phone.replace(/[^0-9]/g, '');
-  const newBooking: BookingAppointment = {
-    id: `book-${Date.now()}`,
-    clientName: name,
-    phone,
-    cleanPhone,
-    service,
-    dateTime,
-    depositStatus: '₦50,000 Paid (Paystack)',
-    whatsappReminderStatus: 'delivered',
-  };
+      if (!name || !phone) {
+        showToast('Please provide client name and contact phone.', 'error');
+        return;
+      }
 
-  state.bookings.unshift(newBooking);
-  logBusEvent('booking.appointment.scheduled', {
-    bookingId: newBooking.id,
-    client: name,
-    phone,
-    service,
-    depositGateway: 'Paystack Instant',
+      const cleanPhone = phone.replace(/[^0-9]/g, '');
+      const newBooking: BookingAppointment = {
+        id: `book-${Date.now()}`,
+        clientName: name,
+        phone,
+        cleanPhone,
+        service: service || 'Telemetry Setup',
+        dateTime: dateTime || 'Tomorrow, 3:00 PM WAT',
+        depositStatus: depositStatus || '₦50,000 Paid (Paystack Sandbox)',
+        whatsappReminderStatus: 'delivered',
+      };
+
+      state.bookings.unshift(newBooking);
+      logBusEvent('booking.appointment.scheduled', {
+        bookingId: newBooking.id,
+        client: name,
+        phone,
+        service: newBooking.service,
+        depositGateway: 'Paystack Sandbox',
+      });
+
+      renderCrm();
+      showToast(`Appointment scheduled for ${name}! Multi-channel reminder queue initialized.`, 'success');
+    }
   });
+};
 
-  renderCrm();
+(window as any).editBooking = (id: string) => {
+  const b = state.bookings.find((item) => item.id === id);
+  if (!b) return;
+
+  openModal({
+    title: 'Edit Scheduled Appointment',
+    subtitle: `Update client parameters, service tier, or schedule for ${b.clientName}.`,
+    confirmText: 'Save Changes',
+    contentHtml: `
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div>
+          <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">Client Name</label>
+          <input type="text" id="modal-edit-name" class="zex-modal-input" value="${b.clientName}" />
+        </div>
+        <div>
+          <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">Contact Phone / WhatsApp</label>
+          <input type="text" id="modal-edit-phone" class="zex-modal-input" value="${b.phone}" />
+        </div>
+        <div>
+          <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">Service / Session</label>
+          <input type="text" id="modal-edit-service" class="zex-modal-input" value="${b.service}" />
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">Date &amp; Time</label>
+            <input type="text" id="modal-edit-time" class="zex-modal-input" value="${b.dateTime}" />
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">Deposit Status</label>
+            <input type="text" id="modal-edit-deposit" class="zex-modal-input" value="${b.depositStatus}" />
+          </div>
+        </div>
+      </div>
+    `,
+    onConfirm: () => {
+      const name = (document.getElementById('modal-edit-name') as HTMLInputElement)?.value.trim();
+      const phone = (document.getElementById('modal-edit-phone') as HTMLInputElement)?.value.trim();
+      const service = (document.getElementById('modal-edit-service') as HTMLInputElement)?.value.trim();
+      const dateTime = (document.getElementById('modal-edit-time') as HTMLInputElement)?.value.trim();
+      const depositStatus = (document.getElementById('modal-edit-deposit') as HTMLInputElement)?.value.trim();
+
+      if (!name || !phone) {
+        showToast('Client name and phone cannot be empty.', 'error');
+        return;
+      }
+
+      b.clientName = name;
+      b.phone = phone;
+      b.cleanPhone = phone.replace(/[^0-9]/g, '');
+      if (service) b.service = service;
+      if (dateTime) b.dateTime = dateTime;
+      if (depositStatus) b.depositStatus = depositStatus;
+
+      renderCrm();
+      showToast(`Updated appointment for ${name}.`, 'success');
+    }
+  });
 };
 
 (window as any).copyShareableBookingLink = () => {
   const link = `https://zexcore.io/book/${state.activeTenant}`;
   if (navigator.clipboard) {
     navigator.clipboard.writeText(link);
-    alert(`Public shareable booking link copied to clipboard:\n${link}\n\nClients can pick slots, pay Paystack deposits, and get instant WhatsApp reminders!`);
+    showToast(`Public booking link copied to clipboard: ${link}`, 'success');
   } else {
-    prompt('Shareable Booking Link:', link);
+    showToast(`Booking link: ${link}`, 'info');
   }
 };
 
@@ -2470,7 +2959,7 @@ function executeSubjectErasure(subjectId: string) {
     hashChainedAuditLedger: 'SHA256_APPEND_ONLY',
   });
 
-  alert(`Right to be Forgotten Executed for: ${subjectId}\n\n- CRM Personal Records: Anonymized to [REDACTED]\n- Consents: Revoked\n- Tamper-evident Audit Ledger Entry Appended`);
+  showToast(`Right to be Forgotten executed for ${subjectId}. Records anonymized & audit ledger appended.`, 'warning');
 }
 
 // ── Event Log Stream ─────────────────────────────────────────────────────────
