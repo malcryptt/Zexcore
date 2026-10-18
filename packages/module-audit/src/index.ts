@@ -1,6 +1,7 @@
 import { applyRlsToTable, type ZexModule, type ZexCoreContext } from '@zexcore/core';
 import type { FastifyInstance } from 'fastify';
 import { auditCapabilityDefinitions } from './permissions.js';
+import { registerAuditRoutes } from './routes/index.js';
 
 export * from './types.js';
 export * from './permissions.js';
@@ -10,6 +11,7 @@ export * from './rules/index.js';
 export * from './findings/index.js';
 export * from './engine/index.js';
 export * from './reports/index.js';
+export * from './routes/index.js';
 
 export const auditModule: ZexModule = {
   name: 'audit',
@@ -200,10 +202,8 @@ export const auditModule: ZexModule = {
     core.logger.info('[audit] Engine initialized with deterministic security & finance rules');
   },
 
-  async registerRoutes(server: FastifyInstance, _core: ZexCoreContext): Promise<void> {
-    server.get('/api/audit/health', async () => {
-      return { status: 'operational', module: 'module-audit', version: '1.0.0' };
-    });
+  async registerRoutes(server: FastifyInstance, core: ZexCoreContext): Promise<void> {
+    registerAuditRoutes(server, core);
   },
 };
 

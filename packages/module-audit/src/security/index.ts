@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { AuditFinding, FindingEvidence } from '../types.js';
 
 export interface SecurityEvaluationContext {
@@ -47,12 +48,7 @@ export interface SecurityEvaluationContext {
 }
 
 function computeSimpleHash(input: string): string {
-  let hash = 0;
-  for (let i = 0; i < input.length; i++) {
-    hash = (hash << 5) - hash + input.charCodeAt(i);
-    hash |= 0;
-  }
-  return 'sha256_' + Math.abs(hash).toString(16).padStart(16, '0');
+  return createHash('sha256').update(input).digest('hex');
 }
 
 export function runSecurityChecks(
@@ -194,9 +190,11 @@ export function runSecurityChecks(
   const silentMinutes = params['sec.posture.silent_devices']?.timeoutMinutes ?? 30;
   const silentRuleKey = 'sec.posture.silent_devices';
   const silentVersion = ruleVersions[silentRuleKey] || 1;
-  const silentDevices = ctx.devices.filter(
-    (d) => d.status === 'offline' || (d.lastSeenTimestampMs && (now.getTime() - d.lastSeenTimestampMs > silentMinutes * 60 * 1000))
-  );
+  const silentDevices = ctx.devices.filter((d) => {
+    if (d.status === 'offline') return true;
+    const lastSeenMs = d.lastSeenTimestampMs || (d.lastSeen ? new Date(d.lastSeen).getTime() : 0);
+    return lastSeenMs > 0 && now.getTime() - lastSeenMs > silentMinutes * 60 * 1000;
+  });
 
   if (silentDevices.length > 0) {
     findings.push({

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type {
   AuditFinding,
   AuditFindingEvent,
@@ -9,12 +10,7 @@ import type {
 } from '../types.js';
 
 function computeSimpleHash(input: string): string {
-  let hash = 0;
-  for (let i = 0; i < input.length; i++) {
-    hash = (hash << 5) - hash + input.charCodeAt(i);
-    hash |= 0;
-  }
-  return 'sha256_' + Math.abs(hash).toString(16).padStart(16, '0');
+  return createHash('sha256').update(input).digest('hex');
 }
 
 /**
