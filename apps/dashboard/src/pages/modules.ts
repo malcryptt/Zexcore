@@ -204,22 +204,44 @@ export function renderModulesPage(): string {
                 </div>
               </div>
 
-              <!-- 6. More Modules (Placeholder / Manifest Registry) -->
-              <div class="p-mod-card p-mod-card-more">
-                <div class="p-mod-more-content">
-                  <div class="p-mod-icon-wrap" style="background: var(--bg-alt); margin-bottom: 16px;">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2">
-                      <rect x="3" y="3" width="7" height="7"/>
-                      <rect x="14" y="3" width="7" height="7"/>
-                      <rect x="14" y="14" width="7" height="7"/>
-                      <rect x="3" y="14" width="7" height="7"/>
+              <!-- 6. Audit & Financial Health Module -->
+              <div class="p-mod-card">
+                <div class="p-mod-header">
+                  <div class="p-mod-icon-wrap" style="background: rgba(229,9,32,0.08); color: var(--accent);">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                      <polyline points="9 12 11 14 15 10"/>
                     </svg>
                   </div>
-                  <h3 class="p-mod-name" style="margin-bottom: 8px;">More Modules</h3>
-                  <p class="p-mod-desc" style="text-align: center; margin-bottom: 24px;">
-                    Additional modules and integrations are available in the platform manifest registry.
-                  </p>
-                  <a href="#/docs#module-contract" class="btn btn-outline btn-sm">Explore Full List &rarr;</a>
+                  <div class="p-mod-meta">
+                    <span class="p-mod-pkg">@zexcore/module-audit</span>
+                    <span class="badge badge-accent">POSTURE &amp; RECONCILIATION</span>
+                  </div>
+                </div>
+                <h3 class="p-mod-name">Audit &amp; Financial Health</h3>
+                <p class="p-mod-desc">
+                  Deterministic security posture analysis, payment gateway reconciliation (Stripe, Paystack, Flutterwave), and tamper-resistant SHA-256 evidence packs.
+                </p>
+                <div class="p-mod-capabilities">
+                  <div class="p-mod-cap-label">Key Capabilities</div>
+                  <ul class="p-mod-cap-list">
+                    <li>Deterministic check runner with zero AI non-determinism</li>
+                    <li>Payment gateway vs. invoices triple reconciliation</li>
+                    <li>Append-only ledger with dual-approval rule governance</li>
+                  </ul>
+                </div>
+                <div class="p-mod-meta-footer">
+                  <div class="p-mod-meta-row"><strong>Tables:</strong> audit_runs, audit_findings, ledger_entries, audit_hash_chain</div>
+                  <div class="p-mod-meta-row"><strong>Exports:</strong> checkRunner, reconciliation, evidencePack</div>
+                </div>
+                <div class="p-mod-endpoints">
+                  <div class="p-mod-cap-label">Example Endpoints</div>
+                  <div class="p-endpoint-tag"><code>POST /api/audit/check</code></div>
+                  <div class="p-endpoint-tag"><code>GET /api/audit/findings</code></div>
+                  <div class="p-endpoint-tag"><code>POST /api/audit/export</code></div>
+                </div>
+                <div class="p-mod-action">
+                  <button class="btn btn-primary btn-sm btn-open-mod" onclick="openModuleModal('audit')">View Details &rarr;</button>
                 </div>
               </div>
 
@@ -312,6 +334,14 @@ const moduleDetailsData: Record<string, { title: string; pkg: string; desc: stri
     schemas: ['compliance_vault', 'consent_ledger', 'erasure_requests'],
     endpoints: ['POST /api/compliance/encrypt', 'POST /api/compliance/decrypt', 'POST /api/compliance/erasure', 'GET /api/compliance/consent'],
     events: ['compliance.data.encrypted', 'compliance.erasure.executed', 'compliance.consent.granted']
+  },
+  audit: {
+    title: 'Audit & Financial Health Engine',
+    pkg: '@zexcore/module-audit',
+    desc: 'Deterministic workspace posture analysis and financial reconciliation engine. Features locked baseline security checks (MFA, wildcard CORS, API key age), automated payment gateway reconciliation (Stripe, Paystack, Flutterwave vs. ledger), and tamper-resistant SHA-256 chained evidence pack exports.',
+    schemas: ['audit_runs', 'audit_findings', 'audit_rules', 'audit_rule_changes', 'ledger_entries', 'audit_hash_chain'],
+    endpoints: ['GET /api/audit/health', 'POST /api/audit/check', 'GET /api/audit/runs', 'GET /api/audit/findings', 'POST /api/audit/export'],
+    events: ['audit.run.completed', 'audit.finding.detected', 'audit.ledger.reconciled', 'audit.rule.tuned']
   }
 };
 

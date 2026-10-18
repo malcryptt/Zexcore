@@ -358,6 +358,64 @@ const encrypted = await encryptField({
 // authTag: 'f92c...01e'
 // blindIndex: 'hmac_sha256_hash_for_lookups'`,
   },
+  audit: {
+    id: 'audit',
+    name: 'Audit & Financial Health Engine',
+    pkg: '@zexcore/module-audit',
+    badge: 'Deterministic Verification',
+    eyebrow: 'ENGINE 06',
+    summary: 'Deterministic security posture analysis, payment gateway triple reconciliation, and tamper-resistant cryptographic evidence packs. Fixes go through standard dual-approval workflows.',
+    capabilities: [
+      {
+        title: 'Deterministic Security Posture Runner',
+        desc: 'Evaluates workspace security posture using strict rule tiers without AI non-determinism. Enforces administrative MFA, disallows wildcard CORS, flags stale API keys, and detects silent device telemetry dropouts.',
+        tags: ['Zero-AI Fallback', 'Deterministic Rules', 'MFA Audit'],
+        icon: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/>',
+      },
+      {
+        title: 'Triple Financial Reconciliation',
+        desc: 'Reconciles payment gateway webhooks (Stripe, Paystack, Flutterwave) against issued invoices and bank statements. Categorizes entries by verified, imported, or customer-claimed trust levels.',
+        tags: ['Payment Gateways', 'Bank Statements', 'Trust Hierarchy'],
+        icon: '<rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>',
+      },
+      {
+        title: 'Tamper-Resistant Evidence Packs',
+        desc: 'Generates cryptographically chained JSON and verifiable PDF bundles with SHA-256 block hash verification for regulatory auditors and compliance reporting.',
+        tags: ['SHA-256 Chain', 'Non-Repudiation', 'Evidence Pack'],
+        icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
+      },
+    ],
+    schemas: [
+      { table: 'audit_runs', desc: 'Timestamped execution records with security and financial scores', columns: 'id, tenant_id (FK), started_at, duration_ms, security_score, finance_score' },
+      { table: 'audit_findings', desc: 'Identified posture anomalies and reconciliation discrepancies', columns: 'id, tenant_id (FK), rule_key, domain, severity, title, evidence, status' },
+      { table: 'ledger_entries', desc: 'Immutable financial ledger with trust level and settlement status', columns: 'id, tenant_id (FK), kind, amount_minor, currency, trust_level, reference' },
+      { table: 'audit_hash_chain', desc: 'Cryptographically linked block sequence for non-repudiation', columns: 'block_number, tenant_id (FK), record_hash, previous_hash, block_hash' },
+    ],
+    endpoints: [
+      { method: 'POST', path: '/api/audit/check', desc: 'Triggers on-demand deterministic posture and financial evaluation' },
+      { method: 'GET', path: '/api/audit/runs', desc: 'Retrieves tenant historical audit runs and score timelines' },
+      { method: 'GET', path: '/api/audit/findings', desc: 'Lists open, investigating, and resolved audit findings' },
+      { method: 'POST', path: '/api/audit/export', desc: 'Exports tamper-evident signed JSON evidence pack' },
+    ],
+    events: [
+      { name: 'audit.run.completed', trigger: 'Emitted when a scheduled or on-demand check completes' },
+      { name: 'audit.finding.detected', trigger: 'Fired when a critical posture or finance anomaly is found' },
+      { name: 'audit.rule.tuned', trigger: 'Logged to audit trail when an administrator tunes guardrails' },
+    ],
+    codeSnippet: `// Triggering deterministic security posture analysis
+import { runAuditSuite, exportEvidencePack } from '@zexcore/module-audit';
+
+const run = await runAuditSuite({
+  tenantId: 'tenant-acme-corp',
+  domain: 'security'
+});
+
+console.log(\`Posture Score: \${run.overallScore}/100, Findings: \${run.findingsGenerated}\`);
+
+// Exporting cryptographically verifiable evidence pack
+const pack = await exportEvidencePack('tenant-acme-corp', run.id);
+console.log('SHA-256 Hash:', pack.manifest.headBlockHash);`,
+  },
 };
 
 const MODULE_LIST = [
@@ -366,6 +424,7 @@ const MODULE_LIST = [
   { id: 'rules', name: 'Rules & AI Author', pkg: '@zexcore/rules', icon: '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>' },
   { id: 'crm', name: 'CRM & Pipeline', pkg: '@zexcore/module-crm', icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>' },
   { id: 'compliance', name: 'Compliance & Vault', pkg: '@zexcore/compliance', icon: '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>' },
+  { id: 'audit', name: 'Audit & Health', pkg: '@zexcore/module-audit', icon: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/>' },
 ];
 
 export function renderPlatformPage(activeModuleId = 'core'): string {

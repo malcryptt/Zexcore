@@ -57,9 +57,18 @@ export function renderNavbar(activePage: string): string {
                   <div class="nav-dropdown-desc">AES-256-GCM encryption &amp; Right-to-be-Forgotten erasure</div>
                 </div>
               </a>
+              <a href="#/console/audit" class="nav-dropdown-link">
+                <div class="nav-dropdown-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+                </div>
+                <div>
+                  <div class="nav-dropdown-title">Audit &amp; Financial Health</div>
+                  <div class="nav-dropdown-desc">Posture checks, reconciliation &amp; evidence packs</div>
+                </div>
+              </a>
               <div style="border-top: 1px solid var(--border-default); margin: 6px 0; padding-top: 6px;">
                 <a href="#/modules" class="nav-dropdown-link" style="padding: 6px 12px;">
-                  <span style="font-size: 0.78rem; font-weight: 700; color: #E50920;">View All 5 Modules &rarr;</span>
+                  <span style="font-size: 0.78rem; font-weight: 700; color: #E50920;">View All 6 Modules &rarr;</span>
                 </a>
               </div>
             </div>

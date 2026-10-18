@@ -138,7 +138,7 @@ export function renderPricingPage(): string {
                     ${pricingFeature(true, 'CMS & site builder')}
                     ${pricingFeature(true, 'ZexCore subdomain')}
                     ${pricingFeature(true, '1 team user')}
-                    ${pricingFeature(true, '7-day activity history')}
+                    ${pricingFeature(true, 'Audit Basic (5 posture checks & 7-day log)')}
                     ${pricingFeature(false, 'Custom domain')}
                     ${pricingFeature(false, 'CRM contact manager')}
                     ${pricingFeature(false, 'Appointment booking')}
@@ -178,7 +178,7 @@ export function renderPricingPage(): string {
                     ${pricingFeature(true, '3 team users')}
                     ${pricingFeature(true, 'Up to 1,000 contacts')}
                     ${pricingFeature(true, 'Lead stage pipeline tracking')}
-                    ${pricingFeature(true, '30-day activity history')}
+                    ${pricingFeature(true, 'Audit Basic (5 posture checks & 30-day log)')}
                     ${pricingFeature(false, 'Client booking & appointments')}
                     ${pricingFeature(false, 'Automation event rules')}
                   </div>
@@ -337,7 +337,7 @@ export function renderPricingPage(): string {
                     ${pricingFeature(true, 'Field-level AES-256-GCM encryption')}
                     ${pricingFeature(true, 'HMAC blind index query engine')}
                     ${pricingFeature(true, 'Data deletion tools (Cryptographic PII erasure)')}
-                    ${pricingFeature(true, 'Cryptographic audit ledger (append-only)')}
+                    ${pricingFeature(true, 'Cryptographic audit ledger & signed evidence packs')}
                     ${pricingFeature(true, 'Signed agreements (BAA, DPA & custom SLA)')}
                     ${pricingFeature(true, 'Dedicated compliance engineer')}
                   </div>
@@ -392,7 +392,10 @@ export function renderPricingPage(): string {
                   ${compRow6('White-Label Branding', false, false, false, true, true, true)}
 
                   ${compSection('SECURITY, AUDIT & DATA PRIVACY')}
-                  ${compRow6('Audit Level', '7-day activity log', '30-day activity log', 'Audit Essentials (90 days)', 'Audit Essentials (per ws)', 'Audit Business (3 years & SIEM)', 'Cryptographic audit ledger')}
+                  ${compRow6('Audit Level', 'Audit Basic (7 days)', 'Audit Basic (30 days)', 'Audit Essentials (90 days)', 'Audit Essentials (per ws)', 'Audit Business (3 years & SIEM)', 'Cryptographic audit ledger')}
+                  ${compRow6('Baseline Security Posture Checks', '5 locked checks', '5 locked checks', 'All checks + tunable', 'All checks + tunable', 'Custom rules + SIEM', 'Hardened zero-trust baseline')}
+                  ${compRow6('Financial Gateway Reconciliation', false, false, 'Stripe, Paystack & MoMo', 'Per-workspace reconciliation', 'Multi-currency ledger sync', 'Immutable banking ledger & audit')}
+                  ${compRow6('Tamper-Resistant Evidence Packs', false, false, 'Standard export', 'Client evidence export', 'Verifiable JSON/PDF bundles', 'Cryptographic block chain export')}
                   ${compRow6('Field-Level AES-256 Encryption', false, false, false, false, false, '✓ (AES-256-GCM field level)')}
                   ${compRow6('HMAC Blind Index Queries', false, false, false, false, false, true)}
                   ${compRow6('Data Deletion Tools', 'Standard delete', 'Standard delete', 'Standard delete & redaction', 'Workspace-level deletion tools', 'Role-gated deletion with audit trace', '✓ Cryptographic PII erasure & ledger proof')}

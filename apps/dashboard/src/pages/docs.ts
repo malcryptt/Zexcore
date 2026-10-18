@@ -403,6 +403,21 @@ Content-Type: application/json
       </div>
     `
   },
+  'audit-module': {
+    id: 'audit-module',
+    category: 'Platform Systems',
+    title: 'Audit & Financial Health Engine',
+    intro: 'Deterministic security posture screening, payment gateway reconciliation, and tamper-resistant evidence packs.',
+    contentHtml: `
+      <p>The <code>@zexcore/module-audit</code> package performs scheduled and on-demand verification of workspace security and ledger integrity with zero AI non-determinism:</p>
+      <ul class="bullet-feature-list">
+        <li><strong>Locked Baseline Rules:</strong> Enforces admin MFA, prohibits wildcard CORS (*), bans cumulative refunds exceeding charges, and verifies finalised ledger immutability.</li>
+        <li><strong>Payment Reconciliation:</strong> Automatically matches Stripe, Paystack, and Flutterwave webhook settlements against issued invoices.</li>
+        <li><strong>Trust Level Hierarchy:</strong> Categorizes transactions into <code>verified</code> (cryptographic webhook signature), <code>imported</code> (bank CSV/OFX statement), and <code>claimed</code> (unverified user receipt).</li>
+        <li><strong>Dual-Approval Guardrail Loosening:</strong> Relaxing security thresholds requires second-operator authorization and fresh MFA proof.</li>
+      </ul>
+    `
+  },
   'rls': {
     id: 'rls',
     category: 'Database & Security',
@@ -501,6 +516,32 @@ CREATE POLICY tenant_isolation ON documents
       <p>Endpoints: <code>POST /api/compliance/encrypt</code>, <code>POST /api/compliance/erasure</code>, <code>GET /api/compliance/consent</code>.</p>
     `
   },
+  'api-audit': {
+    id: 'api-audit',
+    category: 'API Reference',
+    title: 'Audit & Reconciliation Endpoints',
+    intro: 'REST endpoints for triggering security checks, inspecting findings, querying the ledger, and exporting signed evidence packs.',
+    contentHtml: `
+      <div class="code-editor-card">
+        <div class="code-editor-title">POST /api/audit/check</div>
+        <pre class="code-pre"><code>// Trigger on-demand posture analysis
+POST /api/audit/check
+Headers: { "Authorization": "Bearer <jwt>", "X-Tenant-ID": "acme_corp" }
+Body: { "domain": "all", "dryRun": false }
+
+// Response (200 OK):
+{
+  "runId": "run-8f92a10",
+  "overallScore": 96,
+  "securityScore": 94,
+  "financeScore": 98,
+  "findingsGenerated": 1,
+  "durationMs": 42
+}</code></pre>
+      </div>
+      <p>Other endpoints: <code>GET /api/audit/runs</code>, <code>GET /api/audit/findings</code>, <code>POST /api/audit/export</code>, <code>GET /api/audit/health</code>.</p>
+    `
+  },
   'tools-workspace': {
     id: 'tools-workspace',
     category: 'Developer Tools',
@@ -515,6 +556,7 @@ CREATE POLICY tenant_isolation ON documents
   - "packages/rules"          # @zexcore/rules (Safe AST interpreter, Gemini AI)
   - "packages/module-crm"     # @zexcore/module-crm (Leads, contacts, stages)
   - "packages/compliance"     # @zexcore/compliance (AES-256-GCM vault, GDPR erasure)
+  - "packages/module-audit"    # @zexcore/module-audit (Deterministic posture & reconciliation)
 apps:
   - "apps/api"                # Fastify HTTP server bootstrapping registered modules
   - "apps/dashboard"          # Red &amp; White enterprise control plane</code></pre>
@@ -643,6 +685,7 @@ export function renderDocsPage(): string {
                   <li><a href="javascript:void(0)" onclick="selectDocArticle('crm')" class="docs-nav-item ${currentArticle.id === 'crm' ? 'active' : ''}">CRM Pipeline</a></li>
                   <li><a href="javascript:void(0)" onclick="selectDocArticle('crypto')" class="docs-nav-item ${currentArticle.id === 'crypto' ? 'active' : ''}">Cryptographic Vault</a></li>
                   <li><a href="javascript:void(0)" onclick="selectDocArticle('lifecycle')" class="docs-nav-item ${currentArticle.id === 'lifecycle' ? 'active' : ''}">Module Lifecycle Contract</a></li>
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('audit-module')" class="docs-nav-item ${currentArticle.id === 'audit-module' ? 'active' : ''}">Audit &amp; Financial Health</a></li>
                 </ul>
               </div>
 
@@ -666,6 +709,7 @@ export function renderDocsPage(): string {
                   <li><a href="javascript:void(0)" onclick="selectDocArticle('api-iot')" class="docs-nav-item ${currentArticle.id === 'api-iot' ? 'active' : ''}">IoT Endpoints</a></li>
                   <li><a href="javascript:void(0)" onclick="selectDocArticle('api-crm')" class="docs-nav-item ${currentArticle.id === 'api-crm' ? 'active' : ''}">CRM Endpoints</a></li>
                   <li><a href="javascript:void(0)" onclick="selectDocArticle('api-compliance')" class="docs-nav-item ${currentArticle.id === 'api-compliance' ? 'active' : ''}">Compliance Endpoints</a></li>
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('api-audit')" class="docs-nav-item ${currentArticle.id === 'api-audit' ? 'active' : ''}">Audit Endpoints</a></li>
                 </ul>
               </div>
 
