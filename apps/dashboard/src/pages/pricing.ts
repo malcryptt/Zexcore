@@ -17,16 +17,6 @@ function pricingFeature(enabled: boolean, label: string): string {
   `;
 }
 
-function pricingFeatureFeatured(enabled: boolean, label: string): string {
-  return `
-    <div class="pricing-feature-row">
-      <span class="pricing-check-featured ${enabled ? 'enabled' : 'disabled'}">
-        ${enabled ? '✓' : '—'}
-      </span>
-      <span class="pricing-feature-label" style="color: ${enabled ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.4)'};">${label}</span>
-    </div>
-  `;
-}
 
 function compSection(title: string): string {
   return `
@@ -197,41 +187,41 @@ export function renderPricingPage(): string {
               </div>
 
               <!-- 3. GROWTH (FEATURED) -->
-              <div class="pricing-card pricing-card-featured" style="display:flex; flex-direction:column; justify-content:space-between;">
+              <div class="pricing-card pricing-card-featured" style="display:flex; flex-direction:column; justify-content:space-between; border: 2.5px solid var(--primary); box-shadow: 0 12px 32px rgba(229,9,32,0.12); position:relative;">
                 <div>
-                  <div class="pricing-featured-tag">MOST POPULAR</div>
-                  <div class="pricing-card-top">
+                  <div class="pricing-featured-tag" style="background:var(--primary); color:#fff; font-weight:850; font-size:0.68rem; letter-spacing:0.08em; padding:6px; text-align:center;">MOST POPULAR</div>
+                  <div class="pricing-card-top" style="background:#fff7f8;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                      <div class="pricing-tier-label" style="color:#fff; opacity:0.85;">GROWTH</div>
-                      <span style="font-size:0.7rem; font-weight:800; color:#fff; background:rgba(255,255,255,0.2); padding:2px 8px; border-radius:12px;">Growing Teams</span>
+                      <div class="pricing-tier-label" style="color:var(--primary); font-weight:850;">GROWTH</div>
+                      <span style="font-size:0.7rem; font-weight:800; color:var(--primary); background:#fee2e2; padding:2px 8px; border-radius:12px; border:1px solid #fecaca;">Growing Teams</span>
                     </div>
                     <div class="pricing-price-block">
-                      <span class="pricing-currency" style="color:#fff;">$</span>
-                      <span class="pricing-amount" data-monthly="49" data-annual="490" style="color:#fff;">49</span>
-                      <span class="pricing-period" style="color:rgba(255,255,255,0.75);">/ mo</span>
+                      <span class="pricing-currency" style="color:var(--text-main); font-weight:800;">$</span>
+                      <span class="pricing-amount" data-monthly="49" data-annual="490" style="color:var(--text-main); font-weight:850;">49</span>
+                      <span class="pricing-period" style="color:var(--text-secondary);">/ mo</span>
                     </div>
-                    <div style="font-size:0.75rem; font-weight:700; color:#fff; margin-top:8px;">Who it’s for:</div>
-                    <p class="pricing-desc" style="margin-top:2px; color:rgba(255,255,255,0.85);">A growing business expanding booking, automations, and omnichannel outreach.</p>
+                    <div style="font-size:0.75rem; font-weight:700; color:var(--text-main); margin-top:8px;">Who it’s for:</div>
+                    <p class="pricing-desc" style="margin-top:2px; color:var(--text-secondary);">A growing business expanding booking, automations, and omnichannel outreach.</p>
 
-                    <div style="background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.22); border-radius:6px; padding:10px; margin-top:14px; font-size:0.75rem;">
-                      <div style="font-weight:700; color:rgba(255,255,255,0.9); margin-bottom:4px;">Main Limits:</div>
-                      <div style="color:#fff; line-height:1.4;">Everything in Starter + booking &bull; rules &bull; SMS/email &bull; 10 users &bull; 10,000 contacts &bull; Audit Essentials</div>
+                    <div style="background:#ffffff; border:1.5px solid #fca5a5; border-radius:6px; padding:10px; margin-top:14px; font-size:0.75rem;">
+                      <div style="font-weight:700; color:var(--primary); margin-bottom:4px;">Main Limits:</div>
+                      <div style="color:var(--text-main); line-height:1.4;">Everything in Starter + booking &bull; rules &bull; SMS/email &bull; 10 users &bull; 10,000 contacts &bull; Audit Essentials</div>
                     </div>
 
-                    <button class="btn" style="width:100%; justify-content:center; margin-top:18px; background:#fff; color:var(--primary); border-color:#fff; font-weight:800;" onclick="window.startStripeCheckout('growth')">
+                    <button class="btn btn-primary" style="width:100%; justify-content:center; margin-top:18px; font-weight:800;" onclick="window.startStripeCheckout('growth')">
                       Upgrade to Growth &rarr;
                     </button>
                   </div>
                   <div class="pricing-features-list">
-                    <div class="pricing-feature-section-title" style="color:rgba(255,255,255,0.65);">Included Features</div>
-                    ${pricingFeatureFeatured(true, 'Everything in Starter')}
-                    ${pricingFeatureFeatured(true, 'Client booking & slot deposits')}
-                    ${pricingFeatureFeatured(true, 'Deterministic automation rules')}
-                    ${pricingFeatureFeatured(true, 'SMS and Email notifications')}
-                    ${pricingFeatureFeatured(true, '10 team users')}
-                    ${pricingFeatureFeatured(true, '10,000 contacts')}
-                    ${pricingFeatureFeatured(true, 'Audit Essentials included')}
-                    ${pricingFeatureFeatured(false, 'White-label multi-tenant branding')}
+                    <div class="pricing-feature-section-title" style="color:#64748b;">Included Features</div>
+                    ${pricingFeature(true, 'Everything in Starter')}
+                    ${pricingFeature(true, 'Client booking & slot deposits')}
+                    ${pricingFeature(true, 'Deterministic automation rules')}
+                    ${pricingFeature(true, 'SMS and Email notifications')}
+                    ${pricingFeature(true, '10 team users')}
+                    ${pricingFeature(true, '10,000 contacts')}
+                    ${pricingFeature(true, 'Audit Essentials included')}
+                    ${pricingFeature(false, 'White-label multi-tenant branding')}
                   </div>
                 </div>
               </div>
