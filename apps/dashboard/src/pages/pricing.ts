@@ -17,7 +17,6 @@ function pricingFeature(enabled: boolean, label: string): string {
   `;
 }
 
-
 function compSection(title: string): string {
   return `
     <tr class="comp-section-row">
@@ -114,7 +113,7 @@ export function renderPricingPage(): string {
                   <div class="pricing-card-top">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                       <div class="pricing-tier-label">FREE</div>
-                      <span style="font-size:0.7rem; font-weight:700; color:#64748b; background:#f1f5f9; padding:2px 8px; border-radius:12px;">Evaluation</span>
+                      <span style="font-size:0.7rem; font-weight:700; color:#64748b; background:#f1f5f9; padding:2px 8px; border-radius:12px;">Free trial</span>
                     </div>
                     <div class="pricing-price-block">
                       <span class="pricing-currency">$</span>
@@ -139,10 +138,10 @@ export function renderPricingPage(): string {
                     ${pricingFeature(true, 'CMS & site builder')}
                     ${pricingFeature(true, 'ZexCore subdomain')}
                     ${pricingFeature(true, '1 team user')}
+                    ${pricingFeature(true, '7-day activity history')}
                     ${pricingFeature(false, 'Custom domain')}
                     ${pricingFeature(false, 'CRM contact manager')}
                     ${pricingFeature(false, 'Appointment booking')}
-                    ${pricingFeature(false, 'Automation rules')}
                   </div>
                 </div>
               </div>
@@ -153,7 +152,7 @@ export function renderPricingPage(): string {
                   <div class="pricing-card-top">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                       <div class="pricing-tier-label">STARTER</div>
-                      <span style="font-size:0.7rem; font-weight:700; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:12px;">Solopreneurs</span>
+                      <span style="font-size:0.7rem; font-weight:700; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:12px;">Small business</span>
                     </div>
                     <div class="pricing-price-block">
                       <span class="pricing-currency">$</span>
@@ -179,9 +178,9 @@ export function renderPricingPage(): string {
                     ${pricingFeature(true, '3 team users')}
                     ${pricingFeature(true, 'Up to 1,000 contacts')}
                     ${pricingFeature(true, 'Lead stage pipeline tracking')}
+                    ${pricingFeature(true, '30-day activity history')}
                     ${pricingFeature(false, 'Client booking & appointments')}
                     ${pricingFeature(false, 'Automation event rules')}
-                    ${pricingFeature(false, 'SMS & Email fallbacks')}
                   </div>
                 </div>
               </div>
@@ -193,7 +192,7 @@ export function renderPricingPage(): string {
                   <div class="pricing-card-top" style="background:#fff7f8;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                       <div class="pricing-tier-label" style="color:var(--primary); font-weight:850;">GROWTH</div>
-                      <span style="font-size:0.7rem; font-weight:800; color:var(--primary); background:#fee2e2; padding:2px 8px; border-radius:12px; border:1px solid #fecaca;">Growing Teams</span>
+                      <span style="font-size:0.7rem; font-weight:800; color:var(--primary); background:#fee2e2; padding:2px 8px; border-radius:12px; border:1px solid #fecaca;">Growing business</span>
                     </div>
                     <div class="pricing-price-block">
                       <span class="pricing-currency" style="color:var(--text-main); font-weight:800;">$</span>
@@ -220,7 +219,7 @@ export function renderPricingPage(): string {
                     ${pricingFeature(true, 'SMS and Email notifications')}
                     ${pricingFeature(true, '10 team users')}
                     ${pricingFeature(true, '10,000 contacts')}
-                    ${pricingFeature(true, 'Audit Essentials included')}
+                    ${pricingFeature(true, 'Audit Essentials included (90 days)')}
                     ${pricingFeature(false, 'White-label multi-tenant branding')}
                   </div>
                 </div>
@@ -232,7 +231,7 @@ export function renderPricingPage(): string {
                   <div class="pricing-card-top">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                       <div class="pricing-tier-label">AGENCY</div>
-                      <span style="font-size:0.7rem; font-weight:700; color:#0369a1; background:#e0f2fe; padding:2px 8px; border-radius:12px;">Agencies &amp; Studios</span>
+                      <span style="font-size:0.7rem; font-weight:700; color:#0369a1; background:#e0f2fe; padding:2px 8px; border-radius:12px;">Agencies &amp; studios</span>
                     </div>
                     <div class="pricing-price-block">
                       <span class="pricing-currency">$</span>
@@ -244,7 +243,7 @@ export function renderPricingPage(): string {
 
                     <div style="background:#f8fafc; border:1px solid var(--border-default); border-radius:6px; padding:10px; margin-top:14px; font-size:0.75rem;">
                       <div style="font-weight:700; color:var(--text-secondary); margin-bottom:4px;">Main Limits:</div>
-                      <div style="color:var(--text-main); line-height:1.4;">Up to 25 client workspaces &bull; full white-label &bull; Audit Basic per workspace</div>
+                      <div style="color:var(--text-main); line-height:1.4;">Up to 25 client workspaces &bull; white-label &bull; Audit Essentials per workspace &bull; 25,000 contacts total</div>
                     </div>
 
                     <button class="btn btn-primary" style="width:100%; justify-content:center; margin-top:18px;" onclick="window.startStripeCheckout('agency')">
@@ -253,14 +252,14 @@ export function renderPricingPage(): string {
                   </div>
                   <div class="pricing-features-list">
                     <div class="pricing-feature-section-title">Included Features</div>
-                    ${pricingFeature(true, 'Everything in Growth')}
+                    ${pricingFeature(true, 'Growth features across client workspaces')}
                     ${pricingFeature(true, 'Up to 25 client workspaces')}
-                    ${pricingFeature(true, 'Complete white-label branding')}
-                    ${pricingFeature(true, 'Audit Basic per workspace')}
+                    ${pricingFeature(true, '25,000 contacts total (shared across workspaces)')}
+                    ${pricingFeature(true, 'Complete white-label branding & domains')}
+                    ${pricingFeature(true, 'Audit Essentials per workspace')}
                     ${pricingFeature(true, 'IoT Fleet & sensor telemetry hub')}
                     ${pricingFeature(true, 'Multi-tenant client switcher')}
                     ${pricingFeature(false, 'Enterprise SSO & custom SLA')}
-                    ${pricingFeature(false, 'Dedicated hardened instance')}
                   </div>
                 </div>
               </div>
@@ -271,7 +270,7 @@ export function renderPricingPage(): string {
                   <div class="pricing-card-top">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                       <div class="pricing-tier-label">ENTERPRISE</div>
-                      <span style="font-size:0.7rem; font-weight:700; color:#334155; background:#f1f5f9; padding:2px 8px; border-radius:12px;">High Volume</span>
+                      <span style="font-size:0.7rem; font-weight:700; color:#334155; background:#f1f5f9; padding:2px 8px; border-radius:12px;">Large organisations</span>
                     </div>
                     <div class="pricing-price-block">
                       <span style="font-size:0.9rem; font-weight:700; color:var(--text-secondary); margin-right:4px;">From</span>
@@ -294,13 +293,13 @@ export function renderPricingPage(): string {
                   <div class="pricing-features-list">
                     <div class="pricing-feature-section-title">Included Features</div>
                     ${pricingFeature(true, 'Unlimited users & team seats')}
-                    ${pricingFeature(true, 'Single Sign-On (SSO / SAML)')}
+                    ${pricingFeature(true, 'Single Sign-On (SSO: Okta, Azure, Google)')}
                     ${pricingFeature(true, '99.9% uptime SLA guarantee')}
                     ${pricingFeature(true, 'Priority 24/7 technical support')}
-                    ${pricingFeature(true, 'Audit Business package included')}
+                    ${pricingFeature(true, 'Audit Business (3-year retention & SIEM export)')}
+                    ${pricingFeature(true, 'Database encryption-at-rest & in-transit')}
                     ${pricingFeature(true, 'Custom rate limits & scale')}
                     ${pricingFeature(false, 'Dedicated physical HSM instance')}
-                    ${pricingFeature(false, 'Custom regulatory BAA agreements')}
                   </div>
                 </div>
               </div>
@@ -311,7 +310,7 @@ export function renderPricingPage(): string {
                   <div class="pricing-card-top" style="background:#fdf4ff;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                       <div class="pricing-tier-label" style="color:#86198f;">DEDICATED / REGULATED</div>
-                      <span style="font-size:0.7rem; font-weight:800; color:#86198f; background:#fae8ff; padding:2px 8px; border-radius:12px;">Sovereign Vault</span>
+                      <span style="font-size:0.7rem; font-weight:800; color:#86198f; background:#fae8ff; padding:2px 8px; border-radius:12px;">Regulated organisations</span>
                     </div>
                     <div class="pricing-price-block">
                       <span style="font-size:0.9rem; font-weight:700; color:var(--text-secondary); margin-right:4px;">From</span>
@@ -320,7 +319,7 @@ export function renderPricingPage(): string {
                       <span class="pricing-period">/ mo</span>
                     </div>
                     <div style="font-size:0.75rem; font-weight:700; color:var(--text-main); margin-top:8px;">Who it’s for:</div>
-                    <p class="pricing-desc" style="margin-top:2px;">Clinics, medical facilities, and compliance-heavy sovereign clients.</p>
+                    <p class="pricing-desc" style="margin-top:2px;">Clinics, hospitals, and compliance-heavy sovereign clients.</p>
 
                     <div style="background:#fff; border:1px solid #f5d0fe; border-radius:6px; padding:10px; margin-top:14px; font-size:0.75rem;">
                       <div style="font-weight:700; color:#86198f; margin-bottom:4px;">Main Limits:</div>
@@ -333,13 +332,13 @@ export function renderPricingPage(): string {
                   </div>
                   <div class="pricing-features-list">
                     <div class="pricing-feature-section-title">Included Features</div>
-                    ${pricingFeature(true, 'Dedicated cloud instance')}
+                    ${pricingFeature(true, 'Dedicated single-tenant cloud instance')}
                     ${pricingFeature(true, 'Hardened infrastructure tier')}
-                    ${pricingFeature(true, 'AES-256-GCM field encryption')}
+                    ${pricingFeature(true, 'Field-level AES-256-GCM encryption')}
                     ${pricingFeature(true, 'HMAC blind index query engine')}
-                    ${pricingFeature(true, 'GDPR Article 17 Erasure Vault')}
-                    ${pricingFeature(true, 'NDPR / HIPAA compliance readiness')}
-                    ${pricingFeature(true, 'Signed agreements (BAA & DPA)')}
+                    ${pricingFeature(true, 'Data deletion tools (Cryptographic PII erasure)')}
+                    ${pricingFeature(true, 'Cryptographic audit ledger (append-only)')}
+                    ${pricingFeature(true, 'Signed agreements (BAA, DPA & custom SLA)')}
                     ${pricingFeature(true, 'Dedicated compliance engineer')}
                   </div>
                 </div>
@@ -354,8 +353,8 @@ export function renderPricingPage(): string {
           <div class="site-container">
             <div class="section-header-block" style="text-align:center; margin-bottom:36px;">
               <div class="section-eyebrow">DETAILED PLATFORM MATRIX</div>
-              <h2 class="section-title">Compare All 6 ZexCore Tiers</h2>
-              <p class="section-desc" style="max-width:680px; margin:0 auto;">Technical capabilities, capacity limits, and operational commitments side-by-side.</p>
+              <h2 class="section-title">Compare plans</h2>
+              <p class="section-desc" style="max-width:680px; margin:0 auto;">Technical capabilities and limits side-by-side.</p>
             </div>
             <div class="table-container-card" style="overflow-x:auto; background:#fff; border:1.5px solid var(--border-default); border-radius:var(--radius-lg); box-shadow:0 4px 16px rgba(0,0,0,0.04);">
               <table class="comparison-table" style="width:100%; border-collapse:collapse; min-width:880px;">
@@ -374,13 +373,14 @@ export function renderPricingPage(): string {
                   ${compSection('OVERVIEW & PRICING')}
                   ${compRow6('Monthly Price', '$0', '$19', '$49', '$149', 'From $499', 'From $1,500')}
                   ${compRow6('Yearly Price (Save 2 Mo)', '$0', '$190/yr', '$490/yr', '$1,490/yr', 'From $4,990/yr', 'From $15,000/yr')}
-                  ${compRow6('Target User', 'Trying it out', 'Small business', 'Growing business', 'Agencies & Studios', 'Large orgs', 'Clinics & regulated')}
+                  ${compRow6('Target User', 'Trying it out', 'Small business', 'Growing business', 'Agencies & studios', 'Large orgs', 'Clinics & regulated')}
 
                   ${compSection('CAPACITY & WORKSPACES')}
                   ${compRow6('Workspaces / Tenancy', '1 workspace', '1 workspace', '1 workspace', 'Up to 25 workspaces', 'Custom limits', 'Dedicated instance')}
                   ${compRow6('Team Users', '1 user', '3 users', '10 users', 'Unlimited', 'Unlimited', 'Unlimited')}
-                  ${compRow6('Contact Capacity', '—', '1,000 contacts', '10,000 contacts', '25,000 contacts', 'Custom limits', 'Unlimited')}
-                  ${compRow6('Custom Domains', 'ZexCore subdomain', '1 custom domain', 'Custom domain', 'White-label domains', 'Multi-domain SSO', 'Isolated VPC / Domain')}
+                  ${compRow6('Contact Capacity', '—', '1,000 contacts', '10,000 contacts', '25,000 contacts total', 'Custom limits', 'Unlimited')}
+                  ${compRow6('Custom Domains', 'ZexCore subdomain', '1 custom domain', '1 custom domain', 'Up to 25 custom domains', 'Unlimited custom domains', 'Isolated VPC / Domain')}
+                  ${compRow6('Single Sign-On (SSO)', false, false, false, false, 'Google, Okta, Azure AD (SAML)', 'Dedicated IdP isolation & SAML')}
 
                   ${compSection('CORE MODULES & FEATURES')}
                   ${compRow6('CMS & Site Builder', true, true, true, true, true, true)}
@@ -391,35 +391,40 @@ export function renderPricingPage(): string {
                   ${compRow6('IoT Fleet Telemetry Hub', false, false, false, true, true, true)}
                   ${compRow6('White-Label Branding', false, false, false, true, true, true)}
 
-                  ${compSection('SECURITY, AUDIT & COMPLIANCE')}
-                  ${compRow6('Audit Package Level', 'Basic logs', 'Basic audit', 'Audit Essentials', 'Audit Basic (per ws)', 'Audit Business', 'Full Cryptographic Vault')}
-                  ${compRow6('Field-Level AES-256 Encryption', false, false, false, false, true, true)}
+                  ${compSection('SECURITY, AUDIT & DATA PRIVACY')}
+                  ${compRow6('Audit Level', '7-day activity log', '30-day activity log', 'Audit Essentials (90 days)', 'Audit Essentials (per ws)', 'Audit Business (3 years & SIEM)', 'Cryptographic audit ledger')}
+                  ${compRow6('Field-Level AES-256 Encryption', false, false, false, false, false, '✓ (AES-256-GCM field level)')}
                   ${compRow6('HMAC Blind Index Queries', false, false, false, false, false, true)}
-                  ${compRow6('GDPR Art. 17 Key Erasure Vault', false, false, false, false, false, true)}
+                  ${compRow6('Data Deletion Tools', 'Standard delete', 'Standard delete', 'Standard delete & redaction', 'Workspace-level deletion tools', 'Role-gated deletion with audit trace', '✓ Cryptographic PII erasure & ledger proof')}
                   ${compRow6('Dedicated Cloud Instance', false, false, false, false, false, true)}
                   ${compRow6('Hardened Infrastructure Tier', false, false, false, false, false, true)}
-                  ${compRow6('SSO & SAML Integration', false, false, false, false, true, true)}
-                  ${compRow6('SLA & Signed Agreements', 'Community', 'Standard email', '48h email SLA', '24h priority SLA', '99.9% uptime SLA', 'Signed BAA, DPA & custom SLA')}
+                  ${compRow6('SLA & Support', 'Community', 'Standard email', '48h email SLA', '24h priority SLA', '99.9% uptime SLA', 'Signed BAA, DPA & custom SLA')}
                 </tbody>
               </table>
             </div>
           </div>
         </section>
 
-        <!-- FAQ -->
+        <!-- PLANS AND BILLING FAQ -->
         <section class="section-white section-padded" style="padding:70px 0;">
           <div class="site-container">
             <div class="section-header-block" style="text-align:center; margin-bottom:36px;">
-              <div class="section-eyebrow">FREQUENTLY ASKED</div>
-              <h2 class="section-title">Licensing Questions Answered</h2>
+              <div class="section-eyebrow">HELP &amp; POLICIES</div>
+              <h2 class="section-title">Plans and billing</h2>
             </div>
             <div class="faq-grid">
-              ${faqItem('Can I start on the Free plan and upgrade later?', 'Yes! You can explore ZexCore on the Free plan with 1 workspace and CMS site builder. As soon as you need custom domains, CRM contacts, or automated bookings, you can upgrade instantly with zero downtime.')}
+              ${faqItem('What counts as a user?', 'A user is anyone you invite with login access to your workspace (administrators, operators, agents, clinical staff). Customers who visit your site, book appointments, or communicate via WhatsApp/SMS do not count toward your user limit.')}
+              ${faqItem('What counts as a workspace?', 'A workspace is an isolated environment with its own database records, users, domains, and settings. On the Agency plan, you can create up to 25 separate workspaces for independent clients.')}
+              ${faqItem('What happens if I exceed my limits?', 'You will receive an in-app notice when your workspace reaches 90% of contact or user limits. If you reach the limit, existing client bookings, CRM data, and workflows continue to function normally, but adding new contacts or users will prompt an upgrade. We do not charge surprise overage fees.')}
+              ${faqItem('Can I cancel anytime?', 'Yes. You can cancel your subscription from your billing settings at any time. Your workspace remains fully active until the end of your prepaid billing period, and no further charges will be made.')}
+              ${faqItem('Can I export my data?', 'Yes. You retain full ownership of your data. You can export contacts, deals, bookings, rules, and audit logs at any time in standard CSV and JSON formats.')}
+              ${faqItem('What is your refund policy?', 'We do not offer refunds for partial subscription periods or unused time once billed. You can evaluate ZexCore on the Free plan or start on monthly billing before committing to an annual plan.')}
+              ${faqItem('Are taxes included in the displayed price?', 'Displayed prices exclude local sales taxes, VAT, or GST. Where required by law, applicable VAT is calculated and displayed at checkout based on your country and tax registration.')}
+              ${faqItem('What payment methods are supported?', 'For Nigerian clients (NGN), we accept Bank Transfer (via dedicated virtual accounts), USSD, and Nigerian Debit/Credit Cards (Verve, Mastercard, Visa) through Paystack. For international clients, we accept Visa, Mastercard, and American Express through Stripe. Mobile Money (M-Pesa, MTN, Airtel) is supported in Kenya, Ghana, and Côte d’Ivoire via Flutterwave.')}
               ${faqItem('How does the yearly discount work?', 'Choosing annual billing gives you 2 full months free. For example, Starter is $190/year (instead of $228), and Growth is $490/year (instead of $588).')}
-              ${faqItem('What does Audit Essentials include on the Growth tier?', 'Audit Essentials provides immutable cryptographic audit logs for user logins, appointment bookings, rule executions, and deal stage transitions, ensuring complete accountability.')}
-              ${faqItem('How does Agency multi-workspace licensing work?', 'The Agency tier permits you to host up to 25 independent client workspaces with custom domains, full white-label branding, and dedicated Audit Basic logs for each client.')}
-              ${faqItem('Why choose Dedicated / Regulated for healthcare and clinics?', 'The Dedicated / Regulated tier isolates your database on a single-tenant hardened instance with field-level AES-256-GCM encryption, blind indexing, and signed compliance agreements (BAA, NDPR, GDPR Article 17 erasure).')}
-              ${faqItem('Can I pay via local payment methods?', 'Yes. Our checkout supports global credit/debit cards via Stripe, as well as instant Bank Transfer, USSD, and Mobile Money via Paystack and Flutterwave.')}
+              ${faqItem('What do the different audit levels include?', '<strong>7-day / 30-day activity logs:</strong> Recent user logins and record change timestamps.<br /><strong>Audit Essentials:</strong> 90-day immutable event trail for auth events, bookings, automation rule executions, and deal movements.<br /><strong>Audit Business:</strong> 3-year compliance retention with webhook streaming to SIEM tools (Splunk, Datadog).<br /><strong>Cryptographic Audit Ledger:</strong> Tamper-evident hash-chained append-only ledger with mathematical HMAC proof of non-repudiation.')}
+              ${faqItem('How do data deletion tools work alongside an append-only audit log?', 'When data deletion is executed under GDPR Article 17 or NDPR, personal identifiable information (PII) in the database is cryptographically shredded or overwritten with redaction tokens (e.g. <code>[REDACTED]</code>). The append-only audit log records the <em>erasure event itself</em>—including who authorized it and a timestamp hash—without retaining any deleted personal data. This satisfies data subject erasure rights while preserving tamper-evident regulatory integrity.')}
+              ${faqItem('How does upgrading work?', 'Upgrading applies new plan limits immediately to your workspace. Your existing active sessions and scheduled appointments continue without interruption.')}
             </div>
           </div>
         </section>
