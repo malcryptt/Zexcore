@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "zexcore-5d6c0",
     "public": "apps/dashboard/dist",
     "ignore": [
       "firebase.json",
