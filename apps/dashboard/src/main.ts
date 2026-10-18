@@ -303,6 +303,602 @@ function renderWithSoftPaywall(tabId: string, currentPlan: PlanTier, innerConten
   `;
 }
 
+// ── In-Page Tier-Locked Feature Card Helper ──────────────────────────────────
+function renderTierFeatureLock(
+  minPlan: PlanTier,
+  title: string,
+  desc: string,
+  currentPlan: PlanTier,
+  innerPreviewHtml: string
+): string {
+  const planOrder: PlanTier[] = ['starter', 'indie', 'growth', 'scale', 'enterprise'];
+  const isUnlocked = planOrder.indexOf(currentPlan) >= planOrder.indexOf(minPlan);
+
+  if (isUnlocked) {
+    return `
+      <div class="tier-feature-card">
+        <div class="tier-feature-header">
+          <div>
+            <span class="tier-badge-pill ${minPlan}">${minPlan.toUpperCase()} CAPABILITY UNLOCKED</span>
+            <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); margin: 6px 0 2px 0;">${title}</h4>
+            <div style="font-size: 0.78rem; color: var(--text-muted);">${desc}</div>
+          </div>
+        </div>
+        ${innerPreviewHtml}
+      </div>
+    `;
+  }
+
+  const minMeta = PLANS[minPlan] || PLANS.growth;
+  return `
+    <div class="tier-feature-card locked">
+      <div class="tier-feature-header">
+        <div>
+          <span class="tier-badge-pill ${minPlan}">REQUIRES ${minPlan.toUpperCase()} TIER</span>
+          <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); margin: 6px 0 2px 0;">${title}</h4>
+          <div style="font-size: 0.78rem; color: var(--text-muted);">${desc}</div>
+        </div>
+      </div>
+      <div style="filter: blur(4px) opacity(0.35); pointer-events: none; user-select: none;">
+        ${innerPreviewHtml}
+      </div>
+      <div class="tier-lock-overlay">
+        <div class="tier-lock-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <div class="tier-lock-title">${title}</div>
+        <div class="tier-lock-desc">${desc}</div>
+        <button class="btn btn-primary btn-sm btn-paywall-upgrade" data-paywall-upgrade="${minPlan}" style="padding: 9px 20px; font-weight: 700;">
+          Unlock ${minMeta.name} &rarr; ($${minMeta.monthlyPrice}/mo)
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+// ── 1. Console View: System Overview ─────────────────────────────────────────
+function renderConsoleOverviewView(currentPlan: PlanTier): string {
+  return `
+    <div class="console-page-wrapper" id="page-console-overview">
+      <div class="console-page-toolbar">
+        <div>
+          <h2 class="page-title" style="margin: 0; font-size: 1.35rem; font-weight: 850;">Platform Operations Overview</h2>
+          <div class="page-desc" style="margin-top: 2px;">Runtime health, active module metrics, and cross-module event bus ledger</div>
+        </div>
+        <div class="console-toolbar-actions">
+          <button class="btn btn-secondary btn-sm" id="btn-download-all-data" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; padding: 7px 14px; background: #ffffff; border: 1.5px solid #d1d5db; color: #1e293b; border-radius: var(--radius-sm); box-shadow: 0 1px 3px rgba(0,0,0,0.05); cursor: pointer;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Download All My Data (JSON)
+          </button>
+        </div>
+      </div>
+
+      <!-- "Great First Ten Minutes" Onboarding Strip / Starters -->
+      ${renderOnboardingBanner(state.onboarding)}
+
+      <div class="grid-4">
+        <div class="stat-box">
+          <div class="stat-label">Platform Health</div>
+          <div style="margin: 8px 0 4px 0;">
+            <span class="badge" style="background: #ECFDF5; color: #168447; border: 1px solid #A7F3D0; font-size: 0.95rem; font-weight: 700; padding: 4px 12px; border-radius: 9999px;">Operational</span>
+          </div>
+          <div class="stat-subtext" style="color: var(--text-muted); font-size: 0.72rem;">Micro-kernel &amp; 5 modules &bull; 99.99% Uptime</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Fleet Nodes</div>
+          <div class="stat-value" id="stat-online-devices">${state.devices.filter(d => d.status === 'online').length} / ${state.devices.length}</div>
+          <div class="stat-subtext" style="color: #168447; font-weight: 600;">&bull; Connected &bull; Token-Auth</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Rules Evaluated</div>
+          <div class="stat-value">1,428</div>
+          <div class="stat-subtext" style="color: #0284c7; font-weight: 600;">Sub-millisecond AST</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Pipeline Value</div>
+          <div class="stat-value" id="stat-total-pipeline" style="color: #E50920; font-weight: 800;">$${state.leads.reduce((a, b) => a + b.value, 0).toLocaleString()}</div>
+          <div class="stat-subtext" style="color: var(--text-muted); font-size: 0.72rem;">Active multi-tenant pipeline</div>
+        </div>
+      </div>
+
+      <!-- Middle Row: Multi-Tenant Isolation Diagram + Quick Operations -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header" style="margin-bottom: 12px;">
+            <div>
+              <div class="card-title">Sovereign Multi-Tenant Isolation</div>
+              <div class="card-subtitle">Zero data leakage enforced mathematically via PostgreSQL 17 Session RLS</div>
+            </div>
+          </div>
+          <div class="console-tenant-diagram-wrap">
+            <div class="console-tenant-diagram">
+              <svg class="console-tenant-svg-lines" viewBox="0 0 440 160">
+                <line x1="80" y1="30" x2="170" y2="80" stroke="#E1E5EA" stroke-width="2" stroke-dasharray="3 3"/>
+                <line x1="360" y1="30" x2="270" y2="80" stroke="#E1E5EA" stroke-width="2" stroke-dasharray="3 3"/>
+                <line x1="80" y1="130" x2="170" y2="80" stroke="#E1E5EA" stroke-width="2" stroke-dasharray="3 3"/>
+                <line x1="360" y1="130" x2="270" y2="80" stroke="#E1E5EA" stroke-width="2" stroke-dasharray="3 3"/>
+              </svg>
+              <div class="console-tenant-node node-a">${state.activeTenant === 'acme_corp' ? 'Acme (Active)' : 'Tenant A'}</div>
+              <div class="console-tenant-node node-b">${state.activeTenant === 'globex_corp' ? 'Globex (Active)' : 'Tenant B'}</div>
+              <div class="console-tenant-node node-c">${state.activeTenant === 'soylent_ind' ? 'Soylent (Active)' : 'Tenant C'}</div>
+              <div class="console-tenant-node node-d">Tenant D (Isolated)</div>
+              <div class="console-core-center">
+                <img src="/zexcore-logo-icon.png" alt="ZexCore" class="console-core-logo" />
+                <span class="console-core-text">ZexCore Kernel</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Operations -->
+        <div class="card">
+          <div class="card-header" style="margin-bottom: 12px;">
+            <div>
+              <div class="card-title">Quick Operational Actions</div>
+              <div class="card-subtitle">Dispatch verified cross-module actions across isolated engines</div>
+            </div>
+          </div>
+          <div class="console-quick-op-list">
+            <button class="console-quick-op-btn" id="btn-quick-reg-device">
+              <span class="console-quick-op-icon">&oplus;</span>
+              <span>Register Edge Device</span>
+            </button>
+            <button class="console-quick-op-btn" id="btn-quick-telemetry">
+              <span class="console-quick-op-icon">&oplus;</span>
+              <span>Ingest IoT Reading</span>
+            </button>
+            <button class="console-quick-op-btn" id="btn-quick-lead">
+              <span class="console-quick-op-icon">&oplus;</span>
+              <span>Create Opportunity</span>
+            </button>
+            <button class="console-quick-op-btn" id="btn-quick-eval-rule">
+              <span class="console-quick-op-icon">&oplus;</span>
+              <span>Evaluate Rule</span>
+            </button>
+            <button class="console-quick-op-btn" id="btn-quick-view-audit">
+              <span class="console-quick-op-icon">&oplus;</span>
+              <span>View Audit Event</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Advanced Tier Feature: Enterprise SIEM Forwarding Mesh -->
+      ${renderTierFeatureLock(
+        'growth',
+        'Real-Time SIEM Webhook Relay & Syslog RFC 5424 Streaming',
+        'Stream append-only tenant audit events with HMAC-SHA256 payload signing directly to Splunk HEC, Datadog Logs, AWS CloudWatch, or custom SIEM collectors.',
+        currentPlan,
+        `
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 14px; align-items: flex-end;">
+          <div>
+            <label style="font-size: 0.76rem; font-weight: 600; color: var(--text-secondary);">Webhook Destination Endpoint</label>
+            <input type="text" class="input" id="siem-endpoint-input" value="https://siem-collector.enterprise.corp/events/v1" style="margin-top: 4px;" />
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-primary btn-sm" onclick="window.dispatchSiemTestWebhook()" style="flex: 1; padding: 8px 14px;">
+              Dispatch Test SIEM Heartbeat
+            </button>
+          </div>
+        </div>
+        <div style="margin-top: 10px; font-size: 0.74rem; color: #16a34a; font-family: var(--font-mono); display: flex; align-items: center; gap: 6px;">
+          <span>● mTLS Mutual Auth Verified</span> &bull;
+          <span>Payload Signing: HMAC-SHA256 Active</span>
+        </div>
+        `
+      )}
+
+      <!-- Event Bus Live Log -->
+      <div class="terminal-box">
+        <div class="terminal-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span>Core EventBus Real-Time Stream</span>
+            <span style="font-size: 0.7rem; font-family: var(--font-mono); color: #94a3b8;">Asynchronous Append-Only Broker</span>
+          </div>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <span style="font-size: 0.68rem; color: #cbd5e1; text-transform: uppercase; font-weight: 700; margin-right: 2px;">SIEM Export:</span>
+            <button class="btn btn-xs" id="btn-export-siem-json" style="font-size: 0.68rem; padding: 3px 8px; border: 1px solid rgba(255,255,255,0.25); color: #ffffff; background: rgba(255,255,255,0.1); border-radius: 4px; cursor: pointer;">NDJSON</button>
+            <button class="btn btn-xs" id="btn-export-siem-csv" style="font-size: 0.68rem; padding: 3px 8px; border: 1px solid rgba(255,255,255,0.25); color: #ffffff; background: rgba(255,255,255,0.1); border-radius: 4px; cursor: pointer;">CSV Audit</button>
+          </div>
+        </div>
+        <div class="terminal-content" id="event-stream-body"></div>
+      </div>
+    </div>
+  `;
+}
+
+// ── 2. Console View: IoT Device Fleet ─────────────────────────────────────────
+function renderConsoleIotView(currentPlan: PlanTier): string {
+  const innerIot = `
+    <div class="console-page-wrapper" id="page-console-iot">
+      <div class="console-page-toolbar">
+        <div>
+          <h2 class="page-title" style="margin: 0; font-size: 1.35rem; font-weight: 850;">IoT Device Fleet &amp; Telemetry Hub</h2>
+          <div class="page-desc" style="margin-top: 2px;">Sub-second sensor streams, hardware token rotation, remote diagnostic shell, and edge health thresholds</div>
+        </div>
+        <div class="console-toolbar-actions">
+          <button class="btn btn-secondary btn-sm" onclick="window.rotateAllDeviceTokens()">Rotate All Device Keys</button>
+          <button class="btn btn-primary" id="btn-open-register-device">+ Register Edge Device</button>
+        </div>
+      </div>
+
+      <!-- Telemetry Stream Oscilloscope / Sparklines -->
+      <div class="telemetry-oscilloscope-wrap">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <span style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: #10b981; display: flex; align-items: center; gap: 6px;">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+            LIVE FLEET TELEMETRY WAVEFORM (0.5s JITTER MONITOR)
+          </span>
+          <span style="font-family: var(--font-mono); font-size: 0.72rem; color: #64748b;">Protocol: MQTT over TLS 1.3 / WSS</span>
+        </div>
+        <div class="oscilloscope-grid">
+          <div class="oscilloscope-metric-card">
+            <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Avg Fleet Temp</div>
+            <div class="oscilloscope-metric-val" style="color: #38bdf8;">41.8 &deg;C</div>
+            <div style="font-size: 0.7rem; color: #10b981;">● Nominal &bull; Threshold &le; 75.0&deg;C</div>
+          </div>
+          <div class="oscilloscope-metric-card">
+            <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Relative Humidity</div>
+            <div class="oscilloscope-metric-val" style="color: #a78bfa;">52 %</div>
+            <div style="font-size: 0.7rem; color: #10b981;">● Nominal &bull; Threshold &le; 80%</div>
+          </div>
+          <div class="oscilloscope-metric-card">
+            <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">DC Rail Voltage</div>
+            <div class="oscilloscope-metric-val" style="color: #f59e0b;">24.2 V</div>
+            <div style="font-size: 0.7rem; color: #10b981;">● Regulated &bull; Tolerance &plusmn;0.5V</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Device Fleet Table -->
+      <div class="device-table-card">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Device Name &amp; Key</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Temperature</th>
+              <th>Humidity</th>
+              <th>Voltage</th>
+              <th>Firmware</th>
+              <th>Last Seen</th>
+              <th style="text-align: right;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="device-table-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Advanced Feature 1: Remote Diagnostic Command Dispatcher (Requires Growth+) -->
+      ${renderTierFeatureLock(
+        'growth',
+        'Remote Diagnostic Shell & Cryptographic Command Dispatcher',
+        'Dispatch authenticated remote commands directly to edge microcontrollers (ESP32, STM32, ARM Cortex-M) over MQTT/WSS with tenant HMAC signatures.',
+        currentPlan,
+        `
+        <div class="edge-shell-terminal">
+          <div class="edge-shell-log" id="edge-shell-output">
+            <div><span class="edge-shell-prompt">[zex-edge-shell]</span> Connected to edge broker: tls://edge.zexcore.io:8883</div>
+            <div><span class="edge-shell-prompt">[zex-edge-shell]</span> Authenticated as tenant: ${state.activeTenant} (HMAC-SHA256 verified)</div>
+            <div><span class="edge-shell-prompt">[zex-edge-shell]</span> Ready for authenticated remote instruction dispatch.</div>
+          </div>
+          <div class="edge-shell-input-row">
+            <select id="shell-device-select" class="tenant-select" style="max-width: 160px; font-size: 0.75rem; background: #1e293b; color: #fff; border-color: #334155;">
+              ${state.devices.map(d => `<option value="${d.id}">${d.name}</option>`).join('')}
+            </select>
+            <select id="shell-cmd-select" class="tenant-select" style="max-width: 220px; font-size: 0.75rem; background: #1e293b; color: #fff; border-color: #334155;">
+              <option value="reboot">EXEC sys.reboot()</option>
+              <option value="calibrate">EXEC sensor.calibrate_baseline()</option>
+              <option value="rollback">EXEC ota.rollback_firmware(v2.2.0)</option>
+              <option value="cutoff">EXEC power.emergency_cutoff()</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="window.dispatchEdgeCommand()" style="padding: 6px 14px; font-size: 0.78rem;">
+              Dispatch Signed Command
+            </button>
+          </div>
+        </div>
+        `
+      )}
+
+      <!-- Advanced Feature 2: Hardware Root-of-Trust / TPM 2.0 (Requires Enterprise) -->
+      ${renderTierFeatureLock(
+        'enterprise',
+        'Hardware Root-of-Trust & TPM 2.0 Mutual Attestation',
+        'Enforce mTLS mutual cryptographic handshakes and X.509 TPM endorsement verification before edge devices are permitted to push telemetry into the PostgreSQL tenant pool.',
+        currentPlan,
+        `
+        <div style="background: #f8fafc; border: 1px solid var(--border-default); border-radius: 6px; padding: 14px; font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.6;">
+          <div style="color: #16a34a; font-weight: 700;">✓ Hardware TPM 2.0 Endorsement Enclave Active</div>
+          <div style="color: #475569;">Root Certificate Authority: ZexCore Global Edge Hardware CA (X.509 v3)</div>
+          <div style="color: #475569;">Attested Nodes: 12 / 12 &bull; Key Storage: Microchip ATECC608A Cryptographic Co-Processor</div>
+        </div>
+        `
+      )}
+    </div>
+  `;
+
+  return renderWithSoftPaywall('iot', currentPlan, innerIot);
+}
+
+// ── 3. Console View: Rules & AI Studio ────────────────────────────────────────
+function renderConsoleRulesView(currentPlan: PlanTier): string {
+  return `
+    <div class="console-page-wrapper" id="page-console-rules">
+      <div class="console-page-toolbar">
+        <div>
+          <h2 class="page-title" style="margin: 0; font-size: 1.35rem; font-weight: 850;">Deterministic Automation Rules &amp; AI Authoring</h2>
+          <div class="page-desc" style="margin-top: 2px;">AI synthesizes JSON AST proposals; deterministic engine runs approved rules with zero eval()</div>
+        </div>
+      </div>
+
+      <!-- AI Authoring Panel -->
+      <div class="prompt-panel">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+          <span style="font-weight: 700; font-size: 0.92rem; color: var(--text-main);">
+            AI Rule Synthesis Console (Google Gemini Validation Loop)
+          </span>
+          <span style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--text-secondary); background: var(--bg-muted); padding: 2px 8px; border-radius: var(--radius-xs);">
+            POST /api/rules/ai-draft
+          </span>
+        </div>
+        <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 12px;">
+          Describe an automation intent in plain English. The AI generates a validated RuleDraft JSON conforming to strict Zod schema with approved=false.
+        </p>
+        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+          <input type="text" class="input" id="ai-rule-prompt" value="Notify operations if temperature exceeds 75°C for 3 consecutive readings" />
+          <button class="btn btn-primary" id="btn-generate-ai-rule">Synthesize Rule</button>
+        </div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <button class="btn btn-secondary btn-sm" onclick="setAiPrompt('Alert sales VP when a CRM deal over $100k is closed won')">Deal Won Alert</button>
+          <button class="btn btn-secondary btn-sm" onclick="setAiPrompt('When IoT battery level falls below 15% queue recharge command')">Battery Low Command</button>
+          <button class="btn btn-secondary btn-sm" onclick="setAiPrompt('If customer revokes GDPR consent anonymize personal data immediately')">Consent Erasure</button>
+          <button class="btn btn-secondary btn-sm" onclick="setAiPrompt('If pressure exceeds 180 PSI trigger emergency cutoff valve')">Pressure Threshold</button>
+        </div>
+
+        <!-- Output AST Preview -->
+        <div id="ai-rule-preview" style="display: none; margin-top: 16px; border-top: 1px solid var(--border-default); padding-top: 14px;">
+          <div style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">
+            Validated Rule Draft AST (Awaiting Human Approval Gate):
+          </div>
+          <pre class="code-block" id="ai-rule-json"></pre>
+          <div style="margin-top: 12px; display: flex; gap: 8px;">
+            <button class="btn btn-primary btn-sm" id="btn-approve-ai-draft">Approve &amp; Deploy Rule (Human Gate)</button>
+            <button class="btn btn-secondary btn-sm" id="btn-discard-ai-draft">Discard Draft</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Existing Rules Table -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Active &amp; Draft Automation Rules</div>
+          <div class="card-subtitle">Zero-eval() execution engine evaluated inside isolated PostgreSQL transaction blocks</div>
+        </div>
+        <div id="rules-list-container" style="display: flex; flex-direction: column; gap: 10px;"></div>
+      </div>
+
+      <!-- Advanced Feature 1: AI Rule Conflict & Loop Detection Engine (Requires Growth+) -->
+      ${renderTierFeatureLock(
+        'growth',
+        'AI Rule Conflict & Recursive Loop Detector',
+        'Analyzes rules across the tenant mesh to identify circular trigger cascades, contradicting actions, or rate-limit saturation before rules enter production.',
+        currentPlan,
+        `
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; background: #f8fafc; padding: 14px; border-radius: 6px; border: 1px solid var(--border-default);">
+          <div>
+            <div style="font-weight: 700; color: #1e293b; font-size: 0.88rem;">Mesh Static Analysis: 0 Cycles Detected</div>
+            <div style="font-size: 0.75rem; color: #64748b; margin-top: 2px;">Evaluated across 4 active rules &amp; 3 event triggers.</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="window.runConflictAnalysis()">
+            Run Mesh Conflict Analysis
+          </button>
+        </div>
+        `
+      )}
+
+      <!-- Advanced Feature 2: Dual-Operator Cryptographic Sign-Off Gate (Requires Scale+) -->
+      ${renderTierFeatureLock(
+        'scale',
+        'Dual-Operator Cryptographic Sign-Off Gate (Multi-Sig)',
+        'Requires two independent operators (SecOps Officer + Lead Automation Engineer) to digitally sign AI-generated rule deployments using tenant HMAC keys.',
+        currentPlan,
+        `
+        <div class="multi-sign-pipeline">
+          <div class="multi-sign-step signed">
+            <div style="font-size: 0.72rem; color: #15803d; font-weight: 800;">STEP 1: SECOPS SIGNED</div>
+            <div style="font-weight: 700; font-size: 0.85rem; margin: 4px 0;">secops@enterprise-corp.io</div>
+            <div style="font-family: var(--font-mono); font-size: 0.7rem; color: #64748b;">sig:hmac_sha256:7f4c9a2...</div>
+          </div>
+          <div class="multi-sign-step" id="multisig-step-2">
+            <div style="font-size: 0.72rem; color: #0284c7; font-weight: 800;">STEP 2: OPS LEAD SIGN-OFF</div>
+            <div style="font-weight: 700; font-size: 0.85rem; margin: 4px 0;">lead-engineer@enterprise-corp.io</div>
+            <button class="btn btn-primary btn-xs" onclick="window.signRuleOpsLead()" style="margin-top: 4px;">Digitally Sign &amp; Deploy Rule</button>
+          </div>
+        </div>
+        `
+      )}
+
+      <!-- Advanced Feature 3: Dead-Letter Queue & Circuit Breakers (Requires Enterprise) -->
+      ${renderTierFeatureLock(
+        'enterprise',
+        'Dead-Letter Queue (DLQ) & Automated Circuit Breaker Mesh',
+        'Automatic quarantine of flapping rules with exponential backoff and replay buffer.',
+        currentPlan,
+        `
+        <div style="background: #f8fafc; border: 1px solid var(--border-default); border-radius: 6px; padding: 14px; font-family: var(--font-mono); font-size: 0.78rem; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <span style="color: #16a34a; font-weight: 700;">● Circuit Breaker Status: CLOSED (Normal)</span>
+            <div style="color: #64748b; margin-top: 2px;">DLQ Quarantine Buffer: 0 failed executions</div>
+          </div>
+          <span style="background: #e2e8f0; color: #334155; padding: 3px 8px; border-radius: 4px;">Zero-Loss Replay Ready</span>
+        </div>
+        `
+      )}
+    </div>
+  `;
+}
+
+// ── 4. Console View: CRM & Pipeline ──────────────────────────────────────────
+function renderConsoleCrmView(currentPlan: PlanTier): string {
+  const innerCrm = `
+    <div class="console-page-wrapper" id="page-console-crm">
+      <div class="console-page-toolbar">
+        <div>
+          <h2 class="page-title" style="margin: 0; font-size: 1.35rem; font-weight: 850;">Multi-Channel CRM, Inbox &amp; Bookings</h2>
+          <div class="page-desc" style="margin-top: 2px;">WhatsApp-first inbox, automated appointment reminders, Paystack deposits, and pipeline Kanban</div>
+        </div>
+        <div class="console-toolbar-actions">
+          <button class="btn btn-primary" id="btn-add-lead">+ Create Opportunity</button>
+        </div>
+      </div>
+
+      <!-- CRM Sub-navigation Tabs -->
+      <div style="display: flex; gap: 8px; border-bottom: 2px solid var(--border-default); padding-bottom: 10px; flex-wrap: wrap;">
+        <button class="btn ${state.crmSubView === 'whatsapp' ? 'btn-primary' : 'btn-secondary'} btn-sm" id="btn-crm-nav-whatsapp" style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Inbox &amp; Channels
+        </button>
+        <button class="btn ${state.crmSubView === 'kanban' ? 'btn-primary' : 'btn-secondary'} btn-sm" id="btn-crm-nav-kanban" style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Deals Pipeline
+        </button>
+        <button class="btn ${state.crmSubView === 'booking' ? 'btn-primary' : 'btn-secondary'} btn-sm" id="btn-crm-nav-booking" style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Bookings
+        </button>
+      </div>
+
+      <div id="crm-content-view"></div>
+
+      <!-- Advanced Feature 1: Automated WhatsApp Drip Sequences (Requires Scale+) -->
+      ${renderTierFeatureLock(
+        'scale',
+        'Automated WhatsApp Drip Sequences & AI Sentiment Scoring',
+        'Trigger personalized multi-stage WhatsApp messaging sequences based on deal stage transitions with real-time sentiment scoring.',
+        currentPlan,
+        `
+        <div style="background: #f8fafc; border: 1px solid var(--border-default); border-radius: 6px; padding: 14px; font-size: 0.8rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <div style="font-weight: 700; color: #1e293b;">Active Drip Workflows: 3 Running</div>
+            <div style="color: #64748b; font-size: 0.74rem;">Cold Lead Re-engagement &bull; Deposit Reminder &bull; Post-Demo Survey</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="window.triggerDripSequence()">
+            Simulate Drip Dispatch
+          </button>
+        </div>
+        `
+      )}
+
+      <!-- Advanced Feature 2: Custom Meta WhatsApp Cloud API BYOK & SLA Timers (Requires Enterprise) -->
+      ${renderTierFeatureLock(
+        'enterprise',
+        'Bring Your Own Meta WhatsApp Cloud API (BYOK) & SLA Timers',
+        'Direct integration with your corporate Meta Business Manager Phone Number ID, custom webhook verification token, and strict 5-minute lead response SLA timers with automated round-robin distribution.',
+        currentPlan,
+        `
+        <div style="background: #f8fafc; border: 1px solid var(--border-default); border-radius: 6px; padding: 14px; font-family: var(--font-mono); font-size: 0.78rem;">
+          <div style="color: #16a34a; font-weight: 700;">✓ Meta Cloud API WABA ID: 109283746501928</div>
+          <div style="color: #475569;">Verified Sender: +1 (800) 555-0199 &bull; Round-Robin Routing: 4 Reps Active</div>
+          <div style="color: #475569;">SLA Response Timer: 5m Escalation Trigger (Zero Missed Inquiries)</div>
+        </div>
+        `
+      )}
+    </div>
+  `;
+
+  return renderWithSoftPaywall('crm', currentPlan, innerCrm);
+}
+
+// ── 5. Console View: Compliance & Vault ───────────────────────────────────────
+function renderConsoleComplianceView(currentPlan: PlanTier): string {
+  const innerCompliance = `
+    <div class="console-page-wrapper" id="page-console-compliance">
+      <div class="console-page-toolbar">
+        <div>
+          <h2 class="page-title" style="margin: 0; font-size: 1.35rem; font-weight: 850;">Compliance Vault &amp; Cryptographic Privacy Suite</h2>
+          <div class="page-desc" style="margin-top: 2px;">Field-level AEAD envelope encryption, mathematical Right-to-be-Forgotten erasure pipelines, and immutable consent ledgers</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Cryptographic Envelope Simulator -->
+        <div class="card">
+          <div class="card-title">Field-Level AEAD Encryption</div>
+          <div class="card-subtitle" style="margin-bottom: 14px;">
+            Derived tenant key: <code>HMAC-SHA256(masterKey, 'tenant:${state.activeTenant}')</code>
+          </div>
+          <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);">Sensitive Plaintext PII:</label>
+          <input type="text" class="input" id="pii-input" value="john.enterprise@finance-corp.gov" style="margin: 4px 0 12px 0;" />
+          
+          <div style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">AES-256-GCM Envelope:</div>
+          <div class="crypto-display" id="crypto-envelope-display">enc:v1:7f4c9a2d...</div>
+
+          <div style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; margin-top: 10px;">Deterministic HMAC Blind Index:</div>
+          <div class="crypto-display" id="crypto-blind-display" style="color: var(--primary);">blind:e8b417c...</div>
+        </div>
+
+        <!-- Right to be Forgotten / Erasure -->
+        <div class="card">
+          <div class="card-title">Right to be Forgotten (GDPR / NDPR)</div>
+          <div class="card-subtitle" style="margin-bottom: 14px;">
+            Permanent pseudonymization of PII across CRM and Consent records
+          </div>
+          <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+            <input type="text" class="input" id="erasure-subject-input" placeholder="Subject Email or UUID" value="david.k@global-cloud.com" />
+            <button class="btn btn-danger" id="btn-execute-erasure">Execute Erasure</button>
+          </div>
+          <div style="background: var(--bg-subtle); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-default); font-size: 0.8rem; line-height: 1.5;">
+            <div>Fulfilled Erasure Requests: <strong style="color: var(--text-main);" id="erasure-counter">${state.erasureRequestsCount}</strong></div>
+            <div>Sanitized Records: <strong style="color: var(--primary);" id="anonymized-counter">${state.anonymizedCount}</strong></div>
+            <div style="color: var(--text-secondary); font-size: 0.74rem; margin-top: 4px;">
+              Replaces PII with <code>[REDACTED]</code>, wipes contact numbers, and revokes active consent grants.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Consent Registry -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">GDPR / NDPR Consent Ledger</div>
+            <div class="card-subtitle">Verifiable timestamps and lawful basis tracking</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="btn-grant-consent">+ Grant Subject Consent</button>
+        </div>
+
+        <div id="consent-table-container"></div>
+      </div>
+
+      <!-- Advanced Feature: Customer-Managed Keys (BYOK / AWS KMS) (Requires Enterprise) -->
+      ${renderTierFeatureLock(
+        'enterprise',
+        'Customer-Managed Keys (BYOK) via AWS KMS & HashiCorp Vault',
+        'Full cryptographic key sovereignty: use your corporate AWS KMS Key ARN or HashiCorp Vault Transit engine for root envelope encryption. ZexCore engineers have zero access to your plaintext encryption master keys.',
+        currentPlan,
+        `
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 14px; align-items: flex-end;">
+          <div>
+            <label style="font-size: 0.76rem; font-weight: 600; color: var(--text-secondary);">AWS KMS Master Key ARN</label>
+            <input type="text" class="input" value="arn:aws:kms:us-east-1:123456789012:key/zexcore-tenant-root" style="margin-top: 4px; font-family: var(--font-mono); font-size: 0.78rem;" />
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="window.testKmsKeyRotation()" style="padding: 8px 14px;">
+            Simulate 90-Day Key Rotation
+          </button>
+        </div>
+        <div style="margin-top: 10px; font-size: 0.74rem; color: #16a34a; font-family: var(--font-mono);">
+          <span>● Enclave HSM Attestation: Verified</span> &bull;
+          <span>Rotation: Every 90 Days</span>
+        </div>
+        `
+      )}
+    </div>
+  `;
+
+  return renderWithSoftPaywall('compliance', currentPlan, innerCompliance);
+}
+
 // ── Render Application Shell (Dashboard) ────────────────────────────────────
 function renderDashboard() {
   const app = document.getElementById('app');
@@ -321,30 +917,30 @@ function renderDashboard() {
 
         <nav class="nav-menu">
           <div class="nav-label">Platform Modules</div>
-          <div class="nav-item ${state.currentTab === 'overview' ? 'active' : ''}" data-tab="overview">
+          <a href="#/console/overview" class="nav-item ${state.currentTab === 'overview' ? 'active' : ''}" data-tab="overview">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             System Overview
-          </div>
-          <div class="nav-item ${state.currentTab === 'iot' ? 'active' : ''}" data-tab="iot">
+          </a>
+          <a href="#/console/iot" class="nav-item ${state.currentTab === 'iot' ? 'active' : ''}" data-tab="iot">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
             IoT Hub
             ${isTabLocked('iot', currentPlan) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> INDIE</span>` : `<span class="nav-badge" id="iot-count">${state.devices.length}</span>`}
-          </div>
-          <div class="nav-item ${state.currentTab === 'rules' ? 'active' : ''}" data-tab="rules">
+          </a>
+          <a href="#/console/rules" class="nav-item ${state.currentTab === 'rules' ? 'active' : ''}" data-tab="rules">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
             Rules &amp; AI Author
             <span class="nav-badge">${state.rules.length}</span>
-          </div>
-          <div class="nav-item ${state.currentTab === 'crm' ? 'active' : ''}" data-tab="crm">
+          </a>
+          <a href="#/console/crm" class="nav-item ${state.currentTab === 'crm' ? 'active' : ''}" data-tab="crm">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             CRM &amp; Pipeline
             ${isTabLocked('crm', currentPlan) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> GROWTH</span>` : `<span class="nav-badge">${state.leads.length}</span>`}
-          </div>
-          <div class="nav-item ${state.currentTab === 'compliance' ? 'active' : ''}" data-tab="compliance">
+          </a>
+          <a href="#/console/compliance" class="nav-item ${state.currentTab === 'compliance' ? 'active' : ''}" data-tab="compliance">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             Compliance &amp; Vault
             ${isTabLocked('compliance', currentPlan) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> SCALE</span>` : ''}
-          </div>
+          </a>
         </nav>
 
         <!-- Active Plan Card in Sidebar -->
@@ -394,7 +990,6 @@ function renderDashboard() {
           </div>
 
           <div class="topbar-right">
-
             <!-- Authenticated User Profile Badge -->
             <div class="auth-user-badge" style="display: flex; align-items: center; gap: 8px; padding: 4px 10px; background: #fff; border: 1px solid var(--border-default); border-radius: 20px; font-size: 0.76rem;">
               <div style="width: 24px; height: 24px; border-radius: 50%; background: #e50920; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.7rem;">
@@ -415,483 +1010,45 @@ function renderDashboard() {
           </div>
         </header>
 
-        <div class="page-container">
-          <!-- ── OVERVIEW TAB ─────────────────────────────────────────────── -->
-          <div id="tab-overview" class="tab-content ${state.currentTab === 'overview' ? 'active' : ''}">
-            <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
-              <div>
-                <h2 class="page-title">Platform Operations Overview</h2>
-                <div class="page-desc">Runtime health, active module metrics, and cross-module event bus ledger</div>
-              </div>
-              <div style="display: flex; gap: 8px; align-items: center;">
-                <button class="btn btn-secondary btn-sm" id="btn-download-all-data" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; padding: 6px 14px; background: #ffffff; border: 1.5px solid #d1d5db; color: #1e293b; border-radius: var(--radius-sm); box-shadow: 0 1px 3px rgba(0,0,0,0.05); cursor: pointer;">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                  Download All My Data (JSON)
-                </button>
-              </div>
-            </div>
-
-            <!-- "Great First Ten Minutes" Onboarding Strip / Starters -->
-            ${renderOnboardingBanner(state.onboarding)}
-
-            <div class="grid-4" style="margin-bottom: 24px;">
-              <div class="stat-box">
-                <div class="stat-label">Platform Health</div>
-                <div style="margin: 8px 0 4px 0;">
-                  <span class="badge" style="background: #ECFDF5; color: #168447; border: 1px solid #A7F3D0; font-size: 0.95rem; font-weight: 700; padding: 4px 12px; border-radius: 9999px;">Operational</span>
-                </div>
-                <div class="stat-subtext" style="color: var(--text-muted); font-size: 0.72rem;">Micro-kernel &amp; 5 modules</div>
-              </div>
-              <div class="stat-box">
-                <div class="stat-label">Fleet Nodes</div>
-                <div class="stat-value" id="stat-online-devices">12</div>
-                <div class="stat-subtext" style="color: #168447; font-weight: 600;">&bull; Connected</div>
-              </div>
-              <div class="stat-box">
-                <div class="stat-label">Rules Evaluated</div>
-                <div class="stat-value">1,428</div>
-                <div class="stat-subtext">Today</div>
-              </div>
-              <div class="stat-box">
-                <div class="stat-label">Pipeline Value</div>
-                <div class="stat-value" id="stat-total-pipeline" style="color: #E50920; font-weight: 800;">$478,000</div>
-                <div class="stat-subtext">Total</div>
-              </div>
-            </div>
-
-            <!-- Middle Row: Multi-Tenant Isolation Diagram + Quick Operations -->
-            <div class="grid-2" style="margin-bottom: 24px;">
-              <div class="card">
-                <div class="card-header" style="margin-bottom: 12px;">
-                  <div>
-                    <div class="card-title">Multi-Tenant Isolation</div>
-                    <div class="card-subtitle">Isolated tenant execution enforced via PostgreSQL RLS</div>
-                  </div>
-                </div>
-                <div class="console-tenant-diagram-wrap">
-                  <div class="console-tenant-diagram">
-                    <!-- SVG connector lines -->
-                    <svg class="console-tenant-svg-lines" viewBox="0 0 440 160">
-                      <line x1="80" y1="30" x2="170" y2="80" stroke="#E1E5EA" stroke-width="2" stroke-dasharray="3 3"/>
-                      <line x1="360" y1="30" x2="270" y2="80" stroke="#E1E5EA" stroke-width="2" stroke-dasharray="3 3"/>
-                      <line x1="80" y1="130" x2="170" y2="80" stroke="#E1E5EA" stroke-width="2" stroke-dasharray="3 3"/>
-                      <line x1="360" y1="130" x2="270" y2="80" stroke="#E1E5EA" stroke-width="2" stroke-dasharray="3 3"/>
-                    </svg>
-
-                    <!-- 4 Tenant Nodes -->
-                    <div class="console-tenant-node node-a">Tenant A</div>
-                    <div class="console-tenant-node node-b">Tenant B</div>
-                    <div class="console-tenant-node node-c">Tenant C</div>
-                    <div class="console-tenant-node node-d">Tenant D</div>
-
-                    <!-- Center Box: ZexCore Core -->
-                    <div class="console-core-center">
-                      <img src="/zexcore-logo-icon.png" alt="ZexCore" class="console-core-logo" />
-                      <span class="console-core-text">ZexCore Core</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Quick Operations -->
-              <div class="card">
-                <div class="card-header" style="margin-bottom: 12px;">
-                  <div>
-                    <div class="card-title">Quick Operations</div>
-                    <div class="card-subtitle">Dispatch platform actions across isolated engines</div>
-                  </div>
-                </div>
-                <div class="console-quick-op-list">
-                  <button class="console-quick-op-btn" id="btn-quick-reg-device">
-                    <span class="console-quick-op-icon">&oplus;</span>
-                    <span>Register Edge Device</span>
-                  </button>
-                  <button class="console-quick-op-btn" id="btn-quick-telemetry">
-                    <span class="console-quick-op-icon">&oplus;</span>
-                    <span>Ingest IoT Reading</span>
-                  </button>
-                  <button class="console-quick-op-btn" id="btn-quick-lead">
-                    <span class="console-quick-op-icon">&oplus;</span>
-                    <span>Create Opportunity</span>
-                  </button>
-                  <button class="console-quick-op-btn" id="btn-quick-eval-rule">
-                    <span class="console-quick-op-icon">&oplus;</span>
-                    <span>Evaluate Rule</span>
-                  </button>
-                  <button class="console-quick-op-btn" id="btn-quick-view-audit">
-                    <span class="console-quick-op-icon">&oplus;</span>
-                    <span>View Audit Event</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Bottom 3-Column Panels: Real-Time Event Stream, Recent Activity, Module Health -->
-            <div class="console-bottom-3col" style="margin-bottom: 24px;">
-              <!-- 1. Real-Time Event Stream -->
-              <div class="console-card-panel">
-                <div class="console-panel-header">
-                  <span class="console-panel-title">Real-Time Event Stream</span>
-                </div>
-                <div class="console-stream-list">
-                  <div class="console-stream-item">
-                    <div class="console-stream-left">
-                      <span class="console-stream-dot"></span>
-                      <span>device.telemetry</span>
-                    </div>
-                    <span class="console-stream-time">10:21:55</span>
-                  </div>
-                  <div class="console-stream-item">
-                    <div class="console-stream-left">
-                      <span class="console-stream-dot"></span>
-                      <span>rules.executed</span>
-                    </div>
-                    <span class="console-stream-time">10:21:12</span>
-                  </div>
-                  <div class="console-stream-item">
-                    <div class="console-stream-left">
-                      <span class="console-stream-dot"></span>
-                      <span>audit.logged</span>
-                    </div>
-                    <span class="console-stream-time">10:20:41</span>
-                  </div>
-                  <div class="console-stream-item">
-                    <div class="console-stream-left">
-                      <span class="console-stream-dot"></span>
-                      <span>tenant.created</span>
-                    </div>
-                    <span class="console-stream-time">10:17:22</span>
-                  </div>
-                </div>
-                <div class="console-panel-footer">
-                  <a href="#/console" class="console-panel-link" onclick="document.querySelector('[data-tab=\\'iot\\']')?.click()">View All &rarr;</a>
-                </div>
-              </div>
-
-              <!-- 2. Recent Activity -->
-              <div class="console-card-panel">
-                <div class="console-panel-header">
-                  <span class="console-panel-title">Recent Activity</span>
-                </div>
-                <div class="console-stream-list">
-                  <div class="console-stream-item">
-                    <div class="console-stream-left">
-                      <span class="console-stream-dot blue"></span>
-                      <div>
-                        <strong>New device registered</strong>
-                        <div style="font-size: 0.72rem; color: var(--text-muted);">sensor-hub</div>
-                      </div>
-                    </div>
-                    <span class="console-stream-time">2m ago</span>
-                  </div>
-                  <div class="console-stream-item">
-                    <div class="console-stream-left">
-                      <span class="console-stream-dot blue"></span>
-                      <div>
-                        <strong>Rule executed</strong>
-                        <div style="font-size: 0.72rem; color: var(--text-muted);">temperature_threshold</div>
-                      </div>
-                    </div>
-                    <span class="console-stream-time">4m ago</span>
-                  </div>
-                  <div class="console-stream-item">
-                    <div class="console-stream-left">
-                      <span class="console-stream-dot blue"></span>
-                      <div>
-                        <strong>Opportunity created</strong>
-                        <div style="font-size: 0.72rem; color: var(--text-muted);">$95,000</div>
-                      </div>
-                    </div>
-                    <span class="console-stream-time">12m ago</span>
-                  </div>
-                  <div class="console-stream-item">
-                    <div class="console-stream-left">
-                      <span class="console-stream-dot blue"></span>
-                      <div>
-                        <strong>Audit log viewed</strong>
-                        <div style="font-size: 0.72rem; color: var(--text-muted);">admin</div>
-                      </div>
-                    </div>
-                    <span class="console-stream-time">18m ago</span>
-                  </div>
-                </div>
-                <div class="console-panel-footer">
-                  <a href="#/console" class="console-panel-link" onclick="document.querySelector('[data-tab=\\'compliance\\']')?.click()">View All &rarr;</a>
-                </div>
-              </div>
-
-              <!-- 3. Module Health -->
-              <div class="console-card-panel">
-                <div class="console-panel-header">
-                  <span class="console-panel-title">Module Health</span>
-                </div>
-                <div class="console-health-list">
-                  <div class="console-health-item">
-                    <div class="console-stream-left">
-                      <span class="console-stream-dot green"></span>
-                      <span>Core</span>
-                    </div>
-                    <span class="console-health-pct">100%</span>
-                  </div>
-                  <div class="console-health-item">
-                    <div class="console-stream-left">
-                      <span class="console-stream-dot green"></span>
-                      <span>IoT</span>
-                    </div>
-                    <span class="console-health-pct">100%</span>
-                  </div>
-                  <div class="console-health-item">
-                    <div class="console-stream-left">
-                      <span class="console-stream-dot green"></span>
-                      <span>Rules</span>
-                    </div>
-                    <span class="console-health-pct">100%</span>
-                  </div>
-                  <div class="console-health-item">
-                    <div class="console-stream-left">
-                      <span class="console-stream-dot green"></span>
-                      <span>CRM</span>
-                    </div>
-                    <span class="console-health-pct">100%</span>
-                  </div>
-                  <div class="console-health-item">
-                    <div class="console-stream-left">
-                      <span class="console-stream-dot green"></span>
-                      <span>Compliance</span>
-                    </div>
-                    <span class="console-health-pct">100%</span>
-                  </div>
-                </div>
-                <div class="console-panel-footer">
-                  <a href="#/modules" class="console-panel-link">View All &rarr;</a>
-                </div>
-              </div>
-            </div>
-
-            <!-- Event Bus Live Log -->
-            <div class="terminal-box">
-              <div class="terminal-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span>Core EventBus Real-Time Stream</span>
-                  <span style="font-size: 0.7rem; font-family: var(--font-mono); color: #94a3b8;">Asynchronous Event Broker</span>
-                </div>
-                <div style="display: flex; gap: 6px; align-items: center;">
-                  <span style="font-size: 0.68rem; color: #cbd5e1; text-transform: uppercase; font-weight: 700; margin-right: 2px;">SIEM Export:</span>
-                  <button class="btn btn-xs" id="btn-export-siem-json" style="font-size: 0.68rem; padding: 3px 8px; border: 1px solid rgba(255,255,255,0.25); color: #ffffff; background: rgba(255,255,255,0.1); border-radius: 4px; cursor: pointer;">NDJSON</button>
-                  <button class="btn btn-xs" id="btn-export-siem-csv" style="font-size: 0.68rem; padding: 3px 8px; border: 1px solid rgba(255,255,255,0.25); color: #ffffff; background: rgba(255,255,255,0.1); border-radius: 4px; cursor: pointer;">CSV Audit</button>
-                </div>
-              </div>
-              <div class="terminal-content" id="event-stream-body"></div>
-            </div>
-          </div>
-
-          <!-- ── IOT HUB TAB ─────────────────────────────────────────────── -->
-          <div id="tab-iot" class="tab-content ${state.currentTab === 'iot' ? 'active' : ''}">
-            ${renderWithSoftPaywall('iot', currentPlan, `
-            <div class="page-header">
-              <div>
-                <h2 class="page-title">IoT Device Fleet &amp; Telemetry Gateway</h2>
-                <div class="page-desc">Manage edge hardware, ingest telemetry via token authentication, and monitor health thresholds</div>
-              </div>
-              <button class="btn btn-primary" id="btn-open-register-device">+ Register Edge Device</button>
-            </div>
-
-            <div class="device-table-card">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Device Name &amp; Key</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                    <th>Temperature</th>
-                    <th>Humidity</th>
-                    <th>Voltage</th>
-                    <th>Firmware</th>
-                    <th>Last Seen</th>
-                    <th style="text-align: right;">Action</th>
-                  </tr>
-                </thead>
-                <tbody id="device-table-body"></tbody>
-              </table>
-            </div>
-            `)}
-          </div>
-
-          <!-- ── RULES TAB ────────────────────────────────────────────────── -->
-          <div id="tab-rules" class="tab-content ${state.currentTab === 'rules' ? 'active' : ''}">
-            <div class="page-header">
-              <div>
-                <h2 class="page-title">Deterministic Automation Rules &amp; AI Authoring</h2>
-                <div class="page-desc">AI synthesizes JSON AST proposals; deterministic engine runs approved rules with zero eval()</div>
-              </div>
-            </div>
-
-            <!-- AI Authoring Panel -->
-            <div class="prompt-panel">
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-                <span style="font-weight: 700; font-size: 0.92rem; color: var(--text-main);">
-                  AI Rule Synthesis Console (Google Gemini Validation Loop)
-                </span>
-                <span style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--text-secondary); background: var(--bg-muted); padding: 2px 8px; border-radius: var(--radius-xs);">
-                  POST /api/rules/ai-draft
-                </span>
-              </div>
-              <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 12px;">
-                Describe an automation intent in plain English. The AI generates a validated RuleDraft JSON conforming to strict Zod schema with approved=false.
-              </p>
-              <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-                <input type="text" class="input" id="ai-rule-prompt" value="Notify operations if temperature exceeds 75°C for 3 consecutive readings" />
-                <button class="btn btn-primary" id="btn-generate-ai-rule">Synthesize Rule</button>
-              </div>
-              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                <button class="btn btn-secondary btn-sm" onclick="setAiPrompt('Alert sales VP when a CRM deal over $100k is closed won')">Deal Won Alert</button>
-                <button class="btn btn-secondary btn-sm" onclick="setAiPrompt('When IoT battery level falls below 15% queue recharge command')">Battery Low Command</button>
-                <button class="btn btn-secondary btn-sm" onclick="setAiPrompt('If customer revokes GDPR consent anonymize personal data immediately')">Consent Erasure</button>
-              </div>
-
-              <!-- Output AST Preview -->
-              <div id="ai-rule-preview" style="display: none; margin-top: 16px; border-top: 1px solid var(--border-default); padding-top: 14px;">
-                <div style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">
-                  Validated Rule Draft AST (Awaiting Human Approval Gate):
-                </div>
-                <pre class="code-block" id="ai-rule-json"></pre>
-                <div style="margin-top: 12px; display: flex; gap: 8px;">
-                  <button class="btn btn-primary btn-sm" id="btn-approve-ai-draft">Approve &amp; Deploy Rule (Human Gate)</button>
-                  <button class="btn btn-secondary btn-sm" id="btn-discard-ai-draft">Discard Draft</button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Existing Rules Table -->
-            <div class="card">
-              <div class="card-header">
-                <div class="card-title">Active &amp; Draft Automation Rules</div>
-              </div>
-              <div id="rules-list-container" style="display: flex; flex-direction: column; gap: 10px;"></div>
-            </div>
-          </div>
-
-          <!-- ── CRM TAB ─────────────────────────────────────────────────── -->
-          <div id="tab-crm" class="tab-content ${state.currentTab === 'crm' ? 'active' : ''}">
-            ${renderWithSoftPaywall('crm', currentPlan, `
-            <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
-              <div>
-                <h2 class="page-title">Multi-Channel CRM &amp; Booking</h2>
-                <div class="page-desc">WhatsApp-first inbox, automated appointment reminders, Paystack deposits, and pipeline Kanban</div>
-              </div>
-              <div style="display: flex; gap: 8px; align-items: center;">
-                <button class="btn btn-primary" id="btn-add-lead">+ Create Opportunity</button>
-              </div>
-            </div>
-
-            <!-- CRM Sub-navigation Tabs -->
-            <div style="display: flex; gap: 8px; margin-bottom: 18px; border-bottom: 2px solid var(--border-default); padding-bottom: 10px; flex-wrap: wrap;">
-              <button class="btn ${state.crmSubView === 'whatsapp' ? 'btn-primary' : 'btn-secondary'} btn-sm" id="btn-crm-nav-whatsapp" style="display: inline-flex; align-items: center; gap: 6px;">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                Inbox &amp; Channels
-              </button>
-              <button class="btn ${state.crmSubView === 'kanban' ? 'btn-primary' : 'btn-secondary'} btn-sm" id="btn-crm-nav-kanban" style="display: inline-flex; align-items: center; gap: 6px;">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                Deals Pipeline
-              </button>
-              <button class="btn ${state.crmSubView === 'booking' ? 'btn-primary' : 'btn-secondary'} btn-sm" id="btn-crm-nav-booking" style="display: inline-flex; align-items: center; gap: 6px;">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                Bookings
-              </button>
-            </div>
-
-            <div id="crm-content-view"></div>
-            `)}
-          </div>
-
-          <!-- ── COMPLIANCE TAB ───────────────────────────────────────────── -->
-          <div id="tab-compliance" class="tab-content ${state.currentTab === 'compliance' ? 'active' : ''}">
-            ${renderWithSoftPaywall('compliance', currentPlan, `
-            <div class="page-header">
-              <div>
-                <h2 class="page-title">Compliance, Vault &amp; Privacy Suite</h2>
-                <div class="page-desc">GDPR &amp; NDPR regulatory compliance, AES-256-GCM envelope encryption, and Right-to-be-Forgotten</div>
-              </div>
-            </div>
-
-            <div class="grid-2" style="margin-bottom: 24px;">
-              <!-- Cryptographic Envelope Simulator -->
-              <div class="card">
-                <div class="card-title">Field-Level AEAD Encryption</div>
-                <div class="card-subtitle" style="margin-bottom: 14px;">
-                  Derived tenant key: <code>HMAC-SHA256(masterKey, 'tenant:<id>')</code>
-                </div>
-                <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);">Sensitive Plaintext PII:</label>
-                <input type="text" class="input" id="pii-input" value="john.enterprise@finance-corp.gov" style="margin: 4px 0 12px 0;" />
-                
-                <div style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">AES-256-GCM Envelope:</div>
-                <div class="crypto-display" id="crypto-envelope-display">enc:v1:7f4c9a2d...</div>
-
-                <div style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; margin-top: 10px;">Deterministic HMAC Blind Index:</div>
-                <div class="crypto-display" id="crypto-blind-display" style="color: var(--primary);">blind:e8b417c...</div>
-              </div>
-
-              <!-- Right to be Forgotten / Erasure -->
-              <div class="card">
-                <div class="card-title">Right to be Forgotten (GDPR / NDPR)</div>
-                <div class="card-subtitle" style="margin-bottom: 14px;">
-                  Permanent pseudonymization of PII across CRM and Consent records
-                </div>
-                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                  <input type="text" class="input" id="erasure-subject-input" placeholder="Subject Email or UUID" value="david.k@global-cloud.com" />
-                  <button class="btn btn-danger" id="btn-execute-erasure">Execute Erasure</button>
-                </div>
-                <div style="background: var(--bg-subtle); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-default); font-size: 0.8rem; line-height: 1.5;">
-                  <div>Fulfilled Erasure Requests: <strong style="color: var(--text-main);" id="erasure-counter">${state.erasureRequestsCount}</strong></div>
-                  <div>Sanitized Records: <strong style="color: var(--primary);" id="anonymized-counter">${state.anonymizedCount}</strong></div>
-                  <div style="color: var(--text-secondary); font-size: 0.74rem; margin-top: 4px;">
-                    Replaces PII with <code>[REDACTED]</code>, wipes contact numbers, and revokes active consent grants.
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Consent Registry -->
-            <div class="card">
-              <div class="card-header">
-                <div>
-                  <div class="card-title">GDPR / NDPR Consent Ledger</div>
-                  <div class="card-subtitle">Verifiable timestamps and lawful basis tracking</div>
-                </div>
-                <button class="btn btn-secondary btn-sm" id="btn-grant-consent">+ Grant Subject Consent</button>
-              </div>
-
-              <div id="consent-table-container"></div>
-            </div>
-            `)}
-          </div>
+        <!-- Dynamic Multi-Page Console Container -->
+        <div class="page-container" id="console-page-container">
+          ${
+            state.currentTab === 'overview' ? renderConsoleOverviewView(currentPlan) :
+            state.currentTab === 'iot' ? renderConsoleIotView(currentPlan) :
+            state.currentTab === 'rules' ? renderConsoleRulesView(currentPlan) :
+            state.currentTab === 'crm' ? renderConsoleCrmView(currentPlan) :
+            renderConsoleComplianceView(currentPlan)
+          }
         </div>
       </main>
     </div>
   `;
 
   setupEventListeners();
-  renderDevices();
-  renderRules();
-  renderCrm();
-  renderConsents();
-  updateCryptoPreview();
-  renderEventLog();
+
+  // Initialize specific view state
+  if (state.currentTab === 'overview') {
+    renderEventLog();
+  } else if (state.currentTab === 'iot') {
+    renderDevices();
+  } else if (state.currentTab === 'rules') {
+    renderRules();
+  } else if (state.currentTab === 'crm') {
+    renderCrm();
+  } else if (state.currentTab === 'compliance') {
+    renderConsents();
+    updateCryptoPreview();
+  }
 }
 
 // ── Event Handlers ───────────────────────────────────────────────────────────
 function setupEventListeners() {
   document.querySelectorAll('.nav-item').forEach((item) => {
     item.addEventListener('click', () => {
-      document.querySelectorAll('.nav-item').forEach((i) => i.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach((tc) => tc.classList.remove('active'));
-
-      item.classList.add('active');
       const tabId = item.getAttribute('data-tab');
       if (tabId) {
         state.currentTab = tabId;
-        const target = document.getElementById(`tab-${tabId}`);
-        if (target) target.classList.add('active');
+        window.location.hash = '#/console/' + tabId;
       }
     });
   });
@@ -1235,6 +1392,106 @@ function renderDevices() {
   const temp = parseFloat((dev.temperature + (Math.random() * 4 - 2)).toFixed(1));
   const hum = Math.min(99, Math.max(10, Math.round(dev.humidity + (Math.random() * 6 - 3))));
   triggerTelemetryPing(id, temp, hum, dev.voltage);
+};
+
+(window as any).dispatchSiemTestWebhook = () => {
+  const endpoint = (document.getElementById('siem-endpoint-input') as HTMLInputElement)?.value || 'https://siem-collector.enterprise.corp/events/v1';
+  logBusEvent('audit.siem.dispatched', {
+    endpoint,
+    format: 'RFC5424_TLS',
+    signature: 'hmac_sha256_verified',
+    eventsBatched: 1,
+    status: 200,
+  });
+  alert(`Test SIEM Heartbeat Dispatched!\n\nDestination: ${endpoint}\nSignature: HMAC-SHA256 (verified)\nStatus: 200 OK`);
+};
+
+(window as any).rotateAllDeviceTokens = () => {
+  state.devices.forEach((d) => {
+    d.lastSeen = 'Just now (Token Rotated)';
+  });
+  renderDevices();
+  logBusEvent('iot.fleet.tokens_rotated', {
+    tenant: state.activeTenant,
+    count: state.devices.length,
+    cryptoMethod: 'SHA-256 Single-Use Salted Hash',
+  });
+  alert(`All ${state.devices.length} edge device authentication tokens rotated successfully with fresh single-use cryptographic secrets.`);
+};
+
+(window as any).dispatchEdgeCommand = () => {
+  const devSelect = document.getElementById('shell-device-select') as HTMLSelectElement | null;
+  const cmdSelect = document.getElementById('shell-cmd-select') as HTMLSelectElement | null;
+  const devId = devSelect?.value || state.devices[0]?.id || 'dev-1';
+  const cmd = cmdSelect?.value || 'reboot';
+  const dev = state.devices.find((d) => d.id === devId);
+
+  const shellOutput = document.getElementById('edge-shell-output');
+  if (shellOutput) {
+    const time = new Date().toLocaleTimeString();
+    const line = document.createElement('div');
+    line.innerHTML = `<span class="edge-shell-prompt">[${time}]</span> <span style="color:#38bdf8;">DISPATCH:</span> ${cmd} -> <strong style="color:#fff;">${dev?.name || devId}</strong> (Signature: HMAC-SHA256 OK &bull; ACK 200)`;
+    shellOutput.appendChild(line);
+    shellOutput.scrollTop = shellOutput.scrollHeight;
+  }
+
+  logBusEvent('iot.command.dispatched', {
+    deviceId: devId,
+    deviceName: dev?.name,
+    command: cmd,
+    signature: 'hmac_sha256_valid',
+    status: 'ACK_DELIVERED',
+  });
+};
+
+(window as any).runConflictAnalysis = () => {
+  logBusEvent('rules.static_analysis.executed', {
+    tenant: state.activeTenant,
+    rulesEvaluated: state.rules.length,
+    circularLoops: 0,
+    contradictions: 0,
+    meshHealth: 'VERIFIED_DETERMINISTIC',
+  });
+  alert('Static Mesh Analysis Complete:\n\nEvaluated ' + state.rules.length + ' rules against 5 event schemas.\n- Circular Dependency Loops: 0\n- Race Condition Cascades: 0\n- Deadlocks: 0\n\nResult: 100% Deterministic Safety Verified.');
+};
+
+(window as any).signRuleOpsLead = () => {
+  const step2 = document.getElementById('multisig-step-2');
+  if (step2) {
+    step2.className = 'multi-sign-step signed';
+    step2.innerHTML = `
+      <div style="font-size: 0.72rem; color: #15803d; font-weight: 800;">STEP 2: OPS LEAD SIGNED</div>
+      <div style="font-weight: 700; font-size: 0.85rem; margin: 4px 0;">lead-engineer@enterprise-corp.io</div>
+      <div style="font-family: var(--font-mono); font-size: 0.7rem; color: #16a34a;">sig:hmac_sha256:d82e1a9... (Active)</div>
+    `;
+  }
+  logBusEvent('rules.multisig.completed', {
+    ruleId: state.rules[0]?.id || 'rule-1',
+    signers: ['secops@enterprise-corp.io', 'lead-engineer@enterprise-corp.io'],
+    status: 'DEPLOYED_PRODUCTION',
+  });
+  alert('Dual-Operator Cryptographic Sign-Off Complete!\nBoth SecOps and Lead Engineer signatures recorded in the append-only ledger.');
+};
+
+(window as any).triggerDripSequence = () => {
+  logBusEvent('crm.drip.sequence_dispatched', {
+    campaign: 'Cold Lead Re-engagement Drip',
+    recipient: state.whatsAppThreads[0]?.contactName || 'Client Lead',
+    channel: 'whatsapp_meta_cloud',
+    status: 'delivered',
+  });
+  alert('Automated WhatsApp Drip Message Dispatched via Meta Cloud API webhook.');
+};
+
+(window as any).testKmsKeyRotation = () => {
+  logBusEvent('crypto.kms.key_rotated', {
+    tenant: state.activeTenant,
+    keyArn: 'arn:aws:kms:us-east-1:123456789012:key/zexcore-tenant-root',
+    newVersion: 'v' + Math.floor(Math.random() * 900 + 100),
+    rotationCycle: '90_day_automated',
+    status: 'success',
+  });
+  alert('AWS KMS Root Envelope Key Rotation Successful!\nKey re-wrapped in secure HSM enclave with zero plaintext exposure.');
 };
 
 function triggerTelemetryPing(deviceId: string, temp: number, humidity: number, voltage: number) {
@@ -2133,6 +2390,8 @@ function syncRouteFromHash() {
     state.currentView = 'signin';
   } else if (route === 'console' || route === 'dashboard' || route === 'app') {
     state.currentView = 'console';
+    const validTabs = ['overview', 'iot', 'rules', 'crm', 'compliance'];
+    state.currentTab = validTabs.includes(subParam) ? subParam : 'overview';
   } else if (route === 'platform') {
     state.currentView = 'platform';
     state.platformModule = subParam || 'core';
@@ -2166,9 +2425,20 @@ function syncRouteFromHash() {
     resources: 'Engineering Publications & Whitepapers — ZexCore',
     pricing: 'Pricing & Platform Tiers — ZexCore Infrastructure',
     signin: 'Sign in to ZexCore Control',
-    console: 'ZexCore Control — Operational Console',
   };
-  document.title = titles[state.currentView] || 'ZexCore — Enterprise Infrastructure Platform';
+
+  if (state.currentView === 'console') {
+    const consoleTitles: Record<string, string> = {
+      overview: 'System Overview — ZexCore Operations Console',
+      iot: 'IoT Fleet & Telemetry Ingestion — ZexCore Console',
+      rules: 'Deterministic Automation & AI Authoring — ZexCore Console',
+      crm: 'Multi-Channel CRM & Revenue Ops — ZexCore Console',
+      compliance: 'Compliance Vault & GDPR Privacy — ZexCore Console',
+    };
+    document.title = consoleTitles[state.currentTab] || 'ZexCore Control — Operational Console';
+  } else {
+    document.title = titles[state.currentView] || 'ZexCore — Enterprise Infrastructure Platform';
+  }
 
   renderApp();
   window.scrollTo({ top: 0, behavior: 'instant' });

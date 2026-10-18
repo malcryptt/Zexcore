@@ -371,10 +371,6 @@ export function renderHomePage(): string {
             <div class="multi-tenant-split-grid">
               <!-- Left Column: Copy & Button -->
               <div class="multi-tenant-copy">
-                <div class="hero-eyebrow-pill" style="margin-bottom: 16px;">
-                  <span class="hero-eyebrow-dot"></span>
-                  SOVEREIGN PLATFORM ARCHITECTURE
-                </div>
                 <h2 class="section-title" style="text-align: left; font-size: 2.35rem; font-weight: 850; letter-spacing: -0.04em; margin-bottom: 18px; line-height: 1.15;">
                   Engineered for Strict Sovereign Multi-Tenancy
                 </h2>
@@ -471,10 +467,6 @@ export function renderHomePage(): string {
 
               <!-- Right Column: Copy & Explore Button -->
               <div class="powering-copy-col">
-                <div class="hero-eyebrow-pill" style="margin-bottom: 16px;">
-                  <span class="hero-eyebrow-dot"></span>
-                  PRODUCTION-GRADE FOUNDATION
-                </div>
                 <h2 class="section-title" style="text-align: left; font-size: 2.2rem; font-weight: 850; letter-spacing: -0.04em; margin-bottom: 20px;">
                   Powering the next generation of vertical SaaS
                 </h2>

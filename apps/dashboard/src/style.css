@@ -8113,3 +8113,238 @@ body { background: #fff; letter-spacing: -.008em; }
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MULTI-PAGE CONSOLE & ADVANCED TIERED SECURITY FEATURES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.console-page-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.console-page-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 20px;
+  background: #ffffff;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.console-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* In-Page Tier-Locked Feature Card */
+.tier-feature-card {
+  position: relative;
+  background: #ffffff;
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 22px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+
+.tier-feature-card.locked {
+  border-color: #fecdd3;
+  background: #fffafa;
+}
+
+.tier-feature-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tier-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+.tier-badge-pill.indie {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+
+.tier-badge-pill.growth {
+  background: #fff1f2;
+  color: #e11d48;
+  border: 1px solid #fecdd3;
+}
+
+.tier-badge-pill.scale {
+  background: #fdf4ff;
+  color: #a21caf;
+  border: 1px solid #f5d0fe;
+}
+
+.tier-badge-pill.enterprise {
+  background: #17191d;
+  color: #ffffff;
+  border: 1px solid #334155;
+}
+
+.tier-lock-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(4px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  z-index: 5;
+}
+
+.tier-lock-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #fff1f2;
+  border: 1.5px solid #fecdd3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #e50920;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 12px rgba(229, 9, 32, 0.12);
+}
+
+.tier-lock-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #17191d;
+  margin-bottom: 6px;
+}
+
+.tier-lock-desc {
+  font-size: 0.84rem;
+  color: #64748b;
+  max-width: 420px;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+/* Edge Shell Terminal */
+.edge-shell-terminal {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  font-family: var(--font-mono);
+  color: #e2e8f0;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.edge-shell-prompt {
+  color: #10b981;
+  font-weight: 700;
+  margin-right: 8px;
+}
+
+.edge-shell-log {
+  max-height: 160px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.edge-shell-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid #1e293b;
+  padding-top: 10px;
+}
+
+/* Telemetry Oscilloscope */
+.telemetry-oscilloscope-wrap {
+  background: #090d16;
+  border: 1px solid #1e293b;
+  border-radius: var(--radius-sm);
+  padding: 18px;
+  position: relative;
+  overflow: hidden;
+}
+
+.oscilloscope-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 800px) {
+  .oscilloscope-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.oscilloscope-metric-card {
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 6px;
+  padding: 14px;
+}
+
+.oscilloscope-metric-val {
+  font-family: var(--font-mono);
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin: 6px 0 8px 0;
+}
+
+/* Multi-signature cryptographic approval card */
+.multi-sign-pipeline {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+@media (max-width: 768px) {
+  .multi-sign-pipeline {
+    grid-template-columns: 1fr;
+  }
+}
+
+.multi-sign-step {
+  background: #f8fafc;
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+}
+
+.multi-sign-step.signed {
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+

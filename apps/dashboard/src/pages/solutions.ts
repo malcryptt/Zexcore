@@ -50,7 +50,6 @@ export function renderSolutionsPage(): string {
                   </div>
                 </div>
                 <div class="solution-h-body-col">
-                  <div class="cap-badge" style="margin-bottom: 8px;">PACK: INDUSTRIAL-IOT</div>
                   <h3 class="solution-h-title">Industrial IoT &amp; Connected Manufacturing</h3>
                   <ul class="solution-h-bullets">
                     <li>Equipment and fleet monitoring</li>
@@ -74,12 +73,10 @@ export function renderSolutionsPage(): string {
                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
                   />
                   <div class="sol-fallback-box" style="display: none;">
-                    <span class="sol-fallback-tag">PACK: ENTERPRISE-CRM</span>
                     <span class="sol-fallback-title">Sales &amp; Pipeline Engine</span>
                   </div>
                 </div>
                 <div class="solution-h-body-col">
-                  <div class="cap-badge" style="margin-bottom: 8px;">PACK: ENTERPRISE-CRM</div>
                   <h3 class="solution-h-title">Sales &amp; Customer Relationship Management</h3>
                   <ul class="solution-h-bullets">
                     <li>Lead and contact management</li>
@@ -103,12 +100,10 @@ export function renderSolutionsPage(): string {
                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
                   />
                   <div class="sol-fallback-box" style="display: none;">
-                    <span class="sol-fallback-tag">PACK: PRIVACY-VAULT</span>
                     <span class="sol-fallback-title">Compliance &amp; GDPR / NDPR</span>
                   </div>
                 </div>
                 <div class="solution-h-body-col">
-                  <div class="cap-badge" style="margin-bottom: 8px;">PACK: PRIVACY-VAULT</div>
                   <h3 class="solution-h-title">Compliance &amp; Data Privacy</h3>
                   <ul class="solution-h-bullets">
                     <li>Sensitive-data protection and envelope encryption</li>
@@ -132,12 +127,10 @@ export function renderSolutionsPage(): string {
                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
                   />
                   <div class="sol-fallback-box" style="display: none;">
-                    <span class="sol-fallback-tag">PACK: SMART-RULES</span>
                     <span class="sol-fallback-title">Deterministic Automation</span>
                   </div>
                 </div>
                 <div class="solution-h-body-col">
-                  <div class="cap-badge" style="margin-bottom: 8px;">PACK: SMART-RULES</div>
                   <h3 class="solution-h-title">Intelligent Business Automation</h3>
                   <ul class="solution-h-bullets">
                     <li>Deterministic rule evaluation with sub-millisecond execution</li>
