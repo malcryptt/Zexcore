@@ -300,8 +300,8 @@ export function openStripeCheckoutModal(
           </div>
 
           <div style="display: flex; align-items: center; gap: 14px;">
-            <div style="text-align: right; line-height: 1.2;">
-              <div style="font-size: 0.72rem; color: #64748b; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">${tenantEmail}</div>
+            <div style="text-align: right; line-height: 1.35; margin-right: 4px;">
+              <div style="font-size: 0.72rem; color: #64748b; font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin-bottom: 2px;">${tenantEmail}</div>
               <div style="font-size: 0.86rem; font-weight: 850; color: #0f172a;">
                 Pay <span style="color: #0d9488;">${formattedPrice}</span>
               </div>
@@ -415,19 +415,12 @@ export function openStripeCheckoutModal(
                     Enter your card details to pay
                   </div>
                   <div style="font-size: 0.76rem; color: #64748b; margin-bottom: 18px;">
-                    Supports Mastercard, Visa, Verve &amp; Global Cards
+                    Enter your card information below to continue
                   </div>
 
                   <div style="margin-bottom: 14px;">
                     <label style="display: block; font-size: 0.76rem; font-weight: 700; color: #334155; margin-bottom: 6px;">CARD NUMBER</label>
-                    <div style="position: relative; display: flex; align-items: center;">
-                      <input type="text" id="card-input-number" class="input" value="4242 4242 4242 4242" required maxlength="19" style="width: 100%; font-family: var(--font-mono); font-size: 0.88rem; padding: 10px 12px; padding-right: 90px; border-radius: 6px;" />
-                      <div style="position: absolute; right: 10px; display: flex; gap: 4px; pointer-events: none;">
-                        <span style="font-size: 0.65rem; font-weight: 800; color: #0284c7; background: #e0f2fe; padding: 2px 6px; border-radius: 3px;">VISA</span>
-                        <span style="font-size: 0.65rem; font-weight: 800; color: #b45309; background: #fef3c7; padding: 2px 6px; border-radius: 3px;">MC</span>
-                        <span style="font-size: 0.65rem; font-weight: 800; color: #0f766e; background: #ccfbf1; padding: 2px 6px; border-radius: 3px;">VERVE</span>
-                      </div>
-                    </div>
+                    <input type="text" id="card-input-number" class="input" value="4242 4242 4242 4242" required maxlength="19" style="width: 100%; font-family: var(--font-mono); font-size: 0.88rem; padding: 10px 12px; border-radius: 6px;" />
                   </div>
 
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
@@ -725,9 +718,9 @@ export function openSelfServeUpgradeModal(
         <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-default); display: flex; justify-content: space-between; align-items: center; font-size: 0.76rem; color: var(--text-secondary);">
           <div style="display: flex; align-items: center; gap: 14px;">
             <span>Supported Channels:</span>
-            <strong>Cards (Visa, Mastercard, Verve)</strong>
+            <strong>Card</strong>
             <span>&bull;</span>
-            <strong>Automated Bank Transfer</strong>
+            <strong>Transfer</strong>
           </div>
           <span>Instant upgrade with zero downtime &bull; Postgres 17 RLS Enforced</span>
         </div>
