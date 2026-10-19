@@ -453,7 +453,7 @@ logBusEvent('compliance.consent.granted', { subjectId: 'emma.watson@enterprise-c
 
 // ── Soft Paywall Component ──────────────────────────────────────────────────
 function renderWithSoftPaywall(tabId: string, currentPlan: PlanTier, innerContent: string): string {
-  if (!isTabLocked(tabId, currentPlan)) {
+  if (!isTabLocked(tabId, currentPlan, state.currentUser?.email)) {
     return innerContent;
   }
   const info = getTabLockedInfo(tabId);
@@ -1558,7 +1558,7 @@ function renderDashboard() {
           <a href="#/console/iot" class="nav-item ${state.currentTab === 'iot' ? 'active' : ''}" data-tab="iot">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
             IoT Hub
-            ${isTabLocked('iot', currentPlan) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> INDIE</span>` : `<span class="nav-badge" id="iot-count">${state.devices.length}</span>`}
+            ${isTabLocked('iot', currentPlan, state.currentUser?.email) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> INDIE</span>` : `<span class="nav-badge" id="iot-count">${state.devices.length}</span>`}
           </a>
           <a href="#/console/rules" class="nav-item ${state.currentTab === 'rules' ? 'active' : ''}" data-tab="rules">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
@@ -1568,17 +1568,17 @@ function renderDashboard() {
           <a href="#/console/crm" class="nav-item ${state.currentTab === 'crm' ? 'active' : ''}" data-tab="crm">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             CRM &amp; Pipeline
-            ${isTabLocked('crm', currentPlan) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> GROWTH</span>` : `<span class="nav-badge">${state.leads.length}</span>`}
+            ${isTabLocked('crm', currentPlan, state.currentUser?.email) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> GROWTH</span>` : `<span class="nav-badge">${state.leads.length}</span>`}
           </a>
           <a href="#/console/compliance" class="nav-item ${state.currentTab === 'compliance' ? 'active' : ''}" data-tab="compliance">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             Compliance &amp; Vault
-            ${isTabLocked('compliance', currentPlan) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> DEDICATED</span>` : ''}
+            ${isTabLocked('compliance', currentPlan, state.currentUser?.email) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> DEDICATED</span>` : ''}
           </a>
           <a href="#/console/whitelabel" class="nav-item ${state.currentTab === 'whitelabel' ? 'active' : ''}" data-tab="whitelabel">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.26L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
             Agency White-Label
-            ${isTabLocked('whitelabel', currentPlan) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> AGENCY</span>` : '<span class="nav-badge" style="background: rgba(13, 148, 136, 0.15); color: #0d9488; font-weight: 800;">25</span>'}
+            ${isTabLocked('whitelabel', currentPlan, state.currentUser?.email) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> AGENCY</span>` : '<span class="nav-badge" style="background: rgba(13, 148, 136, 0.15); color: #0d9488; font-weight: 800;">25</span>'}
           </a>
           <a href="#/console/audit" class="nav-item ${state.currentTab === 'audit' ? 'active' : ''}" data-tab="audit">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
@@ -1588,7 +1588,7 @@ function renderDashboard() {
           <a href="#/console/license" class="nav-item ${state.currentTab === 'license' ? 'active' : ''}" data-tab="license">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zm-3 8V7a3 3 0 0 1 6 0v3H9z"/></svg>
             Dedicated License
-            ${isTabLocked('license', currentPlan) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> DEDICATED</span>` : '<span class="nav-badge" style="background: rgba(22, 163, 74, 0.15); color: #16a34a; font-weight: 800;">ACTIVE</span>'}
+            ${isTabLocked('license', currentPlan, state.currentUser?.email) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> DEDICATED</span>` : '<span class="nav-badge" style="background: rgba(22, 163, 74, 0.15); color: #16a34a; font-weight: 800;">ACTIVE</span>'}
           </a>
         </nav>
 

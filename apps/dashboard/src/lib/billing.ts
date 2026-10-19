@@ -3,6 +3,7 @@
  */
 
 import { generateClientLicenseKey } from './licensing';
+import { createReceipt, openReceiptModal } from './invoicing';
 
 export type PlanTier = 'free' | 'starter' | 'growth' | 'agency' | 'enterprise' | 'dedicated';
 export type BillingCycle = 'monthly' | 'annual';
@@ -175,7 +176,27 @@ export function setBillingCycle(cycle: BillingCycle): void {
   }
 }
 
-export function isTabLocked(tabId: string, currentPlan: PlanTier): boolean {
+export const SUPERADMIN_EMAILS = ['hello@zexlabs.com.ng'];
+
+export function isSuperadmin(email?: string | null): boolean {
+  try {
+    if (email && SUPERADMIN_EMAILS.includes(email.toLowerCase().trim())) return true;
+    const stored = localStorage.getItem('zexcore_user_email');
+    if (stored && SUPERADMIN_EMAILS.includes(stored.toLowerCase().trim())) return true;
+    const session = localStorage.getItem('zexcore_auth_session');
+    if (session) {
+      const parsed = JSON.parse(session);
+      if (parsed?.email && SUPERADMIN_EMAILS.includes(parsed.email.toLowerCase().trim())) return true;
+    }
+  } catch {}
+  return false;
+}
+
+export function isTabLocked(tabId: string, currentPlan: PlanTier, userEmail?: string | null): boolean {
+  // hello@zexlabs.com.ng superadmin email bypasses all paywalls with 100% unrestricted access
+  if (isSuperadmin(userEmail)) {
+    return false;
+  }
   const plan = PLANS[currentPlan] || PLANS.starter;
   return !plan.allowedTabs.includes(tabId);
 }
@@ -283,7 +304,7 @@ export function openStripeCheckoutModal(
   const plan = PLANS[targetPlan] || PLANS.growth;
   let currentCycle = initialCycle;
   let activeMethod: PaymentMethod = 'card';
-  const tenantEmail = 'engineer@enterprise.io';
+  const tenantEmail = localStorage.getItem('zexcore_user_email') || 'hello@zexlabs.com.ng';
 
   const modalWrap = document.createElement('div');
   modalWrap.id = 'stripe-checkout-modal-wrap';
@@ -316,10 +337,10 @@ export function openStripeCheckoutModal(
         </div>
 
         <!-- Main Modal Body: Left "PAY WITH" & Right Content -->
-        <div style="display: grid; grid-template-columns: 190px 1fr; min-height: 440px; background: #ffffff;">
+        <div class="checkout-modal-body">
           
           <!-- Left Sidebar: PAY WITH Options -->
-          <div style="background: #f8fafc; border-right: 1px solid #f1f5f9; padding: 20px 12px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div class="checkout-modal-sidebar">
             <div>
               <div style="font-size: 0.68rem; font-weight: 800; color: #94a3b8; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 12px; padding-left: 8px;">
                 PAY WITH
@@ -355,7 +376,7 @@ export function openStripeCheckoutModal(
           </div>
 
           <!-- Right Content Area -->
-          <div style="padding: 28px 32px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div class="checkout-modal-content">
             
             ${activeMethod === 'transfer' ? `
               <!-- Transfer View (Inspired by second screenshot) -->
@@ -544,7 +565,9 @@ export function openStripeCheckoutModal(
         if (targetPlan === 'dedicated' || targetPlan === 'enterprise') {
           generateClientLicenseKey('default', 'Enterprise Workspace', targetPlan, 30);
         }
+        const receipt = createReceipt('default', targetPlan, tenantEmail, activeMethod, currentCycle);
         modalWrap.remove();
+        openReceiptModal(receipt);
         if (onSuccess) onSuccess(targetPlan);
       }, 900);
     });
@@ -564,7 +587,9 @@ export function openStripeCheckoutModal(
         if (targetPlan === 'dedicated' || targetPlan === 'enterprise') {
           generateClientLicenseKey('default', 'Enterprise Workspace', targetPlan, 30);
         }
+        const receipt = createReceipt('default', targetPlan, tenantEmail, activeMethod, currentCycle);
         modalWrap.remove();
+        openReceiptModal(receipt);
         if (onSuccess) onSuccess(targetPlan);
       }, 900);
     });

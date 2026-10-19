@@ -6833,7 +6833,8 @@ body { background: #fff; letter-spacing: -.008em; }
 /* ═══════════════════════════════════════════════════════════════════════════
    STRIPE CHECKOUT MODAL & SUBSCRIPTION BILLING
    ═══════════════════════════════════════════════════════════════════════════ */
-.stripe-modal-overlay {
+.stripe-modal-overlay,
+.stripe-modal-backdrop {
   position: fixed;
   top: 0;
   left: 0;
@@ -6845,7 +6846,7 @@ body { background: #fff; letter-spacing: -.008em; }
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 16px;
   animation: stripeFadeIn 0.25s ease-out;
 }
 @keyframes stripeFadeIn {
@@ -6863,6 +6864,48 @@ body { background: #fff; letter-spacing: -.008em; }
   position: relative;
   display: flex;
   flex-direction: column;
+  max-height: 92vh;
+}
+
+.checkout-modal-body {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  min-height: 400px;
+}
+
+.checkout-modal-sidebar {
+  background: #f8fafc;
+  border-right: 1px solid #f1f5f9;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.checkout-modal-content {
+  padding: 24px 28px;
+  background: #ffffff;
+  overflow-y: auto;
+}
+
+@media (max-width: 640px) {
+  .checkout-modal-body {
+    grid-template-columns: 1fr !important;
+    min-height: auto !important;
+  }
+  .checkout-modal-sidebar {
+    border-right: none !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    padding: 12px 14px !important;
+  }
+  .checkout-modal-content {
+    padding: 18px 16px !important;
+  }
+  .stripe-modal-box {
+    max-height: 95vh !important;
+    overflow-y: auto !important;
+    margin: 8px !important;
+  }
 }
 
 .stripe-modal-close {
