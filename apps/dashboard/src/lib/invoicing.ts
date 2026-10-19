@@ -22,7 +22,7 @@ export interface ZexCoreReceipt {
   billingCycle: 'monthly' | 'annual';
   amountUsd: number;
   amountNgn: number;
-  paymentMethod: 'card' | 'transfer';
+  paymentMethod: 'card' | 'transfer' | 'paystack' | 'flutterwave' | string;
   paymentChannelDescription: string;
   status: 'PAID & SETTLED';
   subtotal: number;
@@ -41,7 +41,7 @@ export function createReceipt(
   tenantSlug: string,
   planTier: PlanTier,
   customerEmail: string = 'hello@zexlabs.com.ng',
-  paymentMethod: 'card' | 'transfer' = 'card',
+  paymentMethod: 'card' | 'transfer' | 'paystack' | 'flutterwave' | string = 'card',
   billingCycle: 'monthly' | 'annual' = 'monthly'
 ): ZexCoreReceipt {
   const plan = PLANS[planTier] || PLANS.growth;
@@ -52,6 +52,15 @@ export function createReceipt(
 
   // If enterprise or dedicated, attach license key if exists
   const license = getTenantLicense(tenantSlug);
+
+  const channelDesc =
+    paymentMethod === 'paystack'
+      ? 'Paystack (NGN Cards & Instant NIP Transfer)'
+      : paymentMethod === 'flutterwave'
+      ? 'Flutterwave (Pan-African Mobile Money & M-Pesa)'
+      : paymentMethod === 'transfer'
+      ? 'Direct Virtual Bank Transfer (Titan / Wema)'
+      : 'Global Debit/Credit Card & Apple Pay (Stripe)';
 
   const receipt: ZexCoreReceipt = {
     receiptNumber: `INV-${now.getFullYear()}-${randSeq}`,
@@ -68,7 +77,7 @@ export function createReceipt(
     amountUsd: price,
     amountNgn: ngnPrice,
     paymentMethod,
-    paymentChannelDescription: paymentMethod === 'card' ? 'Debit/Credit Card (Instant Settlement)' : 'Direct Virtual Bank Transfer (Titan / Wema)',
+    paymentChannelDescription: channelDesc,
     status: 'PAID & SETTLED',
     subtotal: price,
     vatAmount: 0, // VAT inclusive

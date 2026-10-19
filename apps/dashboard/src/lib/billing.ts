@@ -4,6 +4,11 @@
 
 import { generateClientLicenseKey } from './licensing';
 import { createReceipt, openReceiptModal } from './invoicing';
+import {
+  executePaystackCheckout,
+  executeFlutterwaveCheckout,
+  executeStripeCheckout,
+} from './gateways';
 
 export type PlanTier = 'free' | 'starter' | 'growth' | 'agency' | 'enterprise' | 'dedicated';
 export type BillingCycle = 'monthly' | 'annual';
@@ -285,12 +290,12 @@ export function getTabLockedInfo(tabId: string): { title: string; subtitle: stri
   }
 }
 
-export type PaymentMethod = 'card' | 'transfer';
+export type PaymentMethod = 'card' | 'paystack' | 'flutterwave' | 'transfer';
 
 /**
- * Modern Clean Multi-Method Checkout Modal
- * Inspired by streamlined African & global fintech checkout flows.
- * Supports Card and Direct Bank Transfer with zero third-party watermark badges.
+ * Modern Clean Multi-Gateway Checkout Modal
+ * Seamlessly integrates Stripe (Cards & Apple Pay), Paystack (NGN & NIP Transfer),
+ * Flutterwave (Pan-African Mobile Money & M-Pesa), and Direct Virtual Account Transfer.
  */
 export function openStripeCheckoutModal(
   targetPlan: PlanTier,
@@ -317,7 +322,7 @@ export function openStripeCheckoutModal(
     const formattedNgn = `₦${ngnPrice.toLocaleString()}`;
 
     return `
-      <div class="stripe-modal-box" style="max-width: 680px; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+      <div class="stripe-modal-box" style="max-width: 720px; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
         <!-- Top Clean Merchant Bar -->
         <div style="background: #ffffff; border-bottom: 1px solid #f1f5f9; padding: 14px 22px; display: flex; align-items: center; justify-content: space-between;">
           <div style="display: flex; align-items: center; gap: 12px;">
@@ -329,7 +334,7 @@ export function openStripeCheckoutModal(
             <div style="text-align: right; line-height: 1.35; margin-right: 4px;">
               <div style="font-size: 0.72rem; color: #64748b; font-family: inherit; margin-bottom: 2px;">${tenantEmail}</div>
               <div style="font-size: 0.86rem; font-weight: 850; color: #0f172a;">
-                Pay <span style="color: #E50920;">${formattedPrice}</span>
+                Pay <span style="color: #E50920;">${formattedPrice}</span> <span style="font-size: 0.72rem; color: #64748b; font-weight: 600;">(${formattedNgn})</span>
               </div>
             </div>
             <button class="stripe-modal-close" id="btn-close-checkout-modal" title="Close" style="font-size: 1.4rem; padding: 0 6px; line-height: 1; color: #94a3b8; background: transparent; border: none; cursor: pointer;">&times;</button>
@@ -343,26 +348,50 @@ export function openStripeCheckoutModal(
           <div class="checkout-modal-sidebar">
             <div>
               <div style="font-size: 0.68rem; font-weight: 800; color: #94a3b8; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 12px; padding-left: 8px;">
-                PAY WITH
+                PAYMENT RAILS
               </div>
 
               <div style="display: flex; flex-direction: column; gap: 6px;">
-                <!-- Option 1: Card -->
-                <button type="button" class="btn-checkout-method ${activeMethod === 'card' ? 'active' : ''}" id="btn-method-card" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid ${activeMethod === 'card' ? '#fca5a5' : 'transparent'}; background: ${activeMethod === 'card' ? '#ffffff' : 'transparent'}; color: ${activeMethod === 'card' ? '#0f172a' : '#64748b'}; font-weight: ${activeMethod === 'card' ? '750' : '600'}; font-size: 0.84rem; cursor: pointer; text-align: left; transition: all 0.15s ease; ${activeMethod === 'card' ? 'box-shadow: 0 2px 6px rgba(0,0,0,0.04); border-left: 3px solid #E50920;' : ''}">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${activeMethod === 'card' ? '#E50920' : 'currentColor'}" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                  <span>Card</span>
+                <!-- Rail 1: Stripe Global Card -->
+                <button type="button" class="btn-checkout-method ${activeMethod === 'card' ? 'active' : ''}" id="btn-method-card" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid ${activeMethod === 'card' ? '#fca5a5' : 'transparent'}; background: ${activeMethod === 'card' ? '#ffffff' : 'transparent'}; color: ${activeMethod === 'card' ? '#0f172a' : '#64748b'}; font-weight: ${activeMethod === 'card' ? '750' : '600'}; font-size: 0.82rem; cursor: pointer; text-align: left; transition: all 0.15s ease; ${activeMethod === 'card' ? 'box-shadow: 0 2px 6px rgba(0,0,0,0.04); border-left: 3px solid #E50920;' : ''}">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="${activeMethod === 'card' ? '#E50920' : 'currentColor'}" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                  <div>
+                    <div style="line-height: 1.2;">Card &amp; Global</div>
+                    <div style="font-size: 0.64rem; color: #94a3b8; font-weight: 500;">Stripe / Apple Pay</div>
+                  </div>
                 </button>
 
-                <!-- Option 2: Transfer -->
-                <button type="button" class="btn-checkout-method ${activeMethod === 'transfer' ? 'active' : ''}" id="btn-method-transfer" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid ${activeMethod === 'transfer' ? '#fca5a5' : 'transparent'}; background: ${activeMethod === 'transfer' ? '#ffffff' : 'transparent'}; color: ${activeMethod === 'transfer' ? '#0f172a' : '#64748b'}; font-weight: ${activeMethod === 'transfer' ? '750' : '600'}; font-size: 0.84rem; cursor: pointer; text-align: left; transition: all 0.15s ease; ${activeMethod === 'transfer' ? 'box-shadow: 0 2px 6px rgba(0,0,0,0.04); border-left: 3px solid #E50920;' : ''}">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${activeMethod === 'transfer' ? '#E50920' : 'currentColor'}" stroke-width="2"><path d="M3 21h18"/><path d="M3 10h18"/><path d="M5 6l7-3 7 3"/><path d="M4 10v11"/><path d="M20 10v11"/><path d="M8 14v4"/><path d="M12 14v4"/><path d="M16 14v4"/></svg>
-                  <span>Transfer</span>
+                <!-- Rail 2: Paystack NGN -->
+                <button type="button" class="btn-checkout-method ${activeMethod === 'paystack' ? 'active' : ''}" id="btn-method-paystack" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid ${activeMethod === 'paystack' ? '#fca5a5' : 'transparent'}; background: ${activeMethod === 'paystack' ? '#ffffff' : 'transparent'}; color: ${activeMethod === 'paystack' ? '#0f172a' : '#64748b'}; font-weight: ${activeMethod === 'paystack' ? '750' : '600'}; font-size: 0.82rem; cursor: pointer; text-align: left; transition: all 0.15s ease; ${activeMethod === 'paystack' ? 'box-shadow: 0 2px 6px rgba(0,0,0,0.04); border-left: 3px solid #E50920;' : ''}">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="${activeMethod === 'paystack' ? '#E50920' : 'currentColor'}" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                  <div>
+                    <div style="line-height: 1.2;">Paystack (NGN)</div>
+                    <div style="font-size: 0.64rem; color: #94a3b8; font-weight: 500;">Cards, Transfer, USSD</div>
+                  </div>
+                </button>
+
+                <!-- Rail 3: Flutterwave Pan-African -->
+                <button type="button" class="btn-checkout-method ${activeMethod === 'flutterwave' ? 'active' : ''}" id="btn-method-flutterwave" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid ${activeMethod === 'flutterwave' ? '#fca5a5' : 'transparent'}; background: ${activeMethod === 'flutterwave' ? '#ffffff' : 'transparent'}; color: ${activeMethod === 'flutterwave' ? '#0f172a' : '#64748b'}; font-weight: ${activeMethod === 'flutterwave' ? '750' : '600'}; font-size: 0.82rem; cursor: pointer; text-align: left; transition: all 0.15s ease; ${activeMethod === 'flutterwave' ? 'box-shadow: 0 2px 6px rgba(0,0,0,0.04); border-left: 3px solid #E50920;' : ''}">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="${activeMethod === 'flutterwave' ? '#E50920' : 'currentColor'}" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                  <div>
+                    <div style="line-height: 1.2;">Flutterwave</div>
+                    <div style="font-size: 0.64rem; color: #94a3b8; font-weight: 500;">Mobile Money, M-Pesa</div>
+                  </div>
+                </button>
+
+                <!-- Rail 4: Direct Bank Transfer -->
+                <button type="button" class="btn-checkout-method ${activeMethod === 'transfer' ? 'active' : ''}" id="btn-method-transfer" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid ${activeMethod === 'transfer' ? '#fca5a5' : 'transparent'}; background: ${activeMethod === 'transfer' ? '#ffffff' : 'transparent'}; color: ${activeMethod === 'transfer' ? '#0f172a' : '#64748b'}; font-weight: ${activeMethod === 'transfer' ? '750' : '600'}; font-size: 0.82rem; cursor: pointer; text-align: left; transition: all 0.15s ease; ${activeMethod === 'transfer' ? 'box-shadow: 0 2px 6px rgba(0,0,0,0.04); border-left: 3px solid #E50920;' : ''}">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="${activeMethod === 'transfer' ? '#E50920' : 'currentColor'}" stroke-width="2"><path d="M3 21h18"/><path d="M3 10h18"/><path d="M5 6l7-3 7 3"/><path d="M4 10v11"/><path d="M20 10v11"/><path d="M8 14v4"/><path d="M12 14v4"/><path d="M16 14v4"/></svg>
+                  <div>
+                    <div style="line-height: 1.2;">Direct Transfer</div>
+                    <div style="font-size: 0.64rem; color: #94a3b8; font-weight: 500;">Virtual Bank Account</div>
+                  </div>
                 </button>
               </div>
             </div>
 
             <!-- Left Sidebar Footer: Plan & Billing Cycle -->
-            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 0.74rem;">
+            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 0.74rem; margin-top: 14px;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                 <span style="font-weight: 700; color: #0f172a;">${plan.name}</span>
                 <span style="font-weight: 800; color: #E50920;">${formattedPrice}</span>
@@ -371,21 +400,113 @@ export function openStripeCheckoutModal(
                 <button type="button" id="btn-checkout-cycle-monthly" style="flex: 1; border: none; padding: 3px 6px; font-size: 0.68rem; font-weight: 700; border-radius: 3px; cursor: pointer; background: ${currentCycle === 'monthly' ? '#fff' : 'transparent'}; color: ${currentCycle === 'monthly' ? '#0f172a' : '#64748b'};">Mo</button>
                 <button type="button" id="btn-checkout-cycle-annual" style="flex: 1; border: none; padding: 3px 6px; font-size: 0.68rem; font-weight: 700; border-radius: 3px; cursor: pointer; background: ${currentCycle === 'annual' ? '#fff' : 'transparent'}; color: ${currentCycle === 'annual' ? '#0f172a' : '#64748b'};">Yr (-10%)</button>
               </div>
-              <div style="font-size: 0.68rem; color: #94a3b8; text-align: center;">Cancel subscription anytime</div>
+              <div style="font-size: 0.66rem; color: #94a3b8; text-align: center;">Cancel subscription anytime</div>
             </div>
           </div>
 
           <!-- Right Content Area -->
           <div class="checkout-modal-content">
             
-            ${activeMethod === 'transfer' ? `
-              <!-- Transfer View (Inspired by second screenshot) -->
+            ${activeMethod === 'paystack' ? `
+              <!-- Paystack NGN View -->
+              <div style="display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
+                <div>
+                  <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin-bottom: 2px;">
+                    Pay ${formattedNgn} with Paystack
+                  </div>
+                  <div style="font-size: 0.76rem; color: #64748b; margin-bottom: 18px;">
+                    Equivalent: <strong style="color: #0f172a;">${formattedPrice} USD</strong> &bull; Fast local checkout in Nigeria, Ghana, Kenya &amp; South Africa
+                  </div>
+
+                  <!-- Channels Banner -->
+                  <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 16px 18px; margin-bottom: 16px;">
+                    <div style="font-size: 0.7rem; font-weight: 750; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px;">SUPPORTED PAYSTACK CHANNELS</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.78rem;">
+                      <div style="display: flex; align-items: center; gap: 6px; color: #0f172a; font-weight: 600;">
+                        <span style="color: #16a34a;">&bull;</span> Debit &amp; Credit Cards (Verve, Visa, Master)
+                      </div>
+                      <div style="display: flex; align-items: center; gap: 6px; color: #0f172a; font-weight: 600;">
+                        <span style="color: #16a34a;">&bull;</span> Instant Bank Transfer (NIP)
+                      </div>
+                      <div style="display: flex; align-items: center; gap: 6px; color: #0f172a; font-weight: 600;">
+                        <span style="color: #16a34a;">&bull;</span> USSD (*737#, *894#, *901#)
+                      </div>
+                      <div style="display: flex; align-items: center; gap: 6px; color: #0f172a; font-weight: 600;">
+                        <span style="color: #16a34a;">&bull;</span> Dedicated Virtual Accounts
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="background: #fff5f7; border: 1px solid #fecaca; border-radius: 6px; padding: 10px 14px; font-size: 0.74rem; color: #991b1b; line-height: 1.4; margin-bottom: 18px;">
+                    <strong>Unified Settlement:</strong> Instant activation and cryptographic lease renewal upon payment confirmation. Official VAT tax receipt issued automatically.
+                  </div>
+                </div>
+
+                <div>
+                  <button type="button" class="btn btn-primary" id="btn-submit-paystack" style="width: 100%; padding: 13px; font-weight: 800; font-size: 0.92rem; border-radius: 6px; justify-content: center; background: #00C3F7; border-color: #00C3F7; color: #0b1528;">
+                    Pay ${formattedNgn} with Paystack &rarr;
+                  </button>
+
+                  <div style="font-size: 0.7rem; color: #94a3b8; text-align: center; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                    <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #00C3F7;"></span>
+                    <span>Secured by Paystack &bull; Automated ZexCore Webhook Settlement</span>
+                  </div>
+                </div>
+              </div>
+            ` : activeMethod === 'flutterwave' ? `
+              <!-- Flutterwave Pan-African View -->
+              <div style="display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
+                <div>
+                  <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin-bottom: 2px;">
+                    Pay with Flutterwave (Pan-African &amp; Mobile Money)
+                  </div>
+                  <div style="font-size: 0.76rem; color: #64748b; margin-bottom: 18px;">
+                    30+ African currencies supported: <strong style="color: #0f172a;">${formattedNgn} NGN</strong> / <strong style="color: #0f172a;">${formattedPrice} USD</strong>
+                  </div>
+
+                  <!-- Channels Banner -->
+                  <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 16px 18px; margin-bottom: 16px;">
+                    <div style="font-size: 0.7rem; font-weight: 750; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px;">SUPPORTED MOBILE MONEY RAILS</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.78rem;">
+                      <div style="display: flex; align-items: center; gap: 6px; color: #0f172a; font-weight: 600;">
+                        <span style="color: #f59e0b;">&bull;</span> M-Pesa (Kenya &amp; Tanzania)
+                      </div>
+                      <div style="display: flex; align-items: center; gap: 6px; color: #0f172a; font-weight: 600;">
+                        <span style="color: #f59e0b;">&bull;</span> MTN MoMo (Ghana, Uganda, Rwanda)
+                      </div>
+                      <div style="display: flex; align-items: center; gap: 6px; color: #0f172a; font-weight: 600;">
+                        <span style="color: #f59e0b;">&bull;</span> Airtel Money &amp; Orange Money
+                      </div>
+                      <div style="display: flex; align-items: center; gap: 6px; color: #0f172a; font-weight: 600;">
+                        <span style="color: #f59e0b;">&bull;</span> Pan-African Debit/Credit Cards
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="background: #fffbeb; border: 1px solid #fef3c7; border-radius: 6px; padding: 10px 14px; font-size: 0.74rem; color: #92400e; line-height: 1.4; margin-bottom: 18px;">
+                    <strong>Cross-Border Settlement:</strong> Pay in your local currency. ZexCore automatically verifies the webhook transaction and dispatches the VAT receipt.
+                  </div>
+                </div>
+
+                <div>
+                  <button type="button" class="btn btn-primary" id="btn-submit-flutterwave" style="width: 100%; padding: 13px; font-weight: 800; font-size: 0.92rem; border-radius: 6px; justify-content: center; background: #fb923c; border-color: #fb923c; color: #ffffff;">
+                    Pay with Flutterwave &rarr;
+                  </button>
+
+                  <div style="font-size: 0.7rem; color: #94a3b8; text-align: center; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                    <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #fb923c;"></span>
+                    <span>Secured by Flutterwave &bull; Multi-Currency &bull; Instant Activation</span>
+                  </div>
+                </div>
+              </div>
+            ` : activeMethod === 'transfer' ? `
+              <!-- Transfer View -->
               <div>
                 <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin-bottom: 2px;">
                   Transfer ${formattedPrice} to ZEXCORE CHECKOUT
                 </div>
                 <div style="font-size: 0.76rem; color: #64748b; margin-bottom: 18px;">
-                  Equivalent: <strong style="color: #0f172a;">${formattedNgn} NGN</strong> &bull; Automated webhook settlement
+                  Equivalent: <strong style="color: #0f172a;">${formattedNgn} NGN</strong> &bull; Automated virtual account settlement
                 </div>
 
                 <!-- Account Box -->
@@ -434,14 +555,14 @@ export function openStripeCheckoutModal(
                 </div>
               </div>
             ` : `
-              <!-- Card View -->
+              <!-- Stripe Global Card View -->
               <form id="checkout-card-form" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
                 <div>
                   <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin-bottom: 2px;">
                     Enter your card details to pay
                   </div>
                   <div style="font-size: 0.76rem; color: #64748b; margin-bottom: 18px;">
-                    Enter your card information below to continue
+                    International Visa, Mastercard, American Express &amp; Apple Pay via Stripe
                   </div>
 
                   <div style="margin-bottom: 14px;">
@@ -468,7 +589,7 @@ export function openStripeCheckoutModal(
 
                 <div>
                   <button type="submit" class="btn btn-primary" id="btn-submit-card" style="width: 100%; padding: 13px; font-weight: 800; font-size: 0.92rem; border-radius: 6px; justify-content: center; background: #E50920; border-color: #E50920; color: #ffffff;">
-                    Pay ${formattedPrice} &amp; Activate ${plan.name}
+                    Pay ${formattedPrice} via Stripe &amp; Activate ${plan.name}
                   </button>
 
                   <div style="font-size: 0.7rem; color: #94a3b8; text-align: center; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 5px;">
@@ -488,8 +609,22 @@ export function openStripeCheckoutModal(
   modalWrap.innerHTML = renderModalHtml();
   document.body.appendChild(modalWrap);
 
+  const fulfillSubscription = (methodName: string) => {
+    setTenantPlan(targetPlan);
+    if (targetPlan === 'dedicated' || targetPlan === 'enterprise') {
+      generateClientLicenseKey('default', 'Enterprise Workspace', targetPlan, 30);
+    }
+    const receipt = createReceipt('default', targetPlan, tenantEmail, methodName, currentCycle);
+    modalWrap.remove();
+    openReceiptModal(receipt);
+    if (onSuccess) onSuccess(targetPlan);
+  };
+
   // Attach dynamic handlers
   function attachModalEvents() {
+    const price = currentCycle === 'annual' ? plan.annualPrice : plan.monthlyPrice;
+    const ngnPrice = price * 1500;
+
     // Close button & overlay click
     document.getElementById('btn-close-checkout-modal')?.addEventListener('click', () => {
       modalWrap.remove();
@@ -499,9 +634,21 @@ export function openStripeCheckoutModal(
       if (e.target === modalWrap) modalWrap.remove();
     });
 
-    // Method Switchers (Card vs Transfer)
+    // Method Switchers (Stripe Card, Paystack, Flutterwave, Transfer)
     document.getElementById('btn-method-card')?.addEventListener('click', () => {
       activeMethod = 'card';
+      modalWrap.innerHTML = renderModalHtml();
+      attachModalEvents();
+    });
+
+    document.getElementById('btn-method-paystack')?.addEventListener('click', () => {
+      activeMethod = 'paystack';
+      modalWrap.innerHTML = renderModalHtml();
+      attachModalEvents();
+    });
+
+    document.getElementById('btn-method-flutterwave')?.addEventListener('click', () => {
+      activeMethod = 'flutterwave';
       modalWrap.innerHTML = renderModalHtml();
       attachModalEvents();
     });
@@ -527,6 +674,56 @@ export function openStripeCheckoutModal(
       attachModalEvents();
     });
 
+    // Paystack execution
+    document.getElementById('btn-submit-paystack')?.addEventListener('click', () => {
+      const btn = document.getElementById('btn-submit-paystack') as HTMLButtonElement | null;
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<span class="stripe-spinner"></span> Connecting Paystack Gateway...`;
+      }
+      executePaystackCheckout({
+        planTier: targetPlan,
+        planName: plan.name,
+        amountUsd: price,
+        amountNgn: ngnPrice,
+        cycle: currentCycle,
+        customerEmail: tenantEmail,
+        tenantSlug: 'default',
+        onSuccess: () => fulfillSubscription('paystack'),
+        onCancel: () => {
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `Pay ₦${ngnPrice.toLocaleString()} with Paystack &rarr;`;
+          }
+        },
+      });
+    });
+
+    // Flutterwave execution
+    document.getElementById('btn-submit-flutterwave')?.addEventListener('click', () => {
+      const btn = document.getElementById('btn-submit-flutterwave') as HTMLButtonElement | null;
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<span class="stripe-spinner"></span> Connecting Flutterwave...`;
+      }
+      executeFlutterwaveCheckout({
+        planTier: targetPlan,
+        planName: plan.name,
+        amountUsd: price,
+        amountNgn: ngnPrice,
+        cycle: currentCycle,
+        customerEmail: tenantEmail,
+        tenantSlug: 'default',
+        onSuccess: () => fulfillSubscription('flutterwave'),
+        onCancel: () => {
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `Pay with Flutterwave &rarr;`;
+          }
+        },
+      });
+    });
+
     // Copy Account Number button
     document.getElementById('btn-copy-account-num')?.addEventListener('click', () => {
       navigator.clipboard?.writeText('9983826819');
@@ -541,7 +738,6 @@ export function openStripeCheckoutModal(
 
     // Copy Amount button
     document.getElementById('btn-copy-amount')?.addEventListener('click', () => {
-      const price = currentCycle === 'annual' ? plan.annualPrice : plan.monthlyPrice;
       navigator.clipboard?.writeText(price.toString());
       const text = document.getElementById('copy-text-amount');
       if (text) {
@@ -561,37 +757,30 @@ export function openStripeCheckoutModal(
       }
 
       setTimeout(() => {
-        setTenantPlan(targetPlan);
-        if (targetPlan === 'dedicated' || targetPlan === 'enterprise') {
-          generateClientLicenseKey('default', 'Enterprise Workspace', targetPlan, 30);
-        }
-        const receipt = createReceipt('default', targetPlan, tenantEmail, activeMethod, currentCycle);
-        modalWrap.remove();
-        openReceiptModal(receipt);
-        if (onSuccess) onSuccess(targetPlan);
+        fulfillSubscription('transfer');
       }, 900);
     });
 
-    // Card Form submission
+    // Card Form submission (Stripe)
     const cardForm = document.getElementById('checkout-card-form');
     cardForm?.addEventListener('submit', (e) => {
       e.preventDefault();
       const btn = document.getElementById('btn-submit-card') as HTMLButtonElement | null;
       if (btn) {
         btn.disabled = true;
-        btn.innerHTML = `<span class="stripe-spinner"></span> Authorizing card payment...`;
+        btn.innerHTML = `<span class="stripe-spinner"></span> Authorizing Stripe payment...`;
       }
 
-      setTimeout(() => {
-        setTenantPlan(targetPlan);
-        if (targetPlan === 'dedicated' || targetPlan === 'enterprise') {
-          generateClientLicenseKey('default', 'Enterprise Workspace', targetPlan, 30);
-        }
-        const receipt = createReceipt('default', targetPlan, tenantEmail, activeMethod, currentCycle);
-        modalWrap.remove();
-        openReceiptModal(receipt);
-        if (onSuccess) onSuccess(targetPlan);
-      }, 900);
+      executeStripeCheckout({
+        planTier: targetPlan,
+        planName: plan.name,
+        amountUsd: price,
+        amountNgn: ngnPrice,
+        cycle: currentCycle,
+        customerEmail: tenantEmail,
+        tenantSlug: 'default',
+        onSuccess: () => fulfillSubscription('card'),
+      });
     });
   }
 

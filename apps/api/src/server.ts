@@ -6,6 +6,7 @@ import { authPlugin } from './plugins/auth.js';
 import { errorHandlerPlugin } from './plugins/errorHandler.js';
 import { securityHeadersPlugin } from './plugins/securityHeaders.js';
 import { rateLimitPlugin } from './plugins/rateLimit.js';
+import { billingWebhooksPlugin } from './plugins/billingWebhooks.js';
 import { bootstrapApp } from './bootstrap.js';
 
 export async function createServer() {
@@ -38,6 +39,7 @@ export async function createServer() {
   await server.register(errorHandlerPlugin);
   await server.register(tenancyPlugin);
   await server.register(authPlugin);
+  await server.register(billingWebhooksPlugin);
 
   // Bootstrap Core & Modules
   await bootstrapApp(server);
