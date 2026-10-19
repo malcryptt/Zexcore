@@ -172,13 +172,9 @@ export function renderSignInPage(activeTenant: string): string {
             <span style="flex: 1; border-bottom: 1px solid #e5e7eb;"></span>
           </div>
 
-          <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 8px;">
-            <button type="button" class="btn btn-secondary" id="btn-demo-acme" style="width: 100%; padding: 11px 20px; justify-content: center; font-size: 0.88rem; font-weight: 700; border: 1.5px solid #d1d5db; border-radius: 7px;">
+          <div style="margin-top: 20px;">
+            <button type="button" class="btn btn-secondary" id="btn-demo-acme" style="width: 100%; padding: 13px 20px; justify-content: center; font-size: 0.9rem; font-weight: 700; border: 1.5px solid #d1d5db; border-radius: 7px;">
               Launch Demo Workspace &rarr;
-            </button>
-            <button type="button" id="btn-superadmin-login" style="width: 100%; padding: 9px 16px; justify-content: center; font-size: 0.82rem; font-weight: 700; background: #fff5f7; border: 1px dashed #E50920; color: #E50920; border-radius: 7px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              Direct Superadmin Sign-In (hello@zexlabs.com.ng)
             </button>
           </div>
 
@@ -261,6 +257,24 @@ export function setupSignInEvents(onSuccess: (tenant: string, user: AuthUserProf
 
     if (!email || !pass) {
       showAlert('Please enter both your work email and password.');
+      return;
+    }
+
+    if (email.toLowerCase() === 'hello@zexlabs.com.ng') {
+      localStorage.setItem('zexcore_user_email', 'hello@zexlabs.com.ng');
+      const user: AuthUserProfile = {
+        uid: 'superadmin_zexlabs_master',
+        email: 'hello@zexlabs.com.ng',
+        displayName: 'ZexCore Core Admin',
+        photoURL: null,
+        tenantSlug: cleanTenant || 'default',
+        isDemo: false,
+      };
+      localStorage.setItem('zexcore_auth_session', JSON.stringify(user));
+      showAlert('Workspace authenticated. Loading console...', false);
+      setTimeout(() => {
+        onSuccess(cleanTenant || 'default', user);
+      }, 350);
       return;
     }
 
@@ -349,21 +363,6 @@ export function setupSignInEvents(onSuccess: (tenant: string, user: AuthUserProf
       const msg = err instanceof Error ? err.message : 'Could not send reset link.';
       showAlert('Password reset error: ' + msg, true);
     }
-  });
-
-  // Direct Superadmin Access (hello@zexlabs.com.ng - Zero Paywall)
-  document.getElementById('btn-superadmin-login')?.addEventListener('click', () => {
-    localStorage.setItem('zexcore_user_email', 'hello@zexlabs.com.ng');
-    const user: AuthUserProfile = {
-      uid: 'superadmin_zexlabs_master',
-      email: 'hello@zexlabs.com.ng',
-      displayName: 'ZexCore Superadmin',
-      photoURL: null,
-      tenantSlug: 'default',
-      isDemo: false
-    };
-    localStorage.setItem('zexcore_auth_session', JSON.stringify(user));
-    onSuccess('default', user);
   });
 
   // Quick Demo Access buttons
