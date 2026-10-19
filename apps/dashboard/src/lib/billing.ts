@@ -2,6 +2,8 @@
  * Client-Side Billing, Stripe Subscription Gateway & Feature Gating
  */
 
+import { generateClientLicenseKey } from './licensing';
+
 export type PlanTier = 'free' | 'starter' | 'growth' | 'agency' | 'enterprise' | 'dedicated';
 export type BillingCycle = 'monthly' | 'annual';
 
@@ -104,7 +106,7 @@ export const PLANS: Record<PlanTier, PlanMetadata> = {
     whoItsFor: 'Larger organisations',
     mainLimits: 'Unlimited users, SSO, SLA, priority support, Audit Business included, custom limits',
     fromPrice: true,
-    allowedTabs: ['overview', 'crm', 'rules', 'iot', 'audit', 'whitelabel'],
+    allowedTabs: ['overview', 'crm', 'rules', 'iot', 'audit', 'whitelabel', 'license'],
     features: [
       'Unlimited users',
       'Single Sign-On (SSO / SAML)',
@@ -123,7 +125,7 @@ export const PLANS: Record<PlanTier, PlanMetadata> = {
     whoItsFor: 'Clinics and compliance-heavy clients',
     mainLimits: 'Dedicated instance, hardened tier, field encryption, signed agreements',
     fromPrice: true,
-    allowedTabs: ['overview', 'crm', 'rules', 'iot', 'compliance', 'audit', 'whitelabel'],
+    allowedTabs: ['overview', 'crm', 'rules', 'iot', 'compliance', 'audit', 'whitelabel', 'license'],
     features: [
       'Dedicated cloud instance',
       'Hardened security tier',
@@ -198,6 +200,7 @@ export function getAuditTierForPlan(plan: PlanTier): AuditLevel {
 }
 
 export function getRequiredPlanForTab(tabId: string): PlanTier {
+  if (tabId === 'license') return 'dedicated';
   if (tabId === 'compliance') return 'dedicated';
   if (tabId === 'whitelabel') return 'agency';
   if (tabId === 'iot') return 'agency';
@@ -209,6 +212,13 @@ export function getRequiredPlanForTab(tabId: string): PlanTier {
 
 export function getTabLockedInfo(tabId: string): { title: string; subtitle: string; icon: string; minPlan: PlanTier } {
   switch (tabId) {
+    case 'license':
+      return {
+        title: 'Enterprise Dedicated Cryptographic License Vault',
+        subtitle: 'Inspect your active enterprise cluster lease, copy signed license keys, export Docker Compose manifests, and manage 24h cloud heartbeats.',
+        icon: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+        minPlan: 'dedicated',
+      };
     case 'whitelabel':
       return {
         title: 'Agency White-Label Branding Studio',
@@ -531,6 +541,9 @@ export function openStripeCheckoutModal(
 
       setTimeout(() => {
         setTenantPlan(targetPlan);
+        if (targetPlan === 'dedicated' || targetPlan === 'enterprise') {
+          generateClientLicenseKey('default', 'Enterprise Workspace', targetPlan, 30);
+        }
         modalWrap.remove();
         if (onSuccess) onSuccess(targetPlan);
       }, 900);
@@ -548,6 +561,9 @@ export function openStripeCheckoutModal(
 
       setTimeout(() => {
         setTenantPlan(targetPlan);
+        if (targetPlan === 'dedicated' || targetPlan === 'enterprise') {
+          generateClientLicenseKey('default', 'Enterprise Workspace', targetPlan, 30);
+        }
         modalWrap.remove();
         if (onSuccess) onSuccess(targetPlan);
       }, 900);

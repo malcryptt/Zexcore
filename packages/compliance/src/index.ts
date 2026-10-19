@@ -12,6 +12,7 @@ export * from './crypto/cipher.js';
 export * from './schema/compliance.js';
 export * from './permissions.js';
 export * from './events.js';
+export * from './licensing/licenseEngine.js';
 
 export const complianceModule: ZexModule = {
   name: 'compliance',

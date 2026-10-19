@@ -16,6 +16,7 @@ import { renderPricingPage } from './pages/pricing';
 import { renderSignInPage, setupSignInEvents } from './pages/signin';
 import { setupNavbarEvents } from './components/navbar';
 import { renderConsoleAuditView, setupConsoleAuditEvents } from './pages/consoleAudit';
+import { renderConsoleLicense, attachConsoleLicenseEvents } from './components/consoleLicense';
 import { getCurrentUser, logoutUser, subscribeToAuth, type AuthUserProfile } from './lib/firebase';
 import {
   loadOnboardingState,
@@ -1322,6 +1323,11 @@ function renderConsoleWhiteLabelView(currentPlan: PlanTier): string {
   return renderWithSoftPaywall('whitelabel', currentPlan, innerWhiteLabel);
 }
 
+function renderConsoleLicenseView(currentPlan: PlanTier): string {
+  const innerLicense = renderConsoleLicense(state.activeTenant);
+  return renderWithSoftPaywall('license', currentPlan, innerLicense);
+}
+
 function showToastNotification(message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') {
   let container = document.getElementById('zexcore-toast-container');
   if (!container) {
@@ -1579,6 +1585,11 @@ function renderDashboard() {
             Audit &amp; Finance
             <span class="nav-badge" style="background: rgba(229, 9, 32, 0.12); color: var(--primary); font-weight: 800;">5</span>
           </a>
+          <a href="#/console/license" class="nav-item ${state.currentTab === 'license' ? 'active' : ''}" data-tab="license">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zm-3 8V7a3 3 0 0 1 6 0v3H9z"/></svg>
+            Dedicated License
+            ${isTabLocked('license', currentPlan) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> DEDICATED</span>` : '<span class="nav-badge" style="background: rgba(22, 163, 74, 0.15); color: #16a34a; font-weight: 800;">ACTIVE</span>'}
+          </a>
         </nav>
 
         <!-- Active Plan Card in Sidebar -->
@@ -1669,6 +1680,7 @@ function renderDashboard() {
             state.currentTab === 'crm' ? renderConsoleCrmView(currentPlan) :
             state.currentTab === 'compliance' ? renderConsoleComplianceView(currentPlan) :
             state.currentTab === 'whitelabel' ? renderConsoleWhiteLabelView(currentPlan) :
+            state.currentTab === 'license' ? renderConsoleLicenseView(currentPlan) :
             renderConsoleAuditView(currentPlan)
           }
         </div>
@@ -1856,6 +1868,13 @@ function setupEventListeners() {
     // Save Branding button
     document.getElementById('btn-save-agency-branding')?.addEventListener('click', () => {
       showToastNotification('Agency branding saved! Client portals updated.', 'success');
+    });
+  }
+
+  // ── Dedicated License Vault Handlers ──────────────────────────────────────
+  if (state.currentTab === 'license') {
+    attachConsoleLicenseEvents(state.activeTenant, () => {
+      renderDashboard();
     });
   }
 
@@ -3594,7 +3613,7 @@ function syncRouteFromHash() {
     state.currentView = 'signin';
   } else if (route === 'console' || route === 'dashboard' || route === 'app') {
     state.currentView = 'console';
-    const validTabs = ['overview', 'iot', 'rules', 'crm', 'compliance', 'whitelabel', 'audit'];
+    const validTabs = ['overview', 'iot', 'rules', 'crm', 'compliance', 'whitelabel', 'audit', 'license'];
     state.currentTab = validTabs.includes(subParam) ? subParam : 'overview';
   } else if (route === 'platform') {
     state.currentView = 'platform';
@@ -3640,6 +3659,7 @@ function syncRouteFromHash() {
       compliance: 'Compliance Vault & GDPR Privacy — ZexCore Console',
       whitelabel: 'Agency White-Label Branding Studio — ZexCore Console',
       audit: 'Audit & Financial Health Suite — ZexCore Console',
+      license: 'Enterprise Dedicated License Vault — ZexCore Console',
     };
     document.title = consoleTitles[state.currentTab] || 'ZexCore Control — Operational Console';
   } else {
