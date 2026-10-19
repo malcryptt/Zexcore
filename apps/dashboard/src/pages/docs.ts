@@ -208,31 +208,62 @@ export const docArticles: Record<string, DocArticle> = {
   'install': {
     id: 'install',
     category: 'Getting Started',
-    title: 'Installation & Setup',
-    intro: 'Bootstrap the ZexCore monorepo in under 5 minutes using pnpm and Docker.',
+    title: 'Platform Deployment & Access',
+    intro: 'Deploy and access ZexCore via Cloud SaaS or Enterprise Dedicated Self-Hosted Containers.',
     contentHtml: `
-      <h4 class="doc-subhead">Prerequisites</h4>
-      <ul class="bullet-feature-list" style="margin-bottom: 20px;">
-        <li>Node.js 22 LTS or later</li>
-        <li>pnpm 9.x</li>
-        <li>PostgreSQL 17 (or Docker for local container)</li>
-      </ul>
-
-      <h4 class="doc-subhead">Clone and Install Dependencies</h4>
-      <div class="code-editor-card">
-        <div class="code-editor-title">terminal</div>
-        <pre class="code-pre"><code>git clone https://github.com/malcryptt/Zexcore.git
-cd Zexcore
-pnpm install</code></pre>
+      <!-- Track 1: Cloud SaaS -->
+      <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 22px; margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #16a34a;"></span>
+            <strong style="font-size: 1.05rem; color: #0f172a;">Track 1: Managed Cloud SaaS (Recommended)</strong>
+          </div>
+          <span style="font-size: 0.72rem; font-weight: 700; color: #E50920; background: #FEF2F2; padding: 3px 8px; border-radius: 4px;">NO INSTALLATION REQUIRED</span>
+        </div>
+        <p style="font-size: 0.88rem; color: #475569; margin-bottom: 14px;">
+          For startups, clinics, digital agencies, and e-commerce merchants. High-availability cloud infrastructure, Postgres 17 tenant isolation, managed SSL, and automatic backups are fully provisioned out of the box.
+        </p>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <a href="#/console/overview" class="btn btn-primary btn-sm" style="font-weight: 700;">Launch Cloud Console &rarr;</a>
+          <a href="#/pricing" class="btn btn-secondary btn-sm">View Pricing Tiers</a>
+        </div>
       </div>
 
-      <h4 class="doc-subhead">Start Local Development Database</h4>
-      <p>ZexCore provides an automated Docker script that bootstraps a PostgreSQL 17 instance preconfigured with the required <code>zexcore_app</code> non-superuser role and tenant schemas:</p>
-      <div class="code-editor-card">
-        <div class="code-editor-title">terminal</div>
-        <pre class="code-pre"><code>chmod +x ./scripts/dev-db.sh
-./scripts/dev-db.sh up
-pnpm db:push</code></pre>
+      <!-- Track 2: Enterprise Dedicated Self-Hosted -->
+      <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 22px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #0284c7;"></span>
+            <strong style="font-size: 1.05rem; color: #0f172a;">Track 2: Enterprise Dedicated Self-Hosted</strong>
+          </div>
+          <span style="font-size: 0.72rem; font-weight: 700; color: #0284c7; background: #E0F2FE; padding: 3px 8px; border-radius: 4px;">DEDICATED TIER ($1,500/mo)</span>
+        </div>
+        <p style="font-size: 0.88rem; color: #475569; margin-bottom: 16px;">
+          Deploy hardened ZexCore container instances inside your private VPC (AWS, Azure, GCP) or on-premise hardware to comply with strict NDPR, HIPAA, and banking data-residency mandates.
+        </p>
+
+        <h4 class="doc-subhead" style="font-size: 0.85rem; margin-bottom: 8px;">1. Pull Secure Enterprise Image</h4>
+        <div class="code-editor-card" style="margin-bottom: 16px;">
+          <div class="code-editor-title">terminal</div>
+          <pre class="code-pre"><code># Authenticate against private enterprise registry
+docker pull registry.zexcore.io/enterprise/core:v1.4-hardened</code></pre>
+        </div>
+
+        <h4 class="doc-subhead" style="font-size: 0.85rem; margin-bottom: 8px;">2. Bootstrap Dedicated Cluster with Signed License</h4>
+        <div class="code-editor-card">
+          <div class="code-editor-title">docker-compose.enterprise.yml</div>
+          <pre class="code-pre"><code>version: '3.9'
+services:
+  zexcore-node:
+    image: registry.zexcore.io/enterprise/core:v1.4-hardened
+    environment:
+      - ZEXCORE_LICENSE_KEY=ZEX-ENT-XXXX-XXXX-XXXX
+      - DATABASE_URL=postgresql://zexcore_app:secret@db:5432/zexcore_prod
+      - ENCRYPTION_ROOT_KEY_ROTATION_VAULT=file:///vault/keys/aes256.master
+      - CRYPTO_HEARTBEAT_ENDPOINT=https://api.zexcore.com/v1/license/heartbeat
+    ports:
+      - "443:443"</code></pre>
+        </div>
       </div>
     `
   },
@@ -669,7 +700,7 @@ export function renderDocsPage(): string {
                 <ul class="docs-nav-items">
                   <li><a href="javascript:void(0)" onclick="selectDocArticle('what-is-zexcore')" class="docs-nav-item ${currentArticle.id === 'what-is-zexcore' ? 'active' : ''}"><span class="docs-nav-dot"></span> <b>What ZexCore is All About</b></a></li>
                   <li><a href="javascript:void(0)" onclick="selectDocArticle('arch-overview')" class="docs-nav-item ${currentArticle.id === 'arch-overview' ? 'active' : ''}">Architecture Overview</a></li>
-                  <li><a href="javascript:void(0)" onclick="selectDocArticle('install')" class="docs-nav-item ${currentArticle.id === 'install' ? 'active' : ''}">Installation &amp; Setup</a></li>
+                  <li><a href="javascript:void(0)" onclick="selectDocArticle('install')" class="docs-nav-item ${currentArticle.id === 'install' ? 'active' : ''}">Cloud vs. Enterprise Setup</a></li>
                   <li><a href="javascript:void(0)" onclick="selectDocArticle('tenancy')" class="docs-nav-item ${currentArticle.id === 'tenancy' ? 'active' : ''}">Tenant Resolution</a></li>
                   <li><a href="javascript:void(0)" onclick="selectDocArticle('auth')" class="docs-nav-item ${currentArticle.id === 'auth' ? 'active' : ''}">Authentication</a></li>
                 </ul>
