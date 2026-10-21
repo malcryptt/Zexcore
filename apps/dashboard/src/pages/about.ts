@@ -304,31 +304,90 @@ export function renderAboutPage(): string {
               </div>
             </div>
 
-            <!-- Terminal Code Block -->
+
+            <!-- Enterprise Setup Detail -->
             <div style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 10px; overflow: hidden;">
               <div style="background: #f8f9fb; padding: 12px 18px; border-bottom: 1px solid var(--border-default); display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: var(--text-secondary);">Enterprise Workspace Setup — Command Reference</span>
-                <span style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted);">PostgreSQL 17 &bull; Fastify &bull; TypeScript</span>
+                <span style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: var(--text-secondary);">Enterprise Workspace Setup — Technical Overview</span>
+                <span style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted);">PostgreSQL 17 &bull; Fastify &bull; Node 22 &bull; TypeScript</span>
               </div>
-              <pre style="margin: 0; padding: 20px; background: #fafbfc; font-family: var(--font-mono); font-size: 0.84rem; color: #1e293b; line-height: 1.7; overflow-x: auto;"><code># 1. Clone the ZexCore repository
-git clone https://github.com/malcryptt/Zexcore.git &amp;&amp; cd ZexCore
 
-# 2. Install all package dependencies
-pnpm install
+              <div style="padding: 24px; display: flex; flex-direction: column; gap: 20px;">
 
-# 3. Start the PostgreSQL 17 database and apply schema migrations
+                <div style="border-left: 3px solid #E50920; padding-left: 16px;">
+                  <div style="font-size: 0.78rem; font-weight: 800; color: #E50920; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Step 1 — Receive Your Workspace Package</div>
+                  <p style="font-size: 0.88rem; color: #374151; line-height: 1.65; margin: 0;">
+                    Enterprise clients receive a private, pre-configured ZexCore workspace bundle directly from the ZexCore team. The package includes the full monorepo, your tenant provisioning credentials, and a pre-populated <code>.env</code> environment file with your organisation's values. Contact <a href="mailto:hello@zexcore.com.ng" style="color: #E50920; font-weight: 700;">hello@zexcore.com.ng</a> to initiate an enterprise delivery.
+                  </p>
+                </div>
+
+                <div style="border-left: 3px solid #0284c7; padding-left: 16px;">
+                  <div style="font-size: 0.78rem; font-weight: 800; color: #0284c7; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Step 2 — Configure Your Environment</div>
+                  <p style="font-size: 0.88rem; color: #374151; line-height: 1.6; margin: 0 0 10px 0;">
+                    Populate your <code>.env</code> file with the values provided in your enterprise delivery. The required configuration parameters are:
+                  </p>
+                  <pre style="margin: 0; padding: 14px 16px; background: #fafbfc; border: 1px solid var(--border-default); border-radius: 8px; font-family: var(--font-mono); font-size: 0.78rem; color: #1e293b; line-height: 1.7; overflow-x: auto;"><code>NODE_ENV=production
+DATABASE_URL=postgres://zexcore_app:&lt;password&gt;@localhost:5432/zexcore_db
+JWT_SECRET=&lt;minimum-32-character-signing-secret&gt;
+CORS_ORIGIN=https://&lt;your-dashboard-domain&gt;
+PORT=3000
+HOST=0.0.0.0
+LOG_LEVEL=info
+GEMINI_API_KEY=&lt;optional-for-AI-rule-authoring&gt;</code></pre>
+                </div>
+
+                <div style="border-left: 3px solid #16a34a; padding-left: 16px;">
+                  <div style="font-size: 0.78rem; font-weight: 800; color: #16a34a; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Step 3 — Start the Database Container</div>
+                  <p style="font-size: 0.88rem; color: #374151; line-height: 1.6; margin: 0 0 10px 0;">
+                    ZexCore ships with a Docker Compose configuration for PostgreSQL 17. Launch the database and wait for its health check to pass before proceeding:
+                  </p>
+                  <pre style="margin: 0; padding: 14px 16px; background: #fafbfc; border: 1px solid var(--border-default); border-radius: 8px; font-family: var(--font-mono); font-size: 0.78rem; color: #1e293b; line-height: 1.7; overflow-x: auto;"><code># Start the PostgreSQL 17 container (health-checked, persistent volume)
 docker compose up -d postgres
-pnpm db:migrate &amp;&amp; pnpm db:seed
 
-# 4. Start the API server (port 3000) and the management dashboard (port 5173)
-pnpm --filter @zexcore/api dev
-pnpm --filter @zexcore/dashboard dev
+# Wait for readiness (~5 seconds), then verify
+docker compose ps</code></pre>
+                </div>
 
-# 5. Confirm the system is healthy and tenant isolation is active
-curl -s http://localhost:3000/health | jq .
-# Expected: {"status":"healthy","database":"connected","rlsEnforced":true}</code></pre>
+                <div style="border-left: 3px solid #7c3aed; padding-left: 16px;">
+                  <div style="font-size: 0.78rem; font-weight: 800; color: #7c3aed; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Step 4 — Initialise Schema &amp; Provision Tenant</div>
+                  <p style="font-size: 0.88rem; color: #374151; line-height: 1.6; margin: 0 0 10px 0;">
+                    The schema initialiser creates all required tables, activates Row-Level Security policies on each tenant-scoped table, and provisions your platform administrator account and first tenant workspace:
+                  </p>
+                  <pre style="margin: 0; padding: 14px 16px; background: #fafbfc; border: 1px solid var(--border-default); border-radius: 8px; font-family: var(--font-mono); font-size: 0.78rem; color: #1e293b; line-height: 1.7; overflow-x: auto;"><code># Apply schema migrations &amp; seed initial platform data
+pnpm db:migrate
+pnpm seed</code></pre>
+                </div>
+
+                <div style="border-left: 3px solid #d97706; padding-left: 16px;">
+                  <div style="font-size: 0.78rem; font-weight: 800; color: #d97706; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Step 5 — Launch the API &amp; Dashboard</div>
+                  <p style="font-size: 0.88rem; color: #374151; line-height: 1.6; margin: 0 0 10px 0;">
+                    Start the Fastify micro-kernel API server and the operations dashboard. For a containerised production deployment, use <code>docker compose up</code> to start both services together:
+                  </p>
+                  <pre style="margin: 0; padding: 14px 16px; background: #fafbfc; border: 1px solid var(--border-default); border-radius: 8px; font-family: var(--font-mono); font-size: 0.78rem; color: #1e293b; line-height: 1.7; overflow-x: auto;"><code># Full containerised production start (API + PostgreSQL)
+docker compose up
+
+# Verify the kernel is healthy and RLS is enforced
+curl -s http://localhost:3000/api/health
+# → {"status":"healthy","database":"connected","rlsEnforced":true}</code></pre>
+                </div>
+
+                <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 14px 16px;">
+                  <div style="font-size: 0.82rem; color: #15803d; font-weight: 700; margin-bottom: 4px;">
+                    <svg style="display: inline; vertical-align: middle; margin-right: 4px;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    What the health check confirms
+                  </div>
+                  <ul style="margin: 0; padding-left: 18px; font-size: 0.82rem; color: #166534; line-height: 1.65;">
+                    <li>PostgreSQL 17 connection is live and accepting transactions</li>
+                    <li>Row-Level Security policies are loaded and enforced on all tenant-scoped tables</li>
+                    <li>The Fastify micro-kernel is accepting requests with rate limiting active</li>
+                    <li>Security headers (HSTS, CSP, X-Frame-Options) are applied to all responses</li>
+                  </ul>
+                </div>
+
+              </div>
             </div>
           </section>
+
 
           <!-- CALL TO ACTION -->
           <section style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 14px; padding: 48px 36px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
