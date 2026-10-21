@@ -1,11 +1,12 @@
 /**
- * ZexCore About & Plain-English Platform Guide
+ * ZexCore Platform Architecture & Foundation Guide
  * 
- * Provides non-technical and technical clients with:
- * - What ZexCore is and why it exists
- * - How every single feature works in plain English
- * - Plain-English glossary for all technical terms
- * - Step-by-step installation on client workspace (Enterprise) and running on the website
+ * Formal and educational overview:
+ * - Enterprise mission, purpose, and problem definition
+ * - The architectural contrast between custom plumbing and kernel-level infrastructure
+ * - Functional breakdown of core engines and security mechanisms
+ * - Deployment methodologies: Instant Cloud and Enterprise On-Premise
+ * - Technical Glossary & Architectural Definitions
  */
 
 import { renderNavbar } from '../components/navbar';
@@ -16,367 +17,392 @@ export function renderAboutPage(): string {
     <div class="site-wrapper">
       ${renderNavbar('about')}
 
-      <main class="page-content" style="padding-top: 40px; padding-bottom: 80px;">
+      <main class="page-content" style="padding-top: 48px; padding-bottom: 96px;">
         <!-- Hero Section -->
-        <section class="about-hero" style="max-width: 1200px; margin: 0 auto; padding: 40px 24px; text-align: center;">
-          <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(229, 9, 32, 0.08); border: 1px solid rgba(229, 9, 32, 0.2); padding: 6px 14px; border-radius: 999px; margin-bottom: 20px;">
-            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #E50920;"></span>
-            <span style="font-size: 0.76rem; font-weight: 800; color: #E50920; text-transform: uppercase; letter-spacing: 0.06em;">Plain English Guide &amp; Architecture</span>
-          </div>
-
-          <h1 style="font-size: clamp(2.2rem, 5vw, 3.4rem); font-weight: 850; line-height: 1.15; color: #17191D; letter-spacing: -0.03em; margin-bottom: 20px;">
-            What is ZexCore, Really?<br />
-            <span style="color: #E50920;">Everything Explained in Plain English.</span>
+        <section class="about-hero" style="max-width: 1160px; margin: 0 auto; padding: 48px 24px 36px; text-align: center;">
+          <h1 style="font-size: clamp(2.2rem, 4.8vw, 3.4rem); font-weight: 850; line-height: 1.15; color: #17191D; letter-spacing: -0.03em; margin: 0 0 20px 0;">
+            About ZexCore Infrastructure<br />
+            <span style="color: #E50920;">The Sovereign Multi-Tenant Operating System for Vertical SaaS.</span>
           </h1>
 
-          <p style="max-width: 820px; margin: 0 auto 32px; font-size: 1.15rem; color: #4B5563; line-height: 1.6;">
-            No confusing buzzwords, no gatekept jargon. Here is exactly what ZexCore is, why forward-thinking companies run on it, how every module works, and how to deploy it on your own servers or run it instantly in your browser.
+          <p style="max-width: 840px; margin: 0 auto 36px; font-size: 1.15rem; color: #4B5563; line-height: 1.65;">
+            An educational guide to the engineering principles, architectural invariants, and security foundations powering ZexCore. Understand how the micro-kernel enforces tenant isolation, handles hardware telemetry, guarantees deterministic automation, and deploys across sovereign cloud or enterprise infrastructure.
           </p>
 
-          <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-            <a href="#/console" class="btn btn-primary" style="padding: 12px 26px; font-size: 0.95rem; font-weight: 750;">
+          <div style="display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;">
+            <a href="#/console" class="btn btn-primary" style="padding: 12px 28px; font-size: 0.95rem; font-weight: 750;">
               Launch Live Console &rarr;
             </a>
-            <a href="#how-to-install" class="btn btn-secondary" style="padding: 12px 24px; font-size: 0.95rem; font-weight: 600;">
-              Installation Guide &darr;
+            <a href="#deployment-models" class="btn btn-secondary" style="padding: 12px 24px; font-size: 0.95rem; font-weight: 600;">
+              View Deployment Models
             </a>
           </div>
         </section>
 
-        <!-- Navigation Pills for Sections -->
-        <div style="max-width: 1100px; margin: 0 auto 40px; padding: 0 24px;">
-          <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; border-bottom: 1px solid var(--border-default); justify-content: flex-start;">
-            <a href="#what-is-zexcore" class="btn btn-secondary btn-sm" style="white-space: nowrap; font-size: 0.78rem;">1. What is ZexCore?</a>
-            <a href="#why-zexcore" class="btn btn-secondary btn-sm" style="white-space: nowrap; font-size: 0.78rem;">2. Why ZexCore?</a>
-            <a href="#features-plain-english" class="btn btn-secondary btn-sm" style="white-space: nowrap; font-size: 0.78rem;">3. Every Feature Explained</a>
-            <a href="#how-to-install" class="btn btn-secondary btn-sm" style="white-space: nowrap; font-size: 0.78rem;">4. How to Install &amp; Run</a>
-            <a href="#plain-english-glossary" class="btn btn-secondary btn-sm" style="white-space: nowrap; font-size: 0.78rem;">5. Plain English Glossary</a>
-          </div>
-        </div>
-
-        <div style="max-width: 1100px; margin: 0 auto; padding: 0 24px; display: flex; flex-direction: column; gap: 64px;">
+        <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; display: flex; flex-direction: column; gap: 48px;">
           
-          <!-- SECTION 1: WHAT IS ZEXCORE -->
-          <section id="what-is-zexcore" style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 16px; padding: 36px 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-              <span style="font-size: 1.6rem; background: rgba(229, 9, 32, 0.1); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #E50920;">🏢</span>
+          <!-- SECTION 1: SYSTEM OVERVIEW & PROBLEM STATEMENT -->
+          <section id="system-overview" style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 14px; padding: 40px; box-shadow: 0 2px 12px rgba(0,0,0,0.03);">
+            <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 22px;">
+              <div style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: rgba(229, 9, 32, 0.08); border: 1px solid rgba(229, 9, 32, 0.2); border-radius: 10px; color: #E50920;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="4" y="2" width="16" height="20" rx="2" ry="2"/>
+                  <line x1="9" y1="22" x2="9" y2="22.01"/>
+                  <line x1="15" y1="22" x2="15" y2="22.01"/>
+                  <line x1="8" y1="6" x2="8" y2="6.01"/>
+                  <line x1="16" y1="6" x2="16" y2="6.01"/>
+                  <line x1="8" y1="10" x2="8" y2="10.01"/>
+                  <line x1="16" y1="10" x2="16" y2="10.01"/>
+                  <line x1="8" y1="14" x2="8" y2="14.01"/>
+                  <line x1="16" y1="14" x2="16" y2="14.01"/>
+                </svg>
+              </div>
               <div>
-                <h2 style="font-size: 1.6rem; font-weight: 800; margin: 0; color: #17191D;">1. What is ZexCore?</h2>
-                <p style="margin: 0; color: var(--text-secondary); font-size: 0.85rem;">The digital engine room for businesses and software builders</p>
+                <h2 style="font-size: 1.5rem; font-weight: 800; margin: 0; color: #17191D;">1. Executive Summary &amp; Architecture Foundations</h2>
+                <p style="margin: 3px 0 0 0; color: var(--text-secondary); font-size: 0.88rem;">The foundational infrastructure layer for vertical industry software</p>
               </div>
             </div>
 
-            <p style="font-size: 1.05rem; line-height: 1.65; color: #374151;">
-              Imagine you are building a modern office tower. You wouldn't forge your own steel beams, generate your own electricity, or lay your own city water pipes before welcoming tenants. You rely on proven, certified utilities so you can focus entirely on designing beautiful offices.
+            <p style="font-size: 1.02rem; line-height: 1.7; color: #374151; margin-bottom: 18px;">
+              When enterprises, startups, or digital agencies engineer vertical software-as-a-service (SaaS)—such as cold-chain refrigerated logistics, clinical healthcare workflows, industrial telemetry hubs, or sovereign citizen portals—engineering teams consistently encounter the <strong>18-month plumbing bottleneck</strong>.
             </p>
-            <p style="font-size: 1.05rem; line-height: 1.65; color: #374151;">
-              <strong>ZexCore is the certified utility foundation for business software.</strong>
+            <p style="font-size: 1.02rem; line-height: 1.7; color: #374151; margin-bottom: 18px;">
+              Building multi-tenant infrastructure from the ground up requires solving identical foundational challenges repeatedly: guaranteeing strict data boundary isolation across distinct corporate tenants, handling hardware telemetry at high ingress rates, compiling business logic into deterministic rule execution pipelines, implementing field-level envelope encryption, and providing tamper-resistant audit trails for regulatory compliance.
             </p>
-            <p style="font-size: 1.05rem; line-height: 1.65; color: #374151;">
-              Whenever an agency, enterprise, or startup wants to run software for multiple customers (multi-tenant), collect sensor readings from physical hardware, manage customer deals, send automated messages on WhatsApp, encrypt confidential records, or pass strict security audits, they normally spend <strong>12 to 18 months</strong> building boring, risky plumbing from scratch.
-            </p>
-            <p style="font-size: 1.05rem; line-height: 1.65; color: #374151;">
-              <strong>ZexCore gives you that complete foundation on Day 1.</strong> You get a secure core engine that keeps every client's data isolated in its own digital vault, with pre-built modules for hardware devices, automated logic, sales pipelines, client branding, and financial integrity.
+            <p style="font-size: 1.02rem; line-height: 1.7; color: #374151; margin: 0;">
+              <strong>ZexCore is the micro-kernel that unifies this foundational layer.</strong> By providing mathematical database isolation, asynchronous message routing, hardware device authentication, and deterministic state execution out of the box, engineering organizations bypass two years of infrastructure development and focus exclusively on vertical domain logic.
             </p>
           </section>
 
-          <!-- SECTION 2: WHY ZEXCORE -->
-          <section id="why-zexcore" style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 16px; padding: 36px 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
-              <span style="font-size: 1.6rem; background: rgba(22, 163, 74, 0.1); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #16a34a;">💡</span>
+          <!-- SECTION 2: COMPARATIVE ARCHITECTURE -->
+          <section id="comparative-architecture" style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 14px; padding: 40px; box-shadow: 0 2px 12px rgba(0,0,0,0.03);">
+            <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 24px;">
+              <div style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: rgba(22, 163, 74, 0.08); border: 1px solid rgba(22, 163, 74, 0.2); border-radius: 10px; color: #16a34a;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"/>
+                  <line x1="10" y1="21" x2="14" y2="21"/>
+                </svg>
+              </div>
               <div>
-                <h2 style="font-size: 1.6rem; font-weight: 800; margin: 0; color: #17191D;">2. Why ZexCore? (The Old Way vs. The ZexCore Way)</h2>
-                <p style="margin: 0; color: var(--text-secondary); font-size: 0.85rem;">Why companies choose ZexCore over cobbling together 10 different tools</p>
+                <h2 style="font-size: 1.5rem; font-weight: 800; margin: 0; color: #17191D;">2. Architectural Paradigm: Fragmented Stacks vs. Unified Kernel</h2>
+                <p style="margin: 3px 0 0 0; color: var(--text-secondary); font-size: 0.88rem;">Evaluating systemic trade-offs between ad-hoc engineering and kernel-enforced invariants</p>
               </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 16px;">
-              <div style="background: #FFF5F5; border: 1px solid #FED7D7; border-radius: 12px; padding: 22px;">
-                <h3 style="color: #9B1C1C; font-size: 1.05rem; font-weight: 750; margin-top: 0; margin-bottom: 10px;">❌ The Traditional (Hard) Way</h3>
-                <ul style="padding-left: 20px; color: #4A5568; font-size: 0.92rem; line-height: 1.6; margin: 0;">
-                  <li><strong>18 Months to Market:</strong> Engineering teams spend over a year writing login, permissions, and database filters before launching.</li>
-                  <li><strong>Accidental Data Leaks:</strong> One junior developer forgets a filter, and Customer A sees Customer B's confidential invoices.</li>
-                  <li><strong>Fragile Frankenstein Stack:</strong> Stitching Zapier, HubSpot, AWS IoT, and custom databases results in constant breakage and mounting monthly bills.</li>
-                  <li><strong>Failed Security Audits:</strong> Regulators ask for tamper-proof logs and GDPR erasure evidence, and the company has no cryptographic proof.</li>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+              <div style="background: #fbfbfc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 26px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#991B1B" stroke-width="2.5">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="15" y1="9" x2="9" y2="15"/>
+                    <line x1="9" y1="9" x2="15" y2="15"/>
+                  </svg>
+                  <h3 style="color: #991B1B; font-size: 1.05rem; font-weight: 750; margin: 0;">Traditional Disjointed Stack</h3>
+                </div>
+                <ul style="padding-left: 20px; color: #475569; font-size: 0.92rem; line-height: 1.65; margin: 0;">
+                  <li style="margin-bottom: 8px;"><strong>Application-Level Filtering:</strong> Relying on individual developers to append <code>WHERE tenant_id = x</code> creates significant vulnerability to cross-tenant data leaks.</li>
+                  <li style="margin-bottom: 8px;"><strong>Non-Deterministic Scripting:</strong> Evaluating automation through arbitrary JavaScript <code>eval()</code> runtimes introduces Remote Code Execution (RCE) and prototype pollution risks.</li>
+                  <li style="margin-bottom: 8px;"><strong>Fragmented Integration Tax:</strong> Connecting disjoint third-party SaaS vendors introduces latency spikes, brittle webhook relays, and compounding API costs.</li>
+                  <li><strong>Unverifiable Audit Records:</strong> Standard database tables allow administrative alteration and deletion, preventing tamper-proof regulatory verification.</li>
                 </ul>
               </div>
 
-              <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 12px; padding: 22px;">
-                <h3 style="color: #166534; font-size: 1.05rem; font-weight: 750; margin-top: 0; margin-bottom: 10px;">✓ The ZexCore Way</h3>
-                <ul style="padding-left: 20px; color: #374151; font-size: 0.92rem; line-height: 1.6; margin: 0;">
-                  <li><strong>Live in 10 Minutes:</strong> Deploy pre-packaged industry blueprints with working sample sites, device streams, and rules instantly.</li>
-                  <li><strong>Mathematical Vault Isolation:</strong> The database itself guarantees Customer A can never, under any circumstances, see Customer B's data.</li>
-                  <li><strong>Unified All-in-One Engine:</strong> Hardware telemetry, WhatsApp communications, rules, and billing run together in one high-performance kernel.</li>
-                  <li><strong>Built-In Regulatory Proof:</strong> Every export and record receives an immutable cryptographic serial number and tamper-proof seal.</li>
+              <div style="background: #ffffff; border: 1.5px solid #d1d5db; border-radius: 12px; padding: 26px; box-shadow: 0 4px 16px rgba(0,0,0,0.02);">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <h3 style="color: #166534; font-size: 1.05rem; font-weight: 750; margin: 0;">The ZexCore Kernel Model</h3>
+                </div>
+                <ul style="padding-left: 20px; color: #334155; font-size: 0.92rem; line-height: 1.65; margin: 0;">
+                  <li style="margin-bottom: 8px;"><strong>Mathematical Database Enforcement:</strong> PostgreSQL 17 Row-Level Security (RLS) is forced at the database engine level, making cross-tenant data access structurally impossible.</li>
+                  <li style="margin-bottom: 8px;"><strong>Deterministic AST Execution:</strong> Business rules compile into pure Abstract Syntax Tree graphs executing in under 1ms with mathematical safety and zero <code>eval()</code> vulnerabilities.</li>
+                  <li style="margin-bottom: 8px;"><strong>Unified Event Fabric:</strong> Hardware ingestion, CRM messaging, cryptographic vaults, and billing settle across a single shared asynchronous broker.</li>
+                  <li><strong>Cryptographic Hash Chains:</strong> Every export, state transition, and reading is sealed with HMAC signatures and sequential hash chaining that cannot be mutated or deleted.</li>
                 </ul>
               </div>
             </div>
           </section>
 
-          <!-- SECTION 3: EVERY FEATURE EXPLAINED IN PLAIN ENGLISH -->
-          <section id="features-plain-english" style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 16px; padding: 36px 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-              <span style="font-size: 1.6rem; background: rgba(2, 132, 199, 0.1); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #0284c7;">⚙️</span>
+          <!-- SECTION 3: FUNCTIONAL CAPABILITIES -->
+          <section id="core-capabilities" style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 14px; padding: 40px; box-shadow: 0 2px 12px rgba(0,0,0,0.03);">
+            <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 28px;">
+              <div style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: rgba(2, 132, 199, 0.08); border: 1px solid rgba(2, 132, 199, 0.2); border-radius: 10px; color: #0284c7;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+              </div>
               <div>
-                <h2 style="font-size: 1.6rem; font-weight: 800; margin: 0; color: #17191D;">3. How Every Feature Works (In Plain English)</h2>
-                <p style="margin: 0; color: var(--text-secondary); font-size: 0.85rem;">Clear explanations of every button and capability on the console</p>
+                <h2 style="font-size: 1.5rem; font-weight: 800; margin: 0; color: #17191D;">3. Architectural Capabilities &amp; Engine Mechanics</h2>
+                <p style="margin: 3px 0 0 0; color: var(--text-secondary); font-size: 0.88rem;">Detailed operational specifications across the platform modules</p>
               </div>
             </div>
 
-            <div style="display: flex; flex-direction: column; gap: 24px;">
+            <div style="display: flex; flex-direction: column; gap: 28px;">
               
-              <!-- Feature 1: Multi-Tenant Isolation -->
-              <div style="border-bottom: 1px solid var(--border-default); padding-bottom: 20px;">
-                <h3 style="font-size: 1.15rem; font-weight: 750; color: #17191D; margin: 0 0 6px 0; display: flex; align-items: center; gap: 8px;">
-                  <span style="color: #E50920;">01.</span> Sovereign Multi-Tenant Isolation
+              <!-- 3.1 Tenancy -->
+              <div style="border-bottom: 1px solid var(--border-default); padding-bottom: 24px;">
+                <h3 style="font-size: 1.15rem; font-weight: 750; color: #17191D; margin: 0 0 8px 0; display: flex; align-items: center; gap: 10px;">
+                  <span style="color: #E50920; font-family: var(--font-mono); font-size: 0.95rem;">01.</span> Sovereign Multi-Tenant Isolation (PostgreSQL 17 RLS)
                 </h3>
-                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.6; margin: 0 0 8px 0;">
-                  <strong>What it is:</strong> A digital security wall between different clients sharing the same system.
+                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.65; margin: 0 0 8px 0;">
+                  <strong>Core Mechanism:</strong> Every database transaction initiates with <code>set_config('app.current_tenant_id', tenantId, true)</code> scoped strictly to the current database connection. The database table definitions enforce <code>FORCE ROW LEVEL SECURITY</code>.
                 </p>
-                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.6; margin: 0;">
-                  <strong>How it works in plain English:</strong> In old software, human programmers have to remember to check "which company does this belong to?" on every single screen. If they forget once, data leaks. ZexCore uses database-enforced Row-Level Security (RLS). Think of it like a hotel keycard: even if you try to open room 302 with a keycard for room 201, the physical lock on the door refuses to open. The database itself blocks cross-client access automatically.
+                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.65; margin: 0;">
+                  <strong>Security Guarantee:</strong> Even in the event of flawed application queries omitting tenancy parameters, the underlying database engine rejects access to rows not belonging to the active transaction session. Cross-tenant leakage is prevented mathematically.
                 </p>
               </div>
 
-              <!-- Feature 2: Connected Devices (IoT Hub) -->
-              <div style="border-bottom: 1px solid var(--border-default); padding-bottom: 20px;">
-                <h3 style="font-size: 1.15rem; font-weight: 750; color: #17191D; margin: 0 0 6px 0; display: flex; align-items: center; gap: 8px;">
-                  <span style="color: #E50920;">02.</span> Connected Devices &amp; IoT Telemetry
+              <!-- 3.2 IoT Telemetry -->
+              <div style="border-bottom: 1px solid var(--border-default); padding-bottom: 24px;">
+                <h3 style="font-size: 1.15rem; font-weight: 750; color: #17191D; margin: 0 0 8px 0; display: flex; align-items: center; gap: 10px;">
+                  <span style="color: #E50920; font-family: var(--font-mono); font-size: 0.95rem;">02.</span> Industrial Hardware Hub &amp; High-Throughput Ingestion
                 </h3>
-                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.6; margin: 0 0 8px 0;">
-                  <strong>What it is:</strong> Connecting physical machines (fridges, sensors, trucks, medical gear) to your software.
+                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.65; margin: 0 0 8px 0;">
+                  <strong>Core Mechanism:</strong> Edge hardware nodes authenticate via <code>SHA-256</code> pre-shared hardware tokens supplied in request headers. Telemetry streams (temperature, humidity, voltage, vibration, pressure) are received by high-speed Fastify ingest endpoints.
                 </p>
-                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.6; margin: 0;">
-                  <strong>How it works in plain English:</strong> Each physical sensor is given a unique secret token. The device pings ZexCore with readings (e.g. "temperature is 4.2°C, battery voltage is 3.7V"). ZexCore verifies the secret token in under one millisecond, logs the reading into a tamper-proof history, and triggers an alert if the fridge gets too warm or the machine vibrates excessively.
+                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.65; margin: 0;">
+                  <strong>Operational Reliability:</strong> Ingestion pipelines operate with sliding-window rate limiters supporting up to 5,000 requests per minute per IP. Telemetry is simultaneously dispatched to the asynchronous event broker and stored in hash-chained time-series records.
                 </p>
               </div>
 
-              <!-- Feature 3: Automation Rules & AI Logic -->
-              <div style="border-bottom: 1px solid var(--border-default); padding-bottom: 20px;">
-                <h3 style="font-size: 1.15rem; font-weight: 750; color: #17191D; margin: 0 0 6px 0; display: flex; align-items: center; gap: 8px;">
-                  <span style="color: #E50920;">03.</span> Deterministic Automation Rules &amp; AI Authoring
+              <!-- 3.3 AST Rules -->
+              <div style="border-bottom: 1px solid var(--border-default); padding-bottom: 24px;">
+                <h3 style="font-size: 1.15rem; font-weight: 750; color: #17191D; margin: 0 0 8px 0; display: flex; align-items: center; gap: 10px;">
+                  <span style="color: #E50920; font-family: var(--font-mono); font-size: 0.95rem;">03.</span> Deterministic Automation Rules &amp; Abstract Syntax Trees (AST)
                 </h3>
-                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.6; margin: 0 0 8px 0;">
-                  <strong>What it is:</strong> "If THIS happens, do THAT" automated workflows.
+                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.65; margin: 0 0 8px 0;">
+                  <strong>Core Mechanism:</strong> Complex conditional logic (e.g. <code>temperature &gt; 8 AND duration &gt;= 300</code>) is compiled into a recursive Abstract Syntax Tree. Operators evaluate strictly against typed leaf nodes.
                 </p>
-                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.6; margin: 0;">
-                  <strong>How it works in plain English:</strong> You can set rules like: <em>"If temperature > 8°C for more than 5 minutes, send an urgent SMS to the manager and log an incident."</em> Instead of letting unsafe computer code run (which hackers could abuse), ZexCore converts your rule into a safe mathematical tree (AST) that executes predictably with zero risk of crashing your server.
+                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.65; margin: 0;">
+                  <strong>Zero-Eval Invariant:</strong> The evaluation runtime contains no JavaScript <code>eval()</code> or function constructors. Prototype pollution vectors (<code>__proto__</code>, <code>constructor</code>) are blocked, and regular expressions are capped to prevent ReDoS denial-of-service vulnerabilities.
                 </p>
               </div>
 
-              <!-- Feature 4: CRM & WhatsApp Inbox -->
-              <div style="border-bottom: 1px solid var(--border-default); padding-bottom: 20px;">
-                <h3 style="font-size: 1.15rem; font-weight: 750; color: #17191D; margin: 0 0 6px 0; display: flex; align-items: center; gap: 8px;">
-                  <span style="color: #E50920;">04.</span> Customer Relationship Management (CRM) &amp; Messaging
+              <!-- 3.4 CRM & Messaging -->
+              <div style="border-bottom: 1px solid var(--border-default); padding-bottom: 24px;">
+                <h3 style="font-size: 1.15rem; font-weight: 750; color: #17191D; margin: 0 0 8px 0; display: flex; align-items: center; gap: 10px;">
+                  <span style="color: #E50920; font-family: var(--font-mono); font-size: 0.95rem;">04.</span> Multi-Channel CRM, Booking &amp; Verified Messaging Delivery
                 </h3>
-                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.6; margin: 0 0 8px 0;">
-                  <strong>What it is:</strong> Managing customer inquiries, WhatsApp chats, deal stages, and payments.
+                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.65; margin: 0 0 8px 0;">
+                  <strong>Core Mechanism:</strong> Inbound leads from digital web portals and WhatsApp webhooks feed into an isolated Kanban deal pipeline linked to tenant payment gateways (Paystack and Stripe).
                 </p>
-                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.6; margin: 0;">
-                  <strong>How it works in plain English:</strong> When a prospective client fills out an inquiry form on your website or sends a message, they appear immediately in your CRM pipeline. You can chat with them directly, send quotes, or collect card payments via Paystack. Message status ticks are strictly accurate: you see a grey checkmark when sent, two grey checkmarks when delivered to the recipient's phone, and blue checkmarks only when the customer has actually opened and read your message.
+                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.65; margin: 0;">
+                  <strong>Delivery Verification:</strong> Outbound customer communications feature cryptographically verified status tracking. Messages display single grey checkmarks upon dispatch, double grey checkmarks upon carrier delivery receipt, and double blue checkmarks exclusively upon confirmed recipient read receipt.
                 </p>
               </div>
 
-              <!-- Feature 5: Compliance Vault & Privacy -->
-              <div style="border-bottom: 1px solid var(--border-default); padding-bottom: 20px;">
-                <h3 style="font-size: 1.15rem; font-weight: 750; color: #17191D; margin: 0 0 6px 0; display: flex; align-items: center; gap: 8px;">
-                  <span style="color: #E50920;">05.</span> Compliance Vault &amp; GDPR Crypto-Erasure
+              <!-- 3.5 Compliance Vault -->
+              <div style="border-bottom: 1px solid var(--border-default); padding-bottom: 24px;">
+                <h3 style="font-size: 1.15rem; font-weight: 750; color: #17191D; margin: 0 0 8px 0; display: flex; align-items: center; gap: 10px;">
+                  <span style="color: #E50920; font-family: var(--font-mono); font-size: 0.95rem;">05.</span> Cryptographic Privacy Vault &amp; GDPR Article 17 Crypto-Erasure
                 </h3>
-                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.6; margin: 0 0 8px 0;">
-                  <strong>What it is:</strong> Bank-grade encryption and total privacy compliance for sensitive customer records.
+                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.65; margin: 0 0 8px 0;">
+                  <strong>Core Mechanism:</strong> Personally Identifiable Information (PII) is encrypted at rest using <code>AES-256-GCM</code> authenticated envelope encryption with 96-bit random IVs and 128-bit authentication tags. Tenant subkeys are derived via <code>HMAC-SHA256(masterKey, "tenant:" + tenantId)</code>.
                 </p>
-                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.6; margin: 0;">
-                  <strong>How it works in plain English:</strong> Confidential fields (like home addresses, phone numbers, and health records) are scrambled using military-grade encryption (AES-256) before they ever touch the hard drive. If a customer exercises their legal "Right to be Forgotten" under GDPR, ZexCore destroys that customer's unique cryptographic key. The data becomes mathematically scrambled gibberish forever, proving complete compliance to data protection authorities.
+                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.65; margin: 0;">
+                  <strong>Right to be Forgotten:</strong> When an erasure request is executed under GDPR Article 17, the subject's cryptographic key material is destroyed. Ciphertext stored across persistent disk arrays becomes permanently and irreversibly unrecoverable. Exact-match searching operates over blind index HMACs without column decryption.
                 </p>
               </div>
 
-              <!-- Feature 6: Agency White-Label Branding -->
-              <div style="border-bottom: 1px solid var(--border-default); padding-bottom: 20px;">
-                <h3 style="font-size: 1.15rem; font-weight: 750; color: #17191D; margin: 0 0 6px 0; display: flex; align-items: center; gap: 8px;">
-                  <span style="color: #E50920;">06.</span> Agency White-Label Branding Studio
+              <!-- 3.6 White-Label Branding -->
+              <div style="border-bottom: 1px solid var(--border-default); padding-bottom: 24px;">
+                <h3 style="font-size: 1.15rem; font-weight: 750; color: #17191D; margin: 0 0 8px 0; display: flex; align-items: center; gap: 10px;">
+                  <span style="color: #E50920; font-family: var(--font-mono); font-size: 0.95rem;">06.</span> Agency White-Label Branding &amp; Multi-Tenant Workspace Studio
                 </h3>
-                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.6; margin: 0 0 8px 0;">
-                  <strong>What it is:</strong> Making the platform look 100% like your own agency or company product.
+                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.65; margin: 0 0 8px 0;">
+                  <strong>Core Mechanism:</strong> Agency tier accounts manage up to 25 sovereign client workspaces under individual tenant schemas.
                 </p>
-                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.6; margin: 0;">
-                  <strong>How it works in plain English:</strong> You can upload your own company logo directly (drag and drop an image file or paste a link), choose your brand colors, remove all ZexCore watermarks, and connect your own custom internet domain (like <code>portal.yourcompany.com</code>). When your clients log in, they only see your company name and branding.
+                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.65; margin: 0;">
+                  <strong>Branding Sovereignty:</strong> Agencies upload corporate logos via direct file upload or URL, customize primary visual brand tokens, remove platform watermarks, and route custom domain hostnames to client portals.
                 </p>
               </div>
 
-              <!-- Feature 7: Tamper-Proof Audit & Export Ledger -->
+              <!-- 3.7 Tamper-Proof Audit -->
               <div>
-                <h3 style="font-size: 1.15rem; font-weight: 750; color: #17191D; margin: 0 0 6px 0; display: flex; align-items: center; gap: 8px;">
-                  <span style="color: #E50920;">07.</span> Tamper-Proof Audit &amp; Permanent Export Ledger
+                <h3 style="font-size: 1.15rem; font-weight: 750; color: #17191D; margin: 0 0 8px 0; display: flex; align-items: center; gap: 10px;">
+                  <span style="color: #E50920; font-family: var(--font-mono); font-size: 0.95rem;">07.</span> Tamper-Resistant Audit Ledger &amp; Non-Deletable Export Registry
                 </h3>
-                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.6; margin: 0 0 8px 0;">
-                  <strong>What it is:</strong> An unalterable black-box recorder for all system exports, readings, and financial events.
+                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.65; margin: 0 0 8px 0;">
+                  <strong>Core Mechanism:</strong> System status transitions, administrative approvals, and data exports are sequentially linked through an append-only hash chain. Each entry incorporates the cryptographic digest of its predecessor.
                 </p>
-                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.6; margin: 0;">
-                  <strong>How it works in plain English:</strong> Just like a plane's flight recorder, every data export or major action is stamped with an official Serial Number (e.g. <code>EXP-20261021-A9F32B</code>), exact timestamp down to the second, user identity, and cryptographic watermark. This record is linked into a mathematical chain (hash chain). Nobody—not even a system administrator—can delete or secretly modify past records without breaking the cryptographic seal, guaranteeing 100% authenticity for auditors.
+                <p style="color: #4B5563; font-size: 0.95rem; line-height: 1.65; margin: 0;">
+                  <strong>Audit Non-Repudiation:</strong> Exported datasets receive a permanent serial number (e.g. <code>EXP-20261021-XXXXXX</code>), ISO 8601 millisecond UTC timestamps, operator identities, and embedded watermarks. Records stored in the export ledger are permanent and cannot be deleted or modified via the user interface.
                 </p>
               </div>
 
             </div>
           </section>
 
-          <!-- SECTION 4: HOW TO INSTALL AND RUN -->
-          <section id="how-to-install" style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 16px; padding: 36px 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-              <span style="font-size: 1.6rem; background: rgba(229, 9, 32, 0.1); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #E50920;">🚀</span>
+          <!-- SECTION 4: DEPLOYMENT METHODOLOGIES -->
+          <section id="deployment-models" style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 14px; padding: 40px; box-shadow: 0 2px 12px rgba(0,0,0,0.03);">
+            <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 24px;">
+              <div style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: rgba(229, 9, 32, 0.08); border: 1px solid rgba(229, 9, 32, 0.2); border-radius: 10px; color: #E50920;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
+                  <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
+                  <line x1="9" y1="12" x2="12" y2="15"/>
+                </svg>
+              </div>
               <div>
-                <h2 style="font-size: 1.6rem; font-weight: 800; margin: 0; color: #17191D;">4. How to Run ZexCore</h2>
-                <p style="margin: 0; color: var(--text-secondary); font-size: 0.85rem;">Two ways to run: Instant Cloud/Web or Enterprise Workspace On-Premise</p>
+                <h2 style="font-size: 1.5rem; font-weight: 800; margin: 0; color: #17191D;">4. Deployment Methodologies &amp; Runtime Environments</h2>
+                <p style="margin: 3px 0 0 0; color: var(--text-secondary); font-size: 0.88rem;">Production deployment models for sovereign cloud and dedicated on-premise infrastructure</p>
               </div>
             </div>
 
-            <!-- Path A: Instant Cloud / Browser -->
-            <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-                <h3 style="font-size: 1.15rem; font-weight: 800; color: #0F172A; margin: 0;">Option A: Run Directly on the Web (Instant Cloud SaaS)</h3>
-                <span class="badge" style="background: rgba(22, 163, 74, 0.15); color: #16a34a; font-weight: 750;">Zero Setup Required</span>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 24px;">
+              <!-- Option A: Cloud Web Console -->
+              <div style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 12px; padding: 28px; display: flex; flex-direction: column;">
+                <div style="font-size: 0.76rem; font-weight: 750; color: #E50920; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Deployment Model 1</div>
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: #0F172A; margin: 0 0 12px 0;">SaaS Cloud Web Console</h3>
+                <p style="color: #4B5563; font-size: 0.92rem; line-height: 1.65; margin: 0 0 16px 0; flex: 1;">
+                  Designed for agencies, software operators, and vertical SaaS founders seeking instant multi-tenant operations without managing underlying virtual machines or cloud hardware.
+                </p>
+                <div style="background: var(--bg-muted); border-radius: 8px; padding: 16px; margin-bottom: 20px; font-size: 0.86rem; color: #374151; line-height: 1.6;">
+                  1. Navigate directly to the <a href="#/console" style="color: #E50920; font-weight: 700;">Operations Console</a>.<br />
+                  2. Select your tenant organization schema.<br />
+                  3. Deploy a vertical industry pack to initialize telemetry streams, rules, and sales pipelines in seconds.
+                </div>
+                <a href="#/console" class="btn btn-primary btn-sm" style="align-self: flex-start; padding: 9px 18px; font-weight: 700;">
+                  Launch Operations Console &rarr;
+                </a>
               </div>
-              <p style="color: #475569; font-size: 0.95rem; line-height: 1.6; margin: 0 0 14px 0;">
-                If you want to use ZexCore without managing any servers, databases, or cloud infrastructure:
-              </p>
-              <ol style="color: #334155; font-size: 0.92rem; line-height: 1.7; margin: 0 0 16px 20px;">
-                <li>Open your browser and navigate to the <strong><a href="#/console" style="color: #E50920; font-weight: 700;">ZexCore Operations Console</a></strong>.</li>
-                <li>Sign in or select your tenant workspace from the top bar (e.g. <code>Acme Enterprise Corp</code> or your own agency name).</li>
-                <li>Click <strong>Deploy Starter Kit</strong> to immediately load a pre-configured vertical package (HVAC, Cold Chain Logistics, Clinical Diagnostic, or Digital Agency).</li>
-                <li>Your fleet sensors, WhatsApp CRM, and automated rules are live instantly in the browser.</li>
-              </ol>
-              <a href="#/console" class="btn btn-primary btn-sm" style="font-weight: 700;">Open Web Console Now &rarr;</a>
+
+              <!-- Option B: Enterprise On-Premise -->
+              <div style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 12px; padding: 28px; display: flex; flex-direction: column;">
+                <div style="font-size: 0.76rem; font-weight: 750; color: #E50920; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Deployment Model 2</div>
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: #0F172A; margin: 0 0 12px 0;">Dedicated Enterprise On-Premise</h3>
+                <p style="color: #4B5563; font-size: 0.92rem; line-height: 1.65; margin: 0 0 16px 0; flex: 1;">
+                  Designed for regulated healthcare facilities, clinical laboratories, defense contractors, and financial institutions requiring single-tenant sovereignty within private VPCs or bare-metal air-gapped data centers.
+                </p>
+                <div style="background: var(--bg-muted); border-radius: 8px; padding: 16px; margin-bottom: 20px; font-size: 0.86rem; color: #374151; line-height: 1.6;">
+                  Deploy via Docker Compose, Kubernetes Helm, or direct Fastify micro-kernel processes against PostgreSQL 17 with hardware security module (HSM) key isolation.
+                </div>
+                <a href="#/docs" class="btn btn-secondary btn-sm" style="align-self: flex-start; padding: 9px 18px; font-weight: 600;">
+                  View Technical Setup Specs &rarr;
+                </a>
+              </div>
             </div>
 
-            <!-- Path B: Enterprise Workspace On-Premise Installation -->
-            <div style="background: #0F172A; border-radius: 12px; padding: 26px; color: #F8FAFC;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-                <h3 style="font-size: 1.15rem; font-weight: 800; color: #ffffff; margin: 0;">Option B: Install in the Client Workspace (Enterprise On-Prem / Private Cloud)</h3>
-                <span class="badge" style="background: rgba(229, 9, 32, 0.25); color: #FFA4A4; font-weight: 750;">Self-Hosted &amp; Sovereign</span>
+            <!-- Terminal Code Block (Clean Enterprise Gray) -->
+            <div style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 10px; overflow: hidden;">
+              <div style="background: #f8f9fb; padding: 12px 18px; border-bottom: 1px solid var(--border-default); display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: var(--text-secondary);">Enterprise Workspace Orchestration Commands</span>
+                <span style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted);">PostgreSQL 17 &bull; Fastify &bull; TypeScript</span>
               </div>
-              <p style="color: #94A3B8; font-size: 0.92rem; line-height: 1.6; margin: 0 0 16px 0;">
-                For regulated enterprises requiring full data sovereignty on private hardware, AWS, Azure, Google Cloud, or local Docker environments:
-              </p>
+              <pre style="margin: 0; padding: 20px; background: #fafbfc; font-family: var(--font-mono); font-size: 0.84rem; color: #1e293b; line-height: 1.7; overflow-x: auto;"><code># 1. Clone sovereign repository
+git clone https://github.com/malcryptt/Zexcore.git && cd ZexCore
 
-              <div style="display: flex; flex-direction: column; gap: 14px;">
-                <div>
-                  <div style="font-weight: 700; font-size: 0.85rem; color: #38BDF8; margin-bottom: 4px;">Step 1: Clone Repository &amp; Install Dependencies</div>
-                  <pre style="background: #020617; padding: 12px 16px; border-radius: 8px; font-family: var(--font-mono); font-size: 0.82rem; color: #E2E8F0; overflow-x: auto; margin: 0;"><code>git clone https://github.com/malcryptt/Zexcore.git
-cd ZexCore
-pnpm install</code></pre>
-                </div>
+# 2. Provision dependencies across workspace
+pnpm install
 
-                <div>
-                  <div style="font-weight: 700; font-size: 0.85rem; color: #38BDF8; margin-bottom: 4px;">Step 2: Start PostgreSQL 17 with Row-Level Security Enabled</div>
-                  <pre style="background: #020617; padding: 12px 16px; border-radius: 8px; font-family: var(--font-mono); font-size: 0.82rem; color: #E2E8F0; overflow-x: auto; margin: 0;"><code>docker compose up -d postgres
-pnpm db:migrate
-pnpm db:seed</code></pre>
-                </div>
+# 3. Initialize PostgreSQL 17 RLS database container
+docker compose up -d postgres
+pnpm db:migrate && pnpm db:seed
 
-                <div>
-                  <div style="font-weight: 700; font-size: 0.85rem; color: #38BDF8; margin-bottom: 4px;">Step 3: Launch High-Speed Fastify API &amp; Dashboard</div>
-                  <pre style="background: #020617; padding: 12px 16px; border-radius: 8px; font-family: var(--font-mono); font-size: 0.82rem; color: #E2E8F0; overflow-x: auto; margin: 0;"><code># Terminal 1: Backend API Engine (Port 3000)
+# 4. Execute micro-kernel API (Port 3000) & Control Interface (Port 5173)
 pnpm --filter @zexcore/api dev
+pnpm --filter @zexcore/dashboard dev
 
-# Terminal 2: Web Console Interface (Port 5173)
-pnpm --filter @zexcore/dashboard dev</code></pre>
-                </div>
-
-                <div>
-                  <div style="font-weight: 700; font-size: 0.85rem; color: #38BDF8; margin-bottom: 4px;">Step 4: Verify Deployment Health</div>
-                  <pre style="background: #020617; padding: 12px 16px; border-radius: 8px; font-family: var(--font-mono); font-size: 0.82rem; color: #E2E8F0; overflow-x: auto; margin: 0;"><code>curl http://localhost:3000/health
-# Returns: {"status":"healthy","database":"connected","rlsEnforced":true}</code></pre>
-                </div>
-              </div>
+# 5. Verify database invariant enforcement
+curl -s http://localhost:3000/health | jq .
+# Expected: {"status":"healthy","database":"connected","rlsEnforced":true}</code></pre>
             </div>
           </section>
 
-          <!-- SECTION 5: GLOSSARY -->
-          <section id="plain-english-glossary" style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 16px; padding: 36px 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-              <span style="font-size: 1.6rem; background: rgba(13, 148, 136, 0.1); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #0d9488;">📖</span>
+          <!-- SECTION 5: TECHNICAL GLOSSARY -->
+          <section id="technical-glossary" style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 14px; padding: 40px; box-shadow: 0 2px 12px rgba(0,0,0,0.03);">
+            <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 24px;">
+              <div style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: rgba(13, 148, 136, 0.08); border: 1px solid rgba(13, 148, 136, 0.2); border-radius: 10px; color: #0d9488;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                </svg>
+              </div>
               <div>
-                <h2 style="font-size: 1.6rem; font-weight: 800; margin: 0; color: #17191D;">5. Plain English Glossary</h2>
-                <p style="margin: 0; color: var(--text-secondary); font-size: 0.85rem;">Confusing tech terms translated into everyday human language</p>
+                <h2 style="font-size: 1.5rem; font-weight: 800; margin: 0; color: #17191D;">5. Technical Glossary &amp; Architectural Definitions</h2>
+                <p style="margin: 3px 0 0 0; color: var(--text-secondary); font-size: 0.88rem;">Precise engineering definitions of core domain concepts</p>
               </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 18px;">
               
-              <div style="background: var(--bg-muted); border-radius: 10px; padding: 16px;">
-                <div style="font-weight: 800; color: #E50920; font-size: 0.95rem; margin-bottom: 4px;">Tenant</div>
-                <div style="color: #4B5563; font-size: 0.85rem; line-height: 1.5;">
-                  A distinct company or customer account on the system. All their devices, users, rules, and sales records exist inside an isolated workspace.
+              <div style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 10px; padding: 20px;">
+                <div style="font-weight: 800; color: #E50920; font-size: 0.95rem; margin-bottom: 6px;">Tenant</div>
+                <div style="color: #4B5563; font-size: 0.88rem; line-height: 1.6;">
+                  An isolated logical organization schema. All devices, users, automation rules, cryptographic subkeys, and audit transactions remain strictly contained within this boundary.
                 </div>
               </div>
 
-              <div style="background: var(--bg-muted); border-radius: 10px; padding: 16px;">
-                <div style="font-weight: 800; color: #E50920; font-size: 0.95rem; margin-bottom: 4px;">Row-Level Security (RLS)</div>
-                <div style="color: #4B5563; font-size: 0.85rem; line-height: 1.5;">
-                  A database feature that physically blocks one client from seeing another client's rows of data, like an impenetrable electronic door.
+              <div style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 10px; padding: 20px;">
+                <div style="font-weight: 800; color: #E50920; font-size: 0.95rem; margin-bottom: 6px;">Row-Level Security (RLS)</div>
+                <div style="color: #4B5563; font-size: 0.88rem; line-height: 1.6;">
+                  A database-level access control mechanism enforced inside PostgreSQL 17 that restricts record visibility based on transaction configuration parameters, independent of application code logic.
                 </div>
               </div>
 
-              <div style="background: var(--bg-muted); border-radius: 10px; padding: 16px;">
-                <div style="font-weight: 800; color: #E50920; font-size: 0.95rem; margin-bottom: 4px;">Telemetry</div>
-                <div style="color: #4B5563; font-size: 0.85rem; line-height: 1.5;">
-                  Automated live measurements sent across the internet by physical hardware (e.g. temperature, battery voltage, GPS position, pressure).
+              <div style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 10px; padding: 20px;">
+                <div style="font-weight: 800; color: #E50920; font-size: 0.95rem; margin-bottom: 6px;">Telemetry</div>
+                <div style="color: #4B5563; font-size: 0.88rem; line-height: 1.6;">
+                  Automated metric and diagnostic readings emitted by connected hardware nodes across network protocols, representing environmental conditions, electrical parameters, or operational status.
                 </div>
               </div>
 
-              <div style="background: var(--bg-muted); border-radius: 10px; padding: 16px;">
-                <div style="font-weight: 800; color: #E50920; font-size: 0.95rem; margin-bottom: 4px;">AST (Abstract Syntax Tree)</div>
-                <div style="color: #4B5563; font-size: 0.85rem; line-height: 1.5;">
-                  A safe mathematical chart used to evaluate business rules. It prevents dangerous hacker commands from ever running on your servers.
+              <div style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 10px; padding: 20px;">
+                <div style="font-weight: 800; color: #E50920; font-size: 0.95rem; margin-bottom: 6px;">Abstract Syntax Tree (AST)</div>
+                <div style="color: #4B5563; font-size: 0.88rem; line-height: 1.6;">
+                  A hierarchical, typed tree structure representing conditional expressions. Enables safe, deterministic evaluation of user-defined automation logic without arbitrary code execution.
                 </div>
               </div>
 
-              <div style="background: var(--bg-muted); border-radius: 10px; padding: 16px;">
-                <div style="font-weight: 800; color: #E50920; font-size: 0.95rem; margin-bottom: 4px;">AES-256-GCM Encryption</div>
-                <div style="color: #4B5563; font-size: 0.85rem; line-height: 1.5;">
-                  The highest civilian security standard in the world. It scrambles data so that even the world's most powerful supercomputers cannot read it without the secret key.
+              <div style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 10px; padding: 20px;">
+                <div style="font-weight: 800; color: #E50920; font-size: 0.95rem; margin-bottom: 6px;">AES-256-GCM AEAD</div>
+                <div style="color: #4B5563; font-size: 0.88rem; line-height: 1.6;">
+                  Advanced Encryption Standard in Galois/Counter Mode providing both confidentiality and cryptographic authenticity verification via a 128-bit authentication tag.
                 </div>
               </div>
 
-              <div style="background: var(--bg-muted); border-radius: 10px; padding: 16px;">
-                <div style="font-weight: 800; color: #E50920; font-size: 0.95rem; margin-bottom: 4px;">Blind Indexing</div>
-                <div style="color: #4B5563; font-size: 0.85rem; line-height: 1.5;">
-                  A clever mathematical trick that lets you search for a client's email or phone number in your database without ever decrypting the whole database.
+              <div style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 10px; padding: 20px;">
+                <div style="font-weight: 800; color: #E50920; font-size: 0.95rem; margin-bottom: 6px;">Blind Indexing</div>
+                <div style="color: #4B5563; font-size: 0.88rem; line-height: 1.6;">
+                  A cryptographic mechanism calculating deterministic HMAC hashes over normalized plaintext attributes, facilitating exact-match database queries over encrypted records without decryption.
                 </div>
               </div>
 
-              <div style="background: var(--bg-muted); border-radius: 10px; padding: 16px;">
-                <div style="font-weight: 800; color: #E50920; font-size: 0.95rem; margin-bottom: 4px;">Hash Chain (Tamper-Proof)</div>
-                <div style="color: #4B5563; font-size: 0.85rem; line-height: 1.5;">
-                  A digital seal where every new log entry contains a mathematical stamp of the previous entry. If anyone changes a past record, the seal immediately breaks and rings an alarm.
+              <div style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 10px; padding: 20px;">
+                <div style="font-weight: 800; color: #E50920; font-size: 0.95rem; margin-bottom: 6px;">Hash Chaining</div>
+                <div style="color: #4B5563; font-size: 0.88rem; line-height: 1.6;">
+                  An immutable data structure where each audit entry incorporates the cryptographic hash of the preceding entry, providing mathematical proof of chronological ordering and integrity.
                 </div>
               </div>
 
-              <div style="background: var(--bg-muted); border-radius: 10px; padding: 16px;">
-                <div style="font-weight: 800; color: #E50920; font-size: 0.95rem; margin-bottom: 4px;">SIEM (Security Event Management)</div>
-                <div style="color: #4B5563; font-size: 0.85rem; line-height: 1.5;">
-                  Professional cybersecurity logging tools (like Splunk or Datadog) used by corporate IT teams to monitor corporate networks for suspicious activity.
+              <div style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 10px; padding: 20px;">
+                <div style="font-weight: 800; color: #E50920; font-size: 0.95rem; margin-bottom: 6px;">Security Information &amp; Event Management (SIEM)</div>
+                <div style="color: #4B5563; font-size: 0.88rem; line-height: 1.6;">
+                  Enterprise monitoring platforms (such as Splunk, Datadog, or IBM QRadar) ingesting real-time audit event streams formatted in NDJSON or Syslog RFC 5424 specifications.
                 </div>
               </div>
 
             </div>
           </section>
 
-          <!-- Call to Action Banner -->
-          <section style="background: linear-gradient(135deg, #17191D 0%, #2D3748 100%); border-radius: 16px; padding: 48px 32px; text-align: center; color: #ffffff;">
-            <h2 style="font-size: 2rem; font-weight: 850; margin: 0 0 12px 0;">Ready to See ZexCore in Action?</h2>
-            <p style="color: #E2E8F0; max-width: 600px; margin: 0 auto 28px; font-size: 1rem; line-height: 1.6;">
-              Test drive the live operations console right now. No credit card required. Explore pre-loaded devices, trigger live rules, and see the architecture firsthand.
+          <!-- FORMAL CALL TO ACTION (RED & WHITE ENTERPRISE STYLE) -->
+          <section style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 14px; padding: 48px 36px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+            <h2 style="font-size: 1.85rem; font-weight: 850; margin: 0 0 12px 0; color: #17191D;">Experience ZexCore Infrastructure</h2>
+            <p style="color: #4B5563; max-width: 620px; margin: 0 auto 28px; font-size: 1.02rem; line-height: 1.65;">
+              Explore the operations console in real time. Simulate edge telemetry ingestion, inspect deterministic automation rules, and review tamper-proof audit trails.
             </p>
-            <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-              <a href="#/console" class="btn btn-primary" style="padding: 12px 28px; font-weight: 750;">
-                Open Live Console Free &rarr;
+            <div style="display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;">
+              <a href="#/console" class="btn btn-primary" style="padding: 12px 28px; font-size: 0.95rem; font-weight: 750;">
+                Launch Live Console &rarr;
               </a>
-              <a href="#/pricing" class="btn btn-secondary" style="padding: 12px 24px; font-weight: 600; background: rgba(255,255,255,0.1); color: #ffffff; border-color: rgba(255,255,255,0.2);">
-                View Platform Pricing
+              <a href="#/pricing" class="btn btn-secondary" style="padding: 12px 24px; font-size: 0.95rem; font-weight: 600;">
+                View Platform Tiers
               </a>
             </div>
-            <p style="margin-top: 24px; font-size: 0.88rem; color: #CBD5E1;">
-              Direct Inquiries &amp; Enterprise Support: <a href="mailto:hello@zexcore.com.ng" style="color: #ffffff; text-decoration: underline; font-weight: 700;">hello@zexcore.com.ng</a>
+            <p style="margin-top: 24px; font-size: 0.88rem; color: var(--text-secondary);">
+              Enterprise Inquiries &amp; Dedicated Deployment Support: <a href="mailto:hello@zexcore.com.ng" style="color: #E50920; text-decoration: underline; font-weight: 700;">hello@zexcore.com.ng</a>
             </p>
           </section>
 
