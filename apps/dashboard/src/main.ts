@@ -2013,10 +2013,14 @@ function renderDashboard() {
             </button>
 
             <!-- Interactive System Status Toggle -->
-            <button class="badge-status-btn ${state.systemStatus}" id="topbar-status-btn" onclick="window.toggleSystemStatus()" title="Click to toggle system state (Operational / Offline)" style="margin-right: 6px; font-size: 0.72rem; padding: 4px 10px;">
-              <span>●</span>
-              <span>${state.systemStatus === 'operational' ? 'OPERATIONAL' : 'OFFLINE'}</span>
-            </button>
+            <label class="zx-toggle-switch" id="topbar-status-toggle" title="Toggle system state: Operational / Offline" style="cursor: pointer; display: inline-flex; align-items: center; gap: 7px; margin-right: 8px;" onclick="window.toggleSystemStatus()">
+              <span class="zx-toggle-track ${state.systemStatus === 'operational' ? 'on' : 'off'}" id="topbar-status-track" style="width: 36px; height: 20px;">
+                <span class="zx-toggle-thumb" style="width: 16px; height: 16px; top: 2px; left: 2px;"></span>
+              </span>
+              <span id="topbar-status-label" style="font-size: 0.72rem; font-weight: 700; color: ${state.systemStatus === 'operational' ? '#16a34a' : '#dc2626'}; white-space: nowrap;">
+                ${state.systemStatus === 'operational' ? 'Operational' : 'Offline'}
+              </span>
+            </label>
 
             <!-- Authenticated User Profile Badge -->
             <div class="auth-user-badge" style="display: flex; align-items: center; gap: 8px; padding: 4px 10px; background: #fff; border: 1px solid var(--border-default); border-radius: 20px; font-size: 0.76rem;">
@@ -2729,9 +2733,14 @@ function renderDevices() {
       </td>
       <td style="color: var(--text-secondary); font-size: 0.8rem;"><code>${d.kind}</code></td>
       <td>
-        <button class="badge-status-btn ${d.status === 'online' ? 'live' : 'offline'}" onclick="window.toggleDeviceStatus('${d.id}')" title="Click to switch status (LIVE / OFFLINE)">
-          ${d.status === 'online' ? 'LIVE' : 'OFFLINE'}
-        </button>
+        <label class="zx-toggle-switch" onclick="window.toggleDeviceStatus('${d.id}')" title="Toggle device: Live / Offline" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+          <span class="zx-toggle-track ${d.status === 'online' ? 'on' : 'off'}" style="width: 34px; height: 18px;">
+            <span class="zx-toggle-thumb" style="width: 14px; height: 14px; top: 2px; left: 2px;"></span>
+          </span>
+          <span style="font-size: 0.72rem; font-weight: 700; color: ${d.status === 'online' ? '#15803d' : '#b91c1c'};">
+            ${d.status === 'online' ? 'Live' : 'Offline'}
+          </span>
+        </label>
       </td>
       <td>
         <strong style="color: ${d.temperature > 70 ? 'var(--primary)' : 'var(--text-main)'}; font-family: var(--font-mono);">
@@ -2828,11 +2837,13 @@ function renderDevices() {
 function _applySystemStatusUI() {
   const isOp = state.systemStatus === 'operational';
 
-  // Topbar badge (kept as small pill for space)
-  const topbarBtn = document.getElementById('topbar-status-btn');
-  if (topbarBtn) {
-    topbarBtn.className = `badge-status-btn ${state.systemStatus}`;
-    topbarBtn.innerHTML = `<span>●</span> <span>${isOp ? 'OPERATIONAL' : 'OFFLINE'}</span>`;
+  // Topbar toggle
+  const topbarTrack = document.getElementById('topbar-status-track');
+  const topbarLabel = document.getElementById('topbar-status-label');
+  if (topbarTrack) { topbarTrack.className = `zx-toggle-track ${isOp ? 'on' : 'off'}`; }
+  if (topbarLabel) {
+    topbarLabel.style.color = isOp ? '#16a34a' : '#dc2626';
+    topbarLabel.textContent = isOp ? 'Operational' : 'Offline';
   }
 
   // Overview toggle
@@ -2999,11 +3010,16 @@ function renderRules() {
   container.innerHTML = state.rules.map((r) => `
     <div style="background: var(--bg-subtle); border: 1px solid var(--border-default); border-radius: var(--radius-sm); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;">
       <div>
-        <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
           <strong style="font-size: 0.9rem; color: var(--text-main);">${r.name}</strong>
-          <button class="badge-status-btn ${r.enabled ? 'enabled' : 'disabled'}" onclick="window.toggleRule('${r.id}')" title="Click to toggle ENABLE / DISABLE">
-            ${r.enabled ? 'ENABLED' : 'DISABLED'}
-          </button>
+          <label class="zx-toggle-switch" onclick="window.toggleRule('${r.id}')" title="Toggle rule: Enabled / Disabled" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+            <span class="zx-toggle-track ${r.enabled ? 'on' : 'off'}" style="width: 34px; height: 18px;">
+              <span class="zx-toggle-thumb" style="width: 14px; height: 14px; top: 2px; left: 2px;"></span>
+            </span>
+            <span style="font-size: 0.72rem; font-weight: 700; color: ${r.enabled ? '#15803d' : '#b91c1c'};">
+              ${r.enabled ? 'Enabled' : 'Disabled'}
+            </span>
+          </label>
           ${!r.approved ? '<span class="badge-status" style="background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning-border); font-size: 0.68rem; padding: 2px 6px;">PENDING APPROVAL</span>' : ''}
         </div>
         <div style="font-family: var(--font-mono); font-size: 0.76rem; color: var(--text-secondary); margin-top: 4px;">
@@ -3313,9 +3329,14 @@ function renderWhatsAppInboxView(container: HTMLElement) {
             <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; display: flex; align-items: center; gap: 6px;">
               <span>Pluggable Adapter Core</span>
               <span>&bull;</span>
-              <button class="badge-status-btn ${state.crmWebhookStatus === 'live' ? 'live' : 'offline'}" onclick="window.toggleCrmWebhook()" title="Click to toggle Webhook Live / Offline" style="padding: 2px 8px; font-size: 0.65rem;">
-                ${state.crmWebhookStatus === 'live' ? 'LIVE' : 'OFFLINE'}
-              </button>
+              <label class="zx-toggle-switch" onclick="window.toggleCrmWebhook()" title="Toggle webhook: Live / Offline" style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                <span class="zx-toggle-track ${state.crmWebhookStatus === 'live' ? 'on' : 'off'}" style="width: 28px; height: 15px;">
+                  <span class="zx-toggle-thumb" style="width: 11px; height: 11px; top: 2px; left: 2px;"></span>
+                </span>
+                <span style="font-size: 0.65rem; font-weight: 700; color: ${state.crmWebhookStatus === 'live' ? '#15803d' : '#b91c1c'};">
+                  ${state.crmWebhookStatus === 'live' ? 'Webhook Live' : 'Webhook Offline'}
+                </span>
+              </label>
             </div>
           </div>
           <button class="btn btn-secondary btn-xs" onclick="window.simulateIncomingWhatsApp()" title="Simulate incoming customer lead message via webhook">
@@ -4007,9 +4028,14 @@ function renderConsents() {
             <td><span class="badge-status active" style="font-size: 0.68rem;">${c.legalBasis}</span></td>
             <td style="color: var(--text-secondary); font-size: 0.78rem;">${c.grantedAt}</td>
             <td>
-              <button class="badge-status-btn ${c.revokedAt ? 'revoked' : 'active'}" onclick="window.toggleConsent('${c.id}')" title="Click to toggle ACTIVE / REVOKED">
-                ${c.revokedAt ? 'REVOKED' : 'ACTIVE'}
-              </button>
+              <label class="zx-toggle-switch" onclick="window.toggleConsent('${c.id}')" title="Toggle consent: Active / Revoked" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                <span class="zx-toggle-track ${c.revokedAt ? 'off' : 'on'}" style="width: 34px; height: 18px;">
+                  <span class="zx-toggle-thumb" style="width: 14px; height: 14px; top: 2px; left: 2px;"></span>
+                </span>
+                <span style="font-size: 0.72rem; font-weight: 700; color: ${c.revokedAt ? '#b91c1c' : '#15803d'};">
+                  ${c.revokedAt ? 'Revoked' : 'Active'}
+                </span>
+              </label>
             </td>
             <td style="text-align: right;">
               <button class="btn ${c.revokedAt ? 'btn-secondary' : 'btn-danger'} btn-sm" onclick="window.toggleConsent('${c.id}')">
