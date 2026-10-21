@@ -9,43 +9,41 @@ import { renderFooter } from '../components/footer';
 
 export function renderAboutPage(): string {
   return `
-    <div class="site-wrapper">
+    <div class="page-wrapper">
       ${renderNavbar('about')}
 
-      <main class="page-content" style="padding-top: 48px; padding-bottom: 96px;">
-        <!-- Hero Section -->
-        <section class="about-hero" style="max-width: 1160px; margin: 0 auto; padding: 48px 24px 36px; text-align: center;">
-          <h1 style="font-size: clamp(2.2rem, 4.8vw, 3.4rem); font-weight: 850; line-height: 1.15; color: #17191D; letter-spacing: -0.03em; margin: 0 0 20px 0;">
-            About ZexCore Infrastructure<br />
-            <span style="color: #E50920;">The Sovereign Multi-Tenant Operating System for Vertical SaaS.</span>
-          </h1>
+      <main>
 
-          <p style="max-width: 860px; margin: 0 auto 36px; font-size: 1.15rem; color: #4B5563; line-height: 1.65;">
-            This guide explains what ZexCore is, why it exists, and exactly how each part of it works — written to be equally clear to a software engineer and a business decision-maker. Every technical concept is explained the first time it appears so that no prior technical knowledge is assumed.
-          </p>
-
-          <div style="display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;">
-            <a href="#/console" class="btn btn-primary" style="padding: 12px 28px; font-size: 0.95rem; font-weight: 750;">
-              Launch Live Console &rarr;
-            </a>
-            <a href="#deployment-models" class="btn btn-secondary" style="padding: 12px 24px; font-size: 0.95rem; font-weight: 600;">
-              View Deployment Models
-            </a>
+        <!-- HERO -->
+        <section class="page-intro-section" style="padding-bottom: 56px;">
+          <div class="page-hero-backdrop" style="background-image: url('/hero-engineering.jpg');"></div>
+          <div class="site-container">
+            <div class="page-intro-header page-hero-content-col" style="text-align: left; max-width: 720px; margin: 0;">
+              <div class="section-eyebrow">PLATFORM FOUNDATION &amp; ARCHITECTURE</div>
+              <h1 class="page-intro-title" style="margin-bottom: 16px;">
+                About ZexCore<br />
+                <span class="text-brand">Infrastructure.</span>
+              </h1>
+              <p class="page-intro-desc">
+                The sovereign multi-tenant operating system for vertical SaaS — built for engineers, explained for everyone. Every technical concept is defined the first time it appears.
+              </p>
+              <div style="display: flex; gap: 14px; flex-wrap: wrap; margin-top: 28px;">
+                <a href="#/console" class="btn btn-primary" style="padding: 11px 24px; font-size: 0.93rem; font-weight: 750;">Launch Live Console &rarr;</a>
+                <a href="#deployment-models" class="btn btn-secondary" style="padding: 11px 22px; font-size: 0.93rem; font-weight: 600;">View Deployment Models</a>
+              </div>
+            </div>
           </div>
         </section>
 
+        <!-- ABOUT BODY -->
+        <section style="background: var(--bg-page); padding: 56px 0 96px;">
         <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; display: flex; flex-direction: column; gap: 48px;">
 
           <!-- SECTION 1: WHAT IS ZEXCORE -->
           <section id="system-overview" style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 14px; padding: 40px; box-shadow: 0 2px 12px rgba(0,0,0,0.03);">
             <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 22px;">
-              <div style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: rgba(229, 9, 32, 0.08); border: 1px solid rgba(229, 9, 32, 0.2); border-radius: 10px; color: #E50920;">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="4" y="2" width="16" height="20" rx="2" ry="2"/>
-                  <line x1="8" y1="6" x2="16" y2="6"/>
-                  <line x1="8" y1="10" x2="16" y2="10"/>
-                  <line x1="8" y1="14" x2="16" y2="14"/>
-                </svg>
+              <div style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: rgba(229, 9, 32, 0.08); border: 1px solid rgba(229, 9, 32, 0.2); border-radius: 10px; overflow: hidden;">
+                <img src="/zexcore-logo-icon.png" alt="ZexCore" style="width: 32px; height: 32px; object-fit: contain;" />
               </div>
               <div>
                 <h2 style="font-size: 1.5rem; font-weight: 800; margin: 0; color: #17191D;">1. What Is ZexCore, and Why Does It Exist?</h2>
@@ -409,6 +407,7 @@ curl -s http://localhost:3000/api/health
           </section>
 
         </div>
+        </section>
       </main>
 
       ${renderFooter()}
