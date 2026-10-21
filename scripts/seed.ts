@@ -23,24 +23,29 @@ async function seed() {
   await db.execute(sql`SELECT set_config('app.bypass_rls', 'on', false)`);
 
   console.log('[seed] Creating platform admin user...');
-  const adminPasswordHash = await hashPassword('admin1234');
+  const adminPasswordHash = await hashPassword('thetaskmaster');
   let [platformAdmin] = await db
     .select()
     .from(users)
-    .where(eq(users.email, 'admin@zexlabs.com'))
+    .where(eq(users.email, 'hello@zexcore.com.ng'))
     .limit(1);
 
   if (!platformAdmin) {
     const [createdAdmin] = await db
       .insert(users)
       .values({
-        email: 'admin@zexlabs.com',
+        email: 'hello@zexcore.com.ng',
         name: 'Platform Superadmin',
         passwordHash: adminPasswordHash,
         isPlatformAdmin: true,
       })
       .returning();
     platformAdmin = createdAdmin;
+  } else {
+    await db
+      .update(users)
+      .set({ passwordHash: adminPasswordHash, isPlatformAdmin: true })
+      .where(eq(users.email, 'hello@zexcore.com.ng'));
   }
 
   console.log('[seed] Creating demo tenant: Realty Pros...');
@@ -159,7 +164,7 @@ async function seed() {
 
   console.log('[seed] Database seed completed successfully!');
   console.log('----------------------------------------------------');
-  console.log('Platform Admin:  admin@zexlabs.com  / admin1234');
+  console.log('Platform Admin:  hello@zexcore.com.ng  / admin1234');
   console.log('Tenant Owner:    sarah@realtypros.com / owner1234');
   console.log('Tenant Slug:     realty-pros');
   console.log('----------------------------------------------------');

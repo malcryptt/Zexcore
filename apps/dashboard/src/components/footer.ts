@@ -15,6 +15,9 @@ export function renderFooter(): string {
           <p class="footer-desc">
             The multi-tenant backend engine and operating system for vertical SaaS applications — providing shared infrastructure for identity, hard data isolation, deterministic rules, and compliance.
           </p>
+          <p style="margin-top: 12px; font-size: 0.85rem; color: #94a3b8;">
+            Direct Contact: <a href="mailto:hello@zexcore.com.ng" style="color: #ffffff; text-decoration: underline; font-weight: 600;">hello@zexcore.com.ng</a>
+          </p>
         </div>
 
         <div class="footer-links-grid">
@@ -22,6 +25,7 @@ export function renderFooter(): string {
             <h4 class="footer-col-title">Platform</h4>
             <ul class="footer-list">
               <li><a href="#/platform">Platform Overview</a></li>
+              <li><a href="#/about">About ZexCore (Plain English)</a></li>
               <li><a href="#/platform#identity">Identity &amp; RBAC</a></li>
               <li><a href="#/platform#tenancy">Multi-Tenant Isolation</a></li>
               <li><a href="#/platform#data">Dynamic Data Engine</a></li>

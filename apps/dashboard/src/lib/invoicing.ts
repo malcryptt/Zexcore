@@ -40,7 +40,7 @@ const RECEIPTS_STORAGE_KEY = 'zexcore_tenant_receipts';
 export function createReceipt(
   tenantSlug: string,
   planTier: PlanTier,
-  customerEmail: string = 'hello@zexlabs.com.ng',
+  customerEmail: string = 'hello@zexcore.com.ng',
   paymentMethod: 'card' | 'transfer' | 'paystack' | 'flutterwave' | string = 'card',
   billingCycle: 'monthly' | 'annual' = 'monthly'
 ): ZexCoreReceipt {
@@ -113,7 +113,7 @@ export function getTenantReceipts(tenantSlug: string = 'default'): ZexCoreReceip
     senderAddress: 'Victoria Island, Lagos & Tech Square, Delaware, USA',
     senderEmail: 'billing@zexcore.io',
     senderTaxId: 'TIN-ZEX-2026-998341',
-    customerEmail: 'hello@zexlabs.com.ng',
+    customerEmail: 'hello@zexcore.com.ng',
     tenantSlug,
     date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
     planName: 'Starter',

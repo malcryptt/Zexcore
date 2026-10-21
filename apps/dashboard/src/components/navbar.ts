@@ -112,6 +112,7 @@ export function renderNavbar(activePage: string): string {
           <a href="#/security" class="nav-link ${activePage === 'security' ? 'active' : ''}">Security</a>
           <a href="#/pricing" class="nav-link ${activePage === 'pricing' ? 'active' : ''}">Pricing</a>
           <a href="#/docs" class="nav-link ${activePage === 'docs' ? 'active' : ''}">Docs</a>
+          <a href="#/about" class="nav-link ${activePage === 'about' ? 'active' : ''}">About</a>
         </nav>
 
         <div class="header-actions">
@@ -150,6 +151,7 @@ export function renderNavbar(activePage: string): string {
             <a href="#/security" class="mobile-nav-link ${activePage === 'security' ? 'active' : ''}">Security &amp; RLS</a>
             <a href="#/pricing" class="mobile-nav-link ${activePage === 'pricing' ? 'active' : ''}">Pricing Plans</a>
             <a href="#/docs" class="mobile-nav-link ${activePage === 'docs' ? 'active' : ''}">Developer Docs</a>
+            <a href="#/about" class="mobile-nav-link ${activePage === 'about' ? 'active' : ''}">About ZexCore</a>
           </div>
           <div class="mobile-drawer-actions">
             <a href="#/signin" class="btn btn-secondary" style="width: 100%; justify-content: center; font-weight: 600;">Sign In to Workspace</a>

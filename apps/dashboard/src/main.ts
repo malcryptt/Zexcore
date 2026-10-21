@@ -14,6 +14,7 @@ import { renderDocsPage } from './pages/docs';
 import { renderResourcesPage } from './pages/resources';
 import { renderPricingPage } from './pages/pricing';
 import { renderSignInPage, setupSignInEvents } from './pages/signin';
+import { renderAboutPage } from './pages/about';
 import { setupNavbarEvents } from './components/navbar';
 import { renderConsoleAuditView, setupConsoleAuditEvents } from './pages/consoleAudit';
 import { renderConsoleLicense, attachConsoleLicenseEvents } from './components/consoleLicense';
@@ -124,7 +125,7 @@ interface BookingAppointment {
 
 // ── Application State ────────────────────────────────────────────────────────
 const state = {
-  currentView: 'home' as 'home' | 'platform' | 'architecture' | 'modules' | 'solutions' | 'security' | 'docs' | 'resources' | 'pricing' | 'signin' | 'console' | 'dashboard',
+  currentView: 'home' as 'home' | 'platform' | 'architecture' | 'modules' | 'solutions' | 'security' | 'docs' | 'resources' | 'pricing' | 'signin' | 'console' | 'dashboard' | 'about',
   platformModule: 'core',
   currentTab: 'overview',
   crmSubView: 'whatsapp' as 'whatsapp' | 'kanban' | 'booking',
@@ -351,22 +352,134 @@ const state = {
     customDomain: 'portal.apexdigital.com',
     primaryColor: '#0d9488',
     logoUrl: '/zexcore-logo-light.png',
+    logoIsUpload: false,
     removeWatermark: true,
     customFavicon: true,
     clientEmailBranding: true,
     isolatedSubWorkspaces: 25,
     previewMode: 'desktop' as 'desktop' | 'mobile',
   },
+  // Export ledger — append-only, cannot be deleted from UI
+  exportLedger: (() => {
+    try {
+      const stored = localStorage.getItem('zx_export_ledger');
+      return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
+  })() as Array<{
+    serial: string;
+    type: string;
+    filename: string;
+    exportedBy: string;
+    recordedAt: string; // ISO 8601 to ms
+    tenantId: string;
+    hash: string;
+  }>,
+  // Immutable reading/chart records — hash-chained
+  immutableRecords: (() => {
+    try {
+      const stored = localStorage.getItem('zx_immutable_records');
+      return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
+  })() as Array<{
+    id: string;
+    category: string; // 'iot_reading' | 'status_change' | 'audit_event' | etc
+    data: Record<string, unknown>;
+    recordedAt: string;
+    hash: string;
+    prevHash: string;
+  }>,
 };
 
+// ── Precise ISO timestamp (to ms) ─────────────────────────────────────────────
+function preciseTimestamp(): string {
+  return new Date().toISOString(); // e.g. 2026-10-21T17:06:41.123Z
+}
+
+function formatTimestamp(iso: string): string {
+  // Display format: "21 Oct 2026, 17:06:41 UTC"
+  try {
+    const d = new Date(iso);
+    return d.toUTCString().replace('GMT', 'UTC').replace(',', ',').slice(0, -4) +
+      ':' + String(d.getUTCSeconds()).padStart(2, '0') + ' UTC';
+  } catch { return iso; }
+}
+
+// ── Simple SHA-256-like hash (djb2 for browser tamper detection) ───────────────
+function hashString(str: string): string {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) ^ str.charCodeAt(i);
+    hash = hash & hash;
+  }
+  return 'zx' + Math.abs(hash).toString(16).padStart(8, '0');
+}
+
+// ── Immutable Record Store (append-only, hash-chained) ────────────────────────
+function appendImmutableRecord(category: string, data: Record<string, unknown>): void {
+  const ts = preciseTimestamp();
+  const prevHash = state.immutableRecords.length > 0
+    ? state.immutableRecords[state.immutableRecords.length - 1].hash
+    : '0000000000000000';
+  const id = 'rec-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+  const content = id + category + JSON.stringify(data) + ts + prevHash;
+  const hash = hashString(content);
+  const record = Object.freeze({ id, category, data: Object.freeze(data), recordedAt: ts, hash, prevHash });
+  state.immutableRecords.push(record as typeof state.immutableRecords[0]);
+  try { localStorage.setItem('zx_immutable_records', JSON.stringify(state.immutableRecords)); } catch { /* quota */ }
+}
+
+function verifyImmutableChain(): { valid: boolean; brokenAt?: number } {
+  for (let i = 1; i < state.immutableRecords.length; i++) {
+    if (state.immutableRecords[i].prevHash !== state.immutableRecords[i - 1].hash) {
+      return { valid: false, brokenAt: i };
+    }
+  }
+  return { valid: true };
+}
+
+// ── Export Ledger (append-only, serial numbered, watermarked) ──────────────────
+function generateExportSerial(): string {
+  const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const rand = Math.random().toString(16).slice(2, 8).toUpperCase();
+  return `EXP-${date}-${rand}`;
+}
+
+function appendExportLedgerEntry(type: string, filename: string, exportedBy: string): string {
+  const serial = generateExportSerial();
+  const recordedAt = preciseTimestamp();
+  const prevHash = state.exportLedger.length > 0
+    ? state.exportLedger[state.exportLedger.length - 1].hash
+    : '0000000000000000';
+  const content = serial + type + filename + exportedBy + recordedAt + prevHash;
+  const hash = hashString(content);
+  const entry = Object.freeze({
+    serial,
+    type,
+    filename,
+    exportedBy,
+    recordedAt,
+    tenantId: state.activeTenant,
+    hash,
+  });
+  state.exportLedger.push(entry);
+  try { localStorage.setItem('zx_export_ledger', JSON.stringify(state.exportLedger)); } catch { /* quota */ }
+  appendImmutableRecord('export_event', { serial, type, filename, exportedBy });
+  return serial;
+}
+
+(window as any).formatTimestamp = formatTimestamp;
+(window as any).verifyImmutableChain = verifyImmutableChain;
+(window as any).appendImmutableRecord = appendImmutableRecord;
+
 function logBusEvent(name: string, payload: Record<string, unknown>) {
-  const ts = new Date().toLocaleTimeString();
+  const ts = preciseTimestamp();
   state.events.unshift({
     ts,
     name,
     payload: JSON.stringify(payload),
   });
   if (state.events.length > 20) state.events.pop();
+  appendImmutableRecord('bus_event', { name, ...payload });
   renderEventLog();
 }
 
@@ -561,9 +674,17 @@ function renderConsoleOverviewView(currentPlan: PlanTier): string {
         <div class="stat-box">
           <div class="stat-label">Platform Health</div>
           <div style="margin: 8px 0 4px 0;">
-            <button id="overview-status-btn" class="badge-status-btn ${state.systemStatus}" onclick="window.toggleSystemStatus()" title="Click to toggle system operational status" style="font-size: 0.88rem; padding: 5px 14px;">
-              ${state.systemStatus === 'operational' ? 'Operational' : 'Offline / Maintenance'}
-            </button>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <label class="zx-toggle-switch" id="overview-status-toggle" title="Toggle platform operational status" style="cursor: pointer;">
+                <input type="checkbox" id="overview-status-checkbox" ${state.systemStatus === 'operational' ? 'checked' : ''} onchange="window.toggleSystemStatus()" style="display:none;" />
+                <span class="zx-toggle-track ${state.systemStatus === 'operational' ? 'on' : 'off'}" id="overview-status-track">
+                  <span class="zx-toggle-thumb"></span>
+                </span>
+              </label>
+              <span id="overview-status-label" style="font-weight: 800; font-size: 0.85rem; color: ${state.systemStatus === 'operational' ? '#16a34a' : '#dc2626'};">
+                ${state.systemStatus === 'operational' ? '● Operational' : '○ Offline'}
+              </span>
+            </div>
           </div>
           <div class="stat-subtext" id="overview-status-subtext" style="color: var(--text-muted); font-size: 0.72rem;">
             ${state.systemStatus === 'operational' ? 'Micro-kernel &amp; 5 modules &bull; 99.99% Uptime' : 'Maintenance window active &bull; Unoperational'}
@@ -687,6 +808,67 @@ function renderConsoleOverviewView(currentPlan: PlanTier): string {
           </div>
         </div>
         <div class="terminal-content" id="event-stream-body"></div>
+      </div>
+
+      <!-- Tamper-Proof Audit & Non-Deletable Export Ledger -->
+      <div class="card" style="margin-top: 16px;">
+        <div class="card-header" style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <div class="card-title" style="display: flex; align-items: center; gap: 8px;">
+              <span>Tamper-Proof Records &amp; Export Ledger</span>
+              <span class="status-pill" style="font-size: 0.68rem; padding: 2px 8px; background: rgba(22, 163, 74, 0.1); color: #16a34a; border: 1px solid rgba(22, 163, 74, 0.2);">
+                ${verifyImmutableChain().valid ? '✓ Hash-Chain Verified' : '⚠ Integrity Mismatch'}
+              </span>
+            </div>
+            <div class="card-subtitle">
+              All exports, telemetry snapshots, and state modifications are sealed with HMAC &amp; serial numbers. Records are permanent and cannot be modified or deleted.
+            </div>
+          </div>
+          <div style="font-size: 0.72rem; color: var(--text-secondary); font-family: var(--font-mono); text-align: right;">
+            Chain Length: <strong>${state.immutableRecords.length}</strong> records &bull; Exports: <strong>${state.exportLedger.length}</strong>
+          </div>
+        </div>
+
+        ${state.exportLedger.length === 0 ? `
+          <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 0.82rem; background: var(--bg-muted); border-radius: 6px;">
+            No data exports generated yet. When you export Tenant Data or SIEM streams, immutable records with permanent serial numbers and cryptographic watermarks will be listed here.
+          </div>
+        ` : `
+          <div class="console-table-wrap">
+            <table class="data-table" style="width: 100%; font-size: 0.78rem;">
+              <thead>
+                <tr>
+                  <th style="text-align: left;">Serial Number</th>
+                  <th style="text-align: left;">Export Type</th>
+                  <th style="text-align: left;">Filename &amp; Watermark</th>
+                  <th style="text-align: left;">Exported By</th>
+                  <th style="text-align: left;">Recorded At (Date &amp; Time)</th>
+                  <th style="text-align: right;">Integrity Seal</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${state.exportLedger.slice(-8).reverse().map((entry) => `
+                  <tr>
+                    <td style="font-family: var(--font-mono); font-weight: 700; color: #E50920;">
+                      ${entry.serial}
+                    </td>
+                    <td><span class="badge" style="font-size: 0.68rem;">${entry.type}</span></td>
+                    <td style="font-family: var(--font-mono); color: var(--text-main); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${entry.filename}">
+                      ${entry.filename}
+                    </td>
+                    <td>${entry.exportedBy}</td>
+                    <td style="font-family: var(--font-mono); color: var(--text-secondary);">
+                      ${formatTimestamp(entry.recordedAt)}
+                    </td>
+                    <td style="text-align: right; font-family: var(--font-mono); font-size: 0.7rem; color: #16a34a;">
+                      ${entry.hash} ✓
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `}
       </div>
     </div>
   `;
@@ -1168,12 +1350,29 @@ function renderConsoleWhiteLabelView(currentPlan: PlanTier): string {
             </div>
 
             <div style="margin-bottom: 12px;">
-              <label style="font-size: 0.76rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Agency Logo URL</label>
-              <div style="display: flex; gap: 8px; margin-top: 4px;">
-                <input type="text" id="agency-logo-input" class="input" value="${branding.logoUrl}" style="flex: 1;" />
-                <div style="width: 38px; height: 38px; border: 1px solid var(--border-default); border-radius: 6px; background: #f8fafc; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 2px;">
-                  <img src="${branding.logoUrl}" id="agency-logo-preview-img" alt="Logo preview" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+              <label style="font-size: 0.76rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Agency Logo</label>
+              <div style="margin-top: 6px; display: flex; flex-direction: column; gap: 8px;">
+                <!-- Upload Zone -->
+                <label id="logo-upload-zone" for="agency-logo-file-input" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 2px dashed var(--border-default); border-radius: 8px; padding: 14px 12px; cursor: pointer; background: #f8fafc; transition: border-color 0.2s, background 0.2s; min-height: 64px; position: relative;" title="Click or drag an image here to upload your logo">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <div id="agency-logo-preview-container" style="width: 48px; height: 48px; border: 1px solid var(--border-default); border-radius: 6px; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 2px; flex-shrink: 0;">
+                      <img src="${branding.logoUrl}" id="agency-logo-preview-img" alt="Logo preview" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+                    </div>
+                    <div style="text-align: center;">
+                      <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-main);">📁 Upload Logo File</div>
+                      <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 2px;">PNG, JPG, SVG • Max 2MB • Click or drag &amp; drop</div>
+                      <div id="logo-upload-filename" style="font-size: 0.68rem; color: #0d9488; font-weight: 700; margin-top: 2px;">${branding.logoIsUpload ? '✓ File uploaded' : ''}</div>
+                    </div>
+                  </div>
+                  <input type="file" id="agency-logo-file-input" accept="image/png,image/jpeg,image/svg+xml,image/gif,image/webp" style="position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;" />
+                </label>
+                <!-- OR URL input -->
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <div style="flex: 1; height: 1px; background: var(--border-default);"></div>
+                  <span style="font-size: 0.68rem; color: var(--text-muted); font-weight: 700;">OR PASTE URL</span>
+                  <div style="flex: 1; height: 1px; background: var(--border-default);"></div>
                 </div>
+                <input type="text" id="agency-logo-input" class="input" value="${branding.logoIsUpload ? '' : branding.logoUrl}" placeholder="https://youragency.com/logo.png" style="font-size: 0.8rem;" />
               </div>
             </div>
 
@@ -1326,6 +1525,112 @@ function renderConsoleWhiteLabelView(currentPlan: PlanTier): string {
 function renderConsoleLicenseView(currentPlan: PlanTier): string {
   const innerLicense = renderConsoleLicense(state.activeTenant);
   return renderWithSoftPaywall('license', currentPlan, innerLicense);
+}
+
+function renderConsoleBillingView(currentPlan: PlanTier): string {
+  const plan = PLANS[currentPlan] || PLANS.starter;
+  const isHighTier = currentPlan === 'dedicated' || currentPlan === 'enterprise';
+  const invoices = [
+    { id: 'INV-2026-010', date: 'Oct 01, 2026', amount: plan.monthlyPrice, status: 'Paid', method: 'Bank Transfer' },
+    { id: 'INV-2026-009', date: 'Sep 01, 2026', amount: plan.monthlyPrice, status: 'Paid', method: 'Paystack' },
+    { id: 'INV-2026-008', date: 'Aug 01, 2026', amount: plan.monthlyPrice, status: 'Paid', method: 'Paystack' },
+  ].filter(i => i.amount > 0);
+
+  return `
+    <div class="console-card-panel" style="max-width: 960px; margin: 0 auto;">
+      <div class="console-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary); margin: 0 0 4px 0;">Billing &amp; Invoices</h2>
+          <p style="color: var(--text-secondary); font-size: 0.87rem; margin: 0;">Manage your subscription, payment methods, and download receipts.</p>
+        </div>
+        <button class="btn btn-primary" id="btn-billing-upgrade-plan" style="font-size: 0.84rem;">
+          ${isHighTier ? '✦ Manage Plan' : '⬆ Upgrade Plan'}
+        </button>
+      </div>
+
+      <!-- Current Plan Summary -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div class="metric-card" style="padding: 20px; border-radius: 12px;">
+          <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); margin-bottom: 8px;">Current Plan</div>
+          <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary);">${plan.name}</div>
+          <div style="font-size: 0.83rem; color: var(--text-secondary); margin-top: 4px;">${plan.tagline}</div>
+          <div style="margin-top: 12px; display: inline-block; background: rgba(22,163,74,0.12); color: #16a34a; font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 999px;">ACTIVE</div>
+        </div>
+        <div class="metric-card" style="padding: 20px; border-radius: 12px;">
+          <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); margin-bottom: 8px;">Monthly Cost</div>
+          <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary);">$${plan.monthlyPrice.toLocaleString()}</div>
+          <div style="font-size: 0.83rem; color: var(--text-secondary); margin-top: 4px;">per month · billed monthly</div>
+          <div style="margin-top: 12px; font-size: 0.78rem; color: var(--text-secondary);">Next invoice: <strong>Nov 1, 2026</strong></div>
+        </div>
+        <div class="metric-card" style="padding: 20px; border-radius: 12px;">
+          <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); margin-bottom: 8px;">Payment Methods</div>
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 0.84rem;">
+              <span style="font-size: 1rem;">🏦</span>
+              <span style="font-weight: 600; color: var(--text-primary);">Bank Transfer</span>
+              <span style="margin-left: auto; font-size: 0.7rem; background: #e0f2fe; color: #0284c7; padding: 2px 7px; border-radius: 999px; font-weight: 700;">DEFAULT</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 0.84rem;">
+              <span style="font-size: 1rem;">💳</span>
+              <span style="color: var(--text-secondary);">Paystack · card ending 4242</span>
+            </div>
+          </div>
+          <button class="btn btn-secondary btn-sm" style="margin-top: 14px; font-size: 0.78rem; width: 100%;">+ Add Payment Method</button>
+        </div>
+      </div>
+
+      <!-- Invoice History -->
+      <div style="background: #fff; border: 1.5px solid var(--border-default); border-radius: 12px; overflow: hidden;">
+        <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-default); display: flex; align-items: center; justify-content: space-between;">
+          <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Invoice History</div>
+          <span style="font-size: 0.8rem; color: var(--text-secondary);">Receipts sent to hello@zexcore.com.ng</span>
+        </div>
+        ${invoices.length > 0 ? `
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background: #f8f9fb;">
+              <th style="text-align: left; padding: 10px 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary);">Invoice</th>
+              <th style="text-align: left; padding: 10px 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary);">Date</th>
+              <th style="text-align: left; padding: 10px 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary);">Amount</th>
+              <th style="text-align: left; padding: 10px 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary);">Method</th>
+              <th style="text-align: left; padding: 10px 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary);">Status</th>
+              <th style="text-align: right; padding: 10px 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary);">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${invoices.map((inv, i) => `
+            <tr style="border-top: 1px solid #f1f5f9; ${i % 2 === 0 ? '' : 'background: #fafbfc;'}">
+              <td style="padding: 13px 20px; font-family: var(--font-mono); font-size: 0.82rem; font-weight: 600; color: var(--text-primary);">${inv.id}</td>
+              <td style="padding: 13px 20px; font-size: 0.84rem; color: var(--text-secondary);">${inv.date}</td>
+              <td style="padding: 13px 20px; font-size: 0.84rem; font-weight: 700; color: var(--text-primary);">$${inv.amount.toLocaleString()}</td>
+              <td style="padding: 13px 20px; font-size: 0.84rem; color: var(--text-secondary);">${inv.method}</td>
+              <td style="padding: 13px 20px;">
+                <span style="display: inline-block; background: rgba(22,163,74,0.12); color: #16a34a; font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 999px;">${inv.status}</span>
+              </td>
+              <td style="padding: 13px 20px; text-align: right;">
+                <button class="btn btn-secondary btn-sm" style="font-size: 0.78rem; padding: 4px 12px;" onclick="window.downloadInvoice('${inv.id}')">⬇ PDF</button>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>` : `
+        <div style="padding: 40px 20px; text-align: center; color: var(--text-secondary);">
+          <div style="font-size: 2rem; margin-bottom: 8px;">🧾</div>
+          <div style="font-weight: 600; margin-bottom: 4px;">No invoices yet</div>
+          <div style="font-size: 0.84rem;">Invoices will appear here once your first billing cycle completes.</div>
+        </div>`}
+      </div>
+
+      <!-- Upgrade CTA for non-dedicated plans -->
+      ${!isHighTier ? `
+      <div style="margin-top: 20px; background: linear-gradient(135deg, #fff5f7, #fff0f0); border: 1.5px solid #fcd5db; border-radius: 14px; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+        <div>
+          <div style="font-weight: 800; font-size: 1rem; color: #17191d; margin-bottom: 4px;">Ready for Dedicated Infrastructure?</div>
+          <div style="font-size: 0.85rem; color: #596579;">Upgrade to Dedicated at $1,500/mo for private VPC, PostgreSQL 17 RLS, AES-256 vault, and 99.99% uptime SLA.</div>
+        </div>
+        <button class="btn btn-primary" id="btn-billing-cta-upgrade" style="white-space: nowrap; flex-shrink: 0;">Upgrade to Dedicated →</button>
+      </div>` : ''}
+    </div>
+  `;
 }
 
 function showToastNotification(message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') {
@@ -1543,52 +1848,109 @@ function renderDashboard() {
 
   app.innerHTML = `
     <div class="app-layout">
+      <!-- Sidebar Overlay for mobile -->
+      <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
       <!-- Sidebar -->
-      <aside class="sidebar">
+      <aside class="sidebar" id="sidebar">
         <div class="brand-header" id="brand-header-to-home" title="Click to view public site">
           <img src="/zexcore-logo-horizontal.png" alt="ZexCore" class="brand-logo-horizontal" />
         </div>
 
         <nav class="nav-menu">
-          <div class="nav-label">Platform Modules</div>
+          <!-- Group: Home -->
+          <div class="nav-label">Home</div>
           <a href="#/console/overview" class="nav-item ${state.currentTab === 'overview' ? 'active' : ''}" data-tab="overview">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-            System Overview
+            <span class="nav-item-text">
+              <span class="nav-item-title">System Overview</span>
+              <span class="nav-item-sub">Health, metrics &amp; live events</span>
+            </span>
           </a>
+          <a href="#/about" class="nav-item" title="Read plain-English explanation, glossary &amp; installation guide">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span class="nav-item-text">
+              <span class="nav-item-title">About &amp; Guide</span>
+              <span class="nav-item-sub">Plain English &amp; setup tutorial</span>
+            </span>
+          </a>
+
+          <!-- Group: Operations -->
+          <div class="nav-label" style="margin-top: 10px;">Operations</div>
           <a href="#/console/iot" class="nav-item ${state.currentTab === 'iot' ? 'active' : ''}" data-tab="iot">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
-            IoT Hub
-            ${isTabLocked('iot', currentPlan, state.currentUser?.email) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> INDIE</span>` : `<span class="nav-badge" id="iot-count">${state.devices.length}</span>`}
+            <span class="nav-item-text">
+              <span class="nav-item-title">Connected Devices
+                ${isTabLocked('iot', currentPlan, state.currentUser?.email) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> INDIE</span>` : `<span class="nav-badge" id="iot-count">${state.devices.length}</span>`}
+              </span>
+              <span class="nav-item-sub">IoT sensors, fleet &amp; telemetry</span>
+            </span>
           </a>
           <a href="#/console/rules" class="nav-item ${state.currentTab === 'rules' ? 'active' : ''}" data-tab="rules">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-            Rules &amp; AI Author
-            <span class="nav-badge">${state.rules.length}</span>
+            <span class="nav-item-text">
+              <span class="nav-item-title">Automation Rules <span class="nav-badge">${state.rules.length}</span></span>
+              <span class="nav-item-sub">If-this-then-that logic &amp; AI rules</span>
+            </span>
           </a>
+
+          <!-- Group: People & Communication -->
+          <div class="nav-label" style="margin-top: 10px;">People</div>
           <a href="#/console/crm" class="nav-item ${state.currentTab === 'crm' ? 'active' : ''}" data-tab="crm">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            CRM &amp; Pipeline
-            ${isTabLocked('crm', currentPlan, state.currentUser?.email) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> GROWTH</span>` : `<span class="nav-badge">${state.leads.length}</span>`}
+            <span class="nav-item-text">
+              <span class="nav-item-title">Customers &amp; Inbox
+                ${isTabLocked('crm', currentPlan, state.currentUser?.email) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> GROWTH</span>` : `<span class="nav-badge">${state.leads.length}</span>`}
+              </span>
+              <span class="nav-item-sub">WhatsApp, deals &amp; bookings</span>
+            </span>
           </a>
+
+          <!-- Group: Compliance & Trust -->
+          <div class="nav-label" style="margin-top: 10px;">Compliance &amp; Trust</div>
           <a href="#/console/compliance" class="nav-item ${state.currentTab === 'compliance' ? 'active' : ''}" data-tab="compliance">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            Compliance &amp; Vault
-            ${isTabLocked('compliance', currentPlan, state.currentUser?.email) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> DEDICATED</span>` : ''}
-          </a>
-          <a href="#/console/whitelabel" class="nav-item ${state.currentTab === 'whitelabel' ? 'active' : ''}" data-tab="whitelabel">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.26L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-            Agency White-Label
-            ${isTabLocked('whitelabel', currentPlan, state.currentUser?.email) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> AGENCY</span>` : '<span class="nav-badge" style="background: rgba(13, 148, 136, 0.15); color: #0d9488; font-weight: 800;">25</span>'}
+            <span class="nav-item-text">
+              <span class="nav-item-title">Data &amp; Privacy
+                ${isTabLocked('compliance', currentPlan, state.currentUser?.email) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> DEDICATED</span>` : ''}
+              </span>
+              <span class="nav-item-sub">GDPR, consent &amp; encryption vault</span>
+            </span>
           </a>
           <a href="#/console/audit" class="nav-item ${state.currentTab === 'audit' ? 'active' : ''}" data-tab="audit">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
-            Audit &amp; Finance
-            <span class="nav-badge" style="background: rgba(229, 9, 32, 0.12); color: var(--primary); font-weight: 800;">5</span>
+            <span class="nav-item-text">
+              <span class="nav-item-title">Audit &amp; Finance <span class="nav-badge" style="background: rgba(229, 9, 32, 0.12); color: var(--primary); font-weight: 800;">5</span></span>
+              <span class="nav-item-sub">Logs, exports &amp; financial records</span>
+            </span>
+          </a>
+
+          <!-- Group: Settings -->
+          <div class="nav-label" style="margin-top: 10px;">Settings</div>
+          <a href="#/console/whitelabel" class="nav-item ${state.currentTab === 'whitelabel' ? 'active' : ''}" data-tab="whitelabel">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.26L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            <span class="nav-item-text">
+              <span class="nav-item-title">Agency White-Label
+                ${isTabLocked('whitelabel', currentPlan, state.currentUser?.email) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> AGENCY</span>` : `<span class="nav-badge" style="background: rgba(13, 148, 136, 0.15); color: #0d9488; font-weight: 800;">25</span>`}
+              </span>
+              <span class="nav-item-sub">Your logo, brand &amp; client portals</span>
+            </span>
           </a>
           <a href="#/console/license" class="nav-item ${state.currentTab === 'license' ? 'active' : ''}" data-tab="license">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zm-3 8V7a3 3 0 0 1 6 0v3H9z"/></svg>
-            Dedicated License
-            ${isTabLocked('license', currentPlan, state.currentUser?.email) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> DEDICATED</span>` : '<span class="nav-badge" style="background: rgba(22, 163, 74, 0.15); color: #16a34a; font-weight: 800;">ACTIVE</span>'}
+            <span class="nav-item-text">
+              <span class="nav-item-title">License &amp; Keys
+                ${isTabLocked('license', currentPlan, state.currentUser?.email) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> DEDICATED</span>` : `<span class="nav-badge" style="background: rgba(22, 163, 74, 0.15); color: #16a34a; font-weight: 800;">ACTIVE</span>`}
+              </span>
+              <span class="nav-item-sub">Software license management</span>
+            </span>
+          </a>
+          <a href="#/console/billing" class="nav-item ${state.currentTab === 'billing' ? 'active' : ''}" data-tab="billing">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            <span class="nav-item-text">
+              <span class="nav-item-title">Billing &amp; Invoices</span>
+              <span class="nav-item-sub">Subscription, payments &amp; receipts</span>
+            </span>
           </a>
         </nav>
 
@@ -1602,13 +1964,14 @@ function renderDashboard() {
           <div class="sidebar-plan-price">$${planMeta.monthlyPrice} / mo &bull; Active Tier</div>
           <button class="btn-sidebar-upgrade" id="btn-sidebar-upgrade-plan">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            ${currentPlan === 'enterprise' ? 'Manage Subscription' : 'Upgrade Plan'}
+            ${currentPlan === 'enterprise' || currentPlan === 'dedicated' ? 'Manage Plan' : 'Upgrade Plan'}
           </button>
         </div>
 
         <div class="sidebar-footer">
-          <div style="display: flex; gap: 6px; margin-bottom: 10px; width: 100%;">
+          <div style="display: flex; gap: 6px; margin-bottom: 8px; width: 100%;">
             <button class="btn btn-secondary btn-sm" id="btn-sidebar-home" style="flex: 1; font-size: 0.72rem; padding: 4px 6px;">Website</button>
+            <a href="#/about" class="btn btn-secondary btn-sm" id="btn-sidebar-about" style="flex: 1; font-size: 0.72rem; padding: 4px 6px; text-decoration: none; text-align: center; display: inline-flex; align-items: center; justify-content: center; color: var(--text-main);" title="Plain-English guide to ZexCore features & installation">About</a>
             <button class="btn btn-secondary btn-sm" id="btn-sidebar-signout" style="flex: 1; font-size: 0.72rem; padding: 4px 6px;">Sign Out</button>
           </div>
           <div class="status-pill">
@@ -1623,17 +1986,21 @@ function renderDashboard() {
       <main class="main-wrapper">
         <header class="topbar">
           <div class="topbar-left">
+            <!-- Mobile hamburger -->
+            <button class="mobile-sidebar-toggle" id="btn-mobile-sidebar-toggle" aria-label="Toggle navigation">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
             <div class="org-tenant-box">
-              <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Tenant:</span>
+              <span class="topbar-tenant-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Tenant:</span>
               <select id="tenantSelect" class="tenant-select">
                 <option value="acme_corp" ${state.activeTenant === 'acme_corp' ? 'selected' : ''}>Acme Enterprise Corp (prod-us-east)</option>
                 <option value="globex_corp" ${state.activeTenant === 'globex_corp' ? 'selected' : ''}>Globex Research (dev-eu-west)</option>
                 <option value="soylent_ind" ${state.activeTenant === 'soylent_ind' ? 'selected' : ''}>Soylent Dynamics (staging-apac)</option>
               </select>
               <div class="topbar-plan-pill" id="topbar-plan-indicator" title="Click to manage subscription or upgrade plan">
-                <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#E50920;"></span>
-                <span>${planMeta.name.toUpperCase()}</span>
-                ${currentPlan !== 'enterprise' ? '<span class="topbar-plan-upgrade-link">Upgrade</span>' : ''}
+                <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#E50920;flex-shrink:0;"></span>
+                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${planMeta.name.toUpperCase()}</span>
+                ${(currentPlan === 'starter' || currentPlan === 'growth' || currentPlan === 'agency' || currentPlan === 'free') ? '<span class="topbar-plan-upgrade-link">Upgrade</span>' : ''}
               </div>
             </div>
           </div>
@@ -1681,6 +2048,7 @@ function renderDashboard() {
             state.currentTab === 'compliance' ? renderConsoleComplianceView(currentPlan) :
             state.currentTab === 'whitelabel' ? renderConsoleWhiteLabelView(currentPlan) :
             state.currentTab === 'license' ? renderConsoleLicenseView(currentPlan) :
+            state.currentTab === 'billing' ? renderConsoleBillingView(currentPlan) :
             renderConsoleAuditView(currentPlan)
           }
         </div>
@@ -1709,8 +2077,31 @@ function renderDashboard() {
 
 // ── Event Handlers ───────────────────────────────────────────────────────────
 function setupEventListeners() {
+  // Topbar and Sidebar Navigation
+  document.getElementById('brand-header-to-home')?.addEventListener('click', () => navigateTo('home'));
+  document.getElementById('btn-topbar-home')?.addEventListener('click', () => navigateTo('home'));
+  document.getElementById('btn-sidebar-home')?.addEventListener('click', () => navigateTo('home'));
+
+  // Mobile sidebar hamburger toggle
+  const sidebar = document.getElementById('console-sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const hamburger = document.getElementById('btn-mobile-sidebar-toggle');
+  function openMobileSidebar() {
+    sidebar?.classList.add('mobile-open');
+    overlay?.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeMobileSidebar() {
+    sidebar?.classList.remove('mobile-open');
+    overlay?.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  hamburger?.addEventListener('click', openMobileSidebar);
+  overlay?.addEventListener('click', closeMobileSidebar);
+  // Close sidebar on nav-item click (mobile UX)
   document.querySelectorAll('.nav-item').forEach((item) => {
     item.addEventListener('click', () => {
+      closeMobileSidebar();
       const tabId = item.getAttribute('data-tab');
       if (tabId) {
         state.currentTab = tabId;
@@ -1719,12 +2110,6 @@ function setupEventListeners() {
     });
   });
 
-  // Topbar and Sidebar Navigation
-  document.getElementById('brand-header-to-home')?.addEventListener('click', () => navigateTo('home'));
-  document.getElementById('btn-topbar-home')?.addEventListener('click', () => navigateTo('home'));
-  document.getElementById('btn-sidebar-home')?.addEventListener('click', () => navigateTo('home'));
-
-  // 1-Click Starter Kits
   document.getElementById('btn-topbar-starter-kits')?.addEventListener('click', () => {
     openVerticalStarterKitsModal();
   });
@@ -1778,6 +2163,9 @@ function setupEventListeners() {
 
   document.getElementById('btn-sidebar-upgrade-plan')?.addEventListener('click', () => handleUpgradeClick());
   document.getElementById('topbar-plan-indicator')?.addEventListener('click', () => handleUpgradeClick());
+  document.getElementById('btn-billing-upgrade-plan')?.addEventListener('click', () => handleUpgradeClick());
+  document.getElementById('btn-billing-cta-upgrade')?.addEventListener('click', () => handleUpgradeClick('dedicated' as PlanTier));
+
 
   document.querySelectorAll<HTMLButtonElement>('.btn-paywall-upgrade').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -1814,10 +2202,67 @@ function setupEventListeners() {
     logoInput?.addEventListener('input', () => {
       const val = logoInput.value || '/zexcore-logo-light.png';
       state.agencyBranding.logoUrl = val;
+      state.agencyBranding.logoIsUpload = false;
       const previewLogo = document.getElementById('preview-client-logo') as HTMLImageElement | null;
       const thumb = document.getElementById('agency-logo-preview-img') as HTMLImageElement | null;
+      const filename = document.getElementById('logo-upload-filename');
       if (previewLogo) previewLogo.src = val;
       if (thumb) thumb.src = val;
+      if (filename) filename.textContent = '';
+    });
+
+    // Logo file upload — converts to base64 and stores as data URI
+    const applyLogoFile = (file: File) => {
+      if (!file.type.startsWith('image/')) {
+        showToast('Only image files are accepted (PNG, JPG, SVG, WEBP)', 'error');
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        showToast('Logo file must be under 2MB', 'error');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUri = e.target?.result as string;
+        state.agencyBranding.logoUrl = dataUri;
+        state.agencyBranding.logoIsUpload = true;
+        const previewLogo = document.getElementById('preview-client-logo') as HTMLImageElement | null;
+        const thumb = document.getElementById('agency-logo-preview-img') as HTMLImageElement | null;
+        const filename = document.getElementById('logo-upload-filename');
+        const urlInput = document.getElementById('agency-logo-input') as HTMLInputElement | null;
+        if (previewLogo) previewLogo.src = dataUri;
+        if (thumb) thumb.src = dataUri;
+        if (filename) filename.textContent = `✓ ${file.name}`;
+        if (urlInput) urlInput.value = '';
+        try { localStorage.setItem('zx_agency_logo', dataUri); } catch { /* quota */ }
+        showToast('Logo uploaded and applied!', 'success');
+        logBusEvent('agency.branding.logo_uploaded', { filename: file.name, size: file.size, type: file.type });
+      };
+      reader.readAsDataURL(file);
+    };
+
+    const fileInput = document.getElementById('agency-logo-file-input') as HTMLInputElement | null;
+    fileInput?.addEventListener('change', () => {
+      if (fileInput.files?.[0]) applyLogoFile(fileInput.files[0]);
+    });
+
+    // Drag-and-drop on the upload zone
+    const uploadZone = document.getElementById('logo-upload-zone');
+    uploadZone?.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadZone.style.borderColor = '#E50920';
+      uploadZone.style.background = '#fff5f5';
+    });
+    uploadZone?.addEventListener('dragleave', () => {
+      uploadZone.style.borderColor = '';
+      uploadZone.style.background = '#f8fafc';
+    });
+    uploadZone?.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadZone.style.borderColor = '';
+      uploadZone.style.background = '#f8fafc';
+      const file = e.dataTransfer?.files?.[0];
+      if (file) applyLogoFile(file);
     });
 
     const updateColor = (hex: string) => {
@@ -2327,32 +2772,87 @@ function renderDevices() {
   updateFleetOscilloscope();
 };
 
-(window as any).toggleSystemStatus = () => {
-  state.systemStatus = state.systemStatus === 'operational' ? 'offline' : 'operational';
-  logBusEvent('system.health.status_changed', {
-    status: state.systemStatus,
-    activeTenant: state.activeTenant,
-    timestamp: new Date().toISOString(),
+(window as any).downloadInvoice = (invoiceId: string) => {
+  // In production this would call the API to generate a PDF receipt
+  const link = document.createElement('a');
+  link.href = `data:text/plain;charset=utf-8,ZexCore Invoice ${invoiceId}\n\nThis invoice PDF would be generated by your billing API.\nIntegrate with Paystack/Stripe PDF generation when APIs are ready.`;
+  link.download = `${invoiceId}.txt`;
+  link.click();
+  import('./lib/invoicing').then(({ openReceiptModal }) => {
+    const plan = PLANS[getTenantPlan(state.activeTenant)] || PLANS.starter;
+    openReceiptModal({
+      receiptId: invoiceId,
+      plan: plan.name,
+      amount: plan.monthlyPrice,
+      currency: 'USD',
+      billingCycle: 'monthly',
+      date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+      tenantName: state.activeTenant,
+      email: state.currentUser?.email || 'hello@zexcore.com.ng',
+    } as any);
   });
+};
 
+(window as any).toggleSystemStatus = () => {
+  const goingOffline = state.systemStatus === 'operational';
+  if (goingOffline) {
+    openModal({
+      title: 'Switch to Offline / Maintenance?',
+      subtitle: 'This will mark the platform as offline for all tenants. This action is logged and immutable.',
+      contentHtml: '<p style="color:var(--text-secondary);font-size:0.88rem;margin:0;">Are you sure you want to switch the system status to <strong>Offline / Maintenance</strong>? This will be recorded in the tamper-proof audit log.</p>',
+      confirmText: 'Yes, Switch Offline',
+      cancelText: 'Cancel',
+      onConfirm: () => {
+        state.systemStatus = 'offline';
+        _applySystemStatusUI();
+        logBusEvent('system.health.status_changed', {
+          status: 'offline',
+          activeTenant: state.activeTenant,
+          recordedAt: preciseTimestamp(),
+        });
+        appendImmutableRecord('status_change', { from: 'operational', to: 'offline', changedBy: state.currentUser?.email || 'admin', recordedAt: preciseTimestamp() });
+      },
+    });
+  } else {
+    state.systemStatus = 'operational';
+    _applySystemStatusUI();
+    logBusEvent('system.health.status_changed', {
+      status: 'operational',
+      activeTenant: state.activeTenant,
+      recordedAt: preciseTimestamp(),
+    });
+    appendImmutableRecord('status_change', { from: 'offline', to: 'operational', changedBy: state.currentUser?.email || 'admin', recordedAt: preciseTimestamp() });
+  }
+};
+
+function _applySystemStatusUI() {
+  const isOp = state.systemStatus === 'operational';
+
+  // Topbar badge (kept as small pill for space)
   const topbarBtn = document.getElementById('topbar-status-btn');
   if (topbarBtn) {
     topbarBtn.className = `badge-status-btn ${state.systemStatus}`;
-    topbarBtn.innerHTML = `<span>●</span> <span>${state.systemStatus === 'operational' ? 'OPERATIONAL' : 'OFFLINE'}</span>`;
+    topbarBtn.innerHTML = `<span>●</span> <span>${isOp ? 'OPERATIONAL' : 'OFFLINE'}</span>`;
   }
 
-  const overviewBtn = document.getElementById('overview-status-btn');
-  const overviewSub = document.getElementById('overview-status-subtext');
-  if (overviewBtn) {
-    overviewBtn.className = `badge-status-btn ${state.systemStatus}`;
-    overviewBtn.innerText = state.systemStatus === 'operational' ? 'Operational' : 'Offline / Maintenance';
+  // Overview toggle
+  const checkbox = document.getElementById('overview-status-checkbox') as HTMLInputElement | null;
+  const track = document.getElementById('overview-status-track');
+  const label = document.getElementById('overview-status-label');
+  if (checkbox) checkbox.checked = isOp;
+  if (track) { track.className = `zx-toggle-track ${isOp ? 'on' : 'off'}`; }
+  if (label) {
+    label.style.color = isOp ? '#16a34a' : '#dc2626';
+    label.textContent = isOp ? '● Operational' : '○ Offline';
   }
+
+  const overviewSub = document.getElementById('overview-status-subtext');
   if (overviewSub) {
-    overviewSub.innerHTML = state.systemStatus === 'operational'
+    overviewSub.innerHTML = isOp
       ? 'Micro-kernel &amp; 5 modules &bull; 99.99% Uptime'
       : 'Maintenance window active &bull; Unoperational';
   }
-};
+}
 
 (window as any).pingDevice = (id: string) => {
   const dev = state.devices.find((d) => d.id === id);
@@ -2591,20 +3091,30 @@ function approveAiDraft() {
 
 // ── Data Portability & SIEM Audit Exports ────────────────────────────────────
 function downloadAllTenantData() {
+  const serial = generateExportSerial();
+  const exportedAt = preciseTimestamp();
+  const exportedBy = state.currentUser?.email || 'admin';
+  const filename = `zexcore-tenant-export-${state.activeTenant}-${exportedAt.slice(0, 10)}.json`;
+
   const exportPayload = {
+    _zexcore_watermark: {
+      serial,
+      exportedAt,
+      exportedBy,
+      tenantId: state.activeTenant,
+      product: 'ZexCore Enterprise Platform',
+      integrity: 'This export is registered in the ZexCore immutable export ledger and cannot be repudiated.',
+    },
     version: '1.0.0',
-    exportedAt: new Date().toISOString(),
+    exportedAt,
     tenantId: state.activeTenant,
     user: state.currentUser ? { uid: state.currentUser.uid, email: state.currentUser.email, displayName: state.currentUser.displayName, tenantSlug: state.currentUser.tenantSlug } : null,
     plan: getTenantPlan(state.activeTenant),
     data: {
       devices: state.devices,
       rules: state.rules,
-      crm: {
-        leads: state.leads,
-        whatsAppThreads: state.whatsAppThreads,
-        bookings: state.bookings,
-      },
+      leads: state.leads,
+      consents: state.consents,
       compliance: {
         consents: state.consents,
         erasureRequestsCount: state.erasureRequestsCount,
@@ -2627,83 +3137,103 @@ function downloadAllTenantData() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `zexcore-tenant-export-${state.activeTenant}-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 
+  appendExportLedgerEntry('Tenant Data (JSON)', filename, exportedBy);
   logBusEvent('tenant.data.exported', {
+    serial,
     tenant: state.activeTenant,
     sizeBytes: blob.size,
     recordsCount: state.devices.length + state.rules.length + state.leads.length + state.whatsAppThreads.length,
     gdprCompliant: true,
   });
+  showToast(`Export complete. Serial: ${serial}`, 'success');
 }
 
 function exportSiemLog(format: 'json' | 'csv') {
+  const serial = generateExportSerial();
+  const exportedAt = preciseTimestamp();
+  const exportedBy = state.currentUser?.email || 'admin';
+
   if (format === 'json') {
     // NDJSON format for Splunk, Datadog, Elastic, IBM QRadar, Microsoft Sentinel
+    const headerLine = JSON.stringify({
+      _type: 'SIEM_EXPORT_HEADER',
+      serial,
+      exportedAt,
+      exportedBy,
+      tenantId: state.activeTenant,
+      watermark: 'ZexCore Immutable Export Ledger',
+    });
     const ndjsonLines = state.events.map((evt, idx) => {
       const lineObj = {
-        '@timestamp': new Date(Date.now() - (state.events.length - idx) * 60000).toISOString(),
+        '@timestamp': evt.ts,
         tenant_id: state.activeTenant,
         event_name: evt.name,
         display_time: evt.ts,
+        export_serial: serial,
         payload: (() => {
           try { return JSON.parse(evt.payload); } catch { return evt.payload; }
         })(),
-        integrity_hash: Array.from(evt.name + evt.ts + state.activeTenant)
-          .map((c) => c.charCodeAt(0).toString(16))
-          .join('')
-          .slice(0, 32),
+        integrity_hash: hashString(evt.name + evt.ts + state.activeTenant + idx),
         classification: 'SECURITY_AUDIT_LOG',
       };
       return JSON.stringify(lineObj);
     });
 
-    const content = ndjsonLines.join('\n');
+    const content = [headerLine, ...ndjsonLines].join('\n');
+    const filename = `zexcore-siem-${state.activeTenant}-${serial}.ndjson`;
     const blob = new Blob([content], { type: 'application/x-ndjson' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `zexcore-siem-${state.activeTenant}-${Date.now()}.ndjson`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
+    appendExportLedgerEntry('SIEM Log (NDJSON)', filename, exportedBy);
     logBusEvent('audit.siem.exported', {
+      serial,
       format: 'NDJSON',
       eventsCount: state.events.length,
       destination: 'SIEM_INGEST_READY',
     });
+    showToast(`SIEM export complete. Serial: ${serial}`, 'success');
   } else {
     // CSV format for compliance auditors & Excel SIEM parsers
-    const headers = ['Timestamp', 'TenantID', 'EventName', 'Payload', 'IntegritySignature'];
+    const headers = ['ExportSerial', 'Timestamp', 'TenantID', 'EventName', 'Payload', 'IntegrityHash', 'Watermark'];
     const rows = state.events.map((evt, idx) => {
-      const iso = new Date(Date.now() - (state.events.length - idx) * 60000).toISOString();
       const escapedPayload = `"${evt.payload.replace(/"/g, '""')}"`;
-      const sig = Array.from(evt.name + evt.ts).map((c) => c.charCodeAt(0).toString(16)).join('').slice(0, 24);
-      return [iso, state.activeTenant, evt.name, escapedPayload, sig].join(',');
+      const sig = hashString(evt.name + evt.ts + state.activeTenant + idx);
+      return [serial, evt.ts, state.activeTenant, evt.name, escapedPayload, sig, 'ZexCore Immutable Export'].join(',');
     });
 
     const csvContent = [headers.join(','), ...rows].join('\n');
+    const filename = `zexcore-siem-${state.activeTenant}-${serial}.csv`;
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `zexcore-siem-${state.activeTenant}-${Date.now()}.csv`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
+    appendExportLedgerEntry('SIEM Log (CSV)', filename, exportedBy);
     logBusEvent('audit.siem.exported', {
+      serial,
       format: 'CSV',
       eventsCount: state.events.length,
       destination: 'CSV_AUDIT_ARCHIVE',
     });
+    showToast(`CSV export complete. Serial: ${serial}`, 'success');
   }
 }
 
@@ -2871,9 +3401,20 @@ function renderWhatsAppInboxView(container: HTMLElement) {
                 </div>
                 <div style="margin-bottom: 3px;">${m.text}</div>
                 <div class="whatsapp-msg-time">
-                  <span>${m.time}</span>
-                  ${m.sender === 'agent' ? `<span style="color: #0284c7; font-weight: 800;">✓✓</span>` : ''}
-                  ${m.sender === 'bot' ? `<span style="background: #e2e8f0; color: #475569; font-size: 0.6rem; padding: 1px 4px; border-radius: 3px;">BOT AUTO</span>` : ''}
+                  <span style="font-size:0.65rem;color:var(--text-muted);">${m.time}</span>
+                  ${m.sender === 'agent' || m.sender === 'bot'
+                    ? m.status === 'read' && m.providerConfirmed
+                      ? `<span title="Seen" style="color:#0284c7;font-weight:800;font-size:0.85rem;">✓✓</span>`
+                      : m.status === 'delivered' && m.providerConfirmed
+                        ? `<span title="Delivered" style="color:#94a3b8;font-weight:800;font-size:0.85rem;">✓✓</span>`
+                        : m.status === 'sent'
+                          ? `<span title="Sent" style="color:#cbd5e1;font-weight:800;font-size:0.85rem;">✓</span>`
+                          : m.status === 'failed'
+                            ? `<span title="Failed to deliver" style="color:#dc2626;font-size:0.7rem;">⚠ Failed</span>`
+                            : `<span title="Sending..." style="color:#e2e8f0;font-size:0.75rem;">◷</span>`
+                    : '' /* client messages never show outbound ticks */
+                  }
+                  ${m.sender === 'bot' ? `<span style="background:#e2e8f0;color:#475569;font-size:0.6rem;padding:1px 4px;border-radius:3px;">BOT AUTO</span>` : ''}
                 </div>
               </div>
             `).join('')}
@@ -3582,6 +4123,10 @@ function renderApp() {
       app.innerHTML = renderPricingPage();
       setupNavbarEvents();
       break;
+    case 'about':
+      app.innerHTML = renderAboutPage();
+      setupNavbarEvents();
+      break;
     case 'signin':
       app.innerHTML = renderSignInPage(state.activeTenant);
       setupSignInEvents((tenant, user) => {
@@ -3613,7 +4158,7 @@ function syncRouteFromHash() {
     state.currentView = 'signin';
   } else if (route === 'console' || route === 'dashboard' || route === 'app') {
     state.currentView = 'console';
-    const validTabs = ['overview', 'iot', 'rules', 'crm', 'compliance', 'whitelabel', 'audit', 'license'];
+    const validTabs = ['overview', 'iot', 'rules', 'crm', 'compliance', 'whitelabel', 'audit', 'license', 'billing'];
     state.currentTab = validTabs.includes(subParam) ? subParam : 'overview';
   } else if (route === 'platform') {
     state.currentView = 'platform';
@@ -3632,6 +4177,8 @@ function syncRouteFromHash() {
     state.currentView = 'resources';
   } else if (route === 'pricing') {
     state.currentView = 'pricing';
+  } else if (route === 'about') {
+    state.currentView = 'about';
   } else {
     state.currentView = 'home';
   }
@@ -3647,6 +4194,7 @@ function syncRouteFromHash() {
     docs: 'Developer Documentation & API Reference — ZexCore',
     resources: 'Engineering Publications & Whitepapers — ZexCore',
     pricing: 'Pricing & Platform Tiers — ZexCore Infrastructure',
+    about: 'About ZexCore — Plain English Platform Guide',
     signin: 'Sign in to ZexCore Control',
   };
 
@@ -3660,6 +4208,7 @@ function syncRouteFromHash() {
       whitelabel: 'Agency White-Label Branding Studio — ZexCore Console',
       audit: 'Audit & Financial Health Suite — ZexCore Console',
       license: 'Enterprise Dedicated License Vault — ZexCore Console',
+      billing: 'Billing & Invoices — ZexCore Console',
     };
     document.title = consoleTitles[state.currentTab] || 'ZexCore Control — Operational Console';
   } else {

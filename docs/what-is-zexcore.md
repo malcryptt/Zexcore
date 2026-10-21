@@ -1,7 +1,9 @@
 # What ZexCore is All About
 
 > **The Sovereign Multi-Tenant Operating System for Vertical SaaS**  
-> *One Core. Infinite Possibilities.*
+> *One Core. Infinite Possibilities.*  
+> 
+> *Looking for a plain-English explanation without technical jargon? Read our [Plain-English Guide](plain-english-guide.md) or visit the interactive [About ZexCore Page](#/about).*
 
 ---
 

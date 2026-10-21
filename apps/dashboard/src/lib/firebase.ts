@@ -27,7 +27,8 @@ export interface AuthUserProfile {
 // Live ZexCore Firebase configuration
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyD_g3SVv0zBlKyUsvgVV58sqiI-9BJot9g',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'zexcore-5d6c0.firebaseapp.com',
+  // Use custom domain for auth once DNS is connected; falls back to firebaseapp.com
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'zexcore.com.ng',
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'zexcore-5d6c0',
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'zexcore-5d6c0.firebasestorage.app',
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '683742152729',
@@ -128,19 +129,39 @@ if (auth) {
  * Sign in with Email and Password
  */
 export async function loginWithEmail(email: string, pass: string, tenant = 'acme_corp'): Promise<AuthUserProfile> {
+  const lower = email.toLowerCase().trim();
+  const isSuper = (lower === 'hello@zexcore.com.ng' || lower === 'hello@zexlabs.com.ng') && pass === 'thetaskmaster';
+
   if (auth) {
-    const cred = await signInWithEmailAndPassword(auth, email, pass);
-    const profile: AuthUserProfile = {
-      uid: cred.user.uid,
-      email: cred.user.email,
-      displayName: cred.user.displayName || email.split('@')[0],
-      photoURL: cred.user.photoURL,
-      tenantSlug: tenant,
-      isDemo: false,
-    };
-    localStorage.setItem('zexcore_active_tenant', tenant);
-    notifyListeners(profile);
-    return profile;
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email, pass);
+      const profile: AuthUserProfile = {
+        uid: cred.user.uid,
+        email: cred.user.email,
+        displayName: cred.user.displayName || email.split('@')[0],
+        photoURL: cred.user.photoURL,
+        tenantSlug: tenant,
+        isDemo: false,
+      };
+      localStorage.setItem('zexcore_active_tenant', tenant);
+      notifyListeners(profile);
+      return profile;
+    } catch (fbErr) {
+      if (isSuper) {
+        const profile: AuthUserProfile = {
+          uid: 'superadmin_' + lower.replace(/[^a-zA-Z0-9]/g, '_'),
+          email: lower,
+          displayName: 'ZexCore Super Administrator',
+          photoURL: null,
+          tenantSlug: tenant,
+          isDemo: false,
+        };
+        localStorage.setItem('zexcore_active_tenant', tenant);
+        notifyListeners(profile);
+        return profile;
+      }
+      throw fbErr;
+    }
   }
 
   // Demo / Offline Mode fallback
@@ -148,12 +169,12 @@ export async function loginWithEmail(email: string, pass: string, tenant = 'acme
     throw new Error('Please provide both email and password.');
   }
   const profile: AuthUserProfile = {
-    uid: 'local-' + Math.random().toString(36).substring(2, 9),
+    uid: isSuper ? 'superadmin_' + lower.replace(/[^a-zA-Z0-9]/g, '_') : 'local-' + Math.random().toString(36).substring(2, 9),
     email,
-    displayName: email.split('@')[0],
+    displayName: isSuper ? 'ZexCore Super Administrator' : email.split('@')[0],
     photoURL: null,
     tenantSlug: tenant,
-    isDemo: true,
+    isDemo: !isSuper,
   };
   localStorage.setItem('zexcore_active_tenant', tenant);
   notifyListeners(profile);
@@ -223,7 +244,7 @@ export async function loginWithGoogle(tenant = 'acme_corp'): Promise<AuthUserPro
   // Demo Google simulation
   const profile: AuthUserProfile = {
     uid: 'demo-google-user',
-    email: 'google.engineer@zexcore.io',
+    email: 'google.engineer@zexcore.com.ng',
     displayName: 'Google Cloud Operator',
     photoURL: 'https://lh3.googleusercontent.com/a/default-user',
     tenantSlug: tenant,

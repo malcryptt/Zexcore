@@ -13,6 +13,13 @@
         "destination": "/index.html"
       }
     ],
+    "redirects": [
+      {
+        "source": "https://www.zexcore.com.ng/**",
+        "destination": "https://zexcore.com.ng/:splat",
+        "type": 301
+      }
+    ],
     "headers": [
       {
         "source": "**/*.@(jpg|jpeg|gif|png|svg|webp|js|css)",
@@ -20,6 +27,23 @@
           {
             "key": "Cache-Control",
             "value": "max-age=31536000"
+          }
+        ]
+      },
+      {
+        "source": "**",
+        "headers": [
+          {
+            "key": "X-Frame-Options",
+            "value": "SAMEORIGIN"
+          },
+          {
+            "key": "X-Content-Type-Options",
+            "value": "nosniff"
+          },
+          {
+            "key": "Referrer-Policy",
+            "value": "strict-origin-when-cross-origin"
           }
         ]
       }

@@ -148,12 +148,13 @@ const CYCLE_STORAGE_KEY = 'zexcore_tenant_billing_cycle_v1';
 
 export function getTenantPlan(tenantSlug = 'default'): PlanTier {
   try {
+    if (isSuperadmin()) return 'dedicated';
     const raw = localStorage.getItem(`${PLAN_STORAGE_KEY}_${tenantSlug}`);
     if (raw && (raw in PLANS)) return raw as PlanTier;
     // Default to starter so soft paywalls and upgrade paths are immediately demonstrated
     return 'starter';
   } catch {
-    return 'starter';
+    return isSuperadmin() ? 'dedicated' : 'starter';
   }
 }
 
@@ -181,7 +182,10 @@ export function setBillingCycle(cycle: BillingCycle): void {
   }
 }
 
-export const SUPERADMIN_EMAILS = ['hello@zexlabs.com.ng'];
+export const SUPERADMIN_EMAILS = [
+  'hello@zexcore.com.ng',
+  'hello@zexlabs.com.ng',
+];
 
 export function isSuperadmin(email?: string | null): boolean {
   try {
@@ -198,7 +202,7 @@ export function isSuperadmin(email?: string | null): boolean {
 }
 
 export function isTabLocked(tabId: string, currentPlan: PlanTier, userEmail?: string | null): boolean {
-  // hello@zexlabs.com.ng superadmin email bypasses all paywalls with 100% unrestricted access
+  // hello@zexcore.com.ng & hello@zexlabs.com.ng superadmin emails bypass all paywalls with 100% unrestricted access
   if (isSuperadmin(userEmail)) {
     return false;
   }

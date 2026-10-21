@@ -445,6 +445,7 @@ export function renderPricingPage(): string {
                   <div class="enterprise-bullet">✓ Custom 99.99% SLAs and uptime commitments</div>
                   <div class="enterprise-bullet">✓ Signed BAA, NDPR, and GDPR compliance agreements</div>
                   <div class="enterprise-bullet">✓ Hardware-isolated key destruction pipelines</div>
+                  <div class="enterprise-bullet">✓ Direct Enterprise Desk: <a href="mailto:hello@zexcore.com.ng" style="color:var(--primary);font-weight:700;text-decoration:underline;">hello@zexcore.com.ng</a></div>
                 </div>
               </div>
               <div class="enterprise-contact-form-card">

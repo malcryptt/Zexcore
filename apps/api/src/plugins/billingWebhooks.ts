@@ -61,7 +61,7 @@ const billingWebhooksPluginCallback: FastifyPluginAsync<BillingWebhookOptions> =
             tenantSlug: obj?.metadata?.tenantSlug || 'default',
             amount: (obj?.amount || 0) / 100,
             currency: (obj?.currency || 'usd').toUpperCase(),
-            customerEmail: obj?.customer_email || obj?.receipt_email || 'customer@enterprise.io',
+            customerEmail: obj?.customer_email || obj?.receipt_email || 'hello@zexcore.com.ng',
             planTier: obj?.metadata?.planTier || 'growth',
             billingCycle: (obj?.metadata?.billingCycle as 'monthly' | 'annual') || 'monthly',
             status: 'paid',

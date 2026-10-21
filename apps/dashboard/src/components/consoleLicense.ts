@@ -51,10 +51,10 @@ export function renderConsoleLicense(tenantSlug: string = 'default'): string {
     <div class="console-tab-page animate-fade-in" style="padding: 28px; max-width: 1200px; margin: 0 auto;">
       
       <!-- Page Header -->
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid #e2e8f0;">
-        <div>
-          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
-            <h2 style="font-size: 1.45rem; font-weight: 850; color: #0f172a; margin: 0; letter-spacing: -0.02em;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid #e2e8f0; flex-wrap: wrap; gap: 16px;">
+        <div style="min-width: 0; flex: 1;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px; flex-wrap: wrap;">
+            <h2 style="font-size: clamp(1.05rem, 2.8vw, 1.45rem); font-weight: 850; color: #0f172a; margin: 0; letter-spacing: -0.02em; line-height: 1.25;">
               Enterprise License &amp; Dedicated Cluster Vault
             </h2>
             ${getStatusBadge()}
@@ -64,7 +64,7 @@ export function renderConsoleLicense(tenantSlug: string = 'default'): string {
           </p>
         </div>
 
-        <div style="display: flex; gap: 10px;">
+        <div style="display: flex; gap: 10px; flex-shrink: 0; flex-wrap: wrap;">
           <button class="btn btn-secondary btn-sm" id="btn-license-rotate" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
             Rotate Master Key
