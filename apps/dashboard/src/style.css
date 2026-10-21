@@ -424,8 +424,8 @@ body {
 }
 
 .brand-logo-horizontal {
-  height: 32px;
-  max-width: 190px;
+  height: 42px;
+  max-width: 220px;
   object-fit: contain;
 }
 
@@ -4889,8 +4889,9 @@ body {
 }
 
 .console-core-logo {
-  width: 24px;
-  height: 24px;
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
 }
 
 .console-core-text {
@@ -5207,7 +5208,7 @@ pre, code, .code-block, .terminal-window { overflow-wrap: anywhere; }
 .app-layout { min-height: 100vh; background: #f7f8fa; }
 .sidebar { background: #fff; border-right: 1px solid var(--border-default); }
 .brand-header { min-height: 72px; display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border-subtle); }
-.brand-logo-horizontal { width: 132px; max-width: 100%; height: 38px; object-fit: contain; object-position: left center; }
+.brand-logo-horizontal { width: 160px; max-width: 100%; height: 42px; object-fit: contain; object-position: left center; }
 .topbar { background: rgba(255,255,255,.96); border-bottom: 1px solid var(--border-default); min-height: 66px; }
 .nav-item { border-radius: 9px; margin: 3px 8px; transition: color .15s ease, background .15s ease; }
 .nav-item.active { background: #fff0f1; color: var(--primary); }
@@ -9636,17 +9637,18 @@ body { background: #fff; letter-spacing: -.008em; }
 }
 .zx-toggle-thumb {
   position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 20px;
-  height: 20px;
+  top: 3px;
+  left: 3px;
+  width: calc(100% - 24px);
+  height: calc(100% - 6px);
   background: #ffffff;
   border-radius: 50%;
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.28);
+  aspect-ratio: 1;
 }
 .zx-toggle-track.on .zx-toggle-thumb {
-  transform: translateX(20px);
+  transform: translateX(calc(100% + 2px));
 }
 .zx-toggle-track.off .zx-toggle-thumb {
   transform: translateX(0);

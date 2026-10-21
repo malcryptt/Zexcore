@@ -15,6 +15,7 @@ import { renderResourcesPage } from './pages/resources';
 import { renderPricingPage } from './pages/pricing';
 import { renderSignInPage, setupSignInEvents } from './pages/signin';
 import { renderAboutPage } from './pages/about';
+import { renderContactPage, setupContactPageEvents } from './pages/contact';
 import { setupNavbarEvents } from './components/navbar';
 import { renderConsoleAuditView, setupConsoleAuditEvents } from './pages/consoleAudit';
 import { renderConsoleLicense, attachConsoleLicenseEvents } from './components/consoleLicense';
@@ -125,7 +126,7 @@ interface BookingAppointment {
 
 // ── Application State ────────────────────────────────────────────────────────
 const state = {
-  currentView: 'home' as 'home' | 'platform' | 'architecture' | 'modules' | 'solutions' | 'security' | 'docs' | 'resources' | 'pricing' | 'signin' | 'console' | 'dashboard' | 'about',
+  currentView: 'home' as 'home' | 'platform' | 'architecture' | 'modules' | 'solutions' | 'security' | 'docs' | 'resources' | 'pricing' | 'signin' | 'console' | 'dashboard' | 'about' | 'contact',
   platformModule: 'core',
   currentTab: 'overview',
   crmSubView: 'whatsapp' as 'whatsapp' | 'kanban' | 'booking',
@@ -2015,7 +2016,7 @@ function renderDashboard() {
             <!-- Interactive System Status Toggle -->
             <label class="zx-toggle-switch" id="topbar-status-toggle" title="Toggle system state: Operational / Offline" style="cursor: pointer; display: inline-flex; align-items: center; gap: 7px; margin-right: 8px;" onclick="window.toggleSystemStatus()">
               <span class="zx-toggle-track ${state.systemStatus === 'operational' ? 'on' : 'off'}" id="topbar-status-track" style="width: 36px; height: 20px;">
-                <span class="zx-toggle-thumb" style="width: 16px; height: 16px; top: 2px; left: 2px;"></span>
+                <span class="zx-toggle-thumb"></span>
               </span>
               <span id="topbar-status-label" style="font-size: 0.72rem; font-weight: 700; color: ${state.systemStatus === 'operational' ? '#16a34a' : '#dc2626'}; white-space: nowrap;">
                 ${state.systemStatus === 'operational' ? 'Operational' : 'Offline'}
@@ -2735,7 +2736,7 @@ function renderDevices() {
       <td>
         <label class="zx-toggle-switch" onclick="window.toggleDeviceStatus('${d.id}')" title="Toggle device: Live / Offline" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
           <span class="zx-toggle-track ${d.status === 'online' ? 'on' : 'off'}" style="width: 34px; height: 18px;">
-            <span class="zx-toggle-thumb" style="width: 14px; height: 14px; top: 2px; left: 2px;"></span>
+            <span class="zx-toggle-thumb"></span>
           </span>
           <span style="font-size: 0.72rem; font-weight: 700; color: ${d.status === 'online' ? '#15803d' : '#b91c1c'};">
             ${d.status === 'online' ? 'Live' : 'Offline'}
@@ -3014,7 +3015,7 @@ function renderRules() {
           <strong style="font-size: 0.9rem; color: var(--text-main);">${r.name}</strong>
           <label class="zx-toggle-switch" onclick="window.toggleRule('${r.id}')" title="Toggle rule: Enabled / Disabled" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
             <span class="zx-toggle-track ${r.enabled ? 'on' : 'off'}" style="width: 34px; height: 18px;">
-              <span class="zx-toggle-thumb" style="width: 14px; height: 14px; top: 2px; left: 2px;"></span>
+              <span class="zx-toggle-thumb"></span>
             </span>
             <span style="font-size: 0.72rem; font-weight: 700; color: ${r.enabled ? '#15803d' : '#b91c1c'};">
               ${r.enabled ? 'Enabled' : 'Disabled'}
@@ -3331,7 +3332,7 @@ function renderWhatsAppInboxView(container: HTMLElement) {
               <span>&bull;</span>
               <label class="zx-toggle-switch" onclick="window.toggleCrmWebhook()" title="Toggle webhook: Live / Offline" style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
                 <span class="zx-toggle-track ${state.crmWebhookStatus === 'live' ? 'on' : 'off'}" style="width: 28px; height: 15px;">
-                  <span class="zx-toggle-thumb" style="width: 11px; height: 11px; top: 2px; left: 2px;"></span>
+                  <span class="zx-toggle-thumb"></span>
                 </span>
                 <span style="font-size: 0.65rem; font-weight: 700; color: ${state.crmWebhookStatus === 'live' ? '#15803d' : '#b91c1c'};">
                   ${state.crmWebhookStatus === 'live' ? 'Webhook Live' : 'Webhook Offline'}
@@ -4030,7 +4031,7 @@ function renderConsents() {
             <td>
               <label class="zx-toggle-switch" onclick="window.toggleConsent('${c.id}')" title="Toggle consent: Active / Revoked" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
                 <span class="zx-toggle-track ${c.revokedAt ? 'off' : 'on'}" style="width: 34px; height: 18px;">
-                  <span class="zx-toggle-thumb" style="width: 14px; height: 14px; top: 2px; left: 2px;"></span>
+                  <span class="zx-toggle-thumb"></span>
                 </span>
                 <span style="font-size: 0.72rem; font-weight: 700; color: ${c.revokedAt ? '#b91c1c' : '#15803d'};">
                   ${c.revokedAt ? 'Revoked' : 'Active'}
@@ -4153,6 +4154,11 @@ function renderApp() {
       app.innerHTML = renderAboutPage();
       setupNavbarEvents();
       break;
+    case 'contact':
+      app.innerHTML = renderContactPage();
+      setupNavbarEvents();
+      setupContactPageEvents();
+      break;
     case 'signin':
       app.innerHTML = renderSignInPage(state.activeTenant);
       setupSignInEvents((tenant, user) => {
@@ -4205,6 +4211,8 @@ function syncRouteFromHash() {
     state.currentView = 'pricing';
   } else if (route === 'about') {
     state.currentView = 'about';
+  } else if (route === 'contact') {
+    state.currentView = 'contact';
   } else {
     state.currentView = 'home';
   }
@@ -4221,6 +4229,7 @@ function syncRouteFromHash() {
     resources: 'Engineering Publications & Whitepapers — ZexCore',
     pricing: 'Pricing & Platform Tiers — ZexCore Infrastructure',
     about: 'About ZexCore — Plain English Platform Guide',
+    contact: 'Contact ZexCore — Enterprise Enquiries & Support',
     signin: 'Sign in to ZexCore Control',
   };
 
