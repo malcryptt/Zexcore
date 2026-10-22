@@ -27,14 +27,8 @@ export function renderHomePage(): string {
           <div class="site-container hz-hero-site-container">
 
             <div class="hz-hero-copy">
-              <!-- Kicker Pill -->
-              <div class="hero-kicker-pill hz-anim-fade-up">
-                <span class="pulse-dot"></span>
-                <span>Enterprise Foundation for Vertical SaaS</span>
-              </div>
-
               <!-- Main Title -->
-              <h1 class="hz-hero-title hz-anim-fade-up" style="animation-delay: 0.1s;">
+              <h1 class="hz-hero-title hz-anim-fade-up" style="animation-delay: 0.05s;">
                 Build &amp; Launch Industry Software.<br />
                 <span class="hz-hero-red">In Days, Not Months.</span>
               </h1>
