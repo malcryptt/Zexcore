@@ -2214,28 +2214,203 @@ function setupEventListeners() {
 
   // Global Quick Search (⌘K Command Palette)
   const openQuickSearch = () => {
-    openModal({
-      title: 'Console Quick Navigation',
-      subtitle: 'Jump to any console tool, module, or resource',
-      contentHtml: `
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          <input type="text" id="modal-quick-search-input" class="input" placeholder="Type to filter... (e.g. IoT, WhatsApp, Rules, Audit, Billing)" style="width:100%;box-sizing:border-box;" autofocus />
-          <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;">
-            <a href="#/console/overview" class="btn btn-secondary" style="justify-content:flex-start;padding:9px 12px;font-size:0.84rem;font-weight:600;" onclick="document.querySelector('.modal-backdrop')?.remove()">📊 Operations Overview &amp; Live Telemetry</a>
-            <a href="#/console/iot" class="btn btn-secondary" style="justify-content:flex-start;padding:9px 12px;font-size:0.84rem;font-weight:600;" onclick="document.querySelector('.modal-backdrop')?.remove()">⚡ Connected Devices &amp; Fleet Hub</a>
-            <a href="#/console/crm" class="btn btn-secondary" style="justify-content:flex-start;padding:9px 12px;font-size:0.84rem;font-weight:600;" onclick="document.querySelector('.modal-backdrop')?.remove()">💬 Customers &amp; WhatsApp CRM Inbox</a>
-            <a href="#/console/rules" class="btn btn-secondary" style="justify-content:flex-start;padding:9px 12px;font-size:0.84rem;font-weight:600;" onclick="document.querySelector('.modal-backdrop')?.remove()">⚙ Automation Rules &amp; Workflows</a>
-            <a href="#/console/compliance" class="btn btn-secondary" style="justify-content:flex-start;padding:9px 12px;font-size:0.84rem;font-weight:600;" onclick="document.querySelector('.modal-backdrop')?.remove()">🔒 Data Privacy &amp; GDPR Vault</a>
-            <a href="#/console/audit" class="btn btn-secondary" style="justify-content:flex-start;padding:9px 12px;font-size:0.84rem;font-weight:600;" onclick="document.querySelector('.modal-backdrop')?.remove()">📜 Audit Ledger &amp; SIEM Stream</a>
-            <a href="#/console/billing" class="btn btn-secondary" style="justify-content:flex-start;padding:9px 12px;font-size:0.84rem;font-weight:600;" onclick="document.querySelector('.modal-backdrop')?.remove()">💳 Subscription &amp; Billing</a>
-          </div>
+    let palette = document.getElementById('zexcore-cmd-palette-backdrop');
+    if (palette) {
+      palette.remove();
+    }
+
+    palette = document.createElement('div');
+    palette.id = 'zexcore-cmd-palette-backdrop';
+    palette.className = 'cmd-palette-backdrop';
+
+    palette.innerHTML = `
+      <div class="cmd-palette-modal" id="cmd-palette-modal">
+        <div class="cmd-palette-input-wrap">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="cmd-palette-input" class="cmd-palette-input" placeholder="Type a command or search devices, leads, views..." autocomplete="off" />
+          <span class="cmd-palette-esc-badge">ESC</span>
         </div>
-      `,
-      confirmText: 'Done',
-      onConfirm: () => {},
+        <div class="cmd-palette-results" id="cmd-palette-results"></div>
+        <div class="cmd-palette-footer">
+          <div class="cmd-palette-shortcut-hints">
+            <span><kbd style="font-family:var(--font-mono);background:#f1f5f9;padding:1px 5px;border-radius:3px;">↑↓</kbd> Navigate</span>
+            <span><kbd style="font-family:var(--font-mono);background:#f1f5f9;padding:1px 5px;border-radius:3px;">↵</kbd> Select</span>
+            <span><kbd style="font-family:var(--font-mono);background:#f1f5f9;padding:1px 5px;border-radius:3px;">ESC</kbd> Close</span>
+          </div>
+          <span>ZexCore Operations Console</span>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(palette);
+
+    const input = document.getElementById('cmd-palette-input') as HTMLInputElement | null;
+    const resultsContainer = document.getElementById('cmd-palette-results');
+
+    const closePalette = () => {
+      palette?.remove();
+    };
+
+    palette.addEventListener('click', (e) => {
+      if (e.target === palette) closePalette();
     });
+
+    const staticItems = [
+      { id: 'nav-overview', label: 'Operations Overview & Telemetry', group: 'Navigation', icon: '📊', action: () => { window.location.hash = '#/console/overview'; } },
+      { id: 'nav-iot', label: 'Connected Devices & Fleet Hub', group: 'Navigation', icon: '⚡', action: () => { window.location.hash = '#/console/iot'; } },
+      { id: 'nav-crm', label: 'WhatsApp CRM & Customer Inbox', group: 'Navigation', icon: '💬', action: () => { window.location.hash = '#/console/crm'; } },
+      { id: 'nav-rules', label: 'Automation & Event Rules', group: 'Navigation', icon: '⚙', action: () => { window.location.hash = '#/console/rules'; } },
+      { id: 'nav-compliance', label: 'Data Privacy & Compliance Vault', group: 'Navigation', icon: '🔒', action: () => { window.location.hash = '#/console/compliance'; } },
+      { id: 'nav-audit', label: 'Security & Financial Audit Ledger', group: 'Navigation', icon: '📜', action: () => { window.location.hash = '#/console/audit'; } },
+      { id: 'nav-whitelabel', label: 'Agency White-Label Branding', group: 'Navigation', icon: '🎨', action: () => { window.location.hash = '#/console/whitelabel'; } },
+      { id: 'nav-billing', label: 'Subscription & Tier Licensing', group: 'Navigation', icon: '💳', action: () => { window.location.hash = '#/console/billing'; } },
+      { id: 'act-reg-dev', label: 'Register New Edge Device Node', group: 'Quick Actions', icon: '+', action: () => { closePalette(); document.getElementById('btn-open-register-device')?.click(); } },
+      { id: 'act-rotate-keys', label: 'Rotate All Device Hardware Keys', group: 'Quick Actions', icon: '↻', action: () => { closePalette(); (window as any).rotateAllDeviceTokens(); } },
+      { id: 'act-add-opp', label: 'Create New CRM Opportunity', group: 'Quick Actions', icon: '+', action: () => { closePalette(); document.getElementById('btn-add-lead')?.click(); } },
+      { id: 'act-run-audit', label: 'Run Security & Ledger Verification', group: 'Quick Actions', icon: '✓', action: () => { closePalette(); window.location.hash = '#/console/audit'; document.getElementById('btn-run-audit-now')?.click(); } },
+      { id: 'act-switch-ws', label: 'Switch Active Tenant Workspace', group: 'Quick Actions', icon: '🏢', action: () => { closePalette(); (window as any).tenantSwitcherModal(); } },
+    ];
+
+    let selectedIndex = 0;
+    let visibleItems: Array<{ id: string; label: string; group: string; icon: string; action: () => void; hint?: string }> = [];
+
+    const renderResults = (query: string) => {
+      const q = query.toLowerCase().trim();
+      const items: typeof visibleItems = [];
+
+      // Filter static navigation & actions
+      staticItems.forEach((item) => {
+        if (!q || item.label.toLowerCase().includes(q) || item.group.toLowerCase().includes(q)) {
+          items.push(item);
+        }
+      });
+
+      // Filter active devices
+      state.devices.forEach((dev) => {
+        if (!q || dev.name.toLowerCase().includes(q) || dev.key.toLowerCase().includes(q) || dev.kind.toLowerCase().includes(q)) {
+          items.push({
+            id: `dev-${dev.id}`,
+            label: `${dev.name} (${dev.kind})`,
+            group: 'Fleet Devices',
+            icon: dev.status === 'online' ? '🟢' : '⚪',
+            hint: `${dev.temperature}°C • ${dev.voltage}V`,
+            action: () => {
+              window.location.hash = '#/console/iot';
+              setTimeout(() => {
+                const search = document.getElementById('iot-search-filter') as HTMLInputElement | null;
+                if (search) {
+                  search.value = dev.name;
+                  (window as any).renderDevices();
+                }
+              }, 100);
+            },
+          });
+        }
+      });
+
+      // Filter WhatsApp threads
+      state.whatsAppThreads.forEach((th) => {
+        if (!q || th.contactName.toLowerCase().includes(q) || th.phone.includes(q) || th.lastMsg.toLowerCase().includes(q)) {
+          items.push({
+            id: `th-${th.id}`,
+            label: `${th.contactName} (${th.phone})`,
+            group: 'Customer Inbox',
+            icon: '💬',
+            hint: `$${th.leadValue.toLocaleString()} • ${th.stage}`,
+            action: () => {
+              state.selectedThreadId = th.id;
+              state.crmSubView = 'whatsapp';
+              window.location.hash = '#/console/crm';
+            },
+          });
+        }
+      });
+
+      visibleItems = items;
+      if (selectedIndex >= visibleItems.length) selectedIndex = 0;
+
+      if (!resultsContainer) return;
+
+      if (visibleItems.length === 0) {
+        resultsContainer.innerHTML = `
+          <div style="padding: 32px 16px; text-align: center; color: var(--text-secondary); font-size: 0.84rem;">
+            No results found for "${query}".
+          </div>
+        `;
+        return;
+      }
+
+      // Group by category
+      let currentGroup = '';
+      let html = '';
+
+      visibleItems.forEach((item, idx) => {
+        if (item.group !== currentGroup) {
+          currentGroup = item.group;
+          html += `<div class="cmd-group-label">${currentGroup}</div>`;
+        }
+        const isSelected = idx === selectedIndex;
+        html += `
+          <div class="cmd-item ${isSelected ? 'selected' : ''}" data-index="${idx}" id="cmd-item-${idx}">
+            <div class="cmd-item-left">
+              <span class="cmd-item-icon">${item.icon}</span>
+              <span>${item.label}</span>
+            </div>
+            ${item.hint ? `<span class="cmd-item-hint">${item.hint}</span>` : ''}
+          </div>
+        `;
+      });
+
+      resultsContainer.innerHTML = html;
+
+      // Click listener for each item
+      visibleItems.forEach((item, idx) => {
+        document.getElementById(`cmd-item-${idx}`)?.addEventListener('click', () => {
+          closePalette();
+          item.action();
+        });
+      });
+    };
+
+    renderResults('');
+
+    if (input) {
+      input.focus();
+      input.addEventListener('input', () => {
+        selectedIndex = 0;
+        renderResults(input.value);
+      });
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          if (visibleItems.length > 0) {
+            selectedIndex = (selectedIndex + 1) % visibleItems.length;
+            renderResults(input.value);
+            document.getElementById(`cmd-item-${selectedIndex}`)?.scrollIntoView({ block: 'nearest' });
+          }
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          if (visibleItems.length > 0) {
+            selectedIndex = (selectedIndex - 1 + visibleItems.length) % visibleItems.length;
+            renderResults(input.value);
+            document.getElementById(`cmd-item-${selectedIndex}`)?.scrollIntoView({ block: 'nearest' });
+          }
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (visibleItems[selectedIndex]) {
+            const item = visibleItems[selectedIndex];
+            closePalette();
+            item.action();
+          }
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          closePalette();
+        }
+      });
+    }
   };
 
+  (window as any).openConsoleSearch = openQuickSearch;
   document.getElementById('topbar-search-trigger')?.addEventListener('click', openQuickSearch);
   document.addEventListener('keydown', (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
