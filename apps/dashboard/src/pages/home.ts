@@ -477,10 +477,10 @@ export function renderHomePage(): string {
               <!-- Right Column: Copy & Explore Button -->
               <div class="powering-copy-col">
                 <h2 class="section-title" style="text-align: left; font-size: 2.2rem; font-weight: 850; letter-spacing: -0.04em; margin-bottom: 20px;">
-                  Powering the next generation of vertical SaaS
+                  Powering Real-World Business Software Across Every Industry
                 </h2>
                 <p style="font-size: 1.05rem; color: #334155; line-height: 1.7; margin-bottom: 32px; max-width: 500px;">
-                  From industrial IoT to healthcare and financial operations, ZexCore gives you the foundation to build, scale, and operate industry-specific applications with confidence.
+                  From logistics and cold chain to healthcare clinics and digital agencies, ZexCore gives you the complete ready-to-run foundation to launch, scale, and manage client operations with zero friction.
                 </p>
                 <div style="display: flex; gap: 14px; flex-wrap: wrap;">
                   <a href="#/solutions" class="btn btn-primary btn-lg" style="box-shadow: 0 4px 16px rgba(229, 9, 32, 0.32); font-weight: 800;">
@@ -547,26 +547,26 @@ export function renderHomePage(): string {
         <section class="home-final-cta-section">
           <div class="site-container">
             <div class="home-final-cta-inner">
-              <h2 class="home-final-cta-title">Build Your Sovereign Vertical SaaS on ZexCore</h2>
+              <h2 class="home-final-cta-title">Launch Your Business Software Today on ZexCore</h2>
               <p class="home-final-cta-desc">
-                Deploy mathematically isolated multi-tenancy, real-time IoT telemetry, and direct WhatsApp customer pipelines today. Zero vendor lock-in. Full PostgreSQL data sovereignty.
+                Get private client portals, live hardware tracking, instant WhatsApp alerts, and automated billing in 10 minutes. No complex setup, no vendor lock-in, free to start.
               </p>
               <div class="home-final-cta-actions">
                 <a href="#/console" class="btn btn-primary btn-lg" style="padding: 14px 32px; font-size: 1.05rem; font-weight: 800; box-shadow: 0 4px 18px rgba(229, 9, 32, 0.32);">
                   Launch Console Free &rarr;
                 </a>
                 <a href="#/pricing" class="btn btn-secondary btn-lg" style="padding: 14px 28px; font-size: 1.05rem; background: #ffffff; color: #17191d; border: 1.5px solid #d0d6de; font-weight: 700;">
-                  View Sovereign Tiers
+                  See Plans &amp; Pricing
                 </a>
               </div>
               <div class="home-final-cta-guarantees">
                 <span class="home-final-guarantee-item">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e50920" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                  PostgreSQL 17 Row-Level Security
+                  100% Private Client Workspaces
                 </span>
                 <span class="home-final-guarantee-item">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e50920" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                  AES-256-GCM Data Vault
+                  Bank-Grade Data Protection
                 </span>
                 <span class="home-final-guarantee-item">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e50920" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>

@@ -34,7 +34,7 @@ export function renderContactPage(): string {
         <!-- CONTACT BODY -->
         <section style="background: var(--bg-page); padding: 56px 0 96px;">
           <div class="site-container">
-            <div style="display: grid; grid-template-columns: 1fr 1.6fr; gap: 40px; align-items: start; max-width: 1100px; margin: 0 auto;">
+            <div class="contact-layout-grid">
 
               <!-- LEFT: Book a Call + Contact Info -->
               <div style="display: flex; flex-direction: column; gap: 20px;">
@@ -135,7 +135,7 @@ export function renderContactPage(): string {
               </div>
 
               <!-- RIGHT: Contact Form -->
-              <div style="background: #fff; border: 1.5px solid var(--border-default); border-radius: 14px; padding: 40px; box-shadow: 0 2px 12px rgba(0,0,0,0.03);">
+              <div class="contact-form-card">
                 <h2 style="font-size: 1.25rem; font-weight: 800; color: #17191D; margin: 0 0 4px 0;">Send Us a Message</h2>
                 <p style="font-size: 0.88rem; color: var(--text-secondary); margin: 0 0 28px 0;">Tell us a bit about your business and what you need — we'll come back with the right answer.</p>
 
@@ -152,7 +152,7 @@ export function renderContactPage(): string {
                   <input type="hidden" name="from_name" value="ZexCore Website" />
                   <input type="checkbox" name="botcheck" style="display:none;" />
 
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                  <div class="contact-form-row">
                     <div>
                       <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #374151; margin-bottom: 6px;">Your Name *</label>
                       <input type="text" name="name" required class="input" placeholder="e.g. Amina Bello" style="width: 100%; box-sizing: border-box;" />
@@ -163,7 +163,7 @@ export function renderContactPage(): string {
                     </div>
                   </div>
 
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                  <div class="contact-form-row">
                     <div>
                       <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #374151; margin-bottom: 6px;">Phone / WhatsApp</label>
                       <input type="tel" name="phone" class="input" placeholder="+234 xxx xxx xxxx" style="width: 100%; box-sizing: border-box;" />

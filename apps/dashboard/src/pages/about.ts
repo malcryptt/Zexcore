@@ -40,7 +40,7 @@ export function renderAboutPage(): string {
         <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; display: flex; flex-direction: column; gap: 48px;">
 
           <!-- SECTION 1: WHAT IS ZEXCORE -->
-          <section id="system-overview" style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 14px; padding: 40px; box-shadow: 0 2px 12px rgba(0,0,0,0.03);">
+          <section id="system-overview" class="about-card-section">
             <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 22px;">
               <div style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: rgba(229, 9, 32, 0.08); border: 1px solid rgba(229, 9, 32, 0.2); border-radius: 10px; overflow: hidden;">
                 <img src="/favicon-transparent.png" alt="ZexCore" style="width: 28px; height: 28px; object-fit: contain;" />
@@ -82,7 +82,7 @@ export function renderAboutPage(): string {
           </section>
 
           <!-- SECTION 2: COMPARATIVE ARCHITECTURE -->
-          <section id="comparative-architecture" style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 14px; padding: 40px; box-shadow: 0 2px 12px rgba(0,0,0,0.03);">
+          <section id="comparative-architecture" class="about-card-section">
             <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 24px;">
               <div style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: rgba(22, 163, 74, 0.08); border: 1px solid rgba(22, 163, 74, 0.2); border-radius: 10px; color: #16a34a;">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -100,7 +100,7 @@ export function renderAboutPage(): string {
               When multiple businesses share a software system, each business must have its own private workspace (called a <strong>tenant</strong>). Everything inside belongs exclusively to that client and must remain completely invisible to all others. Here is how traditional custom builds compare to ZexCore:
             </p>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 24px;">
               <div style="background: #fbfbfc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 26px;">
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#991B1B" stroke-width="2.5">
@@ -136,7 +136,7 @@ export function renderAboutPage(): string {
           </section>
 
           <!-- SECTION 3: HOW EACH FEATURE WORKS -->
-          <section id="core-capabilities" style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 14px; padding: 40px; box-shadow: 0 2px 12px rgba(0,0,0,0.03);">
+          <section id="core-capabilities" class="about-card-section">
             <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 28px;">
               <div style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: rgba(2, 132, 199, 0.08); border: 1px solid rgba(2, 132, 199, 0.2); border-radius: 10px; color: #0284c7;">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -289,7 +289,7 @@ export function renderAboutPage(): string {
           </section>
 
           <!-- SECTION 4: DEPLOYMENT -->
-          <section id="deployment-models" style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 14px; padding: 40px; box-shadow: 0 2px 12px rgba(0,0,0,0.03);">
+          <section id="deployment-models" class="about-card-section">
             <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 24px;">
               <div style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: rgba(229, 9, 32, 0.08); border: 1px solid rgba(229, 9, 32, 0.2); border-radius: 10px; color: #E50920;">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -304,7 +304,7 @@ export function renderAboutPage(): string {
               </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 24px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 24px; margin-bottom: 24px;">
               <div style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 12px; padding: 28px; display: flex; flex-direction: column;">
                 <div style="font-size: 0.76rem; font-weight: 750; color: #E50920; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Deployment Model 1</div>
                 <h3 style="font-size: 1.15rem; font-weight: 800; color: #0F172A; margin: 0 0 12px 0;">Hosted Cloud Console</h3>
@@ -459,7 +459,7 @@ curl -s http://localhost:3000/api/health
 
 
           <!-- CALL TO ACTION -->
-          <section style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 14px; padding: 48px 36px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+          <section class="about-card-section" style="text-align: center;">
             <h2 style="font-size: 1.85rem; font-weight: 850; margin: 0 0 12px 0; color: #17191D;">Experience ZexCore Infrastructure</h2>
             <p style="color: #4B5563; max-width: 640px; margin: 0 auto 28px; font-size: 1.02rem; line-height: 1.65;">
               Explore the live operations console. Simulate sensor telemetry ingestion, inspect automation rules in real time, and review a tamper-proof audit ledger — no installation required.
