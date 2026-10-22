@@ -40,33 +40,33 @@ export interface PlatformModuleDef {
 const PLATFORM_MODULES: Record<string, PlatformModuleDef> = {
   core: {
     id: 'core',
-    name: 'Sovereign Tenancy & Core Foundation',
+    name: '100% Private Client Workspaces',
     pkg: '@zexcore/core',
-    badge: 'Micro-Kernel Root',
+    badge: 'Zero Data Leak Architecture',
     eyebrow: 'FOUNDATION 01',
-    summary: 'The immutable micro-kernel foundation. Provides AsyncLocalStorage context propagation, PostgreSQL 17 Row-Level Security enforcement, capability-based RBAC, and append-only cryptographic audit logging.',
+    summary: 'Every client that uses your platform gets their own completely sealed, private workspace. Their data is mathematically invisible to every other client — enforced at the database engine level, not just by developer convention. You can serve 1 client or 1,000 clients from a single platform without ever mixing their records.',
     capabilities: [
       {
-        title: 'AsyncLocalStorage Tenancy Propagation',
-        desc: 'Every inbound HTTP request, WebSocket frame, and background worker job is wrapped into an isolated Node.js AsyncLocalStorage store, guaranteeing zero cross-tenant thread leakage.',
+        title: 'Bulletproof Request Isolation',
+        desc: 'Every action — from a web request to a background job — is automatically scoped to the correct client workspace. It is physically impossible for one client\'s data to bleed into another during high-traffic periods.',
         tags: ['AsyncLocalStorage', 'Fastify PreHandler', 'Thread Safe'],
         icon: '<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/>',
       },
       {
-        title: 'Hardware-Enforced PostgreSQL 17 RLS',
-        desc: 'PostgreSQL FORCE ROW LEVEL SECURITY binds every query to SET LOCAL app.current_tenant_id. Leaks are mathematically prohibited at the SQL engine layer, independent of application code.',
+        title: 'Zero-Leak Database Walls',
+        desc: 'Client data separation is enforced by the database engine itself — not just by programmer discipline. A developer cannot accidentally expose Client A\'s data to Client B, even if they write a flawed query. Cross-client leaks are structurally impossible.',
         tags: ['Postgres 17', 'FORCE RLS', 'Session Variables'],
         icon: '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>',
       },
       {
-        title: 'Capability-Based Principal RBAC',
-        desc: 'Explicit capability matrices for tenant_admin, owner, member, viewer, and device principals. No role conflation or hardcoded authorization checks.',
+        title: 'Granular Team Permission Control',
+        desc: 'Precisely control what each team member can see and do: Admins manage everything, Managers approve actions, Viewers read reports only, and Devices submit sensor data. No accidental privilege escalation.',
         tags: ['RBAC', 'Principal Evaluator', 'Zero Trust'],
         icon: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
       },
       {
-        title: 'SHA-256 Chained Immutable Audit Trail',
-        desc: 'Every state mutation appends a signed ledger record with hash chaining back to the previous entry. UPDATE and DELETE permissions are revoked from the database role.',
+        title: 'Tamper-Proof Activity Log',
+        desc: 'Every action on the platform — logins, data changes, exports — is permanently recorded and mathematically linked so no record can be altered or deleted, even by an administrator. Provides incontrovertible proof for audits, disputes, and compliance checks.',
         tags: ['SHA-256 Chain', 'Non-Repudiation', 'Append Only'],
         icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
       },
@@ -102,33 +102,33 @@ fastify.addHook('preHandler', async (req, reply) => {
 
   iot: {
     id: 'iot',
-    name: 'Industrial IoT & Telemetry Gateway',
+    name: 'Live Sensor & Hardware Dashboard',
     pkg: '@zexcore/module-iot',
-    badge: 'Edge Ingestion Engine',
+    badge: 'Real-Time Hardware Monitoring',
     eyebrow: 'MODULE 02',
-    summary: 'High-throughput edge sensor ingestion engine with SHA-256 token authentication, time-series partitioning, threshold-based EventBus dispatch, and bidirectional remote command execution.',
+    summary: 'Connect any physical device — temperature probes, GPS trackers, voltage monitors, machinery sensors — and watch live readings appear on your dashboard in real time. Set thresholds once and the platform automatically sends alerts, triggers actions, or shuts systems down the instant a limit is crossed.',
     capabilities: [
       {
-        title: 'SHA-256 Device Token Registry',
-        desc: 'Edge sensors authenticate via X-Device-Token headers. Secrets are salted and hashed with bcrypt, enabling instant token revocation without firmware reflashing.',
+        title: 'Secure Device Registration',
+        desc: 'Every sensor or machine registers with a unique secure key. Only authenticated devices can submit data — rogue devices or tampered readings are automatically rejected. You can revoke a device\'s access instantly without touching the physical hardware.',
         tags: ['X-Device-Token', 'Bcrypt Secret', 'Revocable'],
         icon: '<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
       },
       {
-        title: '10,000+ msgs/sec Ingestion Pipeline',
-        desc: 'Engineered for industrial telemetry nodes. Captures temperature, vibration, pressure, voltage, and GPS coordinates with sub-millisecond buffering and PostgreSQL partitioning.',
+        title: 'Handle Thousands of Sensors Simultaneously',
+        desc: 'Whether you have 5 sensors or 5,000, the platform ingests all readings in real time without slowdown. Captures temperature, vibration, pressure, voltage, and GPS coordinates into permanent time-stamped records.',
         tags: ['Time-Series', 'Sub-millisecond', 'Zero Buffer Bloat'],
         icon: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
       },
       {
-        title: 'Real-Time Threshold Event Bus Dispatch',
-        desc: 'Telemetry anomalies automatically trigger iot.threshold.alert domain events on the internal EventBus, invoking automated WhatsApp alerts, cooling switches, or safety shutdowns.',
+        title: 'Instant Automated Threshold Alerts',
+        desc: 'Set simple rules like "if the freezer drops below -25°C, WhatsApp the on-call engineer". When a sensor crosses that line, the alert fires in milliseconds — no manual checking required.',
         tags: ['Threshold Rules', 'EventBus Mesh', 'WhatsApp Alerts'],
         icon: '<path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/>',
       },
       {
-        title: 'Bidirectional Command Queue',
-        desc: 'Dispatch remote configuration updates and hardware controls over HTTP long-poll or MQTT with delivery acknowledgement tracking in device_commands.',
+        title: 'Remote Device Control',
+        desc: 'Send commands to physical devices from anywhere — turn on a cooling unit, update a device\'s settings, or trigger an emergency shutdown — all from the dashboard. The platform confirms the device received and executed the command.',
         tags: ['Ack Tracking', 'Remote Commands', 'MQTT Ready'],
         icon: '<circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 4.93a10 10 0 0 0 0 14.14"/>',
       },
@@ -167,33 +167,33 @@ Payload:
 
   rules: {
     id: 'rules',
-    name: 'Deterministic Rules Engine & AI Author',
+    name: 'No-Code Business Automation Engine',
     pkg: '@zexcore/rules',
-    badge: 'AST Evaluation Engine',
+    badge: 'Zero-Code Workflow Automation',
     eyebrow: 'MODULE 03',
-    summary: 'Abstract Syntax Tree safe rule evaluation with zero JavaScript eval(), strict 50ms execution timeouts, instruction caps to prevent denial-of-service, and Gemini AI assistance for validated rule authoring.',
+    summary: 'Configure complex business automations in plain English — no coding required. Tell the system "if a temperature reading exceeds 8°C for 5 minutes, send a WhatsApp alert and log an incident". The AI helps you write rules correctly, and a human must approve every rule before it goes live.',
     capabilities: [
       {
-        title: 'Zero eval() Abstract Syntax Tree',
-        desc: 'Rule expressions are parsed into validated AST nodes. The custom runtime evaluates logic without eval() or Function(), eliminating code injection vulnerabilities completely.',
+        title: 'Safe & Crash-Proof Rule Execution',
+        desc: 'Business rules run through a sandboxed evaluation engine — not raw code execution. A badly written rule cannot crash the server, expose security holes, or interfere with other clients. The system is inherently safe by design.',
         tags: ['Zero Eval', 'AST Compiler', 'Sandbox Safe'],
         icon: '<polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
       },
       {
-        title: '50ms Timeout & Instruction Caps',
-        desc: 'Protects the cluster against runaway tenant formulas. Execution steps are bounded to a maximum instruction counter and hard 50ms wall-clock ceiling.',
+        title: 'Lightning Fast — Under 1 Millisecond',
+        desc: 'Rules evaluate and fire in under 1 millisecond, making your platform feel instantaneous. Even the most complex conditional logic runs without any noticeable delay in your dashboards or customer-facing interfaces.',
         tags: ['DoS Protection', 'Instruction Bound', '< 1ms Execution'],
         icon: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
       },
       {
-        title: 'AI Rule Authoring with Gemini',
-        desc: 'Convert plain-English business rules into validated RuleDraft structures. Generates conditions, triggers, and actions matching the strict Zod schema.',
+        title: 'Describe Rules in Plain English — AI Builds Them',
+        desc: 'Type "alert the team if any client portal goes offline for more than 2 minutes" and the AI creates the complete automation rule for you — correctly structured and validated. No programming knowledge required.',
         tags: ['Gemini 2.5', 'Natural Language', 'Zod Validated'],
         icon: '<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>',
       },
       {
-        title: 'Human-in-the-Loop Approval Gate',
-        desc: 'AI-drafted rules are staged with approved: false. Deployment requires explicit operator authorization, writing an immutable record to the audit ledger.',
+        title: 'Human Approval Before Any Rule Goes Live',
+        desc: 'Every AI-generated rule is staged for review first. An authorized operator must explicitly approve it before it activates. This keeps your team in control — AI assists, humans decide. Every approval is permanently recorded.',
         tags: ['Approval Workflow', 'Operator Sign-off', 'Audit Trail'],
         icon: '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
       },
@@ -233,33 +233,33 @@ Payload:
 
   crm: {
     id: 'crm',
-    name: 'Multi-Channel CRM, WhatsApp & Appointments',
+    name: 'WhatsApp CRM, Bookings & Payments',
     pkg: '@zexcore/module-crm',
-    badge: 'Commerce & Pipeline Engine',
+    badge: 'Customer & Revenue Management',
     eyebrow: 'MODULE 04',
-    summary: 'WhatsApp-first communication hub, shareable online booking engine with Paystack and Flutterwave slot deposits, multi-currency Kanban pipeline, and tenant-isolated contact management.',
+    summary: 'Close deals, take bookings, and collect payments directly where your customers already are — on WhatsApp. Inbound messages automatically create leads in your sales pipeline. Clients can book appointments and pay deposits online. You get verified proof of every message delivered and read.',
     capabilities: [
       {
-        title: 'Meta WhatsApp Cloud API Hub',
-        desc: 'Direct integration with Meta WhatsApp Business Cloud API. Webhook signature verification, multi-agent chat, auto-replies, and instant conversion to pipeline deals.',
+        title: 'WhatsApp Inbox for Your Whole Team',
+        desc: 'Every incoming WhatsApp message lands in a shared team inbox. Multiple agents can respond from the same business number. New inquiries automatically become sales leads in your pipeline — no manual copy-paste required.',
         tags: ['WhatsApp Cloud API', 'Webhook Verified', 'Quick Replies'],
         icon: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
       },
       {
-        title: 'Self-Serve Booking & Deposits',
-        desc: 'Public shareable booking link. Clients select time slots and pay an upfront reservation deposit via Paystack, Flutterwave, or Stripe to eliminate customer no-shows.',
+        title: 'Online Booking with Upfront Payment',
+        desc: 'Share a booking link with clients — they pick their slot and pay a deposit (via Paystack, Flutterwave, or Stripe) to confirm. No-shows drop dramatically when clients have already paid to secure their appointment.',
         tags: ['Paystack Deposit', 'Flutterwave', 'Calendar Sync'],
         icon: '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
       },
       {
-        title: 'Automated 24h & 1h WhatsApp & SMS Reminders',
-        desc: 'Scheduler automatically dispatches reminder pings 24 hours and 1 hour before scheduled appointments, confirming attendance with zero-friction reschedule options.',
+        title: 'Automatic Reminders That Cut No-Shows',
+        desc: 'The platform automatically sends your clients a WhatsApp reminder 24 hours before their appointment, and again 1 hour before. Clients can confirm or reschedule instantly — without any manual follow-up from your team.',
         tags: ['Multi-Channel Pings', 'Attendance Confirmation', 'Scheduler'],
         icon: '<path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"/>',
       },
       {
-        title: 'Multi-Currency Opportunity Kanban',
-        desc: 'Track sales deals through customizable stages (New, Qualified, Proposal, Negotiation, Won). Supports USD, NGN, KES, GHS, and EUR with conversion tracking.',
+        title: 'Visual Sales Pipeline Board',
+        desc: 'See every active deal at a glance on a visual board — from first inquiry through to closed sale. Drag deals between stages, track deal values in multiple currencies (USD, NGN, KES, GHS, EUR), and forecast your monthly revenue instantly.',
         tags: ['Multi-Currency', 'Kanban Pipeline', 'Stage Transitions'],
         icon: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
       },
@@ -296,33 +296,33 @@ POST /api/crm/opportunities
 
   compliance: {
     id: 'compliance',
-    name: 'Cryptographic Privacy Vault & GDPR',
+    name: 'Customer Data Privacy & Compliance Vault',
     pkg: '@zexcore/compliance',
-    badge: 'Security & Privacy Engine',
+    badge: 'Military-Grade Data Protection',
     eyebrow: 'MODULE 05',
-    summary: 'AES-256-GCM envelope encryption with per-tenant data encryption keys, HMAC-SHA256 blind indexing for encrypted exact search, consent ledger, and GDPR Article 17 Right-to-be-Forgotten erasure pipelines.',
+    summary: 'Every sensitive customer record — names, phone numbers, ID documents, payment details — is encrypted with military-grade protection unique to each client. If a customer ever asks to have their data deleted (as required by GDPR/NDPR), you can irreversibly erase it instantly, with a signed legal certificate as proof.',
     capabilities: [
       {
-        title: 'AES-256-GCM Envelope Encryption',
-        desc: 'Field-level encryption at rest. Each sensitive record is encrypted with a unique data key wrapped by the tenant master key, preventing multi-tenant cryptographic compromise.',
+        title: 'Military-Grade Data Encryption at Rest',
+        desc: 'Every sensitive record stored on disk is encrypted using the same standard trusted by banks and governments (AES-256-GCM). Each client\'s data is locked with their own unique encryption key — a breach of one client\'s key cannot expose any other client\'s data.',
         tags: ['AES-256-GCM', 'Envelope Encryption', 'Unique DEKs'],
         icon: '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
       },
       {
-        title: 'HMAC-SHA256 Blind Indexing',
-        desc: 'Enables exact-match database queries over encrypted PII without decrypting tables. Queries compute an HMAC blind index token and query indexed hashes directly.',
+        title: 'Search Customer Records Safely',
+        desc: 'Search for a customer by name or phone number even though the data is encrypted — without ever having to decrypt the entire database. Find exactly the record you need while it remains protected at all times.',
         tags: ['HMAC-SHA256', 'Blind Index', 'Encrypted Search'],
         icon: '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
       },
       {
-        title: 'Consent Ledger & Legal Basis',
-        desc: 'Track lawful processing bases under GDPR Article 6 (consent, contract, legal obligation). Full timestamped audit trail of consent grants and withdrawals.',
+        title: 'Customer Consent Tracking',
+        desc: 'Track exactly when each customer agreed to how their data is used, what they agreed to, and when they withdrew consent. Creates a timestamped legal record that protects you during regulatory investigations or customer disputes.',
         tags: ['GDPR Art. 6', 'Consent Ledger', 'Audit Trail'],
         icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>',
       },
       {
-        title: 'GDPR Article 17 Erasure Pipeline',
-        desc: 'Right-to-be-Forgotten automation. Cascades across tenant tables, replaces PII with [REDACTED], and records a tamper-evident erasure certificate in the audit ledger.',
+        title: '"Right to Be Forgotten" in One Click',
+        desc: 'When a customer requests their data be deleted (a legal right under GDPR and NDPR), the platform permanently erases all their personal information across every table and generates a signed legal certificate as proof that the deletion was properly carried out.',
         tags: ['GDPR Art. 17', 'Erasure Pipeline', 'Redaction Cert'],
         icon: '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',
       },
@@ -360,27 +360,27 @@ const encrypted = await encryptField({
   },
   audit: {
     id: 'audit',
-    name: 'Audit & Financial Health Engine',
+    name: 'Security & Financial Audit Reports',
     pkg: '@zexcore/module-audit',
-    badge: 'Deterministic Verification',
+    badge: 'Compliance-Ready Reporting',
     eyebrow: 'ENGINE 06',
-    summary: 'Deterministic security posture analysis, payment gateway triple reconciliation, and tamper-resistant cryptographic evidence packs. Fixes go through standard dual-approval workflows.',
+    summary: 'On-demand security health checks and financial reconciliation reports you can share with regulators, board members, or enterprise clients. Every report is cryptographically signed — meaning auditors can verify the evidence has not been modified since it was generated.',
     capabilities: [
       {
-        title: 'Deterministic Security Posture Runner',
-        desc: 'Evaluates workspace security posture using strict rule tiers without AI non-determinism. Enforces administrative MFA, disallows wildcard CORS, flags stale API keys, and detects silent device telemetry dropouts.',
+        title: 'One-Click Security Health Check',
+        desc: 'Scan your workspace for security risks in seconds: missing 2-factor authentication on admin accounts, stale access keys, sensors that have stopped reporting, and misconfigured permissions. Get a clear score with prioritized fixes.',
         tags: ['Zero-AI Fallback', 'Deterministic Rules', 'MFA Audit'],
         icon: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/>',
       },
       {
-        title: 'Triple Financial Reconciliation',
-        desc: 'Reconciles payment gateway webhooks (Stripe, Paystack, Flutterwave) against issued invoices and bank statements. Categorizes entries by verified, imported, or customer-claimed trust levels.',
+        title: 'Automatic Payment Reconciliation',
+        desc: 'Cross-check every payment received (via Stripe, Paystack, or Flutterwave) against your issued invoices and bank statements automatically. Instantly flag any discrepancy — missing payments, duplicate charges, or amounts that don\'t match.',
         tags: ['Payment Gateways', 'Bank Statements', 'Trust Hierarchy'],
         icon: '<rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>',
       },
       {
-        title: 'Tamper-Resistant Evidence Packs',
-        desc: 'Generates cryptographically chained JSON and verifiable PDF bundles with SHA-256 block hash verification for regulatory auditors and compliance reporting.',
+        title: 'Verifiable Reports for Regulators',
+        desc: 'Export audit reports as signed PDF or JSON bundles that regulators and enterprise clients can independently verify as authentic and unmodified. Every evidence pack carries a unique mathematical fingerprint that proves it hasn\'t been tampered with.',
         tags: ['SHA-256 Chain', 'Non-Repudiation', 'Evidence Pack'],
         icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
       },
@@ -419,12 +419,12 @@ console.log('SHA-256 Hash:', pack.manifest.headBlockHash);`,
 };
 
 const MODULE_LIST = [
-  { id: 'core', name: 'Core Foundation', pkg: '@zexcore/core', icon: '<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/>' },
-  { id: 'iot', name: 'Industrial IoT', pkg: '@zexcore/module-iot', icon: '<path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/>' },
-  { id: 'rules', name: 'Rules & AI Author', pkg: '@zexcore/rules', icon: '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>' },
-  { id: 'crm', name: 'CRM & Pipeline', pkg: '@zexcore/module-crm', icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>' },
-  { id: 'compliance', name: 'Compliance & Vault', pkg: '@zexcore/compliance', icon: '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>' },
-  { id: 'audit', name: 'Audit & Health', pkg: '@zexcore/module-audit', icon: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/>' },
+  { id: 'core', name: 'Private Workspaces', pkg: '@zexcore/core', icon: '<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/>' },
+  { id: 'iot', name: 'Live Sensor Hub', pkg: '@zexcore/module-iot', icon: '<path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/>' },
+  { id: 'rules', name: 'Auto. Rules', pkg: '@zexcore/rules', icon: '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>' },
+  { id: 'crm', name: 'WhatsApp CRM', pkg: '@zexcore/module-crm', icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>' },
+  { id: 'compliance', name: 'Privacy Vault', pkg: '@zexcore/compliance', icon: '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>' },
+  { id: 'audit', name: 'Audit & Reports', pkg: '@zexcore/module-audit', icon: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/>' },
 ];
 
 export function renderPlatformPage(activeModuleId = 'core'): string {
@@ -440,11 +440,11 @@ export function renderPlatformPage(activeModuleId = 'core'): string {
           <div class="site-container">
             <div class="platform-hero-content">
               <div class="section-eyebrow" style="color: #e50920; letter-spacing: 0.08em; font-weight: 800; font-size: 0.75rem; margin-bottom: 6px;">
-                PLATFORM ARCHITECTURE &amp; DOMAIN ENGINES
+                WHAT ZEXCORE DOES FOR YOUR BUSINESS
               </div>
-              <h1 class="platform-hero-title">Platform Architecture</h1>
+              <h1 class="platform-hero-title">Platform Capabilities</h1>
               <p class="platform-hero-desc">
-                ZexCore modules are isolated workspace packages with distinct database schemas, REST endpoints, EventBus listeners, and capabilities. Select a module below to inspect its dedicated specification.
+                ZexCore ships six ready-to-use business engines. Pick a capability below to see what it does, how it works, and what it solves — with full technical specs for your engineering team underneath.
               </p>
             </div>
 
@@ -511,7 +511,7 @@ export function renderPlatformPage(activeModuleId = 'core'): string {
 
             <!-- 2x2 Architectural Capabilities Grid -->
             <div style="margin-bottom: 40px;">
-              <h3 class="platform-section-title">Engine Capabilities</h3>
+              <h3 class="platform-section-title">What This Does For You</h3>
               <div class="platform-capabilities-grid">
                 ${currentMod.capabilities.map((c) => `
                   <div class="platform-cap-card">
@@ -606,9 +606,9 @@ export function renderPlatformPage(activeModuleId = 'core'): string {
         <!-- Bottom Clean Call to Action -->
         <section class="section-white" style="border-top: 1px solid #e2e8f0; padding: 60px 0;">
           <div class="site-container" style="text-align: center; max-width: 640px; margin: 0 auto;">
-            <h2 style="font-size: 1.6rem; font-weight: 800; color: #0f172a; margin: 0 0 10px; letter-spacing: -0.02em;">Ready to explore ZexCore Control?</h2>
+            <h2 style="font-size: 1.6rem; font-weight: 800; color: #0f172a; margin: 0 0 10px; letter-spacing: -0.02em;">See It Working Live — In 10 Minutes</h2>
             <p style="color: #64748b; font-size: 0.92rem; line-height: 1.6; margin: 0 0 24px;">
-              Experience the multi-tenant architecture with sample IoT nodes, deterministic rules, and multi-channel WhatsApp CRM.
+              Launch the live console and try it yourself — connect a simulated sensor, create a rule, watch a WhatsApp alert fire, and check the tamper-proof audit log. No installation required.
             </p>
             <div style="display: flex; gap: 12px; justify-content: center;">
               <a href="#/console" class="btn btn-primary btn-lg">Launch Console &rarr;</a>
