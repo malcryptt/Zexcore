@@ -9824,4 +9824,432 @@ body { background: #fff; letter-spacing: -.008em; }
   }
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   ENTERPRISE CONSOLE REDESIGN (Calm, Utilitarian B2B Design System)
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Modern Topbar Enhancements */
+.topbar-env-pill {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  font-family: var(--font-mono, monospace);
+}
+
+.topbar-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  color: #64748b;
+  min-width: 240px;
+  max-width: 320px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.topbar-search-box:hover {
+  border-color: #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+}
+
+.topbar-search-box kbd {
+  margin-left: auto;
+  font-size: 0.68rem;
+  font-family: var(--font-mono, monospace);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: #94a3b8;
+}
+
+.topbar-status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #166534;
+  text-decoration: none;
+}
+
+.topbar-status-indicator .status-dot-pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #16a34a;
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+}
+
+.topbar-user-menu {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.topbar-user-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  font-size: 0.78rem;
+}
+
+.topbar-user-badge .user-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #E50920;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.72rem;
+}
+
+.topbar-user-badge .user-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.topbar-user-badge .user-name {
+  font-weight: 600;
+  color: #0f172a;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topbar-user-badge .user-role {
+  font-size: 0.65rem;
+  color: #64748b;
+}
+
+/* Overview Dashboard Stats (Calm Enterprise Cards) */
+.enterprise-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.enterprise-stat-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 18px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.enterprise-stat-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.enterprise-stat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.enterprise-stat-label {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.enterprise-stat-value {
+  font-size: 1.65rem;
+  font-weight: 750;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-bottom: 6px;
+}
+
+.enterprise-stat-sub {
+  font-size: 0.74rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.enterprise-stat-sub .dot-healthy {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #16a34a;
+}
+
+/* Two-Column Overview Layout */
+.enterprise-overview-grid {
+  display: grid;
+  grid-template-columns: 1.65fr 1fr;
+  gap: 20px;
+  align-items: start;
+  margin-bottom: 24px;
+}
+
+/* Live Activity Stream Card */
+.activity-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.activity-card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.activity-card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.activity-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.activity-filter-btn {
+  padding: 4px 9px;
+  border-radius: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.activity-filter-btn.active,
+.activity-filter-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.activity-feed-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.activity-feed-item {
+  padding: 12px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 0.82rem;
+  transition: background 0.12s ease;
+}
+
+.activity-feed-item:last-child {
+  border-bottom: none;
+}
+
+.activity-feed-item:hover {
+  background: #f8fafc;
+}
+
+.activity-feed-item .item-time {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  padding-top: 2px;
+}
+
+.activity-feed-item .item-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.activity-feed-item .item-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.activity-feed-item .item-desc {
+  color: #1e293b;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.activity-feed-item .item-payload {
+  font-size: 0.72rem;
+  font-family: var(--font-mono, monospace);
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* System Health & Operations Card */
+.health-service-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  margin-bottom: 18px;
+}
+
+.health-service-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.82rem;
+}
+
+.health-service-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.health-service-row:first-child {
+  padding-top: 0;
+}
+
+.health-service-name {
+  font-weight: 600;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.health-status-tag {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.health-status-tag .dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #16a34a;
+}
+
+/* Quick Action Shortcuts Grid */
+.quick-action-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.quick-action-item {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 12px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.quick-action-item:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  transform: translateY(-1px);
+}
+
+.quick-action-item svg {
+  color: #E50920;
+  flex-shrink: 0;
+}
+
+/* Responsive adjustments for Enterprise Console */
+@media (max-width: 1080px) {
+  .enterprise-stat-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .enterprise-overview-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 680px) {
+  .enterprise-stat-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .topbar-search-box {
+    display: none;
+  }
+  .quick-action-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+
 

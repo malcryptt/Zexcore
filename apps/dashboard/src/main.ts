@@ -653,17 +653,21 @@ function renderTierFeatureLock(
 
 // ── 1. Console View: System Overview ─────────────────────────────────────────
 function renderConsoleOverviewView(currentPlan: PlanTier): string {
+  const onlineDevices = state.devices.filter(d => d.status === 'online').length;
+  const totalDevices = state.devices.length;
+  const pipelineTotal = state.leads.reduce((a, b) => a + b.value, 0);
+
   return `
     <div class="console-page-wrapper" id="page-console-overview">
       <div class="console-page-toolbar">
         <div>
-          <h2 class="page-title" style="margin: 0; font-size: 1.35rem; font-weight: 850;">Platform Operations Overview</h2>
-          <div class="page-desc" style="margin-top: 2px;">Runtime health, active module metrics, and cross-module event bus ledger</div>
+          <h2 class="page-title" style="margin: 0; font-size: 1.35rem; font-weight: 850;">System Operations Overview</h2>
+          <div class="page-desc" style="margin-top: 2px;">Real-time infrastructure health, fleet telemetry, active automations, and event streams</div>
         </div>
         <div class="console-toolbar-actions">
           <button class="btn btn-secondary btn-sm" id="btn-download-all-data" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; padding: 7px 14px; background: #ffffff; border: 1.5px solid #d1d5db; color: #1e293b; border-radius: var(--radius-sm); box-shadow: 0 1px 3px rgba(0,0,0,0.05); cursor: pointer;">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-            Download All My Data (JSON)
+            Export Audit Snapshot (JSON)
           </button>
         </div>
       </div>
@@ -671,109 +675,170 @@ function renderConsoleOverviewView(currentPlan: PlanTier): string {
       <!-- "Great First Ten Minutes" Onboarding Strip / Starters -->
       ${renderOnboardingBanner(state.onboarding)}
 
-      <div class="grid-4">
-        <div class="stat-box">
-          <div class="stat-label">Platform Health</div>
-          <div style="margin: 8px 0 4px 0;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <label class="zx-toggle-switch" id="overview-status-toggle" title="Toggle platform operational status" style="cursor: pointer;">
-                <input type="checkbox" id="overview-status-checkbox" ${state.systemStatus === 'operational' ? 'checked' : ''} onchange="window.toggleSystemStatus()" style="display:none;" />
-                <span class="zx-toggle-track ${state.systemStatus === 'operational' ? 'on' : 'off'}" id="overview-status-track">
-                  <span class="zx-toggle-thumb"></span>
-                </span>
-              </label>
-              <span id="overview-status-label" style="font-weight: 800; font-size: 0.85rem; color: ${state.systemStatus === 'operational' ? '#16a34a' : '#dc2626'};">
-                ${state.systemStatus === 'operational' ? '● Operational' : '○ Offline'}
-              </span>
-            </div>
+      <!-- Calm Enterprise Stat Row -->
+      <div class="enterprise-stat-grid">
+        <div class="enterprise-stat-card">
+          <div class="enterprise-stat-header">
+            <span class="enterprise-stat-label">Connected Fleet</span>
+            <span style="font-size: 0.72rem; font-weight: 700; color: #16a34a; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 2px 7px; border-radius: 4px;">
+              ● ONLINE
+            </span>
           </div>
-          <div class="stat-subtext" id="overview-status-subtext" style="color: var(--text-muted); font-size: 0.72rem;">
-            ${state.systemStatus === 'operational' ? 'Micro-kernel &amp; 5 modules &bull; 99.99% Uptime' : 'Maintenance window active &bull; Unoperational'}
+          <div class="enterprise-stat-value" id="stat-online-devices">
+            ${onlineDevices} <span style="font-size: 1rem; font-weight: 500; color: #64748b;">/ ${totalDevices}</span>
+          </div>
+          <div class="enterprise-stat-sub">
+            <span class="dot-healthy"></span>
+            <span>All nodes responding &bull; MQTT over WSS</span>
           </div>
         </div>
-        <div class="stat-box">
-          <div class="stat-label">Fleet Nodes</div>
-          <div class="stat-value" id="stat-online-devices">${state.devices.filter(d => d.status === 'online').length} / ${state.devices.length}</div>
-          <div class="stat-subtext" style="color: #168447; font-weight: 600;">&bull; Connected &bull; Token-Auth</div>
+
+        <div class="enterprise-stat-card">
+          <div class="enterprise-stat-header">
+            <span class="enterprise-stat-label">Automations Evaluated</span>
+            <span style="font-size: 0.72rem; font-weight: 700; color: #0284c7; background: #f0f9ff; border: 1px solid #bae6fd; padding: 2px 7px; border-radius: 4px;">
+              0 ERRORS
+            </span>
+          </div>
+          <div class="enterprise-stat-value">1,428</div>
+          <div class="enterprise-stat-sub">
+            <span style="color: #0284c7; font-weight: 700;">Sub-millisecond</span>
+            <span>deterministic execution</span>
+          </div>
         </div>
-        <div class="stat-box">
-          <div class="stat-label">Rules Evaluated</div>
-          <div class="stat-value">1,428</div>
-          <div class="stat-subtext" style="color: #0284c7; font-weight: 600;">Sub-millisecond AST</div>
+
+        <div class="enterprise-stat-card">
+          <div class="enterprise-stat-header">
+            <span class="enterprise-stat-label">Customer Conversations</span>
+            <span style="font-size: 0.72rem; font-weight: 700; color: #d97706; background: #fffbeb; border: 1px solid #fde68a; padding: 2px 7px; border-radius: 4px;">
+              ACTIVE
+            </span>
+          </div>
+          <div class="enterprise-stat-value">${state.whatsAppThreads.length}</div>
+          <div class="enterprise-stat-sub">
+            <span>WhatsApp &amp; Omnichannel inbox</span>
+          </div>
         </div>
-        <div class="stat-box">
-          <div class="stat-label">Pipeline Value</div>
-          <div class="stat-value" id="stat-total-pipeline" style="color: #E50920; font-weight: 800;">$${state.leads.reduce((a, b) => a + b.value, 0).toLocaleString()}</div>
-          <div class="stat-subtext" style="color: var(--text-muted); font-size: 0.72rem;">Active multi-tenant pipeline</div>
+
+        <div class="enterprise-stat-card">
+          <div class="enterprise-stat-header">
+            <span class="enterprise-stat-label">Pipeline Value</span>
+            <span style="font-size: 0.72rem; font-weight: 700; color: #E50920; background: #fff1f2; border: 1px solid #fecdd3; padding: 2px 7px; border-radius: 4px;">
+              QUALIFIED
+            </span>
+          </div>
+          <div class="enterprise-stat-value" id="stat-total-pipeline">
+            $${pipelineTotal.toLocaleString()}
+          </div>
+          <div class="enterprise-stat-sub">
+            <span>Paystack &amp; Stripe integrated</span>
+          </div>
         </div>
       </div>
 
-      <!-- Middle Row: Multi-Tenant Isolation Diagram + Quick Operations -->
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-header" style="margin-bottom: 12px;">
-            <div>
-              <div class="card-title">Sovereign Multi-Tenant Isolation</div>
-              <div class="card-subtitle">Zero data leakage enforced mathematically via PostgreSQL 17 Session RLS</div>
+      <!-- Main Operations Grid (Left: Activity Stream, Right: Health & Quick Actions) -->
+      <div class="enterprise-overview-grid">
+
+        <!-- LEFT COLUMN: Live Event Stream -->
+        <div class="activity-card">
+          <div class="activity-card-header">
+            <div class="activity-card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              <span>Live Event Stream</span>
+              <span class="status-dot-pulse" style="width: 6px; height: 6px; background: #16a34a; border-radius: 50%; margin-left: 4px;"></span>
+            </div>
+            <div class="activity-filter-bar">
+              <button class="activity-filter-btn active">All Events</button>
+              <button class="activity-filter-btn">Fleet</button>
+              <button class="activity-filter-btn">WhatsApp</button>
+              <button class="activity-filter-btn">Rules</button>
             </div>
           </div>
-          <div class="console-tenant-diagram-wrap">
-            <div class="console-tenant-diagram">
-              <svg class="console-tenant-svg-lines" viewBox="0 0 440 160">
-                <line x1="80" y1="30" x2="170" y2="80" stroke="#E1E5EA" stroke-width="2" stroke-dasharray="3 3"/>
-                <line x1="360" y1="30" x2="270" y2="80" stroke="#E1E5EA" stroke-width="2" stroke-dasharray="3 3"/>
-                <line x1="80" y1="130" x2="170" y2="80" stroke="#E1E5EA" stroke-width="2" stroke-dasharray="3 3"/>
-                <line x1="360" y1="130" x2="270" y2="80" stroke="#E1E5EA" stroke-width="2" stroke-dasharray="3 3"/>
-              </svg>
-              <div class="console-tenant-node node-a">${state.activeTenant === 'acme_corp' ? 'Acme (Active)' : 'Tenant A'}</div>
-              <div class="console-tenant-node node-b">${state.activeTenant === 'globex_corp' ? 'Globex (Active)' : 'Tenant B'}</div>
-              <div class="console-tenant-node node-c">${state.activeTenant === 'soylent_ind' ? 'Soylent (Active)' : 'Tenant C'}</div>
-              <div class="console-tenant-node node-d">Tenant D (Isolated)</div>
-              <div class="console-core-center">
-                <img src="/zexcore-logo-icon.png" alt="ZexCore" class="console-core-logo" />
-                <span class="console-core-text">ZexCore Kernel</span>
-              </div>
-            </div>
+          <div class="activity-feed-list" id="event-stream-body">
+            <!-- Event stream items populated by renderEventLog() -->
           </div>
         </div>
 
-        <!-- Quick Operations -->
-        <div class="card">
-          <div class="card-header" style="margin-bottom: 12px;">
-            <div>
-              <div class="card-title">Quick Operational Actions</div>
-              <div class="card-subtitle">Dispatch verified cross-module actions across isolated engines</div>
+        <!-- RIGHT COLUMN: System Health Matrix & Quick Actions -->
+        <div>
+          <!-- System Services Health Card -->
+          <div class="health-service-card">
+            <div style="font-size: 0.88rem; font-weight: 750; color: #0f172a; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between;">
+              <span>Infrastructure Services</span>
+              <span style="font-size: 0.72rem; color: #16a34a; font-weight: 700;">All Operational</span>
+            </div>
+
+            <div class="health-service-row">
+              <div class="health-service-name">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/></svg>
+                <span>Core API Micro-kernel</span>
+              </div>
+              <span class="health-status-tag"><span class="dot"></span> 2.1ms avg</span>
+            </div>
+
+            <div class="health-service-row">
+              <div class="health-service-name">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                <span>PostgreSQL 17 Database</span>
+              </div>
+              <span class="health-status-tag"><span class="dot"></span> RLS Enforced</span>
+            </div>
+
+            <div class="health-service-row">
+              <div class="health-service-name">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                <span>WhatsApp Cloud API</span>
+              </div>
+              <span class="health-status-tag"><span class="dot"></span> Webhook 200</span>
+            </div>
+
+            <div class="health-service-row">
+              <div class="health-service-name">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+                <span>Telemetry Ingestion Gateway</span>
+              </div>
+              <span class="health-status-tag"><span class="dot"></span> Active</span>
+            </div>
+
+            <div class="health-service-row">
+              <div class="health-service-name">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <span>AES-256 Vault Encryption</span>
+              </div>
+              <span class="health-status-tag"><span class="dot"></span> Sealed</span>
             </div>
           </div>
-          <div class="console-quick-op-list">
-            <button class="console-quick-op-btn" id="btn-quick-reg-device">
-              <span class="console-quick-op-icon">&oplus;</span>
-              <span>Register Edge Device</span>
+
+          <!-- Quick Actions Grid -->
+          <div style="font-size: 0.88rem; font-weight: 750; color: #0f172a; margin-bottom: 10px;">
+            Quick Operations
+          </div>
+          <div class="quick-action-grid">
+            <button class="quick-action-item" id="btn-quick-reg-device">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+              <span>Add Device</span>
             </button>
-            <button class="console-quick-op-btn" id="btn-quick-telemetry">
-              <span class="console-quick-op-icon">&oplus;</span>
-              <span>Ingest IoT Reading</span>
+            <button class="quick-action-item" id="btn-quick-telemetry">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span>Ingest Reading</span>
             </button>
-            <button class="console-quick-op-btn" id="btn-quick-lead">
-              <span class="console-quick-op-icon">&oplus;</span>
-              <span>Create Opportunity</span>
+            <button class="quick-action-item" id="btn-quick-lead">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+              <span>Add Lead</span>
             </button>
-            <button class="console-quick-op-btn" id="btn-quick-eval-rule">
-              <span class="console-quick-op-icon">&oplus;</span>
-              <span>Evaluate Rule</span>
-            </button>
-            <button class="console-quick-op-btn" id="btn-quick-view-audit">
-              <span class="console-quick-op-icon">&oplus;</span>
-              <span>View Audit Event</span>
+            <button class="quick-action-item" id="btn-quick-eval-rule">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              <span>Run Rule</span>
             </button>
           </div>
         </div>
+
       </div>
 
       <!-- Advanced Tier Feature: Enterprise SIEM Forwarding Mesh -->
       ${renderTierFeatureLock(
         'growth',
-        'Real-Time SIEM Webhook Relay & Syslog RFC 5424 Streaming',
+        'Enterprise SIEM Webhook Relay & Real-Time Log Forwarding',
         'Stream append-only tenant audit events with HMAC-SHA256 payload signing directly to Splunk HEC, Datadog Logs, AWS CloudWatch, or custom SIEM collectors.',
         currentPlan,
         `
@@ -784,7 +849,7 @@ function renderConsoleOverviewView(currentPlan: PlanTier): string {
           </div>
           <div style="display: flex; gap: 8px;">
             <button class="btn btn-primary btn-sm" onclick="window.dispatchSiemTestWebhook()" style="flex: 1; padding: 8px 14px;">
-              Dispatch Test SIEM Heartbeat
+              Dispatch Test Heartbeat
             </button>
           </div>
         </div>
@@ -794,22 +859,6 @@ function renderConsoleOverviewView(currentPlan: PlanTier): string {
         </div>
         `
       )}
-
-      <!-- Event Bus Live Log -->
-      <div class="terminal-box">
-        <div class="terminal-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span>Core EventBus Real-Time Stream</span>
-            <span style="font-size: 0.7rem; font-family: var(--font-mono); color: #94a3b8;">Asynchronous Append-Only Broker</span>
-          </div>
-          <div style="display: flex; gap: 6px; align-items: center;">
-            <span style="font-size: 0.68rem; color: #cbd5e1; text-transform: uppercase; font-weight: 700; margin-right: 2px;">SIEM Export:</span>
-            <button class="btn btn-xs" id="btn-export-siem-json" style="font-size: 0.68rem; padding: 3px 8px; border: 1px solid rgba(255,255,255,0.25); color: #ffffff; background: rgba(255,255,255,0.1); border-radius: 4px; cursor: pointer;">NDJSON</button>
-            <button class="btn btn-xs" id="btn-export-siem-csv" style="font-size: 0.68rem; padding: 3px 8px; border: 1px solid rgba(255,255,255,0.25); color: #ffffff; background: rgba(255,255,255,0.1); border-radius: 4px; cursor: pointer;">CSV Audit</button>
-          </div>
-        </div>
-        <div class="terminal-content" id="event-stream-body"></div>
-      </div>
 
       <!-- Tamper-Proof Audit & Non-Deletable Export Ledger -->
       <div class="card" style="margin-top: 16px;">
@@ -1859,8 +1908,8 @@ function renderDashboard() {
         </div>
 
         <nav class="nav-menu">
-          <!-- Group: Home -->
-          <div class="nav-label">Home</div>
+          <!-- Group: Core -->
+          <div class="nav-label">Core</div>
           <a href="#/console/overview" class="nav-item ${state.currentTab === 'overview' ? 'active' : ''}" data-tab="overview">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             <span class="nav-item-text">
@@ -1868,21 +1917,11 @@ function renderDashboard() {
               <span class="nav-item-sub">Health, metrics &amp; live events</span>
             </span>
           </a>
-          <a href="#/about" class="nav-item" title="Read plain-English explanation, glossary &amp; installation guide">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-            <span class="nav-item-text">
-              <span class="nav-item-title">About &amp; Guide</span>
-              <span class="nav-item-sub">Plain English &amp; setup tutorial</span>
-            </span>
-          </a>
-
-          <!-- Group: Operations -->
-          <div class="nav-label" style="margin-top: 10px;">Operations</div>
           <a href="#/console/iot" class="nav-item ${state.currentTab === 'iot' ? 'active' : ''}" data-tab="iot">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
             <span class="nav-item-text">
               <span class="nav-item-title">Connected Devices
-                ${isTabLocked('iot', currentPlan, state.currentUser?.email) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> INDIE</span>` : `<span class="nav-badge" id="iot-count">${state.devices.length}</span>`}
+                <span class="nav-badge" id="iot-count">${state.devices.length}</span>
               </span>
               <span class="nav-item-sub">IoT sensors, fleet &amp; telemetry</span>
             </span>
@@ -1891,66 +1930,64 @@ function renderDashboard() {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
             <span class="nav-item-text">
               <span class="nav-item-title">Automation Rules <span class="nav-badge">${state.rules.length}</span></span>
-              <span class="nav-item-sub">If-this-then-that logic &amp; AI rules</span>
+              <span class="nav-item-sub">Trigger actions &amp; workflows</span>
             </span>
           </a>
 
-          <!-- Group: People & Communication -->
-          <div class="nav-label" style="margin-top: 10px;">People</div>
+          <!-- Group: Customers -->
+          <div class="nav-label" style="margin-top: 10px;">Customers</div>
           <a href="#/console/crm" class="nav-item ${state.currentTab === 'crm' ? 'active' : ''}" data-tab="crm">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             <span class="nav-item-text">
               <span class="nav-item-title">Customers &amp; Inbox
-                ${isTabLocked('crm', currentPlan, state.currentUser?.email) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> GROWTH</span>` : `<span class="nav-badge">${state.leads.length}</span>`}
+                <span class="nav-badge">${state.leads.length}</span>
               </span>
               <span class="nav-item-sub">WhatsApp, deals &amp; bookings</span>
             </span>
           </a>
 
-          <!-- Group: Compliance & Trust -->
-          <div class="nav-label" style="margin-top: 10px;">Compliance &amp; Trust</div>
+          <!-- Group: Governance & Trust -->
+          <div class="nav-label" style="margin-top: 10px;">Governance &amp; Trust</div>
           <a href="#/console/compliance" class="nav-item ${state.currentTab === 'compliance' ? 'active' : ''}" data-tab="compliance">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             <span class="nav-item-text">
-              <span class="nav-item-title">Data &amp; Privacy
-                ${isTabLocked('compliance', currentPlan, state.currentUser?.email) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> DEDICATED</span>` : ''}
+              <span class="nav-item-title">Data Privacy Vault
+                ${isTabLocked('compliance', currentPlan, state.currentUser?.email) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> PRO</span>` : ''}
               </span>
-              <span class="nav-item-sub">GDPR, consent &amp; encryption vault</span>
+              <span class="nav-item-sub">GDPR consent &amp; data privacy</span>
             </span>
           </a>
           <a href="#/console/audit" class="nav-item ${state.currentTab === 'audit' ? 'active' : ''}" data-tab="audit">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
             <span class="nav-item-text">
-              <span class="nav-item-title">Audit &amp; Finance <span class="nav-badge" style="background: rgba(229, 9, 32, 0.12); color: var(--primary); font-weight: 800;">5</span></span>
-              <span class="nav-item-sub">Logs, exports &amp; financial records</span>
+              <span class="nav-item-title">Audit Ledger &amp; Finance</span>
+              <span class="nav-item-sub">Logs, exports &amp; verification</span>
             </span>
           </a>
 
-          <!-- Group: Settings -->
-          <div class="nav-label" style="margin-top: 10px;">Settings</div>
+          <!-- Group: Organization & Settings -->
+          <div class="nav-label" style="margin-top: 10px;">Organization</div>
           <a href="#/console/whitelabel" class="nav-item ${state.currentTab === 'whitelabel' ? 'active' : ''}" data-tab="whitelabel">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.26L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
             <span class="nav-item-text">
-              <span class="nav-item-title">Agency White-Label
-                ${isTabLocked('whitelabel', currentPlan, state.currentUser?.email) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> AGENCY</span>` : `<span class="nav-badge" style="background: rgba(13, 148, 136, 0.15); color: #0d9488; font-weight: 800;">25</span>`}
+              <span class="nav-item-title">Client Portals &amp; Brand
+                ${isTabLocked('whitelabel', currentPlan, state.currentUser?.email) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> AGENCY</span>` : `<span class="nav-badge">25</span>`}
               </span>
-              <span class="nav-item-sub">Your logo, brand &amp; client portals</span>
+              <span class="nav-item-sub">White-label agency portals</span>
             </span>
           </a>
           <a href="#/console/license" class="nav-item ${state.currentTab === 'license' ? 'active' : ''}" data-tab="license">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zm-3 8V7a3 3 0 0 1 6 0v3H9z"/></svg>
             <span class="nav-item-text">
-              <span class="nav-item-title">License &amp; Keys
-                ${isTabLocked('license', currentPlan, state.currentUser?.email) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> DEDICATED</span>` : `<span class="nav-badge" style="background: rgba(22, 163, 74, 0.15); color: #16a34a; font-weight: 800;">ACTIVE</span>`}
-              </span>
-              <span class="nav-item-sub">Software license management</span>
+              <span class="nav-item-title">License Keys</span>
+              <span class="nav-item-sub">Activation &amp; enterprise keys</span>
             </span>
           </a>
           <a href="#/console/billing" class="nav-item ${state.currentTab === 'billing' ? 'active' : ''}" data-tab="billing">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
             <span class="nav-item-text">
               <span class="nav-item-title">Billing &amp; Invoices</span>
-              <span class="nav-item-sub">Subscription, payments &amp; receipts</span>
+              <span class="nav-item-sub">Subscription &amp; payment receipts</span>
             </span>
           </a>
         </nav>
@@ -1958,7 +1995,7 @@ function renderDashboard() {
         <!-- Active Plan Card in Sidebar -->
         <div class="sidebar-plan-card">
           <div class="sidebar-plan-header">
-            <span class="sidebar-plan-label">ACTIVE TIER</span>
+            <span class="sidebar-plan-label">ACTIVE PLAN</span>
             <span class="sidebar-plan-status">Active</span>
           </div>
           <div class="sidebar-plan-name">${planMeta.name}</div>
@@ -1975,11 +2012,10 @@ function renderDashboard() {
             <a href="#/about" class="btn btn-secondary btn-sm" id="btn-sidebar-about" style="flex: 1; font-size: 0.72rem; padding: 4px 6px; text-decoration: none; text-align: center; display: inline-flex; align-items: center; justify-content: center; color: var(--text-main);" title="Plain-English guide to ZexCore features & installation">About</a>
             <button class="btn btn-secondary btn-sm" id="btn-sidebar-signout" style="flex: 1; font-size: 0.72rem; padding: 4px 6px;">Sign Out</button>
           </div>
-          <div class="status-pill">
-            <div class="status-dot"></div>
-            <span>RLS Enforced</span>
+          <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; font-size: 0.72rem; color: var(--text-muted);">
+            <span>ZexCore Engine</span>
+            <span style="font-family: var(--font-mono);">v1.4.2 &bull; Active</span>
           </div>
-          <span style="font-family: var(--font-mono); color: var(--text-secondary); font-size: 0.72rem;">Postgres 17</span>
         </div>
       </aside>
 
@@ -1991,55 +2027,63 @@ function renderDashboard() {
             <button class="mobile-sidebar-toggle" id="btn-mobile-sidebar-toggle" aria-label="Toggle navigation">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
             </button>
+
+            <!-- Workspace / Tenant Selector -->
             <div class="org-tenant-box">
-              <span class="topbar-tenant-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Tenant:</span>
-              <select id="tenantSelect" class="tenant-select">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" style="flex-shrink: 0;"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="9" y1="22" x2="9" y2="22"/><line x1="9" y1="6" x2="9" y2="6"/><line x1="15" y1="6" x2="15" y2="6"/><line x1="9" y1="10" x2="9" y2="10"/><line x1="15" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="9" y2="14"/><line x1="15" y1="14" x2="15" y2="14"/></svg>
+              <select id="tenantSelect" class="tenant-select" aria-label="Select Tenant Workspace">
                 <option value="acme_corp" ${state.activeTenant === 'acme_corp' ? 'selected' : ''}>Acme Enterprise Corp (prod-us-east)</option>
                 <option value="globex_corp" ${state.activeTenant === 'globex_corp' ? 'selected' : ''}>Globex Research (dev-eu-west)</option>
                 <option value="soylent_ind" ${state.activeTenant === 'soylent_ind' ? 'selected' : ''}>Soylent Dynamics (staging-apac)</option>
               </select>
-              <div class="topbar-plan-pill" id="topbar-plan-indicator" title="Click to manage subscription or upgrade plan">
-                <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#E50920;flex-shrink:0;"></span>
-                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${planMeta.name.toUpperCase()}</span>
+              <span class="topbar-env-pill">PROD</span>
+              <div class="topbar-plan-pill" id="topbar-plan-indicator" title="Manage subscription tier">
+                <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#E50920;flex-shrink:0;"></span>
+                <span>${planMeta.name.toUpperCase()}</span>
                 ${(currentPlan === 'starter' || currentPlan === 'growth' || currentPlan === 'agency' || currentPlan === 'free') ? '<span class="topbar-plan-upgrade-link">Upgrade</span>' : ''}
               </div>
             </div>
           </div>
 
+          <!-- Middle: Global Quick Search / Command Palette Hint -->
+          <div class="topbar-search-box" id="topbar-search-trigger" title="Quick Search across resources">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span>Search devices, rules, customers...</span>
+            <kbd>⌘K</kbd>
+          </div>
+
+          <!-- Right: System Status, Templates & User Profile -->
           <div class="topbar-right">
-            <!-- 1-Click Starter Kits Launcher -->
-            <button class="btn btn-secondary btn-sm" id="btn-topbar-starter-kits" style="margin-right: 4px; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-color: #cbd5e1; color: #0f172a;">
+            <!-- Calm Operational Status Indicator -->
+            <a href="#/console/audit" class="topbar-status-indicator" title="All systems operational. Click to view audit log &amp; health.">
+              <span class="status-dot-pulse"></span>
+              <span>Systems Operational</span>
+            </a>
+
+            <!-- Starter Kits Launcher -->
+            <button class="btn btn-secondary btn-sm" id="btn-topbar-starter-kits" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              <span>1-Click Starter Kits</span>
+              <span>Starter Kits</span>
             </button>
 
-            <!-- Interactive System Status Toggle -->
-            <label class="zx-toggle-switch" id="topbar-status-toggle" title="Toggle system state: Operational / Offline" style="cursor: pointer; display: inline-flex; align-items: center; gap: 7px; margin-right: 8px;" onclick="window.toggleSystemStatus()">
-              <span class="zx-toggle-track ${state.systemStatus === 'operational' ? 'on' : 'off'}" id="topbar-status-track" style="width: 36px; height: 20px;">
-                <span class="zx-toggle-thumb"></span>
-              </span>
-              <span id="topbar-status-label" style="font-size: 0.72rem; font-weight: 700; color: ${state.systemStatus === 'operational' ? '#16a34a' : '#dc2626'}; white-space: nowrap;">
-                ${state.systemStatus === 'operational' ? 'Operational' : 'Offline'}
-              </span>
-            </label>
-
-            <!-- Authenticated User Profile Badge -->
-            <div class="auth-user-badge" style="display: flex; align-items: center; gap: 8px; padding: 4px 10px; background: #fff; border: 1px solid var(--border-default); border-radius: 20px; font-size: 0.76rem;">
-              <div style="width: 24px; height: 24px; border-radius: 50%; background: #e50920; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.7rem;">
-                ${((state.currentUser?.displayName || state.currentUser?.email || 'A')[0]).toUpperCase()}
+            <!-- User Menu & Sign Out -->
+            <div class="topbar-user-menu">
+              <div class="topbar-user-badge">
+                <div class="user-avatar">
+                  ${((state.currentUser?.displayName || state.currentUser?.email || 'A')[0]).toUpperCase()}
+                </div>
+                <div class="user-info">
+                  <span class="user-name">
+                    ${state.currentUser?.displayName || state.currentUser?.email || 'Operator'}
+                  </span>
+                  <span class="user-role">
+                    ${state.currentUser?.isDemo ? 'Sandbox Demo' : 'Administrator'}
+                  </span>
+                </div>
               </div>
-              <div style="display: flex; flex-direction: column; text-align: left; line-height: 1.15;">
-                <span style="font-weight: 600; color: var(--text-primary); max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                  ${state.currentUser?.displayName || state.currentUser?.email || 'Operator'}
-                </span>
-                <span style="font-size: 0.65rem; color: ${state.currentUser?.isDemo ? '#d97706' : '#16a34a'}; font-family: var(--font-mono); font-weight: 700;">
-                  ${state.currentUser?.isDemo ? 'Demo Preview / Sandbox' : 'Production Active'}
-                </span>
-              </div>
+              <button class="btn btn-secondary btn-sm" id="btn-topbar-home">Public Site</button>
+              <button class="btn btn-secondary btn-sm" id="btn-topbar-signout">Sign Out</button>
             </div>
-
-            <button class="btn btn-secondary btn-sm" id="btn-topbar-home" style="margin-left: 4px;">Public Site</button>
-            <button class="btn btn-secondary btn-sm" id="btn-topbar-signout">Sign Out</button>
           </div>
         </header>
 
@@ -2112,6 +2156,49 @@ function setupEventListeners() {
         state.currentTab = tabId;
         window.location.hash = '#/console/' + tabId;
       }
+    });
+  });
+
+  // Global Quick Search (⌘K Command Palette)
+  const openQuickSearch = () => {
+    openModal({
+      title: 'Console Quick Navigation',
+      subtitle: 'Jump to any console tool, module, or resource',
+      contentHtml: `
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <input type="text" id="modal-quick-search-input" class="input" placeholder="Type to filter... (e.g. IoT, WhatsApp, Rules, Audit, Billing)" style="width:100%;box-sizing:border-box;" autofocus />
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;">
+            <a href="#/console/overview" class="btn btn-secondary" style="justify-content:flex-start;padding:9px 12px;font-size:0.84rem;font-weight:600;" onclick="document.querySelector('.modal-backdrop')?.remove()">📊 Operations Overview &amp; Live Telemetry</a>
+            <a href="#/console/iot" class="btn btn-secondary" style="justify-content:flex-start;padding:9px 12px;font-size:0.84rem;font-weight:600;" onclick="document.querySelector('.modal-backdrop')?.remove()">⚡ Connected Devices &amp; Fleet Hub</a>
+            <a href="#/console/crm" class="btn btn-secondary" style="justify-content:flex-start;padding:9px 12px;font-size:0.84rem;font-weight:600;" onclick="document.querySelector('.modal-backdrop')?.remove()">💬 Customers &amp; WhatsApp CRM Inbox</a>
+            <a href="#/console/rules" class="btn btn-secondary" style="justify-content:flex-start;padding:9px 12px;font-size:0.84rem;font-weight:600;" onclick="document.querySelector('.modal-backdrop')?.remove()">⚙ Automation Rules &amp; Workflows</a>
+            <a href="#/console/compliance" class="btn btn-secondary" style="justify-content:flex-start;padding:9px 12px;font-size:0.84rem;font-weight:600;" onclick="document.querySelector('.modal-backdrop')?.remove()">🔒 Data Privacy &amp; GDPR Vault</a>
+            <a href="#/console/audit" class="btn btn-secondary" style="justify-content:flex-start;padding:9px 12px;font-size:0.84rem;font-weight:600;" onclick="document.querySelector('.modal-backdrop')?.remove()">📜 Audit Ledger &amp; SIEM Stream</a>
+            <a href="#/console/billing" class="btn btn-secondary" style="justify-content:flex-start;padding:9px 12px;font-size:0.84rem;font-weight:600;" onclick="document.querySelector('.modal-backdrop')?.remove()">💳 Subscription &amp; Billing</a>
+          </div>
+        </div>
+      `,
+      confirmText: 'Done',
+      onConfirm: () => {},
+    });
+  };
+
+  document.getElementById('topbar-search-trigger')?.addEventListener('click', openQuickSearch);
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      openQuickSearch();
+    }
+  });
+
+  // Activity stream category filters
+  document.querySelectorAll('.activity-filter-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      document.querySelectorAll('.activity-filter-btn').forEach(b => b.classList.remove('active'));
+      const target = e.currentTarget as HTMLElement;
+      target.classList.add('active');
+      const text = target.textContent?.trim().toLowerCase() || 'all';
+      renderEventLog(text.includes('fleet') ? 'fleet' : text.includes('whatsapp') ? 'whatsapp' : text.includes('rules') ? 'rules' : 'all');
     });
   });
 
@@ -4101,18 +4188,63 @@ function executeSubjectErasure(subjectId: string) {
   showToast(`Right to be Forgotten executed for ${subjectId}. Records anonymized & audit ledger appended.`, 'warning');
 }
 
-// ── Event Log Stream ─────────────────────────────────────────────────────────
-function renderEventLog() {
+// ── Event Log Stream (Clean Enterprise Activity Feed) ────────────────────────
+function renderEventLog(filter: string = 'all') {
   const container = document.getElementById('event-stream-body');
   if (!container) return;
 
-  container.innerHTML = state.events.map((e) => `
-    <div class="log-row">
-      <span class="log-time">[${e.ts}]</span>
-      <span class="log-topic">${e.name}</span>
-      <span class="log-data">${e.payload}</span>
-    </div>
-  `).join('');
+  let filtered = state.events;
+  if (filter === 'fleet') {
+    filtered = state.events.filter(e => e.name.startsWith('iot.'));
+  } else if (filter === 'whatsapp') {
+    filtered = state.events.filter(e => e.name.startsWith('crm.'));
+  } else if (filter === 'rules') {
+    filtered = state.events.filter(e => e.name.startsWith('rules.'));
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div style="padding: 32px 20px; text-align: center; color: #94a3b8; font-size: 0.85rem;">
+        No ${filter === 'all' ? '' : filter + ' '}events captured yet. Trigger an action to see live telemetry.
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered.map((e) => {
+    let badgeColor = '#f1f5f9';
+    let badgeTextColor = '#475569';
+    let category = 'SYSTEM';
+
+    if (e.name.startsWith('iot.')) {
+      badgeColor = '#f0fdf4';
+      badgeTextColor = '#166534';
+      category = 'FLEET';
+    } else if (e.name.startsWith('crm.')) {
+      badgeColor = '#fef3c7';
+      badgeTextColor = '#92400e';
+      category = 'WHATSAPP';
+    } else if (e.name.startsWith('rules.')) {
+      badgeColor = '#f0f9ff';
+      badgeTextColor = '#0369a1';
+      category = 'RULES';
+    } else if (e.name.startsWith('compliance.') || e.name.startsWith('audit.')) {
+      badgeColor = '#fdf2f8';
+      badgeTextColor = '#9d174d';
+      category = 'SECURITY';
+    }
+
+    return `
+      <div class="activity-feed-item">
+        <span class="item-time">${e.ts.split(' ')[1] || e.ts}</span>
+        <span class="item-badge" style="background: ${badgeColor}; color: ${badgeTextColor}; border: 1px solid rgba(0,0,0,0.06);">${category}</span>
+        <div class="item-body">
+          <div class="item-desc">${e.name}</div>
+          <div class="item-payload" title="${e.payload}">${e.payload}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 // ── Application Router (10 Distinct Pages) ──────────────────────────────────
