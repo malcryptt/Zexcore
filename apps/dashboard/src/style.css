@@ -4889,8 +4889,8 @@ body {
 }
 
 .console-core-logo {
-  width: 42px;
-  height: 42px;
+  width: 52px;
+  height: 52px;
   object-fit: contain;
 }
 
@@ -5207,8 +5207,8 @@ pre, code, .code-block, .terminal-window { overflow-wrap: anywhere; }
 /* Console UI: quieter chrome, clear hierarchy, better panel spacing */
 .app-layout { min-height: 100vh; background: #f7f8fa; }
 .sidebar { background: #fff; border-right: 1px solid var(--border-default); }
-.brand-header { min-height: 72px; display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border-subtle); }
-.brand-logo-horizontal { width: 160px; max-width: 100%; height: 42px; object-fit: contain; object-position: left center; }
+.brand-header { min-height: 78px; display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border-subtle); }
+.brand-logo-horizontal { width: 188px; max-width: 100%; height: 50px; object-fit: contain; object-position: left center; }
 .topbar { background: rgba(255,255,255,.96); border-bottom: 1px solid var(--border-default); min-height: 66px; }
 .nav-item { border-radius: 9px; margin: 3px 8px; transition: color .15s ease, background .15s ease; }
 .nav-item.active { background: #fff0f1; color: var(--primary); }
@@ -6769,22 +6769,33 @@ body { background: #fff; letter-spacing: -.008em; }
   position: absolute;
   top: 0;
   left: 0;
-  width: 52%;
+  width: 36%;
+  max-width: 500px;
   height: 100%;
   background-size: cover;
   background-position: center left;
-  mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.94) 52%, rgba(0, 0, 0, 0) 100%);
-  -webkit-mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.94) 52%, rgba(0, 0, 0, 0) 100%);
+  mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.8) 35%, rgba(0, 0, 0, 0) 90%);
+  -webkit-mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.8) 35%, rgba(0, 0, 0, 0) 90%);
   pointer-events: none;
   z-index: 1;
+}
+
+/* Ensure Inner Page Hero Flex-Positions Content in the Tinted Red Space on the Right */
+.page-intro-section .site-container {
+  display: flex;
+  justify-content: flex-end;
+  position: relative;
+  z-index: 2;
 }
 
 /* Position Content Comfortably on the Right Half of the Hero */
 .page-hero-content-col {
   position: relative;
   z-index: 2;
-  margin-left: 44%;
-  max-width: 680px;
+  margin-left: auto;
+  margin-right: 0;
+  max-width: 580px;
+  width: 100%;
 }
 
 @media (max-width: 980px) {
@@ -6795,8 +6806,12 @@ body { background: #fff; letter-spacing: -.008em; }
     mask-image: none;
     -webkit-mask-image: none;
   }
+  .page-intro-section .site-container {
+    display: block;
+  }
   .page-hero-content-col {
     margin-left: 0;
+    margin-right: 0;
     max-width: 100%;
   }
 }
@@ -7488,17 +7503,19 @@ body { background: #fff; letter-spacing: -.008em; }
    ═══════════════════════════════════════════════════════════════════════════ */
 .whatsapp-inbox-grid {
   display: grid;
-  grid-template-columns: 340px 1fr;
+  grid-template-columns: 380px 1fr;
+  grid-template-rows: auto 1fr;
   background: #ffffff;
   border: 1.5px solid var(--border-default);
   border-radius: var(--radius-md);
   overflow: hidden;
-  height: 580px;
+  height: 640px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
 }
 @media (max-width: 900px) {
   .whatsapp-inbox-grid {
     grid-template-columns: 1fr;
+    grid-template-rows: auto auto 1fr;
     height: auto;
   }
 }
@@ -8704,32 +8721,87 @@ body { background: #fff; letter-spacing: -.008em; }
    OMNICHANNEL BADGES & CHANNEL FILTER BAR
    ══════════════════════════════════════════════════════════════════════════ */
 .channel-filter-bar {
+  grid-column: 1 / -1;
   display: flex;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
   overflow-x: auto;
-  padding: 8px 12px;
+  padding: 10px 18px;
   background: #f8fafc;
   border-bottom: 1px solid var(--border-default);
 }
 .channel-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   border: 1px solid var(--border-default);
-  background: #fff;
+  background: #ffffff;
   color: #475569;
-  padding: 3px 10px;
-  font-size: 0.72rem;
+  padding: 6px 14px;
+  font-size: 0.78rem;
   font-weight: 700;
-  border-radius: 6px;
+  border-radius: 7px;
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 .channel-filter-btn:hover {
   background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #1e293b;
 }
 .channel-filter-btn.active {
-  background: #e50920;
+  background: #E50920;
   color: #ffffff;
-  border-color: #e50920;
+  border-color: #E50920;
+  box-shadow: 0 1px 4px rgba(229, 9, 32, 0.25);
+}
+.channel-filter-btn .filter-count {
+  background: rgba(0, 0, 0, 0.07);
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+.channel-filter-btn.active .filter-count {
+  background: rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+}
+
+/* Mini toggle switch for thread header */
+.zx-toggle-mini-track {
+  display: inline-block;
+  width: 32px;
+  height: 18px;
+  background: #cbd5e1;
+  border-radius: 999px;
+  position: relative;
+  transition: background-color 0.2s ease;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.15);
+}
+.zx-toggle-mini-track.on {
+  background: #16a34a;
+}
+.zx-toggle-mini-track.off {
+  background: #dc2626;
+}
+.zx-toggle-mini-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: #ffffff;
+  border-radius: 50%;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+.zx-toggle-mini-track.on .zx-toggle-mini-thumb {
+  transform: translateX(14px);
+}
+.zx-toggle-mini-track.off .zx-toggle-mini-thumb {
+  transform: translateX(0);
 }
 
 .whatsapp-channel-badge.wa {
@@ -9639,16 +9711,15 @@ body { background: #fff; letter-spacing: -.008em; }
   position: absolute;
   top: 3px;
   left: 3px;
-  width: calc(100% - 24px);
-  height: calc(100% - 6px);
+  width: 18px;
+  height: 18px;
   background: #ffffff;
   border-radius: 50%;
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 1px 4px rgba(0,0,0,0.28);
-  aspect-ratio: 1;
 }
 .zx-toggle-track.on .zx-toggle-thumb {
-  transform: translateX(calc(100% + 2px));
+  transform: translateX(20px);
 }
 .zx-toggle-track.off .zx-toggle-thumb {
   transform: translateX(0);

@@ -15,10 +15,10 @@ export function renderAboutPage(): string {
       <main>
 
         <!-- HERO -->
-        <section class="page-intro-section" style="padding-bottom: 56px;">
+        <section class="section-white page-intro-section">
           <div class="page-hero-backdrop" style="background-image: url('/hero-engineering.jpg');"></div>
           <div class="site-container">
-            <div class="page-intro-header page-hero-content-col" style="text-align: left; max-width: 720px; margin: 0;">
+            <div class="page-intro-header page-hero-content-col">
               <div class="section-eyebrow">PLATFORM FOUNDATION &amp; ARCHITECTURE</div>
               <h1 class="page-intro-title" style="margin-bottom: 16px;">
                 About ZexCore<br />
@@ -43,7 +43,7 @@ export function renderAboutPage(): string {
           <section id="system-overview" style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 14px; padding: 40px; box-shadow: 0 2px 12px rgba(0,0,0,0.03);">
             <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 22px;">
               <div style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: rgba(229, 9, 32, 0.08); border: 1px solid rgba(229, 9, 32, 0.2); border-radius: 10px; overflow: hidden;">
-                <img src="/zexcore-logo-icon.png" alt="ZexCore" style="width: 32px; height: 32px; object-fit: contain;" />
+                <img src="/favicon-transparent.png" alt="ZexCore" style="width: 28px; height: 28px; object-fit: contain;" />
               </div>
               <div>
                 <h2 style="font-size: 1.5rem; font-weight: 800; margin: 0; color: #17191D;">1. What Is ZexCore, and Why Does It Exist?</h2>
@@ -303,83 +303,120 @@ export function renderAboutPage(): string {
             </div>
 
 
-            <!-- Enterprise Setup Detail -->
+
+            <!-- Enterprise License Activation Flow -->
             <div style="background: #ffffff; border: 1.5px solid var(--border-default); border-radius: 10px; overflow: hidden;">
               <div style="background: #f8f9fb; padding: 12px 18px; border-bottom: 1px solid var(--border-default); display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: var(--text-secondary);">Enterprise Workspace Setup — Technical Overview</span>
-                <span style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted);">PostgreSQL 17 &bull; Fastify &bull; Node 22 &bull; TypeScript</span>
+                <span style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: var(--text-secondary);">Dedicated On-Premise Deployment — Licence Activation Flow</span>
+                <span style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted);">HMAC-SHA256 &bull; PostgreSQL 17 &bull; Docker Compose</span>
               </div>
 
               <div style="padding: 24px; display: flex; flex-direction: column; gap: 20px;">
 
                 <div style="border-left: 3px solid #E50920; padding-left: 16px;">
-                  <div style="font-size: 0.78rem; font-weight: 800; color: #E50920; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Step 1 — Receive Your Workspace Package</div>
+                  <div style="font-size: 0.78rem; font-weight: 800; color: #E50920; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Step 1 — Subscribe &amp; Receive Your Signed Licence Key</div>
                   <p style="font-size: 0.88rem; color: #374151; line-height: 1.65; margin: 0;">
-                    Enterprise clients receive a private, pre-configured ZexCore workspace bundle directly from the ZexCore team. The package includes the full monorepo, your tenant provisioning credentials, and a pre-populated <code>.env</code> environment file with your organisation's values. Contact <a href="mailto:hello@zexcore.com.ng" style="color: #E50920; font-weight: 700;">hello@zexcore.com.ng</a> to initiate an enterprise delivery.
+                    Upon completing a Dedicated or Enterprise subscription payment, ZexCore automatically generates a cryptographically signed licence key unique to your organisation and subscription period. This key is formatted as <code>ZEX-DED.&lt;payload&gt;.&lt;signature&gt;</code> for Dedicated tiers and <code>ZEX-ENT.&lt;payload&gt;.&lt;signature&gt;</code> for Enterprise tiers. It is attached directly to your payment invoice — which you can view and download from the <a href="#/console/license" style="color: #E50920; font-weight: 700;">Licence tab</a> in the Operations Console — and is also dispatched to your registered email address.
                   </p>
                 </div>
 
                 <div style="border-left: 3px solid #0284c7; padding-left: 16px;">
-                  <div style="font-size: 0.78rem; font-weight: 800; color: #0284c7; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Step 2 — Configure Your Environment</div>
+                  <div style="font-size: 0.78rem; font-weight: 800; color: #0284c7; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Step 2 — Configure Your docker-compose.enterprise.yml</div>
                   <p style="font-size: 0.88rem; color: #374151; line-height: 1.6; margin: 0 0 10px 0;">
-                    Populate your <code>.env</code> file with the values provided in your enterprise delivery. The required configuration parameters are:
+                    Your signed licence key is placed into a pre-configured Docker Compose file for your dedicated cluster. Set the <code>ZEXCORE_LICENSE_KEY</code> environment variable to your key. This single configuration file starts both the ZexCore application and its PostgreSQL 17 database:
                   </p>
-                  <pre style="margin: 0; padding: 14px 16px; background: #fafbfc; border: 1px solid var(--border-default); border-radius: 8px; font-family: var(--font-mono); font-size: 0.78rem; color: #1e293b; line-height: 1.7; overflow-x: auto;"><code>NODE_ENV=production
-DATABASE_URL=postgres://zexcore_app:&lt;password&gt;@localhost:5432/zexcore_db
-JWT_SECRET=&lt;minimum-32-character-signing-secret&gt;
-CORS_ORIGIN=https://&lt;your-dashboard-domain&gt;
-PORT=3000
-HOST=0.0.0.0
-LOG_LEVEL=info
-GEMINI_API_KEY=&lt;optional-for-AI-rule-authoring&gt;</code></pre>
+                  <pre style="margin: 0; padding: 14px 16px; background: #fafbfc; border: 1px solid var(--border-default); border-radius: 8px; font-family: var(--font-mono); font-size: 0.78rem; color: #1e293b; line-height: 1.7; overflow-x: auto;"><code>services:
+  zexcore-app:
+    image: registry.zexcore.io/enterprise/core:v1.4-hardened
+    environment:
+      - ZEXCORE_LICENSE_KEY=ZEX-DED.&lt;your-signed-key&gt;
+      - TENANT_ID=&lt;your-organisation-slug&gt;
+      - DATABASE_URL=postgresql://zexcore_app:&lt;password&gt;@db:5432/zexcore_prod
+      - CRYPTO_HEARTBEAT_ENDPOINT=https://api.zexcore.com/v1/license/heartbeat
+    ports:
+      - "443:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      - POSTGRES_DB=zexcore_prod
+      - POSTGRES_USER=zexcore_app
+      - POSTGRES_PASSWORD=&lt;password&gt;
+    volumes:
+      - pgdata:/var/lib/postgresql/data</code></pre>
                 </div>
 
                 <div style="border-left: 3px solid #16a34a; padding-left: 16px;">
-                  <div style="font-size: 0.78rem; font-weight: 800; color: #16a34a; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Step 3 — Start the Database Container</div>
+                  <div style="font-size: 0.78rem; font-weight: 800; color: #16a34a; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Step 3 — Start Your Cluster</div>
                   <p style="font-size: 0.88rem; color: #374151; line-height: 1.6; margin: 0 0 10px 0;">
-                    ZexCore ships with a Docker Compose configuration for PostgreSQL 17. Launch the database and wait for its health check to pass before proceeding:
+                    Start the full cluster with a single command. The kernel validates your licence key on boot before accepting any requests:
                   </p>
-                  <pre style="margin: 0; padding: 14px 16px; background: #fafbfc; border: 1px solid var(--border-default); border-radius: 8px; font-family: var(--font-mono); font-size: 0.78rem; color: #1e293b; line-height: 1.7; overflow-x: auto;"><code># Start the PostgreSQL 17 container (health-checked, persistent volume)
-docker compose up -d postgres
+                  <pre style="margin: 0; padding: 14px 16px; background: #fafbfc; border: 1px solid var(--border-default); border-radius: 8px; font-family: var(--font-mono); font-size: 0.78rem; color: #1e293b; line-height: 1.7; overflow-x: auto;"><code>docker compose -f docker-compose.enterprise.yml up
 
-# Wait for readiness (~5 seconds), then verify
-docker compose ps</code></pre>
-                </div>
-
-                <div style="border-left: 3px solid #7c3aed; padding-left: 16px;">
-                  <div style="font-size: 0.78rem; font-weight: 800; color: #7c3aed; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Step 4 — Initialise Schema &amp; Provision Tenant</div>
-                  <p style="font-size: 0.88rem; color: #374151; line-height: 1.6; margin: 0 0 10px 0;">
-                    The schema initialiser creates all required tables, activates Row-Level Security policies on each tenant-scoped table, and provisions your platform administrator account and first tenant workspace:
-                  </p>
-                  <pre style="margin: 0; padding: 14px 16px; background: #fafbfc; border: 1px solid var(--border-default); border-radius: 8px; font-family: var(--font-mono); font-size: 0.78rem; color: #1e293b; line-height: 1.7; overflow-x: auto;"><code># Apply schema migrations &amp; seed initial platform data
-pnpm db:migrate
-pnpm seed</code></pre>
-                </div>
-
-                <div style="border-left: 3px solid #d97706; padding-left: 16px;">
-                  <div style="font-size: 0.78rem; font-weight: 800; color: #d97706; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Step 5 — Launch the API &amp; Dashboard</div>
-                  <p style="font-size: 0.88rem; color: #374151; line-height: 1.6; margin: 0 0 10px 0;">
-                    Start the Fastify micro-kernel API server and the operations dashboard. For a containerised production deployment, use <code>docker compose up</code> to start both services together:
-                  </p>
-                  <pre style="margin: 0; padding: 14px 16px; background: #fafbfc; border: 1px solid var(--border-default); border-radius: 8px; font-family: var(--font-mono); font-size: 0.78rem; color: #1e293b; line-height: 1.7; overflow-x: auto;"><code># Full containerised production start (API + PostgreSQL)
-docker compose up
-
-# Verify the kernel is healthy and RLS is enforced
+# Confirm licence is active and RLS is enforced
 curl -s http://localhost:3000/api/health
-# → {"status":"healthy","database":"connected","rlsEnforced":true}</code></pre>
+# → {"status":"healthy","database":"connected","rlsEnforced":true,"license":"active"}</code></pre>
                 </div>
 
-                <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 14px 16px;">
-                  <div style="font-size: 0.82rem; color: #15803d; font-weight: 700; margin-bottom: 4px;">
-                    <svg style="display: inline; vertical-align: middle; margin-right: 4px;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                    What the health check confirms
+                <!-- License Lifecycle Explainer -->
+                <div style="background: #fafbfc; border: 1px solid var(--border-default); border-radius: 10px; padding: 20px;">
+                  <div style="font-size: 0.82rem; font-weight: 800; color: #17191D; margin-bottom: 14px;">How the Licence Enforcement Works</div>
+                  <div style="display: flex; flex-direction: column; gap: 12px;">
+
+                    <div style="display: flex; gap: 12px; align-items: flex-start;">
+                      <div style="width: 28px; height: 28px; flex-shrink: 0; background: rgba(229,9,32,0.07); border: 1px solid rgba(229,9,32,0.2); border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                      </div>
+                      <div>
+                        <div style="font-size: 0.82rem; font-weight: 700; color: #17191D; margin-bottom: 2px;">Cryptographic Signature Verification</div>
+                        <div style="font-size: 0.82rem; color: #4B5563; line-height: 1.55;">The key's payload is signed with HMAC-SHA256. On every boot and at each scheduled heartbeat, the engine re-verifies this signature. Any attempt to alter the key — for example, extending the expiry date manually — is immediately detected because the signature will no longer match. A tampered key is treated as invalid and the instance locks immediately.</div>
+                      </div>
+                    </div>
+
+                    <div style="display: flex; gap: 12px; align-items: flex-start;">
+                      <div style="width: 28px; height: 28px; flex-shrink: 0; background: rgba(2,132,199,0.07); border: 1px solid rgba(2,132,199,0.2); border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      </div>
+                      <div>
+                        <div style="font-size: 0.82rem; font-weight: 700; color: #17191D; margin-bottom: 2px;">Server-Clock Time Verification</div>
+                        <div style="font-size: 0.82rem; color: #4B5563; line-height: 1.55;">Expiration is evaluated against ZexCore's authoritative server clock via the <code>CRYPTO_HEARTBEAT_ENDPOINT</code> — not the local clock of the machine running the software. This prevents a common bypass technique where system time is set backwards to keep a licence appearing valid. If the heartbeat endpoint cannot be reached, the kernel uses the last confirmed server timestamp for offline evaluation.</div>
+                      </div>
+                    </div>
+
+                    <div style="display: flex; gap: 12px; align-items: flex-start;">
+                      <div style="width: 28px; height: 28px; flex-shrink: 0; background: rgba(22,163,74,0.07); border: 1px solid rgba(22,163,74,0.2); border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                      </div>
+                      <div>
+                        <div style="font-size: 0.82rem; font-weight: 700; color: #17191D; margin-bottom: 2px;">Active Subscription</div>
+                        <div style="font-size: 0.82rem; color: #4B5563; line-height: 1.55;">All modules are fully operational. IoT telemetry ingestion, automation rules, CRM pipelines, compliance vault, white-label branding, and the audit ledger all run without restriction. The console displays the days and hours remaining on the licence period.</div>
+                      </div>
+                    </div>
+
+                    <div style="display: flex; gap: 12px; align-items: flex-start;">
+                      <div style="width: 28px; height: 28px; flex-shrink: 0; background: rgba(217,119,6,0.07); border: 1px solid rgba(217,119,6,0.2); border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                      </div>
+                      <div>
+                        <div style="font-size: 0.82rem; font-weight: 700; color: #17191D; margin-bottom: 2px;">7-Day Grace Period After Subscription Expiry</div>
+                        <div style="font-size: 0.82rem; color: #4B5563; line-height: 1.55;">When the subscription period ends, the system does not shut down immediately. A 7-day grace period begins. During this window all engines continue to operate normally, and the console displays a prominent renewal notice with the exact number of grace days remaining. Renewing at any point during the grace period restores the full licence term.</div>
+                      </div>
+                    </div>
+
+                    <div style="display: flex; gap: 12px; align-items: flex-start;">
+                      <div style="width: 28px; height: 28px; flex-shrink: 0; background: rgba(127,29,29,0.07); border: 1px solid rgba(127,29,29,0.2); border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#991b1b" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                      </div>
+                      <div>
+                        <div style="font-size: 0.82rem; font-weight: 700; color: #17191D; margin-bottom: 2px;">Read-Only Lock After Grace Period Lapses</div>
+                        <div style="font-size: 0.82rem; color: #4B5563; line-height: 1.55;">If the grace period expires without renewal, the automation engines — rules evaluation, IoT ingestion, CRM messaging, and compliance vault writes — pause and enter read-only mode. Existing data remains intact and accessible. No data is lost. Operations resume the moment a valid renewed licence key is configured.</div>
+                      </div>
+                    </div>
+
                   </div>
-                  <ul style="margin: 0; padding-left: 18px; font-size: 0.82rem; color: #166534; line-height: 1.65;">
-                    <li>PostgreSQL 17 connection is live and accepting transactions</li>
-                    <li>Row-Level Security policies are loaded and enforced on all tenant-scoped tables</li>
-                    <li>The Fastify micro-kernel is accepting requests with rate limiting active</li>
-                    <li>Security headers (HSTS, CSP, X-Frame-Options) are applied to all responses</li>
-                  </ul>
                 </div>
 
               </div>

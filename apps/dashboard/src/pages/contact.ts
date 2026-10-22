@@ -14,10 +14,10 @@ export function renderContactPage(): string {
       <main>
 
         <!-- HERO -->
-        <section class="page-intro-section" style="padding-bottom: 56px;">
+        <section class="section-white page-intro-section">
           <div class="page-hero-backdrop" style="background-image: url('/hero-team.jpg');"></div>
           <div class="site-container">
-            <div class="page-intro-header page-hero-content-col" style="text-align: left; max-width: 720px; margin: 0;">
+            <div class="page-intro-header page-hero-content-col">
               <div class="section-eyebrow">ENTERPRISE ENQUIRIES &amp; SUPPORT</div>
               <h1 class="page-intro-title" style="margin-bottom: 16px;">
                 We Are Ready<br />

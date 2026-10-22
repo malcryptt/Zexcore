@@ -3298,49 +3298,59 @@ function renderWhatsAppInboxView(container: HTMLElement) {
   }
 
   container.innerHTML = `
-    <!-- Omnichannel Channel Filter Bar -->
-    <div class="channel-filter-bar">
-      <button class="channel-filter-btn ${currentFilter === 'all' ? 'active' : ''}" onclick="window.setChannelFilter('all')">
-        All Channels (${state.whatsAppThreads.length})
-      </button>
-      <button class="channel-filter-btn ${currentFilter === 'whatsapp' ? 'active' : ''}" onclick="window.setChannelFilter('whatsapp')">
-        WhatsApp (${state.whatsAppThreads.filter(t => t.channel === 'whatsapp' || t.activeChannel === 'whatsapp').length})
-      </button>
-      <button class="channel-filter-btn ${currentFilter === 'sms' ? 'active' : ''}" onclick="window.setChannelFilter('sms')">
-        SMS Fallback (${state.whatsAppThreads.filter(t => t.channel === 'sms' || t.activeChannel === 'sms').length})
-      </button>
-      <button class="channel-filter-btn ${currentFilter === 'email' ? 'active' : ''}" onclick="window.setChannelFilter('email')">
-        Email Receipts (${state.whatsAppThreads.filter(t => t.channel === 'email' || t.activeChannel === 'email').length})
-      </button>
-      <button class="channel-filter-btn ${currentFilter === 'telegram' ? 'active' : ''}" onclick="window.setChannelFilter('telegram')">
-        Telegram Direct (${state.whatsAppThreads.filter(t => t.channel === 'telegram' || t.activeChannel === 'telegram').length})
-      </button>
-    </div>
+    <div class="whatsapp-inbox-grid">
+      <!-- Omnichannel Channel Filter Bar across top -->
+      <div class="channel-filter-bar">
+        <button class="channel-filter-btn ${currentFilter === 'all' ? 'active' : ''}" onclick="window.setChannelFilter('all')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span>All Channels</span>
+          <span class="filter-count">${state.whatsAppThreads.length}</span>
+        </button>
+        <button class="channel-filter-btn ${currentFilter === 'whatsapp' ? 'active' : ''}" onclick="window.setChannelFilter('whatsapp')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413"/></svg>
+          <span>WhatsApp</span>
+          <span class="filter-count">${state.whatsAppThreads.filter(t => t.channel === 'whatsapp' || t.activeChannel === 'whatsapp').length}</span>
+        </button>
+        <button class="channel-filter-btn ${currentFilter === 'sms' ? 'active' : ''}" onclick="window.setChannelFilter('sms')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span>SMS Fallback</span>
+          <span class="filter-count">${state.whatsAppThreads.filter(t => t.channel === 'sms' || t.activeChannel === 'sms').length}</span>
+        </button>
+        <button class="channel-filter-btn ${currentFilter === 'email' ? 'active' : ''}" onclick="window.setChannelFilter('email')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <span>Email Receipts</span>
+          <span class="filter-count">${state.whatsAppThreads.filter(t => t.channel === 'email' || t.activeChannel === 'email').length}</span>
+        </button>
+        <button class="channel-filter-btn ${currentFilter === 'telegram' ? 'active' : ''}" onclick="window.setChannelFilter('telegram')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18.847-.96 4.965-1.356 7.078-.168.894-.5 1.194-.82 1.223-.695.064-1.222-.46-1.896-.9-1.055-.69-1.652-1.12-2.678-1.796-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.429-.01-1.253-.243-1.867-.442-.752-.244-1.349-.374-1.297-.789.027-.216.325-.437.893-.664 3.498-1.524 5.831-2.529 7.001-3.014 3.332-1.386 4.025-1.627 4.476-1.635.099-.002.321.023.465.14.121.098.155.231.171.326.016.096.037.314.02.486z"/></svg>
+          <span>Telegram Direct</span>
+          <span class="filter-count">${state.whatsAppThreads.filter(t => t.channel === 'telegram' || t.activeChannel === 'telegram').length}</span>
+        </button>
+      </div>
 
-    <div class="whatsapp-inbox-grid" style="margin-top: 14px;">
       <!-- Left Column: Unified Contact Threads -->
       <div class="whatsapp-threads-col">
         <div class="whatsapp-threads-header">
-          <div>
-            <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-weight: 800; font-size: 0.92rem; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#25d366" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
               <span>Unified Contacts Inbox</span>
               ${totalUnread > 0 ? `<span style="background: #25d366; color: #fff; font-size: 0.65rem; font-weight: 800; padding: 2px 7px; border-radius: 999px;">${totalUnread} new</span>` : ''}
             </div>
-            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; display: flex; align-items: center; gap: 6px;">
-              <span>Pluggable Adapter Core</span>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; display: flex; align-items: center; gap: 8px;">
+              <span>Pluggable Adapter</span>
               <span>&bull;</span>
-              <label class="zx-toggle-switch" onclick="window.toggleCrmWebhook()" title="Toggle webhook: Live / Offline" style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
-                <span class="zx-toggle-track ${state.crmWebhookStatus === 'live' ? 'on' : 'off'}" style="width: 28px; height: 15px;">
-                  <span class="zx-toggle-thumb"></span>
+              <label class="zx-toggle-switch" onclick="window.toggleCrmWebhook()" title="Toggle webhook: Live / Offline" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                <span class="zx-toggle-mini-track ${state.crmWebhookStatus === 'live' ? 'on' : 'off'}">
+                  <span class="zx-toggle-mini-thumb"></span>
                 </span>
-                <span style="font-size: 0.65rem; font-weight: 700; color: ${state.crmWebhookStatus === 'live' ? '#15803d' : '#b91c1c'};">
+                <span style="font-size: 0.68rem; font-weight: 700; color: ${state.crmWebhookStatus === 'live' ? '#15803d' : '#b91c1c'};">
                   ${state.crmWebhookStatus === 'live' ? 'Webhook Live' : 'Webhook Offline'}
                 </span>
               </label>
             </div>
           </div>
-          <button class="btn btn-secondary btn-xs" onclick="window.simulateIncomingWhatsApp()" title="Simulate incoming customer lead message via webhook">
+          <button class="btn btn-secondary btn-xs" onclick="window.simulateIncomingWhatsApp()" title="Simulate incoming customer lead message via webhook" style="white-space: nowrap; margin-left: 8px;">
             + Test Inbound
           </button>
         </div>
