@@ -26,36 +26,36 @@ export interface HeroSlide {
 
 export const heroSlides: HeroSlide[] = [
   {
-    badge: 'MISSION-CRITICAL VERTICAL SAAS',
-    titleHtml: 'Accelerate<br />Vertical SaaS.<br /><span class="hz-hero-red">Live in 10 Minutes.</span>',
-    subtext: 'The sovereign multi-tenant platform for vertical SaaS. Turnkey industry packs, automated WhatsApp customer workflows, and PostgreSQL 17 isolation out of the box.',
+    badge: 'ALL-IN-ONE SOFTWARE FOUNDATION • LIVE IN 10 MINUTES',
+    titleHtml: 'Launch Your<br />Industry Software.<br /><span class="hz-hero-red">In Days, Not Months.</span>',
+    subtext: 'Everything your business needs — private client portals, live WhatsApp customer messaging, sensor tracking, and automated billing — ready to go out of the box.',
     image: '/heroes/hero-arrow-real.jpg',
     alt: 'Industrial chevron composite: smart city, power grid, welding, port logistics, high-speed rail',
     primaryCtaText: 'Launch Console Free →',
     primaryCtaHref: '#/console',
-    secondaryCtaText: 'Explore Modules',
-    secondaryCtaHref: '#/modules',
+    secondaryCtaText: 'Explore Solutions',
+    secondaryCtaHref: '#/solutions',
   },
   {
-    badge: 'POSTGRESQL 17 ROW-LEVEL SECURITY',
-    titleHtml: '<span class="hz-hero-red">Sovereign<br />Multi-Tenancy.<br />Zero Data Leaks.</span>',
-    subtext: 'Enforced mathematically at the PostgreSQL session level using Row-Level Security, composite primary keys, and transaction-isolated database connections. Never rely on manual code discipline.',
+    badge: '100% PRIVATE CLIENT WORKSPACES',
+    titleHtml: 'Zero Data Leaks.<br /><span class="hz-hero-red">Guaranteed Client Privacy.</span>',
+    subtext: 'Give each customer their own private, locked-down portal. Database-enforced isolation makes it physically impossible for any client to ever see another client’s data.',
     image: '/refinery.jpg',
     alt: 'Industrial plant and refinery operations powered by sovereign multi-tenancy',
-    primaryCtaText: 'Security Architecture →',
+    primaryCtaText: 'See How Isolation Works →',
     primaryCtaHref: '#/security',
-    secondaryCtaText: 'Technical Whitepaper',
+    secondaryCtaText: 'Architecture Overview',
     secondaryCtaHref: '#/architecture',
   },
   {
-    badge: 'AST ENGINE • ZERO JAVASCRIPT EVAL',
-    titleHtml: 'Deterministic<br />Rules &amp; Automation.<br /><span class="hz-hero-red">&lt; 1ms Latency.</span>',
-    subtext: 'Compile business logic and alert pipelines into secure Abstract Syntax Tree graphs with zero eval vulnerability. Lightning-fast edge triggers and omnichannel customer dispatch.',
+    badge: 'INSTANT BUSINESS AUTOMATIONS',
+    titleHtml: 'Automate Decisions.<br /><span class="hz-hero-red">In Real Time.</span>',
+    subtext: 'Set up automated business rules with zero coding: dispatch WhatsApp alerts when sensor readings spike, confirm bookings, and collect payments in under one millisecond.',
     image: '/solutions/automation.jpg',
     alt: 'Industrial robotic manufacturing automation with deterministic execution',
-    primaryCtaText: 'Open Rules Studio →',
+    primaryCtaText: 'Open Automations Studio →',
     primaryCtaHref: '#/console/rules',
-    secondaryCtaText: 'Developer Documentation',
+    secondaryCtaText: 'Developer Docs',
     secondaryCtaHref: '#/docs',
   },
 ];
@@ -102,7 +102,7 @@ export function renderHomePage(): string {
               <div class="hz-hero-actions hz-anim-fade-up" style="animation-delay: 0.4s" id="hero-slide-actions">
                 <a href="${defaultSlide.primaryCtaHref}" class="hz-btn-primary" id="btn-hero-primary" style="font-weight: 800; box-shadow: 0 4px 16px rgba(229, 9, 32, 0.35);">${defaultSlide.primaryCtaText}</a>
                 <a href="${defaultSlide.secondaryCtaHref}" class="hz-btn-outline" id="btn-hero-secondary" style="font-weight: 700;">${defaultSlide.secondaryCtaText}</a>
-                <a href="#onboarding-walkthrough" class="hz-btn-ghost" id="btn-hero-what-is-zexcore">10-Minute Walkthrough &darr;</a>
+                <a href="#onboarding-walkthrough" class="hz-btn-ghost" id="btn-hero-what-is-zexcore">How It Works &darr;</a>
               </div>
             </div>
           </div>
@@ -122,8 +122,8 @@ export function renderHomePage(): string {
                   </svg>
                 </div>
                 <div>
-                  <div class="metric-big-val">100% RLS</div>
-                  <div class="metric-sub-lbl" style="font-weight: 600; color: #334155;">Zero Data Leakage</div>
+                  <div class="metric-big-val">100% Private</div>
+                  <div class="metric-sub-lbl" style="font-weight: 600; color: #334155;">Zero Data Leaks Between Clients</div>
                 </div>
               </div>
 
@@ -134,8 +134,8 @@ export function renderHomePage(): string {
                   </svg>
                 </div>
                 <div>
-                  <div class="metric-big-val">&lt; 1ms</div>
-                  <div class="metric-sub-lbl" style="font-weight: 600; color: #334155;">Real-Time AST Latency</div>
+                  <div class="metric-big-val">&lt; 1ms Speed</div>
+                  <div class="metric-sub-lbl" style="font-weight: 600; color: #334155;">Instant Automated Decisions</div>
                 </div>
               </div>
 
@@ -147,7 +147,7 @@ export function renderHomePage(): string {
                 </div>
                 <div>
                   <div class="metric-big-val">10 Minutes</div>
-                  <div class="metric-sub-lbl" style="font-weight: 600; color: #334155;">Instant Setup to Live</div>
+                  <div class="metric-sub-lbl" style="font-weight: 600; color: #334155;">From Setup to Live Operation</div>
                 </div>
               </div>
 
@@ -158,8 +158,8 @@ export function renderHomePage(): string {
                   </svg>
                 </div>
                 <div>
-                  <div class="metric-big-val">WhatsApp</div>
-                  <div class="metric-sub-lbl" style="font-weight: 600; color: #334155;">Leads &amp; MoMo Built-in</div>
+                  <div class="metric-big-val">WhatsApp First</div>
+                  <div class="metric-sub-lbl" style="font-weight: 600; color: #334155;">Live Chat &amp; Payments Built-in</div>
                 </div>
               </div>
             </div>
@@ -288,11 +288,12 @@ export function renderHomePage(): string {
         <section class="section-white section-padded whats-new-section" style="padding: 76px 0 88px 0; border-bottom: 1px solid #f3e5e8;">
           <div class="site-container">
             <!-- Header with Red Underline Accent Bar -->
+            <!-- Header with Red Underline Accent Bar -->
             <div class="whats-new-header text-center">
-              <h2 class="whats-new-title" style="font-size: 2.25rem;">Explore Platform Modules</h2>
+              <h2 class="whats-new-title" style="font-size: 2.25rem;">Everything Your Software Needs</h2>
               <div class="whats-new-red-bar"></div>
               <p class="whats-new-subtitle" style="font-size: 1.05rem; color: #334155; max-width: 680px; margin: 0 auto 48px auto;">
-                Engineered for scale, security, and velocity. Click any module below to open its dedicated interactive console workspace.
+                Pre-built foundational capabilities ready to power your vertical product. Click any capability to explore its live operations console.
               </p>
             </div>
 
@@ -303,15 +304,15 @@ export function renderHomePage(): string {
               <div class="whats-new-card">
                 <div class="whats-new-img-wrap">
                   <img src="/solutions/iot.jpg" alt="Industrial IoT device telemetry" class="whats-new-img" loading="lazy" />
-                  <span class="whats-new-category">IOT FLEET</span>
+                  <span class="whats-new-category">HARDWARE &amp; SENSORS</span>
                 </div>
                 <div class="whats-new-content">
-                  <h3 class="whats-new-card-title">Edge Device Fleet &amp; Telemetry Stream</h3>
+                  <h3 class="whats-new-card-title">Live Hardware &amp; Sensor Tracking</h3>
                   <p class="whats-new-card-desc" style="color: #475569;">
-                    Hardware-isolated single-use token rotation, high-frequency time-series telemetry ingestion, and sub-millisecond anomaly thresholds.
+                    Connect temperature monitors, vehicle GPS trackers, and physical machinery directly to your dashboard with live automated threshold alerts.
                   </p>
                   <a href="#/console/iot" class="btn btn-primary btn-sm" style="margin-top: auto; justify-content: center; font-weight: 750; box-shadow: 0 4px 12px rgba(229, 9, 32, 0.25);">
-                    Open IoT Console &rarr;
+                    Open Sensor Hub &rarr;
                   </a>
                 </div>
               </div>
@@ -323,12 +324,12 @@ export function renderHomePage(): string {
                   <span class="whats-new-category">AUTOMATION</span>
                 </div>
                 <div class="whats-new-content">
-                  <h3 class="whats-new-card-title">Zero-Eval AST Workflow Engine</h3>
+                  <h3 class="whats-new-card-title">Automated Decisions &amp; Alerts</h3>
                   <p class="whats-new-card-desc" style="color: #475569;">
-                    Deterministic condition graphs and action dispatchers with zero JavaScript eval risk. Evaluates state machines and triggers in microseconds.
+                    Create smart rules that respond automatically: dispatch WhatsApp alerts when thresholds spike, confirm bookings, or trigger payments instantly without writing code.
                   </p>
                   <a href="#/console/rules" class="btn btn-primary btn-sm" style="margin-top: auto; justify-content: center; font-weight: 750; box-shadow: 0 4px 12px rgba(229, 9, 32, 0.25);">
-                    Open Rules Studio &rarr;
+                    Open Automations Studio &rarr;
                   </a>
                 </div>
               </div>
@@ -337,12 +338,12 @@ export function renderHomePage(): string {
               <div class="whats-new-card">
                 <div class="whats-new-img-wrap">
                   <img src="/solutions/sales.jpg" alt="Enterprise CRM and sales pipeline" class="whats-new-img" loading="lazy" />
-                  <span class="whats-new-category">CRM &amp; WHATSAPP</span>
+                  <span class="whats-new-category">WHATSAPP &amp; CRM</span>
                 </div>
                 <div class="whats-new-content">
-                  <h3 class="whats-new-card-title">WhatsApp CRM &amp; Deal Flow</h3>
+                  <h3 class="whats-new-card-title">WhatsApp CRM &amp; Lead Pipelines</h3>
                   <p class="whats-new-card-desc" style="color: #475569;">
-                    Live customer conversations, Paystack/MoMo deposit collections, and composite-key tenant data isolation preventing cross-tenant leakage.
+                    Turn customer conversations into revenue. Chat directly with leads on WhatsApp, manage deals through a visual pipeline, and collect deposits via Paystack or Mobile Money.
                   </p>
                   <a href="#/console/crm" class="btn btn-primary btn-sm" style="margin-top: auto; justify-content: center; font-weight: 750; box-shadow: 0 4px 12px rgba(229, 9, 32, 0.25);">
                     Open WhatsApp CRM &rarr;
@@ -354,15 +355,15 @@ export function renderHomePage(): string {
               <div class="whats-new-card">
                 <div class="whats-new-img-wrap">
                   <img src="/solutions/compliance.jpg" alt="Cryptographic data vault and compliance" class="whats-new-img" loading="lazy" />
-                  <span class="whats-new-category">COMPLIANCE VAULT</span>
+                  <span class="whats-new-category">PRIVACY &amp; COMPLIANCE</span>
                 </div>
                 <div class="whats-new-content">
-                  <h3 class="whats-new-card-title">GDPR Cryptographic Vault</h3>
+                  <h3 class="whats-new-card-title">Customer Data Privacy &amp; Vault</h3>
                   <p class="whats-new-card-desc" style="color: #475569;">
-                    Right-to-be-Forgotten pipeline with key destruction, HMAC blind indexing for searchable encrypted PII, and immutable append-only audit trails.
+                    Keep sensitive client and patient records completely secure. Built-in bank-grade encryption, privacy consent tracking, and tamper-proof audit trails.
                   </p>
                   <a href="#/console/compliance" class="btn btn-primary btn-sm" style="margin-top: auto; justify-content: center; font-weight: 750; box-shadow: 0 4px 12px rgba(229, 9, 32, 0.25);">
-                    Open Compliance Vault &rarr;
+                    Open Privacy Vault &rarr;
                   </a>
                 </div>
               </div>
@@ -380,13 +381,13 @@ export function renderHomePage(): string {
               <!-- Left Column: Copy & Button -->
               <div class="multi-tenant-copy">
                 <h2 class="section-title" style="text-align: left; font-size: 2.35rem; font-weight: 850; letter-spacing: -0.04em; margin-bottom: 18px; line-height: 1.15;">
-                  Engineered for Strict Sovereign Multi-Tenancy
+                  100% Guaranteed Client Privacy by Design
                 </h2>
                 <p style="font-size: 1.05rem; color: #334155; line-height: 1.7; margin-bottom: 34px; max-width: 490px;">
-                  Build for scale, definition, and workflow execution &mdash; ZexCore delivers the enterprise foundation your vertical SaaS needs to operate securely without architectural compromises.
+                  Give every business, clinic, or agency client their own dedicated workspace. Under the hood, our database engine mathematically isolates each customer’s records &mdash; making data leaks structurally impossible.
                 </p>
                 <a href="#/architecture" class="btn btn-primary btn-lg" style="box-shadow: 0 4px 16px rgba(229, 9, 32, 0.32); font-weight: 800;">
-                  Explore Sovereign Architecture &rarr;
+                  See Security &amp; Isolation Architecture &rarr;
                 </a>
               </div>
 
