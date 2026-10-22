@@ -139,8 +139,9 @@ export function renderContactPage(): string {
                 <h2 style="font-size: 1.25rem; font-weight: 800; color: #17191D; margin: 0 0 4px 0;">Send Us a Message</h2>
                 <p style="font-size: 0.88rem; color: var(--text-secondary); margin: 0 0 28px 0;">Tell us a bit about your business and what you need — we'll come back with the right answer.</p>
 
-                <div id="contact-success-banner" style="display: none; background: #ECFDF5; border: 1px solid #86EFAC; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; color: #15803D; font-size: 0.9rem; font-weight: 600;">
-                  ✓ Message sent! We will respond within 48 hours.
+                <div id="contact-success-banner" style="display: none; background: #ECFDF5; border: 1px solid #86EFAC; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; color: #15803D; font-size: 0.9rem; font-weight: 600; align-items: center; gap: 8px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>Message sent! We will respond within 48 hours.</span>
                 </div>
                 <div id="contact-error-banner" style="display: none; background: #FEF2F2; border: 1px solid #FCA5A5; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; color: #B91C1C; font-size: 0.9rem; font-weight: 600;">
                   Something went wrong. Please try again or WhatsApp us directly.

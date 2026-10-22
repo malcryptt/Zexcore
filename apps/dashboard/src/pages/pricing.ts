@@ -10,7 +10,7 @@ function pricingFeature(enabled: boolean, label: string): string {
   return `
     <div class="pricing-feature-row">
       <span class="pricing-check ${enabled ? 'enabled' : 'disabled'}">
-        ${enabled ? '✓' : '—'}
+        ${enabled ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' : '—'}
       </span>
       <span class="pricing-feature-label ${enabled ? '' : 'muted'}">${label}</span>
     </div>
@@ -37,7 +37,7 @@ function compRow6(
   const cell = (v: boolean | string, featured = false) => {
     if (typeof v === 'boolean') {
       return `<td class="comp-td-tier ${featured ? 'comp-featured-col' : ''}" style="text-align:center; padding:12px 14px;">
-        ${v ? `<span class="comp-check ${featured ? 'featured' : ''}" style="color:${featured ? '#e11d48' : '#16a34a'}; font-weight:800;">✓</span>` : `<span class="comp-dash" style="color:#94a3b8;">—</span>`}
+        ${v ? `<span class="comp-check ${featured ? 'featured' : ''}" style="color:${featured ? '#e11d48' : '#16a34a'}; display:inline-flex; align-items:center; justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>` : `<span class="comp-dash" style="color:#94a3b8;">—</span>`}
       </td>`;
     }
     return `<td class="comp-td-tier ${featured ? 'comp-featured-col' : ''}" style="text-align:center; font-size:0.78rem; font-weight:700; color:${featured ? '#e11d48' : 'var(--text-main)'}; padding:12px 14px;">${v}</td>`;
@@ -396,9 +396,9 @@ export function renderPricingPage(): string {
                   ${compRow6('Baseline Security Posture Checks', '5 locked checks', '5 locked checks', 'All checks + tunable', 'All checks + tunable', 'Custom rules + SIEM', 'Hardened zero-trust baseline')}
                   ${compRow6('Financial Gateway Reconciliation', false, false, 'Stripe, Paystack & MoMo', 'Per-workspace reconciliation', 'Multi-currency ledger sync', 'Immutable banking ledger & audit')}
                   ${compRow6('Tamper-Resistant Evidence Packs', false, false, 'Standard export', 'Client evidence export', 'Verifiable JSON/PDF bundles', 'Cryptographic block chain export')}
-                  ${compRow6('Field-Level AES-256 Encryption', false, false, false, false, false, '✓ (AES-256-GCM field level)')}
+                  ${compRow6('Field-Level AES-256 Encryption', false, false, false, false, false, 'AES-256-GCM field level')}
                   ${compRow6('HMAC Blind Index Queries', false, false, false, false, false, true)}
-                  ${compRow6('Data Deletion Tools', 'Standard delete', 'Standard delete', 'Standard delete & redaction', 'Workspace-level deletion tools', 'Role-gated deletion with audit trace', '✓ Cryptographic PII erasure & ledger proof')}
+                  ${compRow6('Data Deletion Tools', 'Standard delete', 'Standard delete', 'Standard delete & redaction', 'Workspace-level deletion tools', 'Role-gated deletion with audit trace', 'Cryptographic PII erasure & proof')}
                   ${compRow6('Dedicated Cloud Instance', false, false, false, false, false, true)}
                   ${compRow6('Hardened Infrastructure Tier', false, false, false, false, false, true)}
                   ${compRow6('SLA & Support', 'Community', 'Standard email', '48h email SLA', '24h priority SLA', '99.9% uptime SLA', 'Signed BAA, DPA & custom SLA')}
@@ -441,11 +441,11 @@ export function renderPricingPage(): string {
                 <h2 class="section-title" style="text-align:left; margin-bottom:12px;">Need Dedicated Enclaves or Custom Contracts?</h2>
                 <p class="section-desc" style="text-align:left; max-width:560px;">For hospitals, clinical labs, and sovereign enterprises requiring single-tenant hardened infrastructure, dedicated clusters, and signed regulatory compliance agreements.</p>
                 <div class="enterprise-contact-bullets">
-                  <div class="enterprise-bullet">✓ Dedicated single-tenant cloud instance</div>
-                  <div class="enterprise-bullet">✓ Custom 99.99% SLAs and uptime commitments</div>
-                  <div class="enterprise-bullet">✓ Signed BAA, NDPR, and GDPR compliance agreements</div>
-                  <div class="enterprise-bullet">✓ Hardware-isolated key destruction pipelines</div>
-                  <div class="enterprise-bullet">✓ Direct Enterprise Desk: <a href="mailto:hello@zexcore.com.ng" style="color:var(--primary);font-weight:700;text-decoration:underline;">hello@zexcore.com.ng</a></div>
+                  <div class="enterprise-bullet" style="display:flex;align-items:center;gap:8px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" style="flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg><span>Dedicated single-tenant cloud instance</span></div>
+                  <div class="enterprise-bullet" style="display:flex;align-items:center;gap:8px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" style="flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg><span>Custom 99.99% SLAs and uptime commitments</span></div>
+                  <div class="enterprise-bullet" style="display:flex;align-items:center;gap:8px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" style="flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg><span>Signed BAA, NDPR, and GDPR compliance agreements</span></div>
+                  <div class="enterprise-bullet" style="display:flex;align-items:center;gap:8px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" style="flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg><span>Hardware-isolated key destruction pipelines</span></div>
+                  <div class="enterprise-bullet" style="display:flex;align-items:center;gap:8px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" style="flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg><span>Direct Enterprise Desk: <a href="mailto:hello@zexcore.com.ng" style="color:var(--primary);font-weight:700;text-decoration:underline;">hello@zexcore.com.ng</a></span></div>
                 </div>
               </div>
               <div class="enterprise-contact-form-card">

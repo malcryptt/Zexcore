@@ -64,7 +64,8 @@ export function renderAboutPage(): string {
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
               <div style="background: #fef2f2; border: 1.5px solid #fecaca; border-radius: 10px; padding: 18px 20px;">
                 <div style="font-weight: 750; color: #991b1b; font-size: 0.92rem; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
-                  <span style="font-size: 1.1rem;">⏳</span> The 18-Month Nightmare
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#991b1b" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span>The 18-Month Barrier</span>
                 </div>
                 <div style="font-size: 0.86rem; color: #7f1d1d; line-height: 1.55;">
                   Spending $100k+ building user logins, database security, hardware pipelines, WhatsApp bots, and audit logs before shipping your product to market.
@@ -72,7 +73,8 @@ export function renderAboutPage(): string {
               </div>
               <div style="background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 10px; padding: 18px 20px;">
                 <div style="font-weight: 750; color: #166534; font-size: 0.92rem; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
-                  <span style="font-size: 1.1rem;">⚡</span> The ZexCore Solution
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  <span>The ZexCore Foundation</span>
                 </div>
                 <div style="font-size: 0.86rem; color: #14532d; line-height: 1.55;">
                   Launch private client workspaces, live sensor tracking, automated workflows, and verified customer communications in minutes — enterprise-ready from day one.

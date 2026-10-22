@@ -867,7 +867,7 @@ function renderConsoleOverviewView(currentPlan: PlanTier): string {
             <div class="card-title" style="display: flex; align-items: center; gap: 8px;">
               <span>Tamper-Proof Records &amp; Export Ledger</span>
               <span class="status-pill" style="font-size: 0.68rem; padding: 2px 8px; background: rgba(22, 163, 74, 0.1); color: #16a34a; border: 1px solid rgba(22, 163, 74, 0.2);">
-                ${verifyImmutableChain().valid ? '✓ Hash-Chain Verified' : '⚠ Integrity Mismatch'}
+                ${verifyImmutableChain().valid ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block;vertical-align:middle;margin-right:3px;"><polyline points="20 6 9 17 4 12"/></svg>Hash-Chain Verified' : '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block;vertical-align:middle;margin-right:3px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Integrity Mismatch'}
               </span>
             </div>
             <div class="card-subtitle">
@@ -911,7 +911,7 @@ function renderConsoleOverviewView(currentPlan: PlanTier): string {
                       ${formatTimestamp(entry.recordedAt)}
                     </td>
                     <td style="text-align: right; font-family: var(--font-mono); font-size: 0.7rem; color: #16a34a;">
-                      ${entry.hash} ✓
+                      ${entry.hash} <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="display:inline-block;vertical-align:-1px;margin-left:2px;"><polyline points="20 6 9 17 4 12"/></svg>
                     </td>
                   </tr>
                 `).join('')}
@@ -1160,7 +1160,7 @@ function renderConsoleRulesView(currentPlan: PlanTier): string {
             <span style="font-size: 0.78rem; font-weight: 650; color: var(--text-main);">
               Staged Rule Definition (Pending Approval):
             </span>
-            <span style="font-size: 0.72rem; color: #15803d; font-weight: 600;">✓ Schema Validated</span>
+            <span style="font-size: 0.72rem; color: #15803d; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Schema Validated</span>
           </div>
           <pre class="code-block" id="ai-rule-json" style="background: #0f172a; color: #e2e8f0; padding: 12px; border-radius: 6px; font-size: 0.75rem; max-height: 220px; overflow-y: auto;"></pre>
           <div style="margin-top: 12px; display: flex; gap: 8px;">
@@ -1462,9 +1462,12 @@ function renderConsoleWhiteLabelView(currentPlan: PlanTier): string {
                       <img src="${branding.logoUrl}" id="agency-logo-preview-img" alt="Logo preview" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
                     </div>
                     <div style="text-align: center;">
-                      <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-main);">📁 Upload Logo File</div>
+                      <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                        <span>Upload Logo File</span>
+                      </div>
                       <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 2px;">PNG, JPG, SVG • Max 2MB • Click or drag &amp; drop</div>
-                      <div id="logo-upload-filename" style="font-size: 0.68rem; color: #0d9488; font-weight: 700; margin-top: 2px;">${branding.logoIsUpload ? '✓ File uploaded' : ''}</div>
+                      <div id="logo-upload-filename" style="font-size: 0.68rem; color: #0d9488; font-weight: 700; margin-top: 2px;">${branding.logoIsUpload ? 'File uploaded' : ''}</div>
                     </div>
                   </div>
                   <input type="file" id="agency-logo-file-input" accept="image/png,image/jpeg,image/svg+xml,image/gif,image/webp" style="position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;" />
@@ -1545,7 +1548,10 @@ function renderConsoleWhiteLabelView(currentPlan: PlanTier): string {
                   <span style="width: 9px; height: 9px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
                 </div>
                 <div style="flex: 1; background: #fff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 2px 10px; font-family: var(--font-mono); font-size: 0.7rem; color: #475569; display: flex; align-items: center; justify-content: space-between;">
-                  <span>🔒 https://<span id="preview-url-domain">${branding.customDomain}</span>/dashboard</span>
+                  <span style="display:flex;align-items:center;gap:6px;">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    https://<span id="preview-url-domain">${branding.customDomain}</span>/dashboard
+                  </span>
                   <span style="color: #16a34a; font-weight: 700; font-size: 0.65rem;">SSL Valid</span>
                 </div>
               </div>
@@ -1646,8 +1652,9 @@ function renderConsoleBillingView(currentPlan: PlanTier): string {
           <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary); margin: 0 0 4px 0;">Billing &amp; Invoices</h2>
           <p style="color: var(--text-secondary); font-size: 0.87rem; margin: 0;">Manage your subscription, payment methods, and download receipts.</p>
         </div>
-        <button class="btn btn-primary" id="btn-billing-upgrade-plan" style="font-size: 0.84rem;">
-          ${isHighTier ? '✦ Manage Plan' : '⬆ Upgrade Plan'}
+        <button class="btn btn-primary" id="btn-billing-upgrade-plan" style="font-size: 0.84rem; display: inline-flex; align-items: center; gap: 6px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+          <span>${isHighTier ? 'Manage Plan' : 'Upgrade Plan'}</span>
         </button>
       </div>
 
@@ -1669,12 +1676,12 @@ function renderConsoleBillingView(currentPlan: PlanTier): string {
           <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); margin-bottom: 8px;">Payment Methods</div>
           <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
             <div style="display: flex; align-items: center; gap: 8px; font-size: 0.84rem;">
-              <span style="font-size: 1rem;">🏦</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M3 21h18M3 10h18M5 10v11M9 10v11M15 10v11M19 10v11M12 2L2 7h20L12 2z"/></svg>
               <span style="font-weight: 600; color: var(--text-primary);">Bank Transfer</span>
               <span style="margin-left: auto; font-size: 0.7rem; background: #e0f2fe; color: #0284c7; padding: 2px 7px; border-radius: 999px; font-weight: 700;">DEFAULT</span>
             </div>
             <div style="display: flex; align-items: center; gap: 8px; font-size: 0.84rem;">
-              <span style="font-size: 1rem;">💳</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
               <span style="color: var(--text-secondary);">Paystack · card ending 4242</span>
             </div>
           </div>
@@ -1711,14 +1718,17 @@ function renderConsoleBillingView(currentPlan: PlanTier): string {
                 <span style="display: inline-block; background: rgba(22,163,74,0.12); color: #16a34a; font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 999px;">${inv.status}</span>
               </td>
               <td style="padding: 13px 20px; text-align: right;">
-                <button class="btn btn-secondary btn-sm" style="font-size: 0.78rem; padding: 4px 12px;" onclick="window.downloadInvoice('${inv.id}')">⬇ PDF</button>
+                <button class="btn btn-secondary btn-sm" style="font-size: 0.78rem; padding: 4px 12px; display: inline-flex; align-items: center; gap: 5px;" onclick="window.downloadInvoice('${inv.id}')">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  PDF
+                </button>
               </td>
             </tr>`).join('')}
           </tbody>
         </table>` : `
         <div style="padding: 40px 20px; text-align: center; color: var(--text-secondary);">
-          <div style="font-size: 2rem; margin-bottom: 8px;">🧾</div>
-          <div style="font-weight: 600; margin-bottom: 4px;">No invoices yet</div>
+          <div style="margin-bottom: 8px; color: #94a3b8;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+          <div style="font-weight: 600; margin-bottom: 4px; color: var(--text-main);">No invoices yet</div>
           <div style="font-size: 0.84rem;">Invoices will appear here once your first billing cycle completes.</div>
         </div>`}
       </div>
@@ -2256,19 +2266,19 @@ function setupEventListeners() {
     });
 
     const staticItems = [
-      { id: 'nav-overview', label: 'Operations Overview & Telemetry', group: 'Navigation', icon: '📊', action: () => { window.location.hash = '#/console/overview'; } },
-      { id: 'nav-iot', label: 'Connected Devices & Fleet Hub', group: 'Navigation', icon: '⚡', action: () => { window.location.hash = '#/console/iot'; } },
-      { id: 'nav-crm', label: 'WhatsApp CRM & Customer Inbox', group: 'Navigation', icon: '💬', action: () => { window.location.hash = '#/console/crm'; } },
-      { id: 'nav-rules', label: 'Automation & Event Rules', group: 'Navigation', icon: '⚙', action: () => { window.location.hash = '#/console/rules'; } },
-      { id: 'nav-compliance', label: 'Data Privacy & Compliance Vault', group: 'Navigation', icon: '🔒', action: () => { window.location.hash = '#/console/compliance'; } },
-      { id: 'nav-audit', label: 'Security & Financial Audit Ledger', group: 'Navigation', icon: '📜', action: () => { window.location.hash = '#/console/audit'; } },
-      { id: 'nav-whitelabel', label: 'Agency White-Label Branding', group: 'Navigation', icon: '🎨', action: () => { window.location.hash = '#/console/whitelabel'; } },
-      { id: 'nav-billing', label: 'Subscription & Tier Licensing', group: 'Navigation', icon: '💳', action: () => { window.location.hash = '#/console/billing'; } },
-      { id: 'act-reg-dev', label: 'Register New Edge Device Node', group: 'Quick Actions', icon: '+', action: () => { closePalette(); document.getElementById('btn-open-register-device')?.click(); } },
-      { id: 'act-rotate-keys', label: 'Rotate All Device Hardware Keys', group: 'Quick Actions', icon: '↻', action: () => { closePalette(); (window as any).rotateAllDeviceTokens(); } },
-      { id: 'act-add-opp', label: 'Create New CRM Opportunity', group: 'Quick Actions', icon: '+', action: () => { closePalette(); document.getElementById('btn-add-lead')?.click(); } },
-      { id: 'act-run-audit', label: 'Run Security & Ledger Verification', group: 'Quick Actions', icon: '✓', action: () => { closePalette(); window.location.hash = '#/console/audit'; document.getElementById('btn-run-audit-now')?.click(); } },
-      { id: 'act-switch-ws', label: 'Switch Active Tenant Workspace', group: 'Quick Actions', icon: '🏢', action: () => { closePalette(); (window as any).tenantSwitcherModal(); } },
+      { id: 'nav-overview', label: 'Operations Overview & Telemetry', group: 'Navigation', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>', action: () => { window.location.hash = '#/console/overview'; } },
+      { id: 'nav-iot', label: 'Connected Devices & Fleet Hub', group: 'Navigation', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>', action: () => { window.location.hash = '#/console/iot'; } },
+      { id: 'nav-crm', label: 'WhatsApp CRM & Customer Inbox', group: 'Navigation', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>', action: () => { window.location.hash = '#/console/crm'; } },
+      { id: 'nav-rules', label: 'Automation & Event Rules', group: 'Navigation', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>', action: () => { window.location.hash = '#/console/rules'; } },
+      { id: 'nav-compliance', label: 'Data Privacy & Compliance Vault', group: 'Navigation', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>', action: () => { window.location.hash = '#/console/compliance'; } },
+      { id: 'nav-audit', label: 'Security & Financial Audit Ledger', group: 'Navigation', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>', action: () => { window.location.hash = '#/console/audit'; } },
+      { id: 'nav-whitelabel', label: 'Agency White-Label Branding', group: 'Navigation', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/></svg>', action: () => { window.location.hash = '#/console/whitelabel'; } },
+      { id: 'nav-billing', label: 'Subscription & Tier Licensing', group: 'Navigation', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>', action: () => { window.location.hash = '#/console/billing'; } },
+      { id: 'act-reg-dev', label: 'Register New Edge Device Node', group: 'Quick Actions', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>', action: () => { closePalette(); document.getElementById('btn-open-register-device')?.click(); } },
+      { id: 'act-rotate-keys', label: 'Rotate All Device Hardware Keys', group: 'Quick Actions', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>', action: () => { closePalette(); (window as any).rotateAllDeviceTokens(); } },
+      { id: 'act-add-opp', label: 'Create New CRM Opportunity', group: 'Quick Actions', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>', action: () => { closePalette(); document.getElementById('btn-add-lead')?.click(); } },
+      { id: 'act-run-audit', label: 'Run Security & Ledger Verification', group: 'Quick Actions', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>', action: () => { closePalette(); window.location.hash = '#/console/audit'; document.getElementById('btn-run-audit-now')?.click(); } },
+      { id: 'act-switch-ws', label: 'Switch Active Tenant Workspace', group: 'Quick Actions', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="9" y1="22" x2="9" y2="2"/></svg>', action: () => { closePalette(); (window as any).tenantSwitcherModal(); } },
     ];
 
     let selectedIndex = 0;
@@ -2292,7 +2302,7 @@ function setupEventListeners() {
             id: `dev-${dev.id}`,
             label: `${dev.name} (${dev.kind})`,
             group: 'Fleet Devices',
-            icon: dev.status === 'online' ? '🟢' : '⚪',
+            icon: dev.status === 'online' ? '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#16a34a;"></span>' : '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#94a3b8;"></span>',
             hint: `${dev.temperature}°C • ${dev.voltage}V`,
             action: () => {
               window.location.hash = '#/console/iot';
@@ -2315,7 +2325,7 @@ function setupEventListeners() {
             id: `th-${th.id}`,
             label: `${th.contactName} (${th.phone})`,
             group: 'Customer Inbox',
-            icon: '💬',
+            icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
             hint: `$${th.leadValue.toLocaleString()} • ${th.stage}`,
             action: () => {
               state.selectedThreadId = th.id;
@@ -2552,7 +2562,7 @@ function setupEventListeners() {
         const urlInput = document.getElementById('agency-logo-input') as HTMLInputElement | null;
         if (previewLogo) previewLogo.src = dataUri;
         if (thumb) thumb.src = dataUri;
-        if (filename) filename.textContent = `✓ ${file.name}`;
+        if (filename) filename.textContent = file.name;
         if (urlInput) urlInput.value = '';
         try { localStorage.setItem('zx_agency_logo', dataUri); } catch { /* quota */ }
         showToast('Logo uploaded and applied!', 'success');
@@ -2716,7 +2726,7 @@ function setupEventListeners() {
     const submitBtn = document.getElementById('btn-submit-enquiry') as HTMLButtonElement | null;
     if (submitBtn) {
       submitBtn.disabled = true;
-      submitBtn.textContent = '✓ Enquiry Dispatched to CRM Pipeline';
+      submitBtn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Enquiry Dispatched to CRM Pipeline</span>';
     }
     renderKanban();
   });
@@ -3771,21 +3781,21 @@ function renderWhatsAppInboxView(container: HTMLElement) {
               <div class="whatsapp-msg ${m.sender}">
                 <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.65rem; color: var(--text-muted); margin-bottom: 3px;">
                   <span style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">${m.channel || activeThread.channel || 'whatsapp'}</span>
-                  ${m.providerConfirmed ? `<span style="color: #16a34a; font-weight: 700;">✓ Provider Confirmed</span>` : ''}
+                  ${m.providerConfirmed ? `<span style="color: #16a34a; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>Provider Confirmed</span>` : ''}
                 </div>
                 <div style="margin-bottom: 3px;">${m.text}</div>
                 <div class="whatsapp-msg-time">
                   <span style="font-size:0.65rem;color:var(--text-muted);">${m.time}</span>
                   ${m.sender === 'agent' || m.sender === 'bot'
                     ? m.status === 'read' && m.providerConfirmed
-                      ? `<span title="Seen" style="color:#0284c7;font-weight:800;font-size:0.85rem;">✓✓</span>`
+                      ? `<span title="Seen" style="color:#0284c7;display:inline-flex;align-items:center;"><svg width="14" height="10" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 7l3.5 3.5L12 2"/><path d="M5 7l3.5 3.5L15 2"/></svg></span>`
                       : m.status === 'delivered' && m.providerConfirmed
-                        ? `<span title="Delivered" style="color:#94a3b8;font-weight:800;font-size:0.85rem;">✓✓</span>`
+                        ? `<span title="Delivered" style="color:#94a3b8;display:inline-flex;align-items:center;"><svg width="14" height="10" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 7l3.5 3.5L12 2"/><path d="M5 7l3.5 3.5L15 2"/></svg></span>`
                         : m.status === 'sent'
-                          ? `<span title="Sent" style="color:#cbd5e1;font-weight:800;font-size:0.85rem;">✓</span>`
+                          ? `<span title="Sent" style="color:#cbd5e1;display:inline-flex;align-items:center;"><svg width="11" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 7l3.5 3.5L11 2"/></svg></span>`
                           : m.status === 'failed'
-                            ? `<span title="Failed to deliver" style="color:#dc2626;font-size:0.7rem;">⚠ Failed</span>`
-                            : `<span title="Sending..." style="color:#e2e8f0;font-size:0.75rem;">◷</span>`
+                            ? `<span title="Failed to deliver" style="color:#dc2626;font-size:0.7rem;display:inline-flex;align-items:center;gap:3px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Failed</span>`
+                            : `<span title="Sending..." style="color:#94a3b8;font-size:0.75rem;">...</span>`
                     : '' /* client messages never show outbound ticks */
                   }
                   ${m.sender === 'bot' ? `<span style="background:#e2e8f0;color:#475569;font-size:0.6rem;padding:1px 4px;border-radius:3px;">BOT AUTO</span>` : ''}
@@ -3899,10 +3909,10 @@ function renderBookingsView(container: HTMLElement) {
             <tbody>
               ${state.bookings.map((b) => {
                 const statusBadge = b.whatsappReminderStatus === 'delivered'
-                  ? `<span class="badge" style="background: #dcfce7; color: #15803d; border: 1px solid #86efac; font-size: 0.72rem; font-weight: 700;">✓ Delivered (24h)</span>`
+                  ? `<span class="badge" style="background: #dcfce7; color: #15803d; border: 1px solid #86efac; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Delivered (24h)</span>`
                   : b.whatsappReminderStatus === 'sent_1h'
-                  ? `<span class="badge" style="background: #dbeafe; color: #1d4ed8; border: 1px solid #93c5fd; font-size: 0.72rem; font-weight: 700;">✓ 1-Hour Alert Sent</span>`
-                  : `<span class="badge" style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a; font-size: 0.72rem; font-weight: 700;">⏳ Scheduled</span>`;
+                  ? `<span class="badge" style="background: #dbeafe; color: #1d4ed8; border: 1px solid #93c5fd; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>1-Hour Alert Sent</span>`
+                  : `<span class="badge" style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Scheduled</span>`;
 
                 return `
                   <tr style="border-bottom: 1px solid #f1f5f9; font-size: 0.85rem;">

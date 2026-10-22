@@ -329,27 +329,27 @@ export function renderOnboardingBanner(state: OnboardingState): string {
       <!-- Checklist Strip -->
       <div class="onboarding-checklist-strip" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; padding-top: 14px; border-top: 1px solid #f1f5f9;">
         <div class="checklist-item ${state.checklist.selectedField ? 'done' : ''}" style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: ${state.checklist.selectedField ? '#166534' : '#64748b'};">
-          <span>${state.checklist.selectedField ? '✓' : '○'}</span>
+          ${state.checklist.selectedField ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="16 9 10 15 7 12"/></svg>' : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>'}
           <span><b>1.</b> Picked ${activePreset?.name.split('&')[0]}</span>
         </div>
 
         <div class="checklist-item ${state.checklist.namedCompany ? 'done' : ''}" id="check-action-name" style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: ${state.checklist.namedCompany ? '#166534' : '#1e293b'}; cursor: pointer;">
-          <span>${state.checklist.namedCompany ? '✓' : '○'}</span>
+          ${state.checklist.namedCompany ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="16 9 10 15 7 12"/></svg>' : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>'}
           <span style="text-decoration: underline;"><b>2.</b> Set Company Name</span>
         </div>
 
         <div class="checklist-item ${state.checklist.editedListing ? 'done' : ''}" id="check-action-listing" style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: ${state.checklist.editedListing ? '#166534' : '#1e293b'}; cursor: pointer;">
-          <span>${state.checklist.editedListing ? '✓' : '○'}</span>
+          ${state.checklist.editedListing ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="16 9 10 15 7 12"/></svg>' : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>'}
           <span style="text-decoration: underline;"><b>3.</b> Edit First Listing</span>
         </div>
 
         <div class="checklist-item ${state.checklist.testedEnquiry ? 'done' : ''}" id="check-action-enquiry" style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: ${state.checklist.testedEnquiry ? '#166534' : '#1e293b'}; cursor: pointer;">
-          <span>${state.checklist.testedEnquiry ? '✓' : '○'}</span>
+          ${state.checklist.testedEnquiry ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="16 9 10 15 7 12"/></svg>' : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>'}
           <span style="text-decoration: underline;"><b>4.</b> Test Enquiry Form</span>
         </div>
 
         <div class="checklist-item ${state.checklist.sharedLink ? 'done' : ''}" id="check-action-share" style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: ${state.checklist.sharedLink ? '#166534' : '#1e293b'}; cursor: pointer;">
-          <span>${state.checklist.sharedLink ? '✓' : '○'}</span>
+          ${state.checklist.sharedLink ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="16 9 10 15 7 12"/></svg>' : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>'}
           <span style="text-decoration: underline;"><b>5.</b> Copy &amp; Share Link</span>
         </div>
       </div>

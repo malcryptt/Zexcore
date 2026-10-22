@@ -929,7 +929,7 @@ export function openSelfServeUpgradeModal(
                   <span style="font-size: 0.75rem; color: var(--text-secondary);">${activeCycle === 'annual' ? '/ year' : '/ month'}</span>
                 </div>
                 <ul style="list-style: none; padding: 0; margin: 0 0 16px; font-size: 0.76rem; color: var(--text-secondary); line-height: 1.8;">
-                  ${c.features.map(f => `<li style="display: flex; align-items: center; gap: 6px;"><span style="color: ${c.color}; font-weight: 800;">✓</span> ${f}</li>`).join('')}
+                  ${c.features.map(f => `<li style="display: flex; align-items: center; gap: 6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${c.color}" stroke-width="2.5" style="flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg> <span>${f}</span></li>`).join('')}
                 </ul>
               </div>
               <button
