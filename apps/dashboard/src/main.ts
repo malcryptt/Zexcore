@@ -973,8 +973,8 @@ function renderConsoleIotView(currentPlan: PlanTier): string {
     <div class="console-page-wrapper" id="page-console-iot">
       <div class="console-page-toolbar">
         <div>
-          <h2 class="page-title" style="margin: 0; font-size: 1.35rem; font-weight: 850;">IoT Device Fleet &amp; Telemetry Hub</h2>
-          <div class="page-desc" style="margin-top: 2px;">Sub-second sensor streams, hardware token rotation, remote diagnostic shell, and edge health thresholds</div>
+          <h2 class="page-title" style="margin: 0; font-size: 1.35rem; font-weight: 850;">Connected Devices &amp; Fleet Hub</h2>
+          <div class="page-desc" style="margin-top: 2px;">Monitor edge hardware nodes, live sensor telemetry, firmware revisions, and authenticated dispatch.</div>
         </div>
         <div class="console-toolbar-actions">
           <button class="btn btn-secondary btn-sm" onclick="window.rotateAllDeviceTokens()">Rotate All Device Keys</button>
@@ -982,75 +982,107 @@ function renderConsoleIotView(currentPlan: PlanTier): string {
         </div>
       </div>
 
-      <!-- Telemetry Stream Oscilloscope / Sparklines -->
+      <!-- Live Telemetry Ingestion Metrics -->
       <div class="telemetry-oscilloscope-wrap">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-          <span style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: #10b981;">
-            LIVE FLEET TELEMETRY WAVEFORM (0.5s JITTER MONITOR)
-          </span>
-          <span style="font-family: var(--font-mono); font-size: 0.72rem; color: #64748b;">Protocol: MQTT over TLS 1.3 / WSS</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border-default);">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);"></span>
+            <span style="font-size: 0.82rem; font-weight: 650; color: var(--text-main);">Live Sensor Aggregates</span>
+            <span style="font-size: 0.72rem; color: var(--text-secondary); background: #f1f5f9; padding: 2px 8px; border-radius: 4px; font-family: var(--font-mono);">MQTT / TLS 1.3</span>
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-secondary); display: flex; align-items: center; gap: 14px;">
+            <span>Sample Rate: <strong style="color: var(--text-main);">1.0s</strong></span>
+            <span>Attestation: <strong style="color: #15803d;">Active</strong></span>
+          </div>
         </div>
         <div class="oscilloscope-grid" id="iot-oscilloscope-grid">
           <div class="oscilloscope-metric-card">
-            <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Avg Fleet Temp</div>
-            <div class="oscilloscope-metric-val" id="fleet-avg-temp" style="color: #38bdf8;">${fleet.avgTemp} &deg;C</div>
-            <div id="fleet-temp-status" style="font-size: 0.7rem; color: #10b981;">${fleet.tempStatus}</div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Fleet Temperature</span>
+              <span style="color: #64748b; font-size: 0.72rem;">Ambient Avg</span>
+            </div>
+            <div class="oscilloscope-metric-val" id="fleet-avg-temp">${fleet.avgTemp} &deg;C</div>
+            <div id="fleet-temp-status" style="font-size: 0.72rem; color: #15803d; font-weight: 500;">${fleet.tempStatus}</div>
           </div>
           <div class="oscilloscope-metric-card">
-            <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Relative Humidity</div>
-            <div class="oscilloscope-metric-val" id="fleet-avg-hum" style="color: #a78bfa;">${fleet.avgHum} %</div>
-            <div id="fleet-hum-status" style="font-size: 0.7rem; color: #10b981;">${fleet.humStatus}</div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Relative Humidity</span>
+              <span style="color: #64748b; font-size: 0.72rem;">Median RH</span>
+            </div>
+            <div class="oscilloscope-metric-val" id="fleet-avg-hum">${fleet.avgHum} %</div>
+            <div id="fleet-hum-status" style="font-size: 0.72rem; color: #15803d; font-weight: 500;">${fleet.humStatus}</div>
           </div>
           <div class="oscilloscope-metric-card">
-            <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">DC Rail Voltage</div>
-            <div class="oscilloscope-metric-val" id="fleet-avg-volt" style="color: #f59e0b;">${fleet.avgVolt} V</div>
-            <div id="fleet-volt-status" style="font-size: 0.7rem; color: #10b981;">${fleet.voltStatus}</div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">DC Rail Voltage</span>
+              <span style="color: #64748b; font-size: 0.72rem;">Nominal 12V</span>
+            </div>
+            <div class="oscilloscope-metric-val" id="fleet-avg-volt">${fleet.avgVolt} V</div>
+            <div id="fleet-volt-status" style="font-size: 0.72rem; color: #15803d; font-weight: 500;">${fleet.voltStatus}</div>
           </div>
         </div>
       </div>
 
-      <!-- Device Fleet Table -->
+      <!-- Device Fleet Table with Search & Filtering -->
       <div class="device-table-card">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Device Name &amp; Key</th>
-              <th>Type</th>
-              <th>Status</th>
-              <th>Temperature</th>
-              <th>Humidity</th>
-              <th>Voltage</th>
-              <th>Firmware</th>
-              <th>Last Seen</th>
-              <th style="text-align: right;">Action</th>
-            </tr>
-          </thead>
-          <tbody id="device-table-body"></tbody>
-        </table>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border-default); background: #ffffff; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 260px;">
+            <div style="position: relative; width: 100%; max-width: 300px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="iot-search-filter" placeholder="Search devices by name or key..." oninput="window.renderDevices()" style="width: 100%; padding: 6px 12px 6px 30px; font-size: 0.8rem; border: 1px solid var(--border-default); border-radius: 6px; background: #f8fafc; color: var(--text-main); outline: none;">
+            </div>
+            <select id="iot-status-filter" onchange="window.renderDevices()" style="padding: 6px 10px; font-size: 0.8rem; border: 1px solid var(--border-default); border-radius: 6px; background: #ffffff; color: var(--text-main);">
+              <option value="all">All Statuses</option>
+              <option value="online">Online only</option>
+              <option value="offline">Offline only</option>
+            </select>
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-secondary);" id="iot-fleet-counts">
+            <strong>${state.devices.filter(d => d.status === 'online').length}</strong> online &bull; <strong>${state.devices.length}</strong> total
+          </div>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Device Name &amp; Key</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Temperature</th>
+                <th>Humidity</th>
+                <th>Voltage</th>
+                <th>Firmware</th>
+                <th>Last Seen</th>
+                <th style="text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="device-table-body"></tbody>
+          </table>
+        </div>
       </div>
 
       <!-- Advanced Feature 1: Remote Diagnostic Command Dispatcher (Requires Growth+) -->
       ${renderTierFeatureLock(
         'growth',
-        'Remote Diagnostic Shell & Cryptographic Command Dispatcher',
-        'Dispatch authenticated remote commands directly to edge microcontrollers (ESP32, STM32, ARM Cortex-M) over MQTT/WSS with tenant HMAC signatures.',
+        'Remote Diagnostic Shell & Signed Command Dispatcher',
+        'Dispatch cryptographic operational instructions directly to edge microcontrollers (ESP32, STM32, ARM Cortex-M) over MQTT/WSS with tenant HMAC signatures.',
         currentPlan,
         `
         <div class="edge-shell-terminal">
           <div class="edge-shell-log" id="edge-shell-output">
-            <div><span class="edge-shell-prompt">[zex-edge-shell]</span> Connected to edge broker: tls://edge.zexcore.io:8883</div>
-            <div><span class="edge-shell-prompt">[zex-edge-shell]</span> Authenticated as tenant: ${state.activeTenant} (HMAC-SHA256 verified)</div>
-            <div><span class="edge-shell-prompt">[zex-edge-shell]</span> Ready for authenticated remote instruction dispatch.</div>
+            <div><span class="edge-shell-prompt">[edge-gateway]</span> Connected to edge broker: tls://edge.zexcore.io:8883</div>
+            <div><span class="edge-shell-prompt">[edge-gateway]</span> Authenticated as tenant: ${state.activeTenant} (HMAC-SHA256 verified)</div>
+            <div><span class="edge-shell-prompt">[edge-gateway]</span> Gateway ready for authenticated operational commands.</div>
           </div>
           <div class="edge-shell-input-row">
-            <select id="shell-device-select" class="tenant-select" style="max-width: 160px; font-size: 0.75rem; background: #1e293b; color: #fff; border-color: #334155;">
+            <select id="shell-device-select" class="tenant-select" style="max-width: 170px; font-size: 0.75rem; background: #1e293b; color: #fff; border-color: #334155;">
               ${state.devices.map(d => `<option value="${d.id}">${d.name}</option>`).join('')}
             </select>
             <select id="shell-cmd-select" class="tenant-select" style="max-width: 220px; font-size: 0.75rem; background: #1e293b; color: #fff; border-color: #334155;">
-              <option value="reboot">EXEC sys.reboot()</option>
-              <option value="calibrate">EXEC sensor.calibrate_baseline()</option>
-              <option value="rollback">EXEC ota.rollback_firmware(v2.2.0)</option>
-              <option value="cutoff">EXEC power.emergency_cutoff()</option>
+              <option value="reboot">sys.reboot()</option>
+              <option value="calibrate">sensor.calibrate_baseline()</option>
+              <option value="rollback">ota.rollback_firmware(v2.2.0)</option>
+              <option value="cutoff">power.emergency_cutoff()</option>
             </select>
             <button class="btn btn-primary btn-sm" onclick="window.dispatchEdgeCommand()" style="padding: 6px 14px; font-size: 0.78rem;">
               Dispatch Signed Command
@@ -1063,14 +1095,17 @@ function renderConsoleIotView(currentPlan: PlanTier): string {
       <!-- Advanced Feature 2: Hardware Root-of-Trust / TPM 2.0 (Requires Enterprise) -->
       ${renderTierFeatureLock(
         'enterprise',
-        'Hardware Root-of-Trust & TPM 2.0 Mutual Attestation',
-        'Enforce mTLS mutual cryptographic handshakes and X.509 TPM endorsement verification before edge devices are permitted to push telemetry into the PostgreSQL tenant pool.',
+        'Hardware Root-of-Trust & Device Attestation (mTLS / X.509)',
+        'Enforce mutual cryptographic handshakes and X.509 TPM endorsement verification before edge hardware can push telemetry into the PostgreSQL tenant pool.',
         currentPlan,
         `
-        <div style="background: #f8fafc; border: 1px solid var(--border-default); border-radius: 6px; padding: 14px; font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.6;">
-          <div style="color: #16a34a; font-weight: 700;">✓ Hardware TPM 2.0 Endorsement Enclave Active</div>
-          <div style="color: #475569;">Root Certificate Authority: ZexCore Global Edge Hardware CA (X.509 v3)</div>
-          <div style="color: #475569;">Attested Nodes: 12 / 12 &bull; Key Storage: Microchip ATECC608A Cryptographic Co-Processor</div>
+        <div style="background: #ffffff; border: 1px solid var(--border-default); border-radius: 8px; padding: 16px; font-family: var(--font-sans); font-size: 0.82rem; line-height: 1.6;">
+          <div style="display: flex; align-items: center; gap: 8px; color: #15803d; font-weight: 700; margin-bottom: 6px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Hardware TPM 2.0 Attestation Enclave Active
+          </div>
+          <div style="color: var(--text-secondary); font-size: 0.78rem;">Root Certificate Authority: ZexCore Global Edge Hardware CA (X.509 v3)</div>
+          <div style="color: var(--text-secondary); font-size: 0.78rem;">Attested Nodes: ${state.devices.length} / ${state.devices.length} &bull; Key Storage: Microchip ATECC608A Cryptographic Co-Processor</div>
         </div>
         `
       )}
@@ -1086,93 +1121,100 @@ function renderConsoleRulesView(currentPlan: PlanTier): string {
     <div class="console-page-wrapper" id="page-console-rules">
       <div class="console-page-toolbar">
         <div>
-          <h2 class="page-title" style="margin: 0; font-size: 1.35rem; font-weight: 850;">Deterministic Automation Rules &amp; AI Authoring</h2>
-          <div class="page-desc" style="margin-top: 2px;">AI synthesizes JSON AST proposals; deterministic engine runs approved rules with zero eval()</div>
+          <h2 class="page-title" style="margin: 0; font-size: 1.35rem; font-weight: 850;">Automation &amp; Event Rules</h2>
+          <div class="page-desc" style="margin-top: 2px;">Configure trigger conditions, automated operational actions, and notification workflows.</div>
         </div>
       </div>
 
-      <!-- AI Authoring Panel -->
-      <div class="prompt-panel">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-          <span style="font-weight: 700; font-size: 0.92rem; color: var(--text-main);">
-            AI Rule Synthesis Console (Google Gemini Validation Loop)
-          </span>
-          <span style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--text-secondary); background: var(--bg-muted); padding: 2px 8px; border-radius: var(--radius-xs);">
-            POST /api/rules/ai-draft
+      <!-- Natural Language Rule Generator -->
+      <div class="prompt-panel" style="background: #ffffff; border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 18px 20px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary);"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+            <span style="font-weight: 700; font-size: 0.92rem; color: var(--text-main);">
+              Natural Language Rule Generator
+            </span>
+          </div>
+          <span style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--text-secondary); background: #f1f5f9; padding: 2px 8px; border-radius: 4px;">
+            Deterministic Engine
           </span>
         </div>
-        <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 12px;">
-          Describe an automation intent in plain English. The AI generates a validated RuleDraft JSON conforming to strict Zod schema with approved=false.
+        <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.5;">
+          Describe your automation requirement in plain English. The rule engine validates schema and stages a draft rule for review before activation.
         </p>
-        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-          <input type="text" class="input" id="ai-rule-prompt" value="Notify operations if temperature exceeds 75°C for 3 consecutive readings" />
-          <button class="btn btn-primary" id="btn-generate-ai-rule">Synthesize Rule</button>
+        <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+          <input type="text" class="input" id="ai-rule-prompt" style="flex: 1; min-width: 280px; font-size: 0.84rem; background: #f8fafc;" value="Notify operations if temperature exceeds 75°C for 3 consecutive readings" />
+          <button class="btn btn-primary" id="btn-generate-ai-rule" style="white-space: nowrap;">Generate Rule Draft</button>
         </div>
-        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-          <button class="btn btn-secondary btn-sm" onclick="setAiPrompt('Alert sales VP when a CRM deal over $100k is closed won')">Deal Won Alert</button>
-          <button class="btn btn-secondary btn-sm" onclick="setAiPrompt('When IoT battery level falls below 15% queue recharge command')">Battery Low Command</button>
-          <button class="btn btn-secondary btn-sm" onclick="setAiPrompt('If customer revokes GDPR consent anonymize personal data immediately')">Consent Erasure</button>
-          <button class="btn btn-secondary btn-sm" onclick="setAiPrompt('If pressure exceeds 180 PSI trigger emergency cutoff valve')">Pressure Threshold</button>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+          <span style="font-size: 0.72rem; color: var(--text-secondary); margin-right: 4px;">Presets:</span>
+          <button class="btn btn-secondary btn-sm" onclick="setAiPrompt('Alert sales VP when a CRM deal over $100k is closed won')" style="font-size: 0.74rem; padding: 3px 8px;">Deal Won Alert</button>
+          <button class="btn btn-secondary btn-sm" onclick="setAiPrompt('When IoT battery level falls below 15% queue recharge command')" style="font-size: 0.74rem; padding: 3px 8px;">Battery Low Command</button>
+          <button class="btn btn-secondary btn-sm" onclick="setAiPrompt('If customer revokes consent anonymize personal data immediately')" style="font-size: 0.74rem; padding: 3px 8px;">Consent Erasure</button>
+          <button class="btn btn-secondary btn-sm" onclick="setAiPrompt('If pressure exceeds 180 PSI trigger emergency cutoff valve')" style="font-size: 0.74rem; padding: 3px 8px;">Pressure Cutoff</button>
         </div>
 
         <!-- Output AST Preview -->
         <div id="ai-rule-preview" style="display: none; margin-top: 16px; border-top: 1px solid var(--border-default); padding-top: 14px;">
-          <div style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">
-            Validated Rule Draft AST (Awaiting Human Approval Gate):
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 0.78rem; font-weight: 650; color: var(--text-main);">
+              Staged Rule Definition (Pending Approval):
+            </span>
+            <span style="font-size: 0.72rem; color: #15803d; font-weight: 600;">✓ Schema Validated</span>
           </div>
-          <pre class="code-block" id="ai-rule-json"></pre>
+          <pre class="code-block" id="ai-rule-json" style="background: #0f172a; color: #e2e8f0; padding: 12px; border-radius: 6px; font-size: 0.75rem; max-height: 220px; overflow-y: auto;"></pre>
           <div style="margin-top: 12px; display: flex; gap: 8px;">
-            <button class="btn btn-primary btn-sm" id="btn-approve-ai-draft">Approve &amp; Deploy Rule (Human Gate)</button>
+            <button class="btn btn-primary btn-sm" id="btn-approve-ai-draft">Approve &amp; Activate Rule</button>
             <button class="btn btn-secondary btn-sm" id="btn-discard-ai-draft">Discard Draft</button>
           </div>
         </div>
       </div>
 
       <!-- Existing Rules Table -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Active &amp; Draft Automation Rules</div>
-          <div class="card-subtitle">Zero-eval() execution engine evaluated inside isolated PostgreSQL transaction blocks</div>
+      <div class="card" style="background: #ffffff; border: 1px solid var(--border-default); border-radius: var(--radius-md); overflow: hidden; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);">
+        <div class="card-header" style="padding: 14px 20px; border-bottom: 1px solid var(--border-default); background: #ffffff;">
+          <div class="card-title" style="font-size: 0.95rem; font-weight: 700; color: var(--text-main);">Active Automation Rules</div>
+          <div class="card-subtitle" style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">Evaluated in real-time against incoming device telemetry and tenant event buses.</div>
         </div>
-        <div id="rules-list-container" style="display: flex; flex-direction: column; gap: 10px;"></div>
+        <div id="rules-list-container" style="display: flex; flex-direction: column; gap: 8px; padding: 16px 20px;"></div>
       </div>
 
       <!-- Advanced Feature 1: AI Rule Conflict & Loop Detection Engine (Requires Growth+) -->
       ${renderTierFeatureLock(
         'growth',
-        'AI Rule Conflict & Recursive Loop Detector',
-        'Analyzes rules across the tenant mesh to identify circular trigger cascades, contradicting actions, or rate-limit saturation before rules enter production.',
+        'Automation Conflict & Loop Analysis',
+        'Analyzes rule graph across the tenant mesh to identify circular trigger cascades, contradicting actions, or rate-limit saturation before rules enter production.',
         currentPlan,
         `
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; background: #f8fafc; padding: 14px; border-radius: 6px; border: 1px solid var(--border-default);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; background: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid var(--border-default);">
           <div>
-            <div style="font-weight: 700; color: #1e293b; font-size: 0.88rem;">Mesh Static Analysis: 0 Cycles Detected</div>
-            <div style="font-size: 0.75rem; color: #64748b; margin-top: 2px;">Evaluated across 4 active rules &amp; 3 event triggers.</div>
+            <div style="font-weight: 650; color: var(--text-main); font-size: 0.88rem;">Rule Mesh Static Analysis: 0 Conflicts Detected</div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Evaluated across ${state.rules.length} active rules and event trigger subscriptions.</div>
           </div>
           <button class="btn btn-secondary btn-sm" onclick="window.runConflictAnalysis()">
-            Run Mesh Conflict Analysis
+            Run Conflict Analysis
           </button>
         </div>
         `
       )}
 
-      <!-- Advanced Feature 2: Dual-Operator Cryptographic Sign-Off Gate (Requires Enterprise+) -->
+      <!-- Advanced Feature 2: Dual-Operator Sign-Off Gate (Requires Enterprise+) -->
       ${renderTierFeatureLock(
         'enterprise',
-        'Dual-Operator Cryptographic Sign-Off Gate (Multi-Sig)',
-        'Requires two independent operators (SecOps Officer + Lead Automation Engineer) to digitally sign AI-generated rule deployments using tenant HMAC keys.',
+        'Dual-Operator Sign-Off Gate (Multi-Signature)',
+        'Requires two independent operators to digitally sign and approve rule modifications before promotion to production execution.',
         currentPlan,
         `
         <div class="multi-sign-pipeline">
-          <div class="multi-sign-step signed">
-            <div style="font-size: 0.72rem; color: #15803d; font-weight: 800;">STEP 1: SECOPS SIGNED</div>
-            <div style="font-weight: 700; font-size: 0.85rem; margin: 4px 0;">secops@enterprise-corp.io</div>
-            <div style="font-family: var(--font-mono); font-size: 0.7rem; color: #64748b;">sig:hmac_sha256:7f4c9a2...</div>
+          <div class="multi-sign-step signed" style="background: #ffffff; border: 1px solid var(--border-default); border-radius: 8px; padding: 14px;">
+            <div style="font-size: 0.72rem; color: #15803d; font-weight: 700;">STEP 1: SECOPS SIGNED</div>
+            <div style="font-weight: 600; font-size: 0.85rem; margin: 4px 0; color: var(--text-main);">secops@enterprise-corp.io</div>
+            <div style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-secondary);">sig:sha256:7f4c9a2d...</div>
           </div>
-          <div class="multi-sign-step" id="multisig-step-2">
-            <div style="font-size: 0.72rem; color: #0284c7; font-weight: 800;">STEP 2: OPS LEAD SIGN-OFF</div>
-            <div style="font-weight: 700; font-size: 0.85rem; margin: 4px 0;">lead-engineer@enterprise-corp.io</div>
-            <button class="btn btn-primary btn-xs" onclick="window.signRuleOpsLead()" style="margin-top: 4px;">Digitally Sign &amp; Deploy Rule</button>
+          <div class="multi-sign-step" id="multisig-step-2" style="background: #ffffff; border: 1px solid var(--border-default); border-radius: 8px; padding: 14px;">
+            <div style="font-size: 0.72rem; color: var(--primary); font-weight: 700;">STEP 2: OPS LEAD SIGN-OFF</div>
+            <div style="font-weight: 600; font-size: 0.85rem; margin: 4px 0; color: var(--text-main);">lead-engineer@enterprise-corp.io</div>
+            <button class="btn btn-primary btn-xs" onclick="window.signRuleOpsLead()" style="margin-top: 6px;">Sign &amp; Deploy Rule</button>
           </div>
         </div>
         `
@@ -1204,8 +1246,8 @@ function renderConsoleCrmView(currentPlan: PlanTier): string {
     <div class="console-page-wrapper" id="page-console-crm">
       <div class="console-page-toolbar">
         <div>
-          <h2 class="page-title" style="margin: 0; font-size: 1.35rem; font-weight: 850;">Multi-Channel CRM, Inbox &amp; Bookings</h2>
-          <div class="page-desc" style="margin-top: 2px;">WhatsApp-first inbox, automated appointment reminders, Paystack deposits, and pipeline Kanban</div>
+          <h2 class="page-title" style="margin: 0; font-size: 1.35rem; font-weight: 850;">Customer Communications &amp; Pipeline</h2>
+          <div class="page-desc" style="margin-top: 2px;">Unified customer inbox, WhatsApp messaging, deal stages, and scheduled consultations.</div>
         </div>
         <div class="console-toolbar-actions">
           <button class="btn btn-primary" id="btn-add-lead">+ Create Opportunity</button>
@@ -1213,7 +1255,7 @@ function renderConsoleCrmView(currentPlan: PlanTier): string {
       </div>
 
       <!-- CRM Sub-navigation Tabs -->
-      <div style="display: flex; gap: 8px; border-bottom: 2px solid var(--border-default); padding-bottom: 10px; flex-wrap: wrap;">
+      <div style="display: flex; gap: 8px; border-bottom: 1px solid var(--border-default); padding-bottom: 12px; margin-bottom: 16px; flex-wrap: wrap;">
         <button class="btn ${state.crmSubView === 'whatsapp' ? 'btn-primary' : 'btn-secondary'} btn-sm" id="btn-crm-nav-whatsapp" style="display: inline-flex; align-items: center; gap: 6px;">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           Inbox &amp; Channels
@@ -1224,42 +1266,45 @@ function renderConsoleCrmView(currentPlan: PlanTier): string {
         </button>
         <button class="btn ${state.crmSubView === 'booking' ? 'btn-primary' : 'btn-secondary'} btn-sm" id="btn-crm-nav-booking" style="display: inline-flex; align-items: center; gap: 6px;">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          Bookings
+          Bookings &amp; Consultations
         </button>
       </div>
 
       <div id="crm-content-view"></div>
 
-      <!-- Advanced Feature 1: Automated WhatsApp Drip Sequences (Requires Agency+) -->
+      <!-- Advanced Feature 1: Automated Follow-up Sequences (Requires Agency+) -->
       ${renderTierFeatureLock(
         'agency',
-        'Automated WhatsApp Drip Sequences & AI Sentiment Scoring',
-        'Trigger personalized multi-stage WhatsApp messaging sequences based on deal stage transitions with real-time sentiment scoring.',
+        'Automated Follow-up Sequences & Smart Routing',
+        'Trigger personalized multi-stage WhatsApp and SMS messaging sequences based on deal stage transitions.',
         currentPlan,
         `
-        <div style="background: #f8fafc; border: 1px solid var(--border-default); border-radius: 6px; padding: 14px; font-size: 0.8rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div style="background: #ffffff; border: 1px solid var(--border-default); border-radius: 8px; padding: 16px; font-size: 0.82rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
           <div>
-            <div style="font-weight: 700; color: #1e293b;">Active Drip Workflows: 3 Running</div>
-            <div style="color: #64748b; font-size: 0.74rem;">Cold Lead Re-engagement &bull; Deposit Reminder &bull; Post-Demo Survey</div>
+            <div style="font-weight: 650; color: var(--text-main);">Active Messaging Sequences: 3 Running</div>
+            <div style="color: var(--text-secondary); font-size: 0.76rem; margin-top: 2px;">Lead Re-engagement &bull; Deposit Confirmation &bull; Post-Consultation Survey</div>
           </div>
           <button class="btn btn-secondary btn-sm" onclick="window.triggerDripSequence()">
-            Simulate Drip Dispatch
+            Simulate Sequence Dispatch
           </button>
         </div>
         `
       )}
 
-      <!-- Advanced Feature 2: Custom Meta WhatsApp Cloud API BYOK & SLA Timers (Requires Enterprise) -->
+      <!-- Advanced Feature 2: Dedicated Meta WhatsApp Cloud API (Requires Enterprise) -->
       ${renderTierFeatureLock(
         'enterprise',
-        'Bring Your Own Meta WhatsApp Cloud API (BYOK) & SLA Timers',
-        'Direct integration with your corporate Meta Business Manager Phone Number ID, custom webhook verification token, and strict 5-minute lead response SLA timers with automated round-robin distribution.',
+        'Dedicated WhatsApp Business API (WABA) & SLA Timers',
+        'Direct integration with your corporate Meta Business Manager Phone Number ID, custom webhooks, and team round-robin routing.',
         currentPlan,
         `
-        <div style="background: #f8fafc; border: 1px solid var(--border-default); border-radius: 6px; padding: 14px; font-family: var(--font-mono); font-size: 0.78rem;">
-          <div style="color: #16a34a; font-weight: 700;">✓ Meta Cloud API WABA ID: 109283746501928</div>
-          <div style="color: #475569;">Verified Sender: +1 (800) 555-0199 &bull; Round-Robin Routing: 4 Reps Active</div>
-          <div style="color: #475569;">SLA Response Timer: 5m Escalation Trigger (Zero Missed Inquiries)</div>
+        <div style="background: #ffffff; border: 1px solid var(--border-default); border-radius: 8px; padding: 16px; font-size: 0.8rem; line-height: 1.6;">
+          <div style="display: flex; align-items: center; gap: 8px; color: #15803d; font-weight: 700; margin-bottom: 4px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Meta Cloud API WABA ID: 109283746501928 (Connected)
+          </div>
+          <div style="color: var(--text-secondary); font-size: 0.78rem;">Verified Sender: +1 (800) 555-0199 &bull; Round-Robin Routing: 4 Reps Active</div>
+          <div style="color: var(--text-secondary); font-size: 0.78rem;">SLA Response Timer: 5-minute escalation policy active</div>
         </div>
         `
       )}
@@ -1275,80 +1320,88 @@ function renderConsoleComplianceView(currentPlan: PlanTier): string {
     <div class="console-page-wrapper" id="page-console-compliance">
       <div class="console-page-toolbar">
         <div>
-          <h2 class="page-title" style="margin: 0; font-size: 1.35rem; font-weight: 850;">Compliance Vault &amp; Cryptographic Privacy Suite</h2>
-          <div class="page-desc" style="margin-top: 2px;">Field-level AEAD envelope encryption, mathematical Right-to-be-Forgotten erasure pipelines, and immutable consent ledgers</div>
+          <h2 class="page-title" style="margin: 0; font-size: 1.35rem; font-weight: 850;">Data Privacy &amp; Compliance</h2>
+          <div class="page-desc" style="margin-top: 2px;">Field-level envelope encryption, right-to-be-forgotten erasure pipelines, and consent records.</div>
         </div>
       </div>
 
       <div class="grid-2">
         <!-- Cryptographic Envelope Simulator -->
-        <div class="card">
-          <div class="card-title">Field-Level AEAD Encryption</div>
-          <div class="card-subtitle" style="margin-bottom: 14px;">
-            Derived tenant key: <code>HMAC-SHA256(masterKey, 'tenant:${state.activeTenant}')</code>
+        <div class="card" style="background: #ffffff; border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 18px 20px; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.04);">
+          <div class="card-title" style="font-size: 0.95rem; font-weight: 700; color: var(--text-main);">Field-Level Envelope Encryption</div>
+          <div class="card-subtitle" style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 14px; margin-top: 2px;">
+            AES-256-GCM envelope with isolated tenant key derivation
           </div>
-          <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);">Sensitive Plaintext PII:</label>
-          <input type="text" class="input" id="pii-input" value="john.enterprise@finance-corp.gov" style="margin: 4px 0 12px 0;" />
+          <label style="font-size: 0.76rem; font-weight: 600; color: var(--text-secondary);">Plaintext Input (Simulation):</label>
+          <input type="text" class="input" id="pii-input" value="john.enterprise@finance-corp.gov" style="margin: 4px 0 12px 0; font-size: 0.82rem; background: #f8fafc;" />
           
-          <div style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">AES-256-GCM Envelope:</div>
-          <div class="crypto-display" id="crypto-envelope-display">enc:v1:7f4c9a2d...</div>
+          <div style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Ciphertext Envelope:</div>
+          <div class="crypto-display" id="crypto-envelope-display" style="background: #0f172a; color: #38bdf8; padding: 8px 12px; border-radius: 6px; font-family: var(--font-mono); font-size: 0.75rem; word-break: break-all; margin: 4px 0 10px 0;">enc:v1:7f4c9a2d...</div>
 
-          <div style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; margin-top: 10px;">Deterministic HMAC Blind Index:</div>
-          <div class="crypto-display" id="crypto-blind-display" style="color: var(--primary);">blind:e8b417c...</div>
+          <div style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Deterministic Blind Search Index:</div>
+          <div class="crypto-display" id="crypto-blind-display" style="background: #0f172a; color: #a78bfa; padding: 8px 12px; border-radius: 6px; font-family: var(--font-mono); font-size: 0.75rem; word-break: break-all; margin-top: 4px;">blind:e8b417c...</div>
         </div>
 
         <!-- Right to be Forgotten / Erasure -->
-        <div class="card">
-          <div class="card-title">Right to be Forgotten (GDPR / NDPR)</div>
-          <div class="card-subtitle" style="margin-bottom: 14px;">
-            Permanent pseudonymization of PII across CRM and Consent records
+        <div class="card" style="background: #ffffff; border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 18px 20px; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.04);">
+          <div class="card-title" style="font-size: 0.95rem; font-weight: 700; color: var(--text-main);">Right to be Forgotten (GDPR / NDPR)</div>
+          <div class="card-subtitle" style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 14px; margin-top: 2px;">
+            Permanent pseudonymization of data across customer records and logs
           </div>
-          <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-            <input type="text" class="input" id="erasure-subject-input" placeholder="Subject Email or UUID" value="david.k@global-cloud.com" />
-            <button class="btn btn-danger" id="btn-execute-erasure">Execute Erasure</button>
+          <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+            <input type="text" class="input" id="erasure-subject-input" placeholder="Subject Email or UUID" value="david.k@global-cloud.com" style="flex: 1; font-size: 0.82rem; background: #f8fafc;" />
+            <button class="btn btn-danger" id="btn-execute-erasure" style="white-space: nowrap; font-size: 0.8rem; padding: 6px 14px;">Execute Erasure</button>
           </div>
-          <div style="background: var(--bg-subtle); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-default); font-size: 0.8rem; line-height: 1.5;">
-            <div>Fulfilled Erasure Requests: <strong style="color: var(--text-main);" id="erasure-counter">${state.erasureRequestsCount}</strong></div>
-            <div>Sanitized Records: <strong style="color: var(--primary);" id="anonymized-counter">${state.anonymizedCount}</strong></div>
-            <div style="color: var(--text-secondary); font-size: 0.74rem; margin-top: 4px;">
-              Replaces PII with <code>[REDACTED]</code>, wipes contact numbers, and revokes active consent grants.
+          <div style="background: #f8fafc; padding: 14px; border-radius: 6px; border: 1px solid var(--border-default); font-size: 0.8rem; line-height: 1.6;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <span style="color: var(--text-secondary);">Fulfilled Requests:</span>
+              <strong style="color: var(--text-main);" id="erasure-counter">${state.erasureRequestsCount}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+              <span style="color: var(--text-secondary);">Sanitized Records:</span>
+              <strong style="color: #15803d;" id="anonymized-counter">${state.anonymizedCount}</strong>
+            </div>
+            <div style="color: var(--text-secondary); font-size: 0.74rem; border-top: 1px solid var(--border-default); padding-top: 6px;">
+              Replaces PII with <code>[REDACTED]</code>, clears phone numbers, and invalidates active consent grants.
             </div>
           </div>
         </div>
       </div>
 
       <!-- Consent Registry -->
-      <div class="card">
-        <div class="card-header">
+      <div class="card" style="background: #ffffff; border: 1px solid var(--border-default); border-radius: var(--radius-md); overflow: hidden; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.04);">
+        <div class="card-header" style="padding: 14px 20px; border-bottom: 1px solid var(--border-default); display: flex; justify-content: space-between; align-items: center; background: #ffffff;">
           <div>
-            <div class="card-title">GDPR / NDPR Consent Ledger</div>
-            <div class="card-subtitle">Verifiable timestamps and lawful basis tracking</div>
+            <div class="card-title" style="font-size: 0.95rem; font-weight: 700; color: var(--text-main);">Consent Ledger &amp; Lawful Basis</div>
+            <div class="card-subtitle" style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">Verifiable timestamps and lawful basis tracking for data processing</div>
           </div>
-          <button class="btn btn-secondary btn-sm" id="btn-grant-consent">+ Grant Subject Consent</button>
+          <button class="btn btn-secondary btn-sm" id="btn-grant-consent">+ Record Consent</button>
         </div>
 
-        <div id="consent-table-container"></div>
+        <div id="consent-table-container" style="padding: 0;"></div>
       </div>
 
       <!-- Advanced Feature: Customer-Managed Keys (BYOK / AWS KMS) (Requires Enterprise) -->
       ${renderTierFeatureLock(
         'enterprise',
         'Customer-Managed Keys (BYOK) via AWS KMS & HashiCorp Vault',
-        'Full cryptographic key sovereignty: use your corporate AWS KMS Key ARN or HashiCorp Vault Transit engine for root envelope encryption. ZexCore engineers have zero access to your plaintext encryption master keys.',
+        'Use your corporate AWS KMS Key ARN or HashiCorp Vault transit engine for root envelope encryption.',
         currentPlan,
         `
-        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 14px; align-items: flex-end;">
-          <div>
-            <label style="font-size: 0.76rem; font-weight: 600; color: var(--text-secondary);">AWS KMS Master Key ARN</label>
-            <input type="text" class="input" value="arn:aws:kms:us-east-1:123456789012:key/zexcore-tenant-root" style="margin-top: 4px; font-family: var(--font-mono); font-size: 0.78rem;" />
+        <div style="background: #ffffff; border: 1px solid var(--border-default); border-radius: 8px; padding: 16px;">
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 14px; align-items: flex-end;">
+            <div>
+              <label style="font-size: 0.76rem; font-weight: 600; color: var(--text-secondary);">AWS KMS Master Key ARN</label>
+              <input type="text" class="input" value="arn:aws:kms:us-east-1:123456789012:key/zexcore-tenant-root" style="margin-top: 4px; font-family: var(--font-mono); font-size: 0.78rem; background: #f8fafc;" />
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="window.testKmsKeyRotation()" style="padding: 8px 14px;">
+              Rotate Key
+            </button>
           </div>
-          <button class="btn btn-secondary btn-sm" onclick="window.testKmsKeyRotation()" style="padding: 8px 14px;">
-            Simulate 90-Day Key Rotation
-          </button>
-        </div>
-        <div style="margin-top: 10px; font-size: 0.74rem; color: #16a34a; font-family: var(--font-mono);">
-          <span>● Enclave HSM Attestation: Verified</span> &bull;
-          <span>Rotation: Every 90 Days</span>
+          <div style="margin-top: 10px; font-size: 0.74rem; color: #15803d; font-family: var(--font-mono); display: flex; align-items: center; gap: 8px;">
+            <span>● Enclave HSM Attestation: Verified</span> &bull;
+            <span>Rotation Interval: 90 Days</span>
+          </div>
         </div>
         `
       )}
@@ -1462,7 +1515,7 @@ function renderConsoleWhiteLabelView(currentPlan: PlanTier): string {
               </label>
               <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                 <input type="checkbox" checked disabled />
-                <span style="color: #64748b;">Postgres 17 RLS Sub-Tenant Isolation (Enforced across all 25 client databases)</span>
+                <span style="color: #64748b;">Row-level tenant isolation enforced across all client workspaces</span>
               </label>
             </div>
           </div>
@@ -1473,8 +1526,8 @@ function renderConsoleWhiteLabelView(currentPlan: PlanTier): string {
           <div class="card" style="padding: 16px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
               <div>
-                <div class="card-title" style="margin: 0;">Live Client Portal Sandbox Preview</div>
-                <div class="card-subtitle">Real-time simulation of how your clients see their branded workspace</div>
+                <div class="card-title" style="margin: 0;">Client Portal Sandbox Preview</div>
+                <div class="card-subtitle">Real-time simulation of client-facing branded workspace</div>
               </div>
               <div style="display: flex; gap: 4px; background: #f1f5f9; padding: 3px; border-radius: 6px;">
                 <button class="btn btn-sm ${branding.previewMode === 'desktop' ? 'btn-primary' : 'btn-secondary'}" id="btn-preview-desktop" style="padding: 4px 10px; font-size: 0.72rem; border: none;">Desktop</button>
@@ -1493,7 +1546,7 @@ function renderConsoleWhiteLabelView(currentPlan: PlanTier): string {
                 </div>
                 <div style="flex: 1; background: #fff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 2px 10px; font-family: var(--font-mono); font-size: 0.7rem; color: #475569; display: flex; align-items: center; justify-content: space-between;">
                   <span>🔒 https://<span id="preview-url-domain">${branding.customDomain}</span>/dashboard</span>
-                  <span style="color: #16a34a; font-weight: 700; font-size: 0.65rem;">SSL ENCRYPTED</span>
+                  <span style="color: #16a34a; font-weight: 700; font-size: 0.65rem;">SSL Valid</span>
                 </div>
               </div>
 
@@ -2808,12 +2861,36 @@ function setupEventListeners() {
   if (input) input.value = txt;
 };
 
-// ── IoT Render ───────────────────────────────────────────────────────────────
 function renderDevices() {
   const tbody = document.getElementById('device-table-body');
   if (!tbody) return;
 
-  tbody.innerHTML = state.devices.map((d) => `
+  const searchInput = (document.getElementById('iot-search-filter') as HTMLInputElement)?.value?.toLowerCase().trim() || '';
+  const statusFilter = (document.getElementById('iot-status-filter') as HTMLSelectElement)?.value || 'all';
+
+  const filtered = state.devices.filter((d) => {
+    const matchesSearch = !searchInput || d.name.toLowerCase().includes(searchInput) || d.key.toLowerCase().includes(searchInput) || d.kind.toLowerCase().includes(searchInput);
+    const matchesStatus = statusFilter === 'all' || d.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const countBadge = document.getElementById('iot-fleet-counts');
+  if (countBadge) {
+    const online = state.devices.filter(d => d.status === 'online').length;
+    countBadge.innerHTML = `<strong>${online}</strong> online &bull; <strong>${state.devices.length}</strong> total`;
+  }
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="9" style="text-align: center; padding: 36px 20px; color: var(--text-secondary); font-size: 0.84rem;">
+          No edge devices match your query.
+        </td>
+      </tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map((d) => `
     <tr>
       <td>
         <div style="font-weight: 600; color: var(--text-main);">${d.name}</div>
@@ -2821,28 +2898,24 @@ function renderDevices() {
       </td>
       <td style="color: var(--text-secondary); font-size: 0.8rem;"><code>${d.kind}</code></td>
       <td>
-        <label class="zx-toggle-switch" onclick="window.toggleDeviceStatus('${d.id}')" title="Toggle device: Live / Offline" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-          <span class="zx-toggle-track ${d.status === 'online' ? 'on' : 'off'}" style="width: 34px; height: 18px;">
-            <span class="zx-toggle-thumb"></span>
-          </span>
-          <span style="font-size: 0.72rem; font-weight: 700; color: ${d.status === 'online' ? '#15803d' : '#b91c1c'};">
-            ${d.status === 'online' ? 'Live' : 'Offline'}
-          </span>
-        </label>
+        <button onclick="window.toggleDeviceStatus('${d.id}')" title="Click to toggle status" style="cursor: pointer; border: 1px solid ${d.status === 'online' ? '#bbf7d0' : '#e2e8f0'}; background: ${d.status === 'online' ? '#f0fdf4' : '#f8fafc'}; color: ${d.status === 'online' ? '#15803d' : '#64748b'}; padding: 3px 8px; border-radius: 9999px; font-size: 0.72rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+          <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: ${d.status === 'online' ? '#16a34a' : '#94a3b8'};"></span>
+          ${d.status === 'online' ? 'Live' : 'Offline'}
+        </button>
       </td>
       <td>
-        <strong style="color: ${d.temperature > 70 ? 'var(--primary)' : 'var(--text-main)'}; font-family: var(--font-mono);">
+        <strong style="color: ${d.temperature > 70 ? '#b91c1c' : 'var(--text-main)'}; font-family: var(--font-mono);">
           ${d.temperature}°C
         </strong>
       </td>
-      <td style="font-family: var(--font-mono);">${d.humidity}%</td>
-      <td style="font-family: var(--font-mono);">${d.voltage}V</td>
+      <td style="font-family: var(--font-mono); color: var(--text-main);">${d.humidity}%</td>
+      <td style="font-family: var(--font-mono); color: var(--text-main);">${d.voltage}V</td>
       <td style="font-size: 0.75rem; color: var(--text-secondary); font-family: var(--font-mono);">${d.firmware}</td>
       <td style="font-size: 0.78rem; color: var(--text-secondary);">${d.lastSeen}</td>
       <td style="text-align: right;">
-        <button class="btn btn-secondary btn-sm" onclick="window.pingDevice('${d.id}')" style="display:inline-flex;align-items:center;gap:5px;">
+        <button class="btn btn-secondary btn-sm" onclick="window.pingDevice('${d.id}')" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;font-size:0.75rem;">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
-          Ingest Ping
+          Ping Ingest
         </button>
       </td>
     </tr>
@@ -2852,6 +2925,7 @@ function renderDevices() {
   const statOnline = document.getElementById('stat-online-devices');
   if (statOnline) statOnline.innerText = `${onlineCount} / ${state.devices.length}`;
 }
+(window as any).renderDevices = renderDevices;
 
 (window as any).toggleDeviceStatus = (id: string) => {
   const dev = state.devices.find((d) => d.id === id);
@@ -3095,29 +3169,35 @@ function renderRules() {
   const container = document.getElementById('rules-list-container');
   if (!container) return;
 
+  if (state.rules.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 32px 16px; color: var(--text-secondary); font-size: 0.84rem;">
+        No automation rules configured. Use the builder above to stage a new rule.
+      </div>`;
+    return;
+  }
+
   container.innerHTML = state.rules.map((r) => `
-    <div style="background: var(--bg-subtle); border: 1px solid var(--border-default); border-radius: var(--radius-sm); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;">
-      <div>
+    <div style="background: #ffffff; border: 1px solid var(--border-default); border-radius: 8px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+      <div style="flex: 1; min-width: 280px;">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <strong style="font-size: 0.9rem; color: var(--text-main);">${r.name}</strong>
-          <label class="zx-toggle-switch" onclick="window.toggleRule('${r.id}')" title="Toggle rule: Enabled / Disabled" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-            <span class="zx-toggle-track ${r.enabled ? 'on' : 'off'}" style="width: 34px; height: 18px;">
-              <span class="zx-toggle-thumb"></span>
-            </span>
-            <span style="font-size: 0.72rem; font-weight: 700; color: ${r.enabled ? '#15803d' : '#b91c1c'};">
-              ${r.enabled ? 'Enabled' : 'Disabled'}
-            </span>
-          </label>
-          ${!r.approved ? '<span class="badge-status" style="background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning-border); font-size: 0.68rem; padding: 2px 6px;">PENDING APPROVAL</span>' : ''}
+          <strong style="font-size: 0.92rem; color: var(--text-main); font-weight: 650;">${r.name}</strong>
+          <span style="display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 9999px; font-size: 0.72rem; font-weight: 600; border: 1px solid ${r.enabled ? '#bbf7d0' : '#e2e8f0'}; background: ${r.enabled ? '#f0fdf4' : '#f8fafc'}; color: ${r.enabled ? '#15803d' : '#64748b'};">
+            <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: ${r.enabled ? '#16a34a' : '#94a3b8'};"></span>
+            ${r.enabled ? 'Active' : 'Disabled'}
+          </span>
+          ${!r.approved ? '<span style="background: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-size: 0.7rem; font-weight: 600; padding: 2px 7px; border-radius: 4px;">Pending Review</span>' : ''}
         </div>
-        <div style="font-family: var(--font-mono); font-size: 0.76rem; color: var(--text-secondary); margin-top: 4px;">
-          <span>Trigger: <strong style="color: var(--text-main);">${r.trigger}</strong></span> |
-          <span>Condition: <code>${r.conditions}</code></span> |
-          <span>Action: <code>${r.action}</code></span>
+        <div style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 6px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+          <span>Trigger: <strong style="color: var(--text-main); font-family: var(--font-mono); font-size: 0.74rem;">${r.trigger}</strong></span>
+          <span style="color: var(--border-default);">&bull;</span>
+          <span>IF: <code style="background: #f1f5f9; padding: 1px 6px; border-radius: 4px; font-family: var(--font-mono); color: #0f172a;">${r.conditions}</code></span>
+          <span style="color: var(--border-default);">&bull;</span>
+          <span>THEN: <code style="background: #f1f5f9; padding: 1px 6px; border-radius: 4px; font-family: var(--font-mono); color: #0f172a;">${r.action}</code></span>
         </div>
       </div>
-      <div>
-        ${!r.approved ? `<button class="btn btn-primary btn-sm" onclick="window.approveRule('${r.id}')">Approve Rule</button>` : `<button class="btn btn-secondary btn-sm" onclick="window.toggleRule('${r.id}')">${r.enabled ? 'Disable' : 'Enable'}</button>`}
+      <div style="display: flex; align-items: center; gap: 8px;">
+        ${!r.approved ? `<button class="btn btn-primary btn-sm" onclick="window.approveRule('${r.id}')" style="font-size: 0.76rem; padding: 5px 12px;">Approve Rule</button>` : `<button class="btn btn-secondary btn-sm" onclick="window.toggleRule('${r.id}')" style="font-size: 0.76rem; padding: 5px 12px;">${r.enabled ? 'Disable' : 'Enable'}</button>`}
       </div>
     </div>
   `).join('');

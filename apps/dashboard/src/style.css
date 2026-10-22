@@ -8252,10 +8252,11 @@ body { background: #fff; letter-spacing: -.008em; }
 
 /* Telemetry Oscilloscope */
 .telemetry-oscilloscope-wrap {
-  background: #090d16;
-  border: 1px solid #1e293b;
-  border-radius: var(--radius-sm);
-  padding: 18px;
+  background: #ffffff;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
   position: relative;
   overflow: hidden;
 }
@@ -8263,7 +8264,7 @@ body { background: #fff; letter-spacing: -.008em; }
 .oscilloscope-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: 14px;
 }
 
 @media (max-width: 800px) {
@@ -8273,17 +8274,22 @@ body { background: #fff; letter-spacing: -.008em; }
 }
 
 .oscilloscope-metric-card {
-  background: #111827;
-  border: 1px solid #1f2937;
-  border-radius: 6px;
-  padding: 14px;
+  background: #f8fafc;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .oscilloscope-metric-val {
   font-family: var(--font-mono);
-  font-size: 1.6rem;
-  font-weight: 800;
-  margin: 6px 0 8px 0;
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: -0.02em;
+  margin: 4px 0 6px 0;
 }
 
 /* Multi-signature cryptographic approval card */

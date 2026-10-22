@@ -467,12 +467,12 @@ export function renderConsoleAuditView(currentPlan: PlanTier): string {
       <div class="console-page-toolbar">
         <div>
           <div style="display: flex; align-items: center; gap: 10px;">
-            <h2 class="page-title" style="margin: 0; font-size: 1.35rem; font-weight: 850;">Audit &amp; Financial Health</h2>
-            <span class="audit-tier-pill ${auditLevel}">${auditLevel.toUpperCase()} AUDIT ACTIVE</span>
-            ${auditState.isScanning ? `<span class="badge" style="background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning-border);"><span class="audit-spin">&#9696;</span> Deterministic Scan Running</span>` : ''}
+            <h2 class="page-title" style="margin: 0; font-size: 1.35rem; font-weight: 850;">Security &amp; Financial Audit</h2>
+            <span class="badge" style="background: #f1f5f9; color: var(--text-secondary); border: 1px solid var(--border-default); font-weight: 600; font-size: 0.72rem; padding: 2px 8px; border-radius: 4px;">Tier: ${auditLevel.toUpperCase()}</span>
+            ${auditState.isScanning ? `<span class="badge" style="background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning-border);"><span class="audit-spin">&#9696;</span> Verification Scan Running</span>` : ''}
           </div>
           <div class="page-desc" style="margin-top: 3px;">
-            Deterministic posture verification, financial reconciliation, and tamper-resistant evidence packs. Fixes go through standard approval gates.
+            Security posture verification, transaction ledger reconciliation, and tamper-resistant audit logs.
           </div>
         </div>
         <div style="display: flex; gap: 8px;">
