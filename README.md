@@ -1,3 +1,4 @@
+![Zexcore Logo](Interlocking-Red-Hexagon-Emblem.png)
 # ZexCore
 
 > **Multi-tenant Backend Engine & Modular Platform ("One Core, Different Possibilities")**  
