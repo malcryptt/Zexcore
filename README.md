@@ -1,4 +1,4 @@
-![Zexcore Logo](Interlocking-Red-Hexagon-Emblem.png)
+<img src="Interlocking-Red-Hexagon-Emblem.png" alt="Zexcore Logo" width="200">
 # ZexCore
 
 > **Multi-tenant Backend Engine & Modular Platform ("One Core, Different Possibilities")**  
