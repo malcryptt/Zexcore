@@ -6,12 +6,14 @@ import { billingWebhooksPlugin } from '../../apps/api/src/plugins/billingWebhook
 describe('Multi-Gateway Billing Webhooks', () => {
   const PAYSTACK_SECRET = 'sk_test_paystack_secret_12345';
   const FLW_SECRET = 'flw_secret_hash_98765';
+  const STRIPE_SECRET = 'whsec_test_12345';
 
   async function buildTestServer() {
     const app = Fastify();
     await app.register(billingWebhooksPlugin, {
       paystackSecretKey: PAYSTACK_SECRET,
       flutterwaveSecretHash: FLW_SECRET,
+      stripeWebhookSecret: STRIPE_SECRET,
     });
     return app;
   }
@@ -129,13 +131,17 @@ describe('Multi-Gateway Billing Webhooks', () => {
       },
     };
 
+    const rawBody = JSON.stringify(payload);
+    const t = Math.floor(Date.now() / 1000);
+    const v1 = crypto.createHmac('sha256', STRIPE_SECRET).update(`${t}.${rawBody}`).digest('hex');
     const response = await app.inject({
       method: 'POST',
       url: '/api/webhooks/billing/stripe',
       headers: {
         'content-type': 'application/json',
+        'stripe-signature': `t=${t},v1=${v1}`,
       },
-      body: JSON.stringify(payload),
+      body: rawBody,
     });
 
     expect(response.statusCode).toBe(200);
@@ -143,5 +149,36 @@ describe('Multi-Gateway Billing Webhooks', () => {
     expect(body.gateway).toBe('stripe');
     expect(body.reference).toBe('cs_test_stripe_00192');
     expect(body.tenantSlug).toBe('global_ent');
+  });
+
+  it('rejects unsigned and forged webhooks on every gateway (fail closed)', async () => {
+    const app = await buildTestServer();
+    for (const gw of ['stripe', 'paystack', 'flutterwave']) {
+      const r = await app.inject({
+        method: 'POST',
+        url: `/api/webhooks/billing/${gw}`,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ event: 'charge.success', data: { metadata: { tenantSlug: 'x', planTier: 'enterprise' } } }),
+      });
+      expect(r.statusCode).toBe(401);
+    }
+  });
+
+  it('rejects a Flutterwave hash that differs only in length, and stale Stripe timestamps', async () => {
+    const app = await buildTestServer();
+    const r1 = await app.inject({ method: 'POST', url: '/api/webhooks/billing/flutterwave', headers: { 'verif-hash': FLW_SECRET + 'x', 'content-type': 'application/json' }, body: '{}' });
+    expect(r1.statusCode).toBe(401);
+    const raw = '{}';
+    const t = Math.floor(Date.now() / 1000) - 3600;
+    const v1 = crypto.createHmac('sha256', STRIPE_SECRET).update(`${t}.${raw}`).digest('hex');
+    const r2 = await app.inject({ method: 'POST', url: '/api/webhooks/billing/stripe', headers: { 'stripe-signature': `t=${t},v1=${v1}`, 'content-type': 'application/json' }, body: raw });
+    expect(r2.statusCode).toBe(401);
+  });
+
+  it('returns 503 when a gateway has no secret configured', async () => {
+    const app = Fastify();
+    await app.register(billingWebhooksPlugin, {});
+    const r = await app.inject({ method: 'POST', url: '/api/webhooks/billing/paystack', headers: { 'content-type': 'application/json' }, body: '{}' });
+    expect(r.statusCode).toBe(503);
   });
 });

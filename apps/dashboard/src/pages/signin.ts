@@ -260,30 +260,6 @@ export function setupSignInEvents(onSuccess: (tenant: string, user: AuthUserProf
       return;
     }
 
-    const lowerEmail = email.toLowerCase().trim();
-    if (lowerEmail === 'hello@zexcore.com.ng' || lowerEmail === 'hello@zexlabs.com.ng') {
-      if (pass !== 'thetaskmaster') {
-        showAlert('Invalid credentials. Please enter the correct password for ' + email + '.', true);
-        return;
-      }
-      localStorage.setItem('zexcore_user_email', lowerEmail);
-      localStorage.setItem('zexcore_active_tenant', cleanTenant || 'acme_corp');
-      const user: AuthUserProfile = {
-        uid: 'superadmin_' + lowerEmail.replace(/[^a-zA-Z0-9]/g, '_'),
-        email: lowerEmail,
-        displayName: 'ZexCore Super Administrator',
-        photoURL: null,
-        tenantSlug: cleanTenant || 'acme_corp',
-        isDemo: false,
-      };
-      localStorage.setItem('zexcore_auth_session', JSON.stringify(user));
-      showAlert('Workspace authenticated with full features access. Loading console...', false);
-      setTimeout(() => {
-        onSuccess(cleanTenant || 'acme_corp', user);
-      }, 350);
-      return;
-    }
-
     if (btnSubmit) {
       btnSubmit.disabled = true;
       btnSubmit.textContent = isSignUpMode ? 'Creating account...' : 'Authenticating...';

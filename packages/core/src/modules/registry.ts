@@ -13,8 +13,19 @@ export function createDefaultCoreContext(): ZexCoreContext {
     get(target, prop, receiver) {
       if (prop === 'execute') {
         return async (queryOrSql: any) => {
-          if (queryOrSql && typeof queryOrSql === 'object' && 'sql' in queryOrSql && typeof queryOrSql.sql === 'string') {
-            const params = (queryOrSql.params || []) as unknown[];
+          // Modules pass raw queries as { sql, params } or { text, params }.
+          // Drizzle SQL objects (which expose getSQL) fall through to Drizzle itself.
+          const rawText: string | undefined =
+            queryOrSql && typeof queryOrSql === 'object' && typeof queryOrSql.getSQL !== 'function'
+              ? typeof queryOrSql.sql === 'string'
+                ? queryOrSql.sql
+                : typeof queryOrSql.text === 'string'
+                  ? queryOrSql.text
+                  : undefined
+              : undefined;
+
+          if (rawText !== undefined) {
+            const params = (queryOrSql.params || queryOrSql.values || []) as unknown[];
 
             // Resolve tenant ID from query metadata or AsyncLocalStorage context
             const ctx = getTenantContext();
@@ -31,13 +42,13 @@ export function createDefaultCoreContext(): ZexCoreContext {
                   [tenantId],
                 );
                 await tx.unsafe(`SELECT set_config('app.bypass_rls', 'off', true)`);
-                return await tx.unsafe(queryOrSql.sql, params as any);
+                return await tx.unsafe(rawText, params as any);
               });
               return { rows: result };
             }
 
             // No tenant context — run without RLS context (schema init, module onInit, etc.)
-            const rows = await sqlClient.unsafe(queryOrSql.sql, params as any);
+            const rows = await sqlClient.unsafe(rawText, params as any);
             return { rows };
           }
           return (target as any).execute(queryOrSql);

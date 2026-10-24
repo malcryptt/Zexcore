@@ -2,8 +2,13 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import type { ZexCoreContext } from '@zexcore/core';
 import { cmsPages } from '../schema/pages.js';
 import { CMS_EVENTS } from '../events.js';
-import { eq, desc } from '@zexcore/core';
+import { eq, desc, and } from '@zexcore/core';
 import { withTenantDb } from '@zexcore/core';
+import { CMS_CAPABILITIES } from '../permissions.js';
+
+const guard = (server: FastifyInstance, cap: string) => ({
+  preHandler: [server.authenticate, server.requireCapability(cap)],
+});
 
 interface CreatePageBody {
   slug: string;
@@ -16,6 +21,7 @@ export function registerCmsRoutes(server: FastifyInstance, core: ZexCoreContext)
   // 1. List all CMS pages for current tenant
   server.get(
     '/api/cms/pages',
+    guard(server, CMS_CAPABILITIES.PAGES_READ),
     async (request: FastifyRequest, reply: FastifyReply) => {
       const tenant = (request as any).tenant;
       if (!tenant || !tenant.id) {
@@ -35,8 +41,9 @@ export function registerCmsRoutes(server: FastifyInstance, core: ZexCoreContext)
   );
 
   // 2. Create CMS page
-  server.post(
+  server.post<{ Body: CreatePageBody }>(
     '/api/cms/pages',
+    guard(server, CMS_CAPABILITIES.PAGES_CREATE),
     async (request: FastifyRequest<{ Body: CreatePageBody }>, reply: FastifyReply) => {
       const tenant = (request as any).tenant;
       if (!tenant || !tenant.id) {
@@ -76,8 +83,9 @@ export function registerCmsRoutes(server: FastifyInstance, core: ZexCoreContext)
   );
 
   // 3. Publish CMS page
-  server.post(
+  server.post<{ Params: { id: string } }>(
     '/api/cms/pages/:id/publish',
+    guard(server, CMS_CAPABILITIES.PAGES_PUBLISH),
     async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       const tenant = (request as any).tenant;
       if (!tenant || !tenant.id) {
@@ -94,7 +102,7 @@ export function registerCmsRoutes(server: FastifyInstance, core: ZexCoreContext)
             publishedAt: new Date(),
             updatedAt: new Date(),
           })
-          .where(eq(cmsPages.id, id))
+          .where(and(eq(cmsPages.id, id), eq(cmsPages.tenantId, tenant.id)))
           .returning();
       });
 

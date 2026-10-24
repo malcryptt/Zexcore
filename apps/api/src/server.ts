@@ -12,7 +12,12 @@ import { bootstrapApp } from './bootstrap.js';
 export async function createServer() {
   const env = getEnv();
 
+  // TRUST_PROXY: 'true' (behind one trusted proxy, e.g. Render/Railway) or a hop count. Default off.
+  const tp = process.env.TRUST_PROXY;
+  const trustProxy = tp === undefined || tp === '' || tp === 'false' ? false : tp === 'true' ? true : Number.isInteger(Number(tp)) ? Number(tp) : tp;
+
   const server = Fastify({
+    trustProxy: trustProxy as boolean,
     bodyLimit: 1048576, // 1MB payload cap to prevent memory exhaustion / DoS
     logger: {
       level: env.LOG_LEVEL,
