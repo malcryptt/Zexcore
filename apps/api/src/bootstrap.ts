@@ -12,6 +12,8 @@ import {
   verifyPassword,
   signAuthToken,
   createDefaultCoreContext,
+  memberships,
+  and,
 } from '@zexcore/core';
 import { cmsModule } from '@zexcore/module-cms';
 import { crmModule } from '@zexcore/module-crm';
@@ -62,7 +64,10 @@ export async function bootstrapApp(server: FastifyInstance): Promise<void> {
   server.post<{
     Body: { email: string; password: string; tenantSlug?: string };
   }>('/api/auth/login', async (request, reply) => {
-    const { email, password, tenantSlug } = request.body;
+    const { email, password, tenantSlug } = request.body ?? ({} as any);
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      return reply.status(400).send({ error: 'email and password required' });
+    }
     const db = getDb();
 
     const [userRecord] = await db.select().from(users).where(eq(users.email, email)).limit(1);
@@ -76,14 +81,29 @@ export async function bootstrapApp(server: FastifyInstance): Promise<void> {
     }
 
     let resolvedTenantId: string | undefined;
+    let role: 'owner' | 'admin' | 'member' | 'viewer' | undefined;
     if (tenantSlug) {
       const [t] = await db.select().from(tenants).where(eq(tenants.slug, tenantSlug)).limit(1);
-      resolvedTenantId = t?.id;
+      if (!t) {
+        return reply.status(401).send({ error: 'Invalid email or password' });
+      }
+      // Membership is mandatory: a valid password does not grant access to a tenant you don't belong to.
+      const [m] = await withTenantDb(t.id, async (tx) =>
+        tx.select().from(memberships)
+          .where(and(eq(memberships.tenantId, t.id), eq(memberships.userId, userRecord.id)))
+          .limit(1),
+      );
+      if (!m && !userRecord.isPlatformAdmin) {
+        return reply.status(401).send({ error: 'Invalid email or password' });
+      }
+      resolvedTenantId = t.id;
+      role = m?.role as typeof role;
     }
 
     const token = signAuthToken({
       userId: userRecord.id,
       tenantId: resolvedTenantId,
+      role,
       principalType: userRecord.isPlatformAdmin ? 'platform_admin' : 'tenant_user',
       isPlatformAdmin: userRecord.isPlatformAdmin,
     });
@@ -100,7 +120,9 @@ export async function bootstrapApp(server: FastifyInstance): Promise<void> {
   });
 
   // 6. Generic records endpoint (Dynamic Content Engine)
-  server.get('/api/records', async (request, reply) => {
+  server.get('/api/records', {
+    preHandler: [server.authenticate, server.requireCapability('records:read')],
+  }, async (request, reply) => {
     const tenant = (request as any).tenant;
     if (!tenant) {
       return reply.status(400).send({ error: 'Tenant context required' });

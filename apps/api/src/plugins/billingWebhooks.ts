@@ -8,7 +8,6 @@
 
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import crypto from 'node:crypto';
-import fp from 'fastify-plugin';
 
 export interface NormalizedBillingEvent {
   gateway: 'stripe' | 'paystack' | 'flutterwave';
@@ -30,7 +29,40 @@ export interface BillingWebhookOptions {
   flutterwaveSecretHash?: string;
 }
 
+function safeEqual(a: string, b: string): boolean {
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  return ab.length === bb.length && crypto.timingSafeEqual(ab, bb);
+}
+
+function verifyStripe(raw: Buffer, header: string | undefined, secret: string, toleranceSec = 300): boolean {
+  if (!header) return false;
+  const parts = Object.fromEntries(
+    header.split(',').map((kv) => {
+      const i = kv.indexOf('=');
+      return [kv.slice(0, i).trim(), kv.slice(i + 1).trim()];
+    }),
+  );
+  const t = Number(parts.t);
+  if (!Number.isFinite(t) || Math.abs(Date.now() / 1000 - t) > toleranceSec) return false;
+  const expected = crypto.createHmac('sha256', secret).update(`${t}.`).update(raw).digest('hex');
+  // Stripe may send several v1 signatures during secret rotation; header parsing above keeps the last.
+  return header.split(',').some((kv) => kv.trim().startsWith('v1=') && safeEqual(kv.trim().slice(3), expected));
+}
+
+// NOT wrapped in fastify-plugin on purpose: the raw-body JSON parser below must stay
+// scoped to the webhook route and not replace the parser for the rest of the API.
 const billingWebhooksPluginCallback: FastifyPluginAsync<BillingWebhookOptions> = async (fastify, opts) => {
+  fastify.addContentTypeParser('application/json', { parseAs: 'buffer' }, (req, body, done) => {
+    (req as any).rawBody = body;
+    try {
+      done(null, body.length ? JSON.parse(body.toString('utf8')) : {});
+    } catch (e) {
+      (e as any).statusCode = 400;
+      done(e as Error, undefined);
+    }
+  });
+
   const stripeSecret = opts.stripeWebhookSecret || process.env.STRIPE_WEBHOOK_SECRET || '';
   const paystackSecret = opts.paystackSecretKey || process.env.PAYSTACK_SECRET_KEY || '';
   const flwSecretHash = opts.flutterwaveSecretHash || process.env.FLUTTERWAVE_SECRET_HASH || '';
@@ -38,7 +70,14 @@ const billingWebhooksPluginCallback: FastifyPluginAsync<BillingWebhookOptions> =
   // Universal Webhook Endpoint: /api/webhooks/billing/:gateway
   fastify.post('/api/webhooks/billing/:gateway', async (request: FastifyRequest<{ Params: { gateway: string } }>, reply: FastifyReply) => {
     const { gateway } = request.params;
-    const rawBody = JSON.stringify(request.body || {});
+    const raw: Buffer = (request as any).rawBody ?? Buffer.alloc(0);
+    const g = gateway.toLowerCase();
+    const secretFor = { stripe: stripeSecret, paystack: paystackSecret, flutterwave: flwSecretHash } as Record<string, string>;
+    if (g in secretFor && !secretFor[g]) {
+      // Fail closed: an unconfigured gateway must never accept events.
+      fastify.log.error({ gateway }, 'Webhook received but no signing secret is configured');
+      return reply.status(503).send({ error: 'Webhook not configured' });
+    }
 
     let normalized: NormalizedBillingEvent | null = null;
 
@@ -46,10 +85,8 @@ const billingWebhooksPluginCallback: FastifyPluginAsync<BillingWebhookOptions> =
       switch (gateway.toLowerCase()) {
         case 'stripe': {
           const sig = request.headers['stripe-signature'] as string | undefined;
-          if (stripeSecret && sig) {
-            // In production with stripe SDK: stripe.webhooks.constructEvent(...)
-            // Here we verify presence and format
-            fastify.log.info({ gateway, sigPresent: Boolean(sig) }, 'Processing Stripe webhook');
+          if (!verifyStripe(raw, sig, stripeSecret)) {
+            return reply.status(401).send({ error: 'Invalid Stripe signature' });
           }
 
           const body = request.body as any;
@@ -72,12 +109,10 @@ const billingWebhooksPluginCallback: FastifyPluginAsync<BillingWebhookOptions> =
 
         case 'paystack': {
           const sig = request.headers['x-paystack-signature'] as string | undefined;
-          if (paystackSecret && sig) {
-            const hmac = crypto.createHmac('sha512', paystackSecret).update(rawBody).digest('hex');
-            if (hmac !== sig) {
-              fastify.log.warn({ gateway }, 'Paystack HMAC signature mismatch');
-              return reply.status(401).send({ error: 'Invalid Paystack signature' });
-            }
+          const hmac = crypto.createHmac('sha512', paystackSecret).update(raw).digest('hex');
+          if (!sig || !safeEqual(hmac, sig)) {
+            fastify.log.warn({ gateway }, 'Paystack HMAC signature mismatch');
+            return reply.status(401).send({ error: 'Invalid Paystack signature' });
           }
 
           const body = request.body as any;
@@ -100,11 +135,9 @@ const billingWebhooksPluginCallback: FastifyPluginAsync<BillingWebhookOptions> =
 
         case 'flutterwave': {
           const sig = request.headers['verif-hash'] as string | undefined;
-          if (flwSecretHash && sig) {
-            if (sig !== flwSecretHash) {
-              fastify.log.warn({ gateway }, 'Flutterwave secret hash mismatch');
-              return reply.status(401).send({ error: 'Invalid Flutterwave secret hash' });
-            }
+          if (!sig || !safeEqual(sig, flwSecretHash)) {
+            fastify.log.warn({ gateway }, 'Flutterwave secret hash mismatch');
+            return reply.status(401).send({ error: 'Invalid Flutterwave secret hash' });
           }
 
           const body = request.body as any;
@@ -131,10 +164,11 @@ const billingWebhooksPluginCallback: FastifyPluginAsync<BillingWebhookOptions> =
 
       fastify.log.info({ normalized }, 'Normalized billing event settled successfully');
 
+      // NOTE: verified + normalized only. Plan activation is not implemented yet (tracked for post-launch).
       return reply.status(200).send({
         status: 'acknowledged',
         gateway,
-        settled: true,
+        settled: false,
         reference: normalized.reference,
         tenantSlug: normalized.tenantSlug,
       });
@@ -145,7 +179,4 @@ const billingWebhooksPluginCallback: FastifyPluginAsync<BillingWebhookOptions> =
   });
 };
 
-export const billingWebhooksPlugin = fp(billingWebhooksPluginCallback, {
-  name: 'billing-webhooks',
-  fastify: '5.x',
-});
+export const billingWebhooksPlugin = billingWebhooksPluginCallback;

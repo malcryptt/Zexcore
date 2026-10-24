@@ -2,6 +2,7 @@
  * Client-Side Billing, Stripe Subscription Gateway & Feature Gating
  */
 
+import { auth } from './firebase';
 import { generateClientLicenseKey } from './licensing';
 import { createReceipt, openReceiptModal } from './invoicing';
 import {
@@ -188,17 +189,17 @@ export const SUPERADMIN_EMAILS = [
 ];
 
 export function isSuperadmin(email?: string | null): boolean {
+  // Only a real, verified Firebase session counts. Never trust localStorage or a typed email:
+  // both are user-editable. (This is a UI convenience only; real enforcement must be server-side.)
   try {
-    if (email && SUPERADMIN_EMAILS.includes(email.toLowerCase().trim())) return true;
-    const stored = localStorage.getItem('zexcore_user_email');
-    if (stored && SUPERADMIN_EMAILS.includes(stored.toLowerCase().trim())) return true;
-    const session = localStorage.getItem('zexcore_auth_session');
-    if (session) {
-      const parsed = JSON.parse(session);
-      if (parsed?.email && SUPERADMIN_EMAILS.includes(parsed.email.toLowerCase().trim())) return true;
-    }
-  } catch {}
-  return false;
+    const u = auth?.currentUser;
+    if (!u || !u.email || !u.emailVerified) return false;
+    const verified = u.email.toLowerCase().trim();
+    if (email && email.toLowerCase().trim() !== verified) return false;
+    return SUPERADMIN_EMAILS.includes(verified);
+  } catch {
+    return false;
+  }
 }
 
 export function isTabLocked(tabId: string, currentPlan: PlanTier, userEmail?: string | null): boolean {
@@ -614,6 +615,13 @@ export function openStripeCheckoutModal(
   document.body.appendChild(modalWrap);
 
   const fulfillSubscription = (methodName: string) => {
+    // A browser callback is not proof of payment. Plans are only activated client-side in
+    // explicit demo builds; production activation must come from the verified server webhook.
+    if (import.meta.env.VITE_ALLOW_CLIENT_ACTIVATION !== 'true') {
+      modalWrap.remove();
+      alert('Payment submitted. Your plan will activate once the payment is confirmed (usually within minutes). You will receive a receipt by email.');
+      return;
+    }
     setTenantPlan(targetPlan);
     if (targetPlan === 'dedicated' || targetPlan === 'enterprise') {
       generateClientLicenseKey('default', 'Enterprise Workspace', targetPlan, 30);

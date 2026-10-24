@@ -10,6 +10,7 @@ interface RateLimitOptions {
   windowMs?: number;
   max?: number;
   iotMax?: number;
+  loginMax?: number;
 }
 
 /**
@@ -20,6 +21,7 @@ const rateLimitPluginAsync: FastifyPluginAsync<RateLimitOptions> = async (server
   const windowMs = opts.windowMs || 60 * 1000; // 1 minute
   const defaultMax = opts.max || 120; // 120 req/min for general API
   const iotMax = opts.iotMax || 5000; // 5,000 req/min for IoT telemetry ingest
+  const loginMax = opts.loginMax || 10; // brute-force guard
 
   const buckets = new Map<string, RateLimitBucket>();
 
@@ -40,16 +42,15 @@ const rateLimitPluginAsync: FastifyPluginAsync<RateLimitOptions> = async (server
   });
 
   server.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
-    // Determine client identifier: prefers x-forwarded-for if behind reverse proxy
-    const forwarded = request.headers['x-forwarded-for'];
-    const ip = typeof forwarded === 'string'
-      ? (forwarded.split(',')[0] ?? '').trim() || '127.0.0.1'
-      : request.ip || '127.0.0.1';
+    // request.ip honours Fastify's `trustProxy` setting. Never read X-Forwarded-For directly:
+    // it is client-controlled unless a trusted proxy overwrites it.
+    const ip = request.ip || '127.0.0.1';
 
     const path = request.url.split('?')[0];
     const isIotIngest = path === '/api/iot/ingest';
-    const limit = isIotIngest ? iotMax : defaultMax;
-    const bucketKey = `${ip}:${isIotIngest ? 'iot' : 'gen'}`;
+    const isLogin = path === '/api/auth/login';
+    const limit = isIotIngest ? iotMax : isLogin ? loginMax : defaultMax;
+    const bucketKey = `${ip}:${isIotIngest ? 'iot' : isLogin ? 'login' : 'gen'}`;
 
     const now = Date.now();
     let bucket = buckets.get(bucketKey);

@@ -52,14 +52,11 @@ const authPluginAsync: FastifyPluginAsync = async (server) => {
       return reply.status(401).send({ error: 'Authentication required' });
     }
 
-    // Cross-tenant defense: ensure token tenant matches request tenant context
-    if (
-      request.tenant &&
-      request.user.tenantId &&
-      !request.user.isPlatformAdmin &&
-      request.user.tenantId !== request.tenant.id
-    ) {
-      return reply.status(403).send({ error: 'Tenant context mismatch: Access to foreign tenant is forbidden' });
+    // Cross-tenant defense: a non-admin token is only valid for the tenant it was issued for.
+    if (request.tenant && !request.user.isPlatformAdmin) {
+      if (!request.user.tenantId || request.user.tenantId !== request.tenant.id) {
+        return reply.status(403).send({ error: 'Tenant context mismatch: Access to foreign tenant is forbidden' });
+      }
     }
   });
 

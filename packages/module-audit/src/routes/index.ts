@@ -6,6 +6,16 @@ import { generateEvidencePackBundle } from '../reports/index.js';
 import type { FindingStatus, FindingSeverity } from '../types.js';
 
 export function registerAuditRoutes(server: FastifyInstance, core: ZexCoreContext): void {
+  const guard = { preHandler: [server.authenticate, server.requireCapability('audit:read')] };
+  const requireTenant = (request: FastifyRequest, reply: FastifyReply): string | null => {
+    const id = (request as any).tenant?.id as string | undefined;
+    if (!id) {
+      reply.status(400).send({ error: 'Tenant context required' });
+      return null;
+    }
+    return id;
+  };
+  const allowSimulation = process.env.NODE_ENV !== 'production' || process.env.AUDIT_ALLOW_SIMULATION === 'true';
   // ── HEALTH ──────────────────────────────────────────────────────────────────
   server.get('/api/audit/health', async () => {
     return {
@@ -18,7 +28,7 @@ export function registerAuditRoutes(server: FastifyInstance, core: ZexCoreContex
   });
 
   // ── RULES LIST ──────────────────────────────────────────────────────────────
-  server.get('/api/audit/rules', async () => {
+  server.get('/api/audit/rules', guard, async () => {
     return {
       rules: BASELINE_AUDIT_RULES,
       total: BASELINE_AUDIT_RULES.length,
@@ -32,16 +42,25 @@ export function registerAuditRoutes(server: FastifyInstance, core: ZexCoreContex
       dryRun?: boolean;
       mockContext?: Partial<AuditEngineContext>;
     };
-  }>('/api/audit/check', async (request: FastifyRequest<{
+  }>('/api/audit/check', guard, async (request: FastifyRequest<{
     Body: {
       domain?: string;
       dryRun?: boolean;
       mockContext?: Partial<AuditEngineContext>;
     };
   }>, reply: FastifyReply) => {
-    const tenant = (request as any).tenant;
-    const tenantId = tenant?.id || 'tenant-default';
+    const tenantId = requireTenant(request, reply);
+    if (!tenantId) return reply;
     const { dryRun = false, mockContext } = request.body || {};
+
+    // The engine is not yet wired to live tenant data (users/MFA, ledger, devices).
+    // Never produce a "clean" score from invented fixtures in production.
+    if (!allowSimulation) {
+      return reply.status(501).send({
+        error: 'Audit engine is not connected to live tenant data yet',
+        code: 'AUDIT_DATA_SOURCES_NOT_CONNECTED',
+      });
+    }
 
     const defaultEngineCtx: AuditEngineContext = {
       tenantId,
@@ -77,6 +96,7 @@ export function registerAuditRoutes(server: FastifyInstance, core: ZexCoreContex
     };
 
     const result = executeAuditRun(defaultEngineCtx, dryRun);
+    (result.run as any).simulated = true;
 
     // If not a dry run, record run in database
     if (!dryRun) {
@@ -117,7 +137,7 @@ export function registerAuditRoutes(server: FastifyInstance, core: ZexCoreContex
   });
 
   // ── LIST RUNS ───────────────────────────────────────────────────────────────
-  server.get('/api/audit/runs', async (request: FastifyRequest, reply: FastifyReply) => {
+  server.get('/api/audit/runs', guard, async (request: FastifyRequest, reply: FastifyReply) => {
     const tenant = (request as any).tenant;
     const tenantId = tenant?.id;
 
@@ -143,7 +163,7 @@ export function registerAuditRoutes(server: FastifyInstance, core: ZexCoreContex
       severity?: FindingSeverity;
       domain?: string;
     };
-  }>('/api/audit/findings', async (request, reply) => {
+  }>('/api/audit/findings', guard, async (request, reply) => {
     const tenant = (request as any).tenant;
     const tenantId = tenant?.id;
 
@@ -184,10 +204,13 @@ export function registerAuditRoutes(server: FastifyInstance, core: ZexCoreContex
       timeRange?: { start: string; end: string };
       generatedBy?: string;
     };
-  }>('/api/audit/export', async (request, reply) => {
-    const tenant = (request as any).tenant;
-    const tenantId = tenant?.id || 'tenant-default';
-    const { timeRange, generatedBy = 'operator@zexcore' } = request.body || {};
+  }>('/api/audit/export', guard, async (request, reply) => {
+    const tenantId = requireTenant(request, reply);
+    if (!tenantId) return reply;
+    if (!allowSimulation) {
+      return reply.status(501).send({ error: 'Evidence export is not connected to live data yet', code: 'AUDIT_DATA_SOURCES_NOT_CONNECTED' });
+    }
+    const { timeRange, generatedBy = (request as any).user?.userId ?? 'unknown' } = request.body || {};
 
     const now = new Date();
     const defaultStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();

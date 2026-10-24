@@ -129,9 +129,6 @@ if (auth) {
  * Sign in with Email and Password
  */
 export async function loginWithEmail(email: string, pass: string, tenant = 'acme_corp'): Promise<AuthUserProfile> {
-  const lower = email.toLowerCase().trim();
-  const isSuper = (lower === 'hello@zexcore.com.ng' || lower === 'hello@zexlabs.com.ng') && pass === 'thetaskmaster';
-
   if (auth) {
     try {
       const cred = await signInWithEmailAndPassword(auth, email, pass);
@@ -147,19 +144,6 @@ export async function loginWithEmail(email: string, pass: string, tenant = 'acme
       notifyListeners(profile);
       return profile;
     } catch (fbErr) {
-      if (isSuper) {
-        const profile: AuthUserProfile = {
-          uid: 'superadmin_' + lower.replace(/[^a-zA-Z0-9]/g, '_'),
-          email: lower,
-          displayName: 'ZexCore Super Administrator',
-          photoURL: null,
-          tenantSlug: tenant,
-          isDemo: false,
-        };
-        localStorage.setItem('zexcore_active_tenant', tenant);
-        notifyListeners(profile);
-        return profile;
-      }
       throw fbErr;
     }
   }
@@ -169,12 +153,12 @@ export async function loginWithEmail(email: string, pass: string, tenant = 'acme
     throw new Error('Please provide both email and password.');
   }
   const profile: AuthUserProfile = {
-    uid: isSuper ? 'superadmin_' + lower.replace(/[^a-zA-Z0-9]/g, '_') : 'local-' + Math.random().toString(36).substring(2, 9),
+    uid: 'local-' + Math.random().toString(36).substring(2, 9),
     email,
-    displayName: isSuper ? 'ZexCore Super Administrator' : email.split('@')[0],
+    displayName: email.split('@')[0],
     photoURL: null,
     tenantSlug: tenant,
-    isDemo: !isSuper,
+    isDemo: true,
   };
   localStorage.setItem('zexcore_active_tenant', tenant);
   notifyListeners(profile);
