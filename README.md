@@ -1,4 +1,5 @@
-# ZexCore
+<img src="Interlocking-Red-Hexagon-Emblem.png" alt="Zexcore Logo" width="200">
+ ZexCore
 
 > **Multi-tenant Backend Engine & Modular Platform ("One Core, Different Possibilities")**  
 > Built by Zexlabs for extensible, enterprise-grade business workloads.
