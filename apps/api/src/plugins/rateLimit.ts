@@ -50,7 +50,7 @@ const rateLimitPluginAsync: FastifyPluginAsync<RateLimitOptions> = async (server
 
     const path = request.url.split('?')[0] ?? '';
     const isIotIngest = path === '/api/iot/ingest';
-    const isLogin = path === '/api/auth/login' || path === '/api/auth/register';
+    const isLogin = path === '/api/auth/login' || path === '/api/auth/register' || path === '/api/auth/google';
     const isPublicWrite = request.method === 'POST' && /^\/api\/public\/[^/]+\/(bookings|messages)$/.test(path);
     const limit = isIotIngest ? iotMax : isLogin ? loginMax : isPublicWrite ? publicWriteMax : defaultMax;
     const bucketKey = `${ip}:${isIotIngest ? 'iot' : isLogin ? 'login' : isPublicWrite ? 'pub' : 'gen'}`;

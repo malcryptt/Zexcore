@@ -8,17 +8,15 @@ import {
   withTenantDb,
   verifyPassword,
   hashPassword,
-  resolveTenant,
   lookupUserForLogin,
-  signAuthToken,
   createDefaultCoreContext,
   grantRuntimeAccess,
   checkRuntimeRoleSafety,
-  memberships,
-  and,
 } from '@zexcore/core';
 import { registerBillingRoutes } from './billing/routes.js';
 import { registerAccountRoutes } from './routes/account.js';
+import { registerGoogleRoutes } from './routes/google.js';
+import { startSession } from './auth/session.js';
 import { registerOverviewRoutes } from './routes/overview.js';
 import { cmsModule } from '@zexcore/module-cms';
 import { crmModule } from '@zexcore/module-crm';
@@ -99,43 +97,10 @@ export async function bootstrapApp(server: FastifyInstance): Promise<void> {
       return reply.status(401).send({ error: 'Invalid email or password' });
     }
 
-    let resolvedTenantId: string | undefined;
-    let role: 'owner' | 'admin' | 'member' | 'viewer' | undefined;
-    if (tenantSlug) {
-      const t = await resolveTenant({ slug: tenantSlug });
-      if (!t) {
-        return reply.status(401).send({ error: 'Invalid email or password' });
-      }
-      // Membership is mandatory: a valid password does not grant access to a tenant you don't belong to.
-      const [m] = await withTenantDb(t.id, async (tx) =>
-        tx.select().from(memberships)
-          .where(and(eq(memberships.tenantId, t.id), eq(memberships.userId, userRecord.id)))
-          .limit(1),
-      );
-      if (!m && !userRecord.is_platform_admin) {
-        return reply.status(401).send({ error: 'Invalid email or password' });
-      }
-      resolvedTenantId = t.id;
-      role = m?.role as typeof role;
-    }
-
-    const token = signAuthToken({
-      userId: userRecord.id,
-      tenantId: resolvedTenantId,
-      role,
-      principalType: userRecord.is_platform_admin ? 'platform_admin' : 'tenant_user',
-      isPlatformAdmin: userRecord.is_platform_admin,
-    });
-
-    return reply.send({
-      token,
-      user: {
-        id: userRecord.id,
-        email: userRecord.email,
-        name: userRecord.name,
-        isPlatformAdmin: userRecord.is_platform_admin,
-      },
-    });
+    const session = await startSession(userRecord, tenantSlug);
+    if (session.kind === 'choose') return reply.send({ workspaces: session.workspaces });
+    if (session.kind === 'denied') return reply.status(401).send({ error: 'Invalid email or password' });
+    return reply.send({ token: session.token, user: session.user });
   });
 
   // 6. Generic records endpoint (Dynamic Content Engine)
@@ -160,6 +125,7 @@ export async function bootstrapApp(server: FastifyInstance): Promise<void> {
 
   registerBillingRoutes(server);
   registerAccountRoutes(server);
+  registerGoogleRoutes(server);
   registerOverviewRoutes(server);
 
   // 7. Mount registered module routes

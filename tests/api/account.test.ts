@@ -70,6 +70,16 @@ describe('Signup, session and workspace endpoints', () => {
     expect(r.json().token).toBeTruthy();
   });
 
+  it('login without a workspace picks the user\'s only workspace and the token works', async () => {
+    const r = await post('/api/auth/login', { email, password });
+    expect(r.statusCode).toBe(200);
+    const t = r.json().token as string;
+    const me = await server.inject({ method: 'GET', url: '/api/auth/me', headers: { authorization: `Bearer ${t}` } });
+    expect(me.statusCode).toBe(200);
+    expect(me.json().tenant.slug).toBe(slug);
+    expect(me.json().role).toBe('owner');
+  });
+
   it('rejects weak passwords, bad slugs, duplicates (without confirming emails)', async () => {
     const base = { tenantName: 'Another Co', name: 'Bob', email: `bob-${sfx}@x.test`, password };
     expect((await post('/api/auth/register', { ...base, password: 'short' })).statusCode).toBe(400);

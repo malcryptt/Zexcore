@@ -79,6 +79,13 @@ export async function settleDeposit(args: {
   return { outcome: r.out_outcome, tenantId: r.out_tenant };
 }
 
+export interface UserWorkspace { id: string; slug: string; name: string; role: string }
+
+export async function listUserWorkspaces(userId: string): Promise<UserWorkspace[]> {
+  const sql = getSqlClient();
+  return sql.unsafe<UserWorkspace[]>(`SELECT * FROM zex_user_tenants($1::uuid)`, [userId] as any);
+}
+
 export class RegistrationError extends Error {
   constructor(public code: 'invalid_slug' | 'reserved_slug' | 'invalid_email' | 'slug_taken' | 'email_taken') {
     super(code);

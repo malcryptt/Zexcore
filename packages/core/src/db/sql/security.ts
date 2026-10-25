@@ -4,7 +4,7 @@
  * Model:
  *  - Tenant-scoped tables: ENABLE + FORCE RLS, policy = tenant_id matches app.current_tenant_id.
  *    There is NO bypass setting. Nothing the app role can SET makes another tenant's rows visible.
- *  - tenants / users / billing_payments: RLS enabled (owner exempt). The runtime role can only
+ *  - tenants / users / memberships / billing_payments: RLS enabled (owner exempt, so definer functions work). The runtime role can only
  *    see its own tenant row; users are invisible to it. Cross-tenant lookups (login, tenant
  *    resolution, plan activation, audit append) go through narrow SECURITY DEFINER functions.
  *  - audit_log: append-only (triggers + no INSERT/UPDATE/DELETE grant), written only through
@@ -15,7 +15,7 @@ export const TENANT_GUC_EXPR = `NULLIF(current_setting('app.current_tenant_id', 
 
 export const CORE_RLS_SQL = `
 ALTER TABLE IF EXISTS memberships   ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS memberships   FORCE  ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS memberships   NO FORCE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS content_types ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS content_types FORCE  ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS records       ENABLE ROW LEVEL SECURITY;
@@ -312,6 +312,17 @@ BEGIN
   RETURN QUERY SELECT v_tenant, v_user;
 END $f$;
 
+-- ── Workspaces a user belongs to (login without knowing the slug) ───────────────────
+-- memberships is ENABLE-only (owner exempt, like tenants/users): the runtime role stays filtered by
+-- the tenant policy, while this owner-run function can answer a single-user question efficiently.
+CREATE OR REPLACE FUNCTION zex_user_tenants(p_user uuid)
+RETURNS TABLE (id uuid, slug varchar, name varchar, role varchar)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public AS $f$
+  SELECT t.id, t.slug, t.name, m.role FROM memberships m
+    JOIN tenants t ON t.id = m.tenant_id AND t.status = 'active'
+   WHERE m.user_id = p_user ORDER BY t.created_at
+$f$;
+
 -- ── Profile of a user, only if they belong to the caller's current tenant ───────────
 CREATE OR REPLACE FUNCTION zex_user_profile(p_user uuid)
 RETURNS TABLE (id uuid, email varchar, name varchar)
@@ -332,6 +343,7 @@ const RUNTIME_FUNCTIONS = [
   'zex_register_tenant(text, text, text, text, text)',
   'zex_user_profile(uuid)',
   'zex_settle_deposit(text, text, bigint, text)',
+  'zex_user_tenants(uuid)',
 ];
 const INTERNAL_FUNCTIONS = [
   'zex_audit_append_unchecked(uuid, uuid, text, text, text, text, jsonb, text, text)',
