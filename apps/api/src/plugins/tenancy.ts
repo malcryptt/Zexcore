@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
-import { runWithTenant, getDb, tenants, eq, verifyAuthToken } from '@zexcore/core';
+import { runWithTenant, resolveTenant, verifyAuthToken } from '@zexcore/core';
 
 const tenancyPluginAsync: FastifyPluginAsync = async (server) => {
   /**
@@ -51,17 +51,8 @@ const tenancyPluginAsync: FastifyPluginAsync = async (server) => {
         return done(); // Public endpoint — no tenant context required
       }
 
-      // Fetch tenant record from DB (tenants table has no RLS)
-      const db = getDb();
-      let tenantRecord;
-
-      if (tenantId) {
-        const results = await db.select().from(tenants).where(eq(tenants.id, tenantId)).limit(1);
-        tenantRecord = results[0];
-      } else if (tenantSlug) {
-        const results = await db.select().from(tenants).where(eq(tenants.slug, tenantSlug)).limit(1);
-        tenantRecord = results[0];
-      }
+      // Resolve via the SECURITY DEFINER lookup (the runtime role cannot read other tenants' rows)
+      const tenantRecord = await resolveTenant(tenantId ? { id: tenantId } : { slug: tenantSlug });
 
       if (!tenantRecord) {
         reply.status(404).send({ error: 'Tenant not found or inactive' });

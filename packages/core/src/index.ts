@@ -3,6 +3,7 @@ export * from './db/client.js';
 export * from './db/schema/index.js';
 export * from './db/rls/index.js';
 export * from './db/init.js';
+export * from './db/system.js';
 
 // Tenancy & Context
 export * from './tenancy/index.js';

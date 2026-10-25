@@ -1,10 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createServer } from '../../apps/api/src/server.js';
 import {
-  getDb,
+  getAdminDb,
   closeDatabaseConnection,
   tenants,
-  sql,
   signAuthToken,
 } from '../../packages/core/src/index.js';
 import type { FastifyInstance } from 'fastify';
@@ -23,8 +22,7 @@ describe('API Server Integration: Booting Core + CMS Module', () => {
     await server.ready();
 
     // 2. Provision test tenant
-    const db = getDb();
-    await db.execute(sql`SELECT set_config('app.bypass_rls', 'on', false)`);
+    const db = getAdminDb();
 
     testTenantSlug = `cms-test-${Date.now()}`;
     const [t] = await db
@@ -40,8 +38,6 @@ describe('API Server Integration: Booting Core + CMS Module', () => {
     otherTenantId = o!.id;
     adminAuth = { authorization: `Bearer ${signAuthToken({ userId: '00000000-0000-0000-0000-000000000001', tenantId: testTenantId, role: 'admin', principalType: 'tenant_user' })}` };
     otherAuth = { authorization: `Bearer ${signAuthToken({ userId: '00000000-0000-0000-0000-000000000002', tenantId: otherTenantId, role: 'admin', principalType: 'tenant_user' })}` };
-
-    await db.execute(sql`SELECT set_config('app.bypass_rls', 'off', false)`);
   });
 
   afterAll(async () => {

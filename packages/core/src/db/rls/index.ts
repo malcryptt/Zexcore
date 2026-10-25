@@ -1,56 +1,35 @@
-import { sql } from 'drizzle-orm';
-import { getDb, getSqlClient } from '../client.js';
-import { readFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { getAdminSqlClient } from '../client.js';
+import { CORE_RLS_SQL, TENANT_GUC_EXPR } from '../sql/security.js';
 
 /**
- * Applies RLS enablement and default policies to an arbitrary tenant-scoped table.
- * Used by core starter tables and modules (e.g. cms_pages, crm_contacts).
+ * Applies tenant-isolation RLS to a tenant-scoped table (must have a tenant_id column).
+ * Runs on the ADMIN connection. Idempotent: the policy is always dropped and recreated so a stale
+ * policy from an older release (e.g. one with the removed bypass clause) can never survive.
  */
 export async function applyRlsToTable(tableName: string): Promise<void> {
-  const db = getDb();
-
-  await db.execute(sql.raw(`ALTER TABLE IF EXISTS "${tableName}" ENABLE ROW LEVEL SECURITY;`));
-  await db.execute(sql.raw(`ALTER TABLE IF EXISTS "${tableName}" FORCE ROW LEVEL SECURITY;`));
-
-  const policyName = `tenant_isolation_${tableName.replace(/[^a-zA-Z0-9_]/g, '_')}`;
-
-  await db.execute(
-    sql.raw(`
-    DO $$
-    BEGIN
-      IF NOT EXISTS (
-        SELECT 1 FROM pg_policies 
-        WHERE tablename = '${tableName}' AND policyname = '${policyName}'
-      ) THEN
-        CREATE POLICY "${policyName}" ON "${tableName}"
-          FOR ALL
-          USING (
-            current_setting('app.bypass_rls', true) = 'on'
-            OR tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
-          )
-          WITH CHECK (
-            current_setting('app.bypass_rls', true) = 'on'
-            OR tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
-          );
-      END IF;
-    EXCEPTION
-      WHEN duplicate_object THEN NULL;
-    END $$;
-  `),
-  );
+  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(tableName)) {
+    throw new Error(`Unsafe table name for RLS: ${tableName}`);
+  }
+  const admin = getAdminSqlClient();
+  const policyName = `tenant_isolation_${tableName}`;
+  await admin.begin(async (tx) => {
+    await tx.unsafe(`ALTER TABLE IF EXISTS "${tableName}" ENABLE ROW LEVEL SECURITY`);
+    await tx.unsafe(`ALTER TABLE IF EXISTS "${tableName}" FORCE ROW LEVEL SECURITY`);
+    await tx.unsafe(`DROP POLICY IF EXISTS "${policyName}" ON "${tableName}"`);
+    // Table may not exist in partial deployments; skip silently like ENABLE ... IF EXISTS
+    const exists = await tx.unsafe(`SELECT to_regclass('public."${tableName}"') AS t`);
+    if (!exists[0]?.t) return;
+    await tx.unsafe(
+      `CREATE POLICY "${policyName}" ON "${tableName}" FOR ALL
+         USING (tenant_id = ${TENANT_GUC_EXPR}) WITH CHECK (tenant_id = ${TENANT_GUC_EXPR})`,
+    );
+  });
 }
 
 /**
- * Applies the core RLS policies from policies.sql.
+ * Applies the core RLS policies (memberships, content_types, records, audit_log, tenants, users,
+ * billing_payments). Runs on the ADMIN connection.
  */
 export async function applyCoreRlsPolicies(): Promise<void> {
-  const sqlClient = getSqlClient();
-  const sqlPath = join(__dirname, 'policies.sql');
-  const policySql = readFileSync(sqlPath, 'utf-8');
-  await sqlClient.unsafe(policySql);
+  await getAdminSqlClient().unsafe(CORE_RLS_SQL);
 }

@@ -1,8 +1,25 @@
-import { getSqlClient } from './client.js';
+import { getAdminSqlClient, getRuntimeRoleName } from './client.js';
 import { applyCoreRlsPolicies, applyRlsToTable } from './rls/index.js';
+import { STRUCTURE_SQL, SECURITY_FUNCTIONS_SQL, buildGrantsSql } from './sql/security.js';
 
+/**
+ * Re-applies least-privilege grants for the runtime role. Must run AFTER every module has created
+ * its tables (tables are created by the admin role, so the runtime role has no access until this).
+ */
+export async function grantRuntimeAccess(): Promise<void> {
+  const admin = getAdminSqlClient();
+  await admin.unsafe(buildGrantsSql(getRuntimeRoleName()));
+}
+
+/**
+ * Creates/updates schema, RLS policies, security functions and audit triggers.
+ * Uses the ADMIN connection (schema owner). Safe to run on every boot; serialised across
+ * instances with an advisory lock.
+ */
 export async function initializeDatabaseSchema(): Promise<void> {
-  const sql = getSqlClient();
+  const admin = getAdminSqlClient();
+  await admin.begin(async (sql) => {
+  await sql`SELECT pg_advisory_xact_lock(727001)`;
 
   // Create extension for UUID generation if not present
   await sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
@@ -128,7 +145,13 @@ export async function initializeDatabaseSchema(): Promise<void> {
 
   await sql`CREATE INDEX IF NOT EXISTS outbox_events_tenant_status_idx ON outbox_events(tenant_id, status, created_at);`;
 
-  // Apply Row-Level Security policies to core tables and outbox
+  // Structure additions (composite FKs, audit seq, billing), security functions, triggers
+  await sql.unsafe(STRUCTURE_SQL);
+  await sql.unsafe(SECURITY_FUNCTIONS_SQL);
+  });
+
+  // Row-Level Security policies (no bypass) + least-privilege grants
   await applyCoreRlsPolicies();
   await applyRlsToTable('outbox_events');
+  await grantRuntimeAccess();
 }

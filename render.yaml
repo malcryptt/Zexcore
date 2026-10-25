@@ -22,10 +22,17 @@ services:
         sync: false
       - key: FLUTTERWAVE_SECRET_HASH
         sync: false
-      - key: DATABASE_URL
+      # Schema owner = the managed DB's primary user (boot-time migrations only).
+      - key: ADMIN_DATABASE_URL
         fromDatabase:
           name: zexcore-db
           property: connectionString
+      # Restricted runtime role: create it once with scripts/db-setup-roles.sql (skip_owner=1),
+      # then paste its connection string here. The API refuses to boot in production without it.
+      - key: DATABASE_URL
+        sync: false
+      - key: NGN_PER_USD
+        value: "1500"
 
 databases:
   - name: zexcore-db

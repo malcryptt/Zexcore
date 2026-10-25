@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import {
   getDb,
+  getAdminDb,
   closeDatabaseConnection,
   initializeDatabaseSchema,
   withTenantDb,
@@ -11,7 +12,6 @@ import {
   memberships,
   contentTypes,
   records,
-  auditLog,
   eq,
   sql,
 } from '../../packages/core/src/index.js';
@@ -30,10 +30,7 @@ describe('Tenant Isolation & RLS Security Attacks', () => {
     // 1. Initialize schema and RLS policies on Postgres
     await initializeDatabaseSchema();
 
-    const db = getDb();
-
-    // Bypass RLS during initial fixture wipe
-    await db.execute(sql`SELECT set_config('app.bypass_rls', 'on', false)`);
+    const db = getAdminDb();
 
     // 2. Create Tenant A and Tenant B with unique slugs
     const slugA = `test-tenant-alpha-${Date.now()}`;
@@ -81,13 +78,12 @@ describe('Tenant Isolation & RLS Security Attacks', () => {
     userBId = uB!.id;
 
     // Memberships
-    await db.insert(memberships).values([
-      { tenantId: tenantAId, userId: userAId, principalType: 'tenant_admin', role: 'admin' },
-      { tenantId: tenantBId, userId: userBId, principalType: 'tenant_admin', role: 'admin' },
-    ]);
-
-    // Re-lock RLS
-    await db.execute(sql`SELECT set_config('app.bypass_rls', 'off', false)`);
+    await withTenantDb(tenantAId, (tx) =>
+      tx.insert(memberships).values({ tenantId: tenantAId, userId: userAId, principalType: 'tenant_admin', role: 'admin' }),
+    );
+    await withTenantDb(tenantBId, (tx) =>
+      tx.insert(memberships).values({ tenantId: tenantBId, userId: userBId, principalType: 'tenant_admin', role: 'admin' }),
+    );
 
     // 4. Create Content Type and Records for Tenant A within tenant A scope
     await withTenantDb(tenantAId, async (tx) => {
@@ -206,7 +202,6 @@ describe('Tenant Isolation & RLS Security Attacks', () => {
     const db = getDb();
     // Default connection session with app.current_tenant_id not set
     await db.execute(sql`SELECT set_config('app.current_tenant_id', '', false)`);
-    await db.execute(sql`SELECT set_config('app.bypass_rls', 'off', false)`);
 
     const result = await db.select().from(records);
     expect(result.length).toBe(0);

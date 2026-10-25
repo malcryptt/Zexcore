@@ -1,9 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZexModule, ZexCoreContext } from './types.js';
-import { getDb, getSqlClient } from '../db/client.js';
+import { getDb, getSqlClient, getAdminSqlClient, getAdminDb } from '../db/client.js';
 import { globalEventBus } from '../events/bus.js';
 import { logAuditEvent } from '../audit/logger.js';
 import { getTenantContext } from '../tenancy/context.js';
+
+let systemPhase = false;
 
 export function createDefaultCoreContext(): ZexCoreContext {
   const db = getDb();
@@ -41,15 +43,24 @@ export function createDefaultCoreContext(): ZexCoreContext {
                   `SELECT set_config('app.current_tenant_id', $1, true)`,
                   [tenantId],
                 );
-                await tx.unsafe(`SELECT set_config('app.bypass_rls', 'off', true)`);
                 return await tx.unsafe(rawText, params as any);
               });
               return { rows: result };
             }
 
-            // No tenant context — run without RLS context (schema init, module onInit, etc.)
-            const rows = await sqlClient.unsafe(rawText, params as any);
+            // No tenant context. Only permitted during the boot "system phase" (module DDL in onInit),
+            // and then it runs on the ADMIN connection. At request time an unscoped query is a bug
+            // (or an attack) and is refused rather than run with elevated reach.
+            if (!systemPhase) {
+              throw new Error('Refusing to run a query without tenant context outside the system boot phase');
+            }
+            const rows = await getAdminSqlClient().unsafe(rawText, params as any);
             return { rows };
+          }
+          // Drizzle SQL objects (module DDL such as sql.raw(CREATE TABLE ...)) run on the ADMIN
+          // connection during the boot system phase; at request time they use the restricted pool.
+          if (systemPhase && !getTenantContext()) {
+            return (getAdminDb() as any).execute(queryOrSql);
           }
           return (target as any).execute(queryOrSql);
         };
@@ -158,10 +169,15 @@ export class ModuleRegistry {
     const ctx: ZexCoreContext = context || createDefaultCoreContext();
 
     const sorted = this.getAll();
-    for (const mod of sorted) {
-      if (mod.onInit) {
-        await mod.onInit(ctx);
+    systemPhase = true;
+    try {
+      for (const mod of sorted) {
+        if (mod.onInit) {
+          await mod.onInit(ctx);
+        }
       }
+    } finally {
+      systemPhase = false;
     }
 
     this.initialized = true;

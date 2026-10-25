@@ -2,25 +2,31 @@ import type { FastifyInstance } from 'fastify';
 import {
   initializeDatabaseSchema,
   globalModuleRegistry,
-  getDb,
-  tenants,
-  users,
   records,
   eq,
   desc,
   withTenantDb,
   verifyPassword,
+  hashPassword,
+  resolveTenant,
+  lookupUserForLogin,
   signAuthToken,
   createDefaultCoreContext,
+  grantRuntimeAccess,
+  checkRuntimeRoleSafety,
   memberships,
   and,
 } from '@zexcore/core';
+import { registerBillingRoutes } from './billing/routes.js';
 import { cmsModule } from '@zexcore/module-cms';
 import { crmModule } from '@zexcore/module-crm';
 import { iotModule } from '@zexcore/module-iot';
 import { complianceModule } from '@zexcore/compliance';
 import { rulesModule } from '@zexcore/rules';
 import { auditModule } from '@zexcore/module-audit';
+
+// Pre-computed hash used to equalise login timing for unknown users
+const DUMMY_HASH = await hashPassword('zexcore-timing-equaliser-' + Math.random());
 
 export async function bootstrapApp(server: FastifyInstance): Promise<void> {
   // 1. Initialize DB schema and RLS policies
@@ -50,6 +56,18 @@ export async function bootstrapApp(server: FastifyInstance): Promise<void> {
   const coreContext = createDefaultCoreContext();
   await globalModuleRegistry.initAll(coreContext);
 
+  // Module tables now exist: apply least-privilege grants for the runtime role, then (in production)
+  // refuse to serve if the runtime role could undermine tenant isolation.
+  await grantRuntimeAccess();
+  const roleSafety = await checkRuntimeRoleSafety();
+  if (!roleSafety.ok) {
+    const msg = `Runtime DB role is unsafe: ${roleSafety.problems.join('; ')}`;
+    if (process.env.NODE_ENV === 'production' && process.env.ZEXCORE_ALLOW_SINGLE_DB_ROLE !== 'true') {
+      throw new Error(`[FATAL SECURITY CONFIGURATION] ${msg}`);
+    }
+    server.log.warn(`[bootstrap] ${msg}`);
+  }
+
   // 4. Register health check
   server.get('/api/health', async () => {
     return {
@@ -68,22 +86,17 @@ export async function bootstrapApp(server: FastifyInstance): Promise<void> {
     if (typeof email !== 'string' || typeof password !== 'string') {
       return reply.status(400).send({ error: 'email and password required' });
     }
-    const db = getDb();
-
-    const [userRecord] = await db.select().from(users).where(eq(users.email, email)).limit(1);
-    if (!userRecord) {
-      return reply.status(401).send({ error: 'Invalid email or password' });
-    }
-
-    const isValid = await verifyPassword(password, userRecord.passwordHash);
-    if (!isValid) {
+    const userRecord = await lookupUserForLogin(email.toLowerCase().trim());
+    // Always burn a password verification so unknown emails and wrong passwords take similar time.
+    const isValid = await verifyPassword(password, userRecord?.password_hash ?? DUMMY_HASH);
+    if (!userRecord || !isValid) {
       return reply.status(401).send({ error: 'Invalid email or password' });
     }
 
     let resolvedTenantId: string | undefined;
     let role: 'owner' | 'admin' | 'member' | 'viewer' | undefined;
     if (tenantSlug) {
-      const [t] = await db.select().from(tenants).where(eq(tenants.slug, tenantSlug)).limit(1);
+      const t = await resolveTenant({ slug: tenantSlug });
       if (!t) {
         return reply.status(401).send({ error: 'Invalid email or password' });
       }
@@ -93,7 +106,7 @@ export async function bootstrapApp(server: FastifyInstance): Promise<void> {
           .where(and(eq(memberships.tenantId, t.id), eq(memberships.userId, userRecord.id)))
           .limit(1),
       );
-      if (!m && !userRecord.isPlatformAdmin) {
+      if (!m && !userRecord.is_platform_admin) {
         return reply.status(401).send({ error: 'Invalid email or password' });
       }
       resolvedTenantId = t.id;
@@ -104,8 +117,8 @@ export async function bootstrapApp(server: FastifyInstance): Promise<void> {
       userId: userRecord.id,
       tenantId: resolvedTenantId,
       role,
-      principalType: userRecord.isPlatformAdmin ? 'platform_admin' : 'tenant_user',
-      isPlatformAdmin: userRecord.isPlatformAdmin,
+      principalType: userRecord.is_platform_admin ? 'platform_admin' : 'tenant_user',
+      isPlatformAdmin: userRecord.is_platform_admin,
     });
 
     return reply.send({
@@ -114,7 +127,7 @@ export async function bootstrapApp(server: FastifyInstance): Promise<void> {
         id: userRecord.id,
         email: userRecord.email,
         name: userRecord.name,
-        isPlatformAdmin: userRecord.isPlatformAdmin,
+        isPlatformAdmin: userRecord.is_platform_admin,
       },
     });
   });
@@ -138,6 +151,8 @@ export async function bootstrapApp(server: FastifyInstance): Promise<void> {
 
     return reply.send({ records: recordsList });
   });
+
+  registerBillingRoutes(server);
 
   // 7. Mount registered module routes
   server.log.info('[bootstrap] Mounting module routes...');
