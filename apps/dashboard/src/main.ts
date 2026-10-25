@@ -2014,7 +2014,7 @@ function renderDashboard() {
           <a href="#/console/compliance" class="nav-item ${state.currentTab === 'compliance' ? 'active' : ''}" data-tab="compliance">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             <span class="nav-item-text">
-              <span class="nav-item-title">Data Privacy Vault
+              <span class="nav-item-title">Data Privacy Vault <span class="nav-stage nav-stage-beta">BETA</span>
                 ${isTabLocked('compliance', currentPlan, state.currentUser?.email) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> PRO</span>` : ''}
               </span>
               <span class="nav-item-sub">GDPR consent &amp; data privacy</span>
@@ -2023,7 +2023,7 @@ function renderDashboard() {
           <a href="#/console/audit" class="nav-item ${state.currentTab === 'audit' ? 'active' : ''}" data-tab="audit">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
             <span class="nav-item-text">
-              <span class="nav-item-title">Audit Ledger &amp; Finance</span>
+              <span class="nav-item-title">Audit Ledger &amp; Finance <span class="nav-stage nav-stage-preview">PREVIEW</span></span>
               <span class="nav-item-sub">Logs, exports &amp; verification</span>
             </span>
           </a>
@@ -2033,7 +2033,7 @@ function renderDashboard() {
           <a href="#/console/whitelabel" class="nav-item ${state.currentTab === 'whitelabel' ? 'active' : ''}" data-tab="whitelabel">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.26L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
             <span class="nav-item-text">
-              <span class="nav-item-title">Client Portals &amp; Brand
+              <span class="nav-item-title">Client Portals &amp; Brand <span class="nav-stage nav-stage-soon">SOON</span>
                 ${isTabLocked('whitelabel', currentPlan, state.currentUser?.email) ? `<span class="nav-plan-lock-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> AGENCY</span>` : `<span class="nav-badge">25</span>`}
               </span>
               <span class="nav-item-sub">White-label agency portals</span>
@@ -2042,7 +2042,7 @@ function renderDashboard() {
           <a href="#/console/license" class="nav-item ${state.currentTab === 'license' ? 'active' : ''}" data-tab="license">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zm-3 8V7a3 3 0 0 1 6 0v3H9z"/></svg>
             <span class="nav-item-text">
-              <span class="nav-item-title">License Keys</span>
+              <span class="nav-item-title">License Keys <span class="nav-stage nav-stage-preview">PREVIEW</span></span>
               <span class="nav-item-sub">Activation &amp; enterprise keys</span>
             </span>
           </a>
@@ -2059,10 +2059,10 @@ function renderDashboard() {
         <div class="sidebar-plan-card">
           <div class="sidebar-plan-header">
             <span class="sidebar-plan-label">ACTIVE PLAN</span>
-            <span class="sidebar-plan-status">Active</span>
+            <span class="sidebar-plan-status sidebar-plan-status-demo">Demo</span>
           </div>
           <div class="sidebar-plan-name">${planMeta.name}</div>
-          <div class="sidebar-plan-price">$${planMeta.monthlyPrice} / mo &bull; Active Tier</div>
+          <div class="sidebar-plan-price">$${planMeta.monthlyPrice} / mo &bull; preview only</div>
           <button class="btn-sidebar-upgrade" id="btn-sidebar-upgrade-plan">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
             ${currentPlan === 'enterprise' || currentPlan === 'dedicated' ? 'Manage Plan' : 'Upgrade Plan'}
@@ -2077,7 +2077,7 @@ function renderDashboard() {
           </div>
           <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; font-size: 0.72rem; color: var(--text-muted);">
             <span>ZexCore Engine</span>
-            <span style="font-family: var(--font-mono);">v1.4.2 &bull; Active</span>
+            <span class="sidebar-version">Demo build</span>
           </div>
         </div>
       </aside>
@@ -2095,11 +2095,11 @@ function renderDashboard() {
             <div class="org-tenant-box">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" style="flex-shrink: 0;"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="9" y1="22" x2="9" y2="22"/><line x1="9" y1="6" x2="9" y2="6"/><line x1="15" y1="6" x2="15" y2="6"/><line x1="9" y1="10" x2="9" y2="10"/><line x1="15" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="9" y2="14"/><line x1="15" y1="14" x2="15" y2="14"/></svg>
               <select id="tenantSelect" class="tenant-select" aria-label="Select Tenant Workspace">
-                <option value="acme_corp" ${state.activeTenant === 'acme_corp' ? 'selected' : ''}>Acme Enterprise Corp (prod-us-east)</option>
-                <option value="globex_corp" ${state.activeTenant === 'globex_corp' ? 'selected' : ''}>Globex Research (dev-eu-west)</option>
-                <option value="soylent_ind" ${state.activeTenant === 'soylent_ind' ? 'selected' : ''}>Soylent Dynamics (staging-apac)</option>
+                <option value="acme_corp" ${state.activeTenant === 'acme_corp' ? 'selected' : ''}>Acme Enterprise Corp</option>
+                <option value="globex_corp" ${state.activeTenant === 'globex_corp' ? 'selected' : ''}>Globex Research</option>
+                <option value="soylent_ind" ${state.activeTenant === 'soylent_ind' ? 'selected' : ''}>Soylent Dynamics</option>
               </select>
-              <span class="topbar-env-pill">PROD</span>
+              <span class="topbar-env-pill topbar-env-demo" title="Sample data. Nothing here is connected to a live workspace yet.">DEMO</span>
               <div class="topbar-plan-pill" id="topbar-plan-indicator" title="Manage subscription tier">
                 <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#E50920;flex-shrink:0;"></span>
                 <span>${planMeta.name.toUpperCase()}</span>
@@ -2118,9 +2118,9 @@ function renderDashboard() {
           <!-- Right: System Status, Templates & User Profile -->
           <div class="topbar-right">
             <!-- Calm Operational Status Indicator -->
-            <a href="#/console/audit" class="topbar-status-indicator" title="All systems operational. Click to view audit log &amp; health.">
-              <span class="status-dot-pulse"></span>
-              <span>Systems Operational</span>
+            <a href="#/console/audit" class="topbar-status-indicator" title="Demo workspace with sample data. Live health monitoring is not connected yet.">
+              <span class="status-dot-pulse status-dot-demo"></span>
+              <span>Demo workspace</span>
             </a>
 
             <!-- Starter Kits Launcher -->

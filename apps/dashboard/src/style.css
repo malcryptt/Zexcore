@@ -10408,3 +10408,70 @@ body { background: #fff; letter-spacing: -.008em; }
 
 
 
+
+
+/* ==========================================================================
+   Review fixes (Oct 2026): pricing alignment, console layout, honest labels
+   ========================================================================== */
+
+/* Pricing: the generic [class*="-card"] rules also hit .pricing-card-top and the featured card lift
+   pushed Growth out of line. Keep inner sections flat and the three cards on one baseline. */
+.pricing-grid-3col { align-items: stretch; }
+.pricing-card, .pricing-card-featured { transform: none !important; display: flex; flex-direction: column; }
+.pricing-card:hover, .pricing-card-featured:hover { transform: none !important; }
+.page-wrapper .pricing-card-top {
+  background: transparent !important;
+  border-left: 0 !important; border-right: 0 !important; border-top: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 28px 28px 20px !important;
+}
+.page-wrapper .pricing-card-featured .pricing-card-top { background: #fff7f8 !important; }
+.pricing-card .pricing-features-list { padding: 20px 28px 28px; }
+.pricing-featured-tag { width: 100%; margin: 0; box-sizing: border-box; }
+
+/* Console sidebar: nav scrolls, plan card and footer never overlap or overflow */
+.sidebar { min-height: 0; }
+.nav-menu { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.sidebar-plan-card { flex-shrink: 0; margin: 8px 16px; padding: 10px 12px; }
+.sidebar-plan-card .sidebar-plan-price { margin-bottom: 8px; }
+.sidebar-footer { flex-shrink: 0; flex-direction: column; align-items: stretch; gap: 0; }
+.sidebar-footer .sidebar-version { font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-muted); white-space: nowrap; }
+@media (max-height: 820px) {
+  .sidebar-plan-card .sidebar-plan-price { display: none; }
+  .nav-item-sub { display: none; }
+}
+
+/* Topbar: workspace selector no longer truncated; search box yields space first */
+.tenant-select { max-width: none; width: auto; min-width: 150px; }
+.topbar-search-box { flex: 0 1 280px; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+@media (max-width: 1500px) { .topbar-search-box kbd { display: none; } }
+@media (max-width: 1280px) { .topbar-search-box { flex-basis: 40px; } .topbar-search-box span { display: none; } }
+
+/* Honest status labels */
+.nav-stage {
+  display: inline-block; vertical-align: middle; margin-left: 6px;
+  font-size: 0.58rem; font-weight: 800; letter-spacing: .06em; line-height: 1;
+  padding: 3px 6px; border-radius: 999px; border: 1px solid transparent;
+}
+.nav-stage-beta { color: #1d4ed8; background: #eff6ff; border-color: #bfdbfe; }
+.nav-stage-preview { color: #92400e; background: #fffbeb; border-color: #fde68a; }
+.nav-stage-soon { color: #475569; background: #f1f5f9; border-color: #cbd5e1; }
+.topbar-env-demo { color: #92400e !important; background: #fffbeb !important; border: 1px solid #fde68a !important; }
+.status-dot-demo { background: #f59e0b !important; box-shadow: none !important; animation: none !important; }
+.sidebar-plan-status-demo { color: #92400e !important; background: #fffbeb !important; border-color: #fde68a !important; }
+
+/* Console polish: titles wrap cleanly, one plan indicator, compact plan card, amber demo status */
+.nav-item-title { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; }
+.nav-item-title .nav-stage { margin-left: 0; }
+.sidebar-plan-card .sidebar-plan-price { display: none; }
+.sidebar-plan-card { padding: 9px 12px; }
+.sidebar-plan-name { margin-bottom: 8px; }
+@media (max-width: 1600px) { .topbar-plan-pill { display: none; } }
+.topbar-status-indicator {
+  background: #fffbeb !important; border-color: #fde68a !important; color: #92400e !important;
+  white-space: nowrap;
+}
+.topbar-status-indicator span { white-space: nowrap; }
+.topbar-search-box { flex: 1 1 160px; max-width: 280px; }
+@media (max-height: 900px) { .nav-item-sub { display: none; } .nav-item { padding-top: 8px; padding-bottom: 8px; } }
