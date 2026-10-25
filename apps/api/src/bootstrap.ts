@@ -26,6 +26,7 @@ import { iotModule } from '@zexcore/module-iot';
 import { complianceModule } from '@zexcore/compliance';
 import { rulesModule } from '@zexcore/rules';
 import { auditModule } from '@zexcore/module-audit';
+import { bookingsModule } from '@zexcore/module-bookings';
 
 // Pre-computed hash used to equalise login timing for unknown users
 const DUMMY_HASH = await hashPassword('zexcore-timing-equaliser-' + Math.random());
@@ -53,6 +54,9 @@ export async function bootstrapApp(server: FastifyInstance): Promise<void> {
 
   server.log.info('[bootstrap] Registering Audit & Financial Health module...');
   globalModuleRegistry.register(auditModule);
+
+  server.log.info('[bootstrap] Registering Bookings module...');
+  globalModuleRegistry.register(bookingsModule);
 
   // 3. Initialize all modules (lifecycle onInit)
   const coreContext = createDefaultCoreContext();

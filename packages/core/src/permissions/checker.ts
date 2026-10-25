@@ -56,8 +56,10 @@ export function hasCapability(
     return true;
   }
 
-  // Principal-type default resolution
+  // Principal-type default resolution. A concrete tenant role is authoritative: a 'viewer' must not
+  // inherit the broader defaults of the generic tenant_user principal.
   if (
+    !subject.role &&
     subject.principalType &&
     PRINCIPAL_DEFAULT_CAPABILITIES[subject.principalType]?.includes(requiredCapability)
   ) {

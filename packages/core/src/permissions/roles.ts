@@ -28,12 +28,15 @@ export const ROLE_CAPABILITIES: Record<TenantRole, string[]> = {
     CORE_CAPABILITIES.AI_APPROVE,
   ],
   member: [
+    'bookings:read',
+    'bookings:manage',
     CORE_CAPABILITIES.RECORDS_READ,
     CORE_CAPABILITIES.RECORDS_CREATE,
     CORE_CAPABILITIES.RECORDS_UPDATE,
     CORE_CAPABILITIES.AI_PROPOSE,
   ],
   viewer: [
+    'bookings:read',
     CORE_CAPABILITIES.RECORDS_READ,
   ],
 };

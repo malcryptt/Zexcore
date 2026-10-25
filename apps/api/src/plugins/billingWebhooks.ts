@@ -8,7 +8,7 @@
 
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import crypto from 'node:crypto';
-import { activatePlan } from '@zexcore/core';
+import { activatePlan, settleDeposit } from '@zexcore/core';
 
 export interface NormalizedBillingEvent {
   gateway: 'stripe' | 'paystack' | 'flutterwave';
@@ -178,7 +178,9 @@ const billingWebhooksPluginCallback: FastifyPluginAsync<BillingWebhookOptions> =
       // gateway is ignored. Duplicate deliveries are idempotent.
       let outcome: string = 'ignored';
       if (normalized.status === 'paid' && isChargeSuccessEvent(normalized)) {
-        const result = await activatePlan({
+        // Booking deposits use their own reference namespace ("bk_") and settle a booking, not a plan.
+        const settle = normalized.reference.startsWith('bk_') ? settleDeposit : activatePlan;
+        const result = await settle({
           reference: normalized.reference,
           gateway: normalized.gateway,
           paidMinor: normalized.amountMinor,

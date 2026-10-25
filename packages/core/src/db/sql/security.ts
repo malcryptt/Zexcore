@@ -240,6 +240,42 @@ BEGIN
   RETURN QUERY SELECT 'activated'::text, v.tenant_id, v.tier::text;
 END $f$;
 
+-- ── Booking deposit settlement (verified webhook path; owner-run, sets tenant GUC itself) ──────
+CREATE OR REPLACE FUNCTION zex_settle_deposit(p_reference text, p_gateway text, p_paid_minor bigint, p_currency text)
+RETURNS TABLE (out_outcome text, out_tenant uuid)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public AS $f$
+DECLARE v record;
+BEGIN
+  IF to_regclass('public.bk_bookings') IS NULL THEN
+    RETURN QUERY SELECT 'unknown_reference'::text, NULL::uuid; RETURN;
+  END IF;
+  SELECT * INTO v FROM bk_bookings WHERE payment_reference = p_reference FOR UPDATE;
+  IF NOT FOUND THEN
+    RETURN QUERY SELECT 'unknown_reference'::text, NULL::uuid; RETURN;
+  END IF;
+  IF v.deposit_status = 'paid' THEN
+    RETURN QUERY SELECT 'duplicate'::text, v.tenant_id; RETURN;
+  END IF;
+  IF upper(p_currency) <> upper(v.currency) OR p_paid_minor < v.deposit_minor THEN
+    UPDATE bk_bookings SET deposit_status = 'mismatch', updated_at = now() WHERE id = v.id;
+    PERFORM zex_audit_append_unchecked(v.tenant_id, NULL, 'system', 'bookings.deposit_mismatch', 'booking', v.id::text,
+      jsonb_build_object('reference', v.payment_reference, 'expected_minor', v.deposit_minor, 'expected_currency', v.currency,
+                         'paid_minor', p_paid_minor, 'paid_currency', upper(p_currency), 'gateway', p_gateway), NULL, NULL);
+    RETURN QUERY SELECT 'amount_mismatch'::text, v.tenant_id; RETURN;
+  END IF;
+  UPDATE bk_bookings
+     SET deposit_status = 'paid', paid_at = now(), updated_at = now(),
+         status = CASE WHEN status = 'pending' THEN 'confirmed' ELSE status END
+   WHERE id = v.id;
+  INSERT INTO bk_messages (tenant_id, booking_id, customer_name, customer_phone, direction, kind, body)
+  VALUES (v.tenant_id, v.id, v.customer_name, v.customer_phone, 'in', 'payment',
+          'Deposit of ' || v.currency || ' ' || to_char(p_paid_minor / 100.0, 'FM999,999,999,990.00') || ' received for ' || v.ref
+          || ' (' || p_gateway || ' ref ' || v.payment_reference || ')');
+  PERFORM zex_audit_append_unchecked(v.tenant_id, NULL, 'system', 'bookings.deposit_paid', 'booking', v.id::text,
+    jsonb_build_object('ref', v.ref, 'reference', v.payment_reference, 'gateway', p_gateway, 'paid_minor', p_paid_minor, 'currency', upper(p_currency)), NULL, NULL);
+  RETURN QUERY SELECT 'activated'::text, v.tenant_id;
+END $f$;
+
 -- ── Self-service signup: tenant + owner user + membership, atomically ───────────────
 CREATE OR REPLACE FUNCTION zex_register_tenant(
   p_slug text, p_tenant_name text, p_email text, p_user_name text, p_password_hash text
@@ -295,6 +331,7 @@ const RUNTIME_FUNCTIONS = [
   'zex_activate_plan(text, text, bigint, text)',
   'zex_register_tenant(text, text, text, text, text)',
   'zex_user_profile(uuid)',
+  'zex_settle_deposit(text, text, bigint, text)',
 ];
 const INTERNAL_FUNCTIONS = [
   'zex_audit_append_unchecked(uuid, uuid, text, text, text, text, jsonb, text, text)',

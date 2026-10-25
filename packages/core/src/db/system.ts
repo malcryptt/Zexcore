@@ -58,6 +58,27 @@ export async function activatePlan(args: {
   return { outcome: r.out_outcome, tenantId: r.out_tenant, tier: r.out_tier };
 }
 
+export interface DepositSettlementResult {
+  outcome: 'activated' | 'duplicate' | 'amount_mismatch' | 'unknown_reference';
+  tenantId: string | null;
+}
+
+/** Validates a verified gateway payment against a booking deposit intent and confirms the booking. */
+export async function settleDeposit(args: {
+  reference: string;
+  gateway: string;
+  paidMinor: number;
+  currency: string;
+}): Promise<DepositSettlementResult> {
+  const sql = getSqlClient();
+  const rows = await sql.unsafe<{ out_outcome: DepositSettlementResult['outcome']; out_tenant: string | null }[]>(
+    `SELECT * FROM zex_settle_deposit($1::text, $2::text, $3::bigint, $4::text)`,
+    [args.reference, args.gateway, String(Math.round(args.paidMinor)), args.currency] as any,
+  );
+  const r = rows[0]!;
+  return { outcome: r.out_outcome, tenantId: r.out_tenant };
+}
+
 export class RegistrationError extends Error {
   constructor(public code: 'invalid_slug' | 'reserved_slug' | 'invalid_email' | 'slug_taken' | 'email_taken') {
     super(code);
