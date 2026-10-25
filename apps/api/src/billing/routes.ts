@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import crypto from 'node:crypto';
 import { withTenantDb, sql, logAuditEvent } from '@zexcore/core';
-import { expectedAmountMinor, isPlanTier, type BillingCycle, type Currency } from './plans.js';
+import { expectedAmountMinor, isPlanTier, ngnPerUsd, SERVER_PLANS, type BillingCycle, type Currency } from './plans.js';
 
 /**
  * POST /api/billing/checkout  (tenant admin/owner)
@@ -11,6 +11,27 @@ import { expectedAmountMinor, isPlanTier, type BillingCycle, type Currency } fro
  * (tenant, plan) in webhooks is never trusted.
  */
 export function registerBillingRoutes(server: FastifyInstance): void {
+  // Public price list: the single source of truth for the pricing page and checkout.
+  server.get('/api/billing/plans', async (_request, reply) => {
+    return reply.send({
+      currencyRates: { NGN_PER_USD: ngnPerUsd() },
+      plans: Object.entries(SERVER_PLANS).map(([tier, p]) => ({ tier, monthlyUsd: p.monthlyUsd, annualUsd: p.annualUsd })),
+    });
+  });
+
+  // Payment history for the signed-in tenant
+  server.get('/api/billing/payments', { preHandler: [server.authenticate, server.requireCapability('tenant:settings')] }, async (request, reply) => {
+    const tenant = (request as any).tenant;
+    if (!tenant?.id) return reply.status(400).send({ error: 'Tenant context required' });
+    const rows = await withTenantDb(tenant.id, async (tx) =>
+      (await tx.execute(sql`
+        SELECT reference, tier, cycle, currency, amount_minor, paid_minor, status, gateway, created_at, paid_at
+          FROM billing_payments ORDER BY created_at DESC LIMIT 100
+      `)) as unknown as any[],
+    );
+    return reply.send({ payments: rows });
+  });
+
   server.post<{ Body: { tier?: string; cycle?: string; currency?: string } }>(
     '/api/billing/checkout',
     { preHandler: [server.authenticate, server.requireCapability('tenant:settings')] },

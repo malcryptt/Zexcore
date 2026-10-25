@@ -239,6 +239,52 @@ BEGIN
                        'gateway', p_gateway, 'paid_minor', p_paid_minor, 'currency', upper(p_currency)), NULL, NULL);
   RETURN QUERY SELECT 'activated'::text, v.tenant_id, v.tier::text;
 END $f$;
+
+-- ── Self-service signup: tenant + owner user + membership, atomically ───────────────
+CREATE OR REPLACE FUNCTION zex_register_tenant(
+  p_slug text, p_tenant_name text, p_email text, p_user_name text, p_password_hash text
+) RETURNS TABLE (out_tenant uuid, out_user uuid)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public AS $f$
+DECLARE v_tenant uuid; v_user uuid; v_guc text; v_email text := lower(trim(p_email));
+BEGIN
+  IF p_slug !~ '^[a-z0-9][a-z0-9-]{2,39}$' THEN
+    RAISE EXCEPTION 'invalid_slug' USING ERRCODE = '22023';
+  END IF;
+  IF p_slug = ANY (ARRAY['www','api','app','admin','console','dashboard','static','assets','docs','status','mail','support','billing','zexcore','zexlabs']) THEN
+    RAISE EXCEPTION 'reserved_slug' USING ERRCODE = '22023';
+  END IF;
+  IF v_email !~ '^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$' OR length(v_email) > 254 THEN
+    RAISE EXCEPTION 'invalid_email' USING ERRCODE = '22023';
+  END IF;
+  IF EXISTS (SELECT 1 FROM tenants WHERE slug = p_slug) THEN
+    RAISE EXCEPTION 'slug_taken' USING ERRCODE = '23505';
+  END IF;
+  IF EXISTS (SELECT 1 FROM users WHERE lower(email) = v_email) THEN
+    RAISE EXCEPTION 'email_taken' USING ERRCODE = '23505';
+  END IF;
+
+  INSERT INTO tenants (slug, name, tier) VALUES (p_slug, left(trim(p_tenant_name), 255), 'free') RETURNING id INTO v_tenant;
+  INSERT INTO users (email, password_hash, name) VALUES (v_email, p_password_hash, left(trim(p_user_name), 255)) RETURNING id INTO v_user;
+
+  v_guc := current_setting('app.current_tenant_id', true);
+  PERFORM set_config('app.current_tenant_id', v_tenant::text, true);
+  INSERT INTO memberships (tenant_id, user_id, principal_type, role) VALUES (v_tenant, v_user, 'tenant_admin', 'owner');
+  PERFORM set_config('app.current_tenant_id', coalesce(v_guc, ''), true);
+
+  PERFORM zex_audit_append_unchecked(v_tenant, v_user, 'tenant_admin', 'tenant.registered', 'tenant', v_tenant::text,
+    jsonb_build_object('slug', p_slug), NULL, NULL);
+  RETURN QUERY SELECT v_tenant, v_user;
+END $f$;
+
+-- ── Profile of a user, only if they belong to the caller's current tenant ───────────
+CREATE OR REPLACE FUNCTION zex_user_profile(p_user uuid)
+RETURNS TABLE (id uuid, email varchar, name varchar)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public AS $f$
+  SELECT u.id, u.email, u.name FROM users u
+   WHERE u.id = p_user AND EXISTS (
+     SELECT 1 FROM memberships m
+      WHERE m.user_id = u.id AND m.tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid)
+$f$;
 `;
 
 const RUNTIME_FUNCTIONS = [
@@ -247,6 +293,8 @@ const RUNTIME_FUNCTIONS = [
   'zex_resolve_tenant(uuid, text)',
   'zex_login_lookup(text)',
   'zex_activate_plan(text, text, bigint, text)',
+  'zex_register_tenant(text, text, text, text, text)',
+  'zex_user_profile(uuid)',
 ];
 const INTERNAL_FUNCTIONS = [
   'zex_audit_append_unchecked(uuid, uuid, text, text, text, text, jsonb, text, text)',

@@ -48,7 +48,7 @@ const rateLimitPluginAsync: FastifyPluginAsync<RateLimitOptions> = async (server
 
     const path = request.url.split('?')[0];
     const isIotIngest = path === '/api/iot/ingest';
-    const isLogin = path === '/api/auth/login';
+    const isLogin = path === '/api/auth/login' || path === '/api/auth/register';
     const limit = isIotIngest ? iotMax : isLogin ? loginMax : defaultMax;
     const bucketKey = `${ip}:${isIotIngest ? 'iot' : isLogin ? 'login' : 'gen'}`;
 

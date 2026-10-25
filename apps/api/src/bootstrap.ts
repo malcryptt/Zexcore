@@ -18,6 +18,8 @@ import {
   and,
 } from '@zexcore/core';
 import { registerBillingRoutes } from './billing/routes.js';
+import { registerAccountRoutes } from './routes/account.js';
+import { registerOverviewRoutes } from './routes/overview.js';
 import { cmsModule } from '@zexcore/module-cms';
 import { crmModule } from '@zexcore/module-crm';
 import { iotModule } from '@zexcore/module-iot';
@@ -153,6 +155,8 @@ export async function bootstrapApp(server: FastifyInstance): Promise<void> {
   });
 
   registerBillingRoutes(server);
+  registerAccountRoutes(server);
+  registerOverviewRoutes(server);
 
   // 7. Mount registered module routes
   server.log.info('[bootstrap] Mounting module routes...');

@@ -57,3 +57,45 @@ export async function activatePlan(args: {
   const r = rows[0]!;
   return { outcome: r.out_outcome, tenantId: r.out_tenant, tier: r.out_tier };
 }
+
+export class RegistrationError extends Error {
+  constructor(public code: 'invalid_slug' | 'reserved_slug' | 'invalid_email' | 'slug_taken' | 'email_taken') {
+    super(code);
+  }
+}
+
+/** Atomically creates tenant + owner user + membership (free tier). */
+export async function registerTenant(args: {
+  slug: string;
+  tenantName: string;
+  email: string;
+  userName: string;
+  passwordHash: string;
+}): Promise<{ tenantId: string; userId: string }> {
+  const sql = getSqlClient();
+  try {
+    const rows = await sql.unsafe<{ out_tenant: string; out_user: string }[]>(
+      `SELECT * FROM zex_register_tenant($1::text,$2::text,$3::text,$4::text,$5::text)`,
+      [args.slug, args.tenantName, args.email, args.userName, args.passwordHash] as any,
+    );
+    return { tenantId: rows[0]!.out_tenant, userId: rows[0]!.out_user };
+  } catch (err: any) {
+    const msg = String(err?.message ?? '');
+    for (const code of ['invalid_slug', 'reserved_slug', 'invalid_email', 'slug_taken', 'email_taken'] as const) {
+      if (msg.includes(code)) throw new RegistrationError(code);
+    }
+    throw err;
+  }
+}
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  name: string;
+}
+
+/** Profile of a user who is a member of the current tenant session (call inside withTenantDb). */
+export async function getUserProfileInTenant(tx: { unsafe: (q: string, p?: any[]) => Promise<any[]> }, userId: string): Promise<UserProfile | undefined> {
+  const rows = await tx.unsafe(`SELECT * FROM zex_user_profile($1::uuid)`, [userId]);
+  return rows[0];
+}
