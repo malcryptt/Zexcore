@@ -6780,55 +6780,58 @@ body { background: #fff; letter-spacing: -.008em; }
   transition: opacity 0.35s ease, background-image 0.35s ease;
 }
 
-/* Inner Pages Left-Half Hero Backdrop */
-.page-hero-backdrop {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 36%;
-  max-width: 500px;
-  height: 100%;
-  background-size: cover;
-  background-position: center left;
-  mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.8) 35%, rgba(0, 0, 0, 0) 90%);
-  -webkit-mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.8) 35%, rgba(0, 0, 0, 0) 90%);
-  pointer-events: none;
-  z-index: 1;
+/* Inner Pages — Clean Coded Header Banner (no stock photos) */
+.page-intro-section {
+  position: relative;
+  overflow: hidden;
+  background-color: #fdf3f5;
+  background-image:
+    radial-gradient(ellipse 90% 60% at 50% -10%, rgba(225, 29, 72, 0.10) 0%, transparent 65%),
+    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(225, 29, 72, 0.05) 0%, transparent 60%),
+    linear-gradient(to bottom, #fef0f2 0%, #fdf3f5 60%, #fcf5f6 100%);
 }
 
-/* Ensure Inner Page Hero Flex-Positions Content in the Tinted Red Space on the Right */
+/* Subtle geometric grid overlay — engineering feel */
+.page-intro-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(225, 29, 72, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(225, 29, 72, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Remove old stock photo backdrop element — now a no-op */
+.page-hero-backdrop {
+  display: none;
+}
+
+/* Center content over the clean background */
 .page-intro-section .site-container {
-  display: flex;
-  justify-content: flex-end;
   position: relative;
   z-index: 2;
+  display: flex;
+  justify-content: center;
 }
 
-/* Position Content Comfortably on the Right Half of the Hero */
 .page-hero-content-col {
   position: relative;
   z-index: 2;
-  margin-left: auto;
-  margin-right: 0;
-  max-width: 580px;
+  max-width: 720px;
   width: 100%;
+  text-align: center;
+  margin: 0 auto;
 }
 
 @media (max-width: 980px) {
-  .huawei-half-backdrop,
-  .page-hero-backdrop {
-    width: 100%;
-    opacity: 0.16;
-    mask-image: none;
-    -webkit-mask-image: none;
+  .page-hero-content-col {
+    max-width: 100%;
   }
   .page-intro-section .site-container {
     display: block;
-  }
-  .page-hero-content-col {
-    margin-left: 0;
-    margin-right: 0;
-    max-width: 100%;
   }
 }
 
