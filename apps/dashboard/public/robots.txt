@@ -1,0 +1,9 @@
+# ZexCore: the marketing site and each business's public booking page are indexable; the signed-in app and API are not.
+User-agent: *
+Allow: /
+Disallow: /app/
+Disallow: /api/
+Disallow: /signin
+Disallow: /signup
+
+Sitemap: https://zexcore.com.ng/sitemap.xml

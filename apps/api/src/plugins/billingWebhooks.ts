@@ -8,6 +8,7 @@
 
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import crypto from 'node:crypto';
+import { activatePlan, settleDeposit } from '@zexcore/core';
 
 export interface NormalizedBillingEvent {
   gateway: 'stripe' | 'paystack' | 'flutterwave';
@@ -20,7 +21,12 @@ export interface NormalizedBillingEvent {
   planTier: string;
   billingCycle: 'monthly' | 'annual';
   status: 'paid' | 'failed' | 'pending';
+  amountMinor: number;
   timestamp: string;
+}
+
+function isChargeSuccessEvent(e: NormalizedBillingEvent): boolean {
+  return ['charge.success', 'charge.completed', 'checkout.session.completed', 'payment_intent.succeeded'].includes(e.event);
 }
 
 export interface BillingWebhookOptions {
@@ -94,14 +100,15 @@ const billingWebhooksPluginCallback: FastifyPluginAsync<BillingWebhookOptions> =
           normalized = {
             gateway: 'stripe',
             event: body?.type || 'payment_intent.succeeded',
-            reference: obj?.id || `stripe_${Date.now()}`,
+            reference: obj?.client_reference_id || obj?.metadata?.reference || obj?.id || `stripe_${Date.now()}`,
             tenantSlug: obj?.metadata?.tenantSlug || 'default',
             amount: (obj?.amount || 0) / 100,
             currency: (obj?.currency || 'usd').toUpperCase(),
             customerEmail: obj?.customer_email || obj?.receipt_email || 'hello@zexcore.com.ng',
             planTier: obj?.metadata?.planTier || 'growth',
             billingCycle: (obj?.metadata?.billingCycle as 'monthly' | 'annual') || 'monthly',
-            status: 'paid',
+            status: obj?.payment_status === 'unpaid' ? 'pending' : 'paid',
+            amountMinor: Math.round(obj?.amount_total ?? obj?.amount ?? 0),
             timestamp: new Date().toISOString(),
           };
           break;
@@ -128,6 +135,7 @@ const billingWebhooksPluginCallback: FastifyPluginAsync<BillingWebhookOptions> =
             planTier: data?.metadata?.planTier || 'growth',
             billingCycle: (data?.metadata?.billingCycle as 'monthly' | 'annual') || 'monthly',
             status: data?.status === 'success' ? 'paid' : 'failed',
+            amountMinor: Math.round(Number(data?.amount || 0)),
             timestamp: new Date().toISOString(),
           };
           break;
@@ -153,6 +161,7 @@ const billingWebhooksPluginCallback: FastifyPluginAsync<BillingWebhookOptions> =
             planTier: data?.meta?.planTier || 'growth',
             billingCycle: (data?.meta?.billingCycle as 'monthly' | 'annual') || 'monthly',
             status: data?.status === 'successful' ? 'paid' : 'failed',
+            amountMinor: Math.round(Number(data?.amount || 0) * 100),
             timestamp: new Date().toISOString(),
           };
           break;
@@ -162,13 +171,30 @@ const billingWebhooksPluginCallback: FastifyPluginAsync<BillingWebhookOptions> =
           return reply.status(400).send({ error: `Unsupported payment gateway: ${gateway}` });
       }
 
-      fastify.log.info({ normalized }, 'Normalized billing event settled successfully');
+      fastify.log.info({ gateway: normalized.gateway, reference: normalized.reference, status: normalized.status }, 'Billing webhook verified');
 
-      // NOTE: verified + normalized only. Plan activation is not implemented yet (tracked for post-launch).
+      // Activation: only successful charge events, matched by OUR reference (created server-side at
+      // checkout), amount/currency validated inside the database. Tenant/plan metadata sent by the
+      // gateway is ignored. Duplicate deliveries are idempotent.
+      let outcome: string = 'ignored';
+      if (normalized.status === 'paid' && isChargeSuccessEvent(normalized)) {
+        // Booking deposits use their own reference namespace ("bk_") and settle a booking, not a plan.
+        const settle = normalized.reference.startsWith('bk_') ? settleDeposit : activatePlan;
+        const result = await settle({
+          reference: normalized.reference,
+          gateway: normalized.gateway,
+          paidMinor: normalized.amountMinor,
+          currency: normalized.currency,
+        });
+        outcome = result.outcome;
+        fastify.log.info({ reference: normalized.reference, outcome }, 'Plan activation result');
+      }
+
       return reply.status(200).send({
         status: 'acknowledged',
         gateway,
-        settled: false,
+        settled: outcome === 'activated' || outcome === 'duplicate',
+        outcome,
         reference: normalized.reference,
         tenantSlug: normalized.tenantSlug,
       });

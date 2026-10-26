@@ -90,7 +90,13 @@ pnpm seed
 | `NODE_ENV` | Application environment mode | `production` |
 | `PORT` | Listening HTTP port | `3000` |
 | `HOST` | Bind host address | `0.0.0.0` |
-| `CORS_ORIGIN` | Allowed web origins (comma-separated) | `https://zexcore-5d6c0.web.app` |
+| `CORS_ORIGIN` | Allowed web origins (comma-separated) | `https://zexcore.com.ng,https://zexcore-5d6c0.web.app` |
+| `GOOGLE_CLIENT_ID` | Google OAuth web client; add the site origin under Authorized JavaScript origins. Empty hides the button | `123-abc.apps.googleusercontent.com` |
+| `PAYSTACK_PUBLIC_KEY` | Public key for Paystack checkout in the browser | `pk_live_...` |
+| `PUBLIC_APP_URL` | Origin used in payment links sent to customers | `https://zexcore.com.ng` |
+| `TENANT_BASE_DOMAIN` | Optional wildcard-subdomain routing | `zexcore.me` |
+
+Firebase Hosting serves `apps/dashboard/dist` with a strict Content-Security-Policy (see `firebase.json`). If your API runs on a host other than `https://zexcore-api.onrender.com`, change it in `connect-src` before deploying, and set `VITE_API_URL` when building the dashboard.
 | `JWT_SECRET` | Cryptographic key for signing tenant tokens | `min-32-chars-crypto-random-secret` |
 | `SESSION_TTL_HOURS` | Expiration for auth sessions | `24` |
 | `LOG_LEVEL` | Pino logging level | `info` |

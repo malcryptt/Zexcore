@@ -1,0 +1,153 @@
+import { html, mount, $, type Raw } from '../lib/html';
+import { ic } from '../lib/icons';
+import { login, register } from '../lib/session';
+import { ApiError } from '../lib/api';
+import { authLayout } from '../layouts';
+import { navigate } from '../router';
+import { busy } from '../lib/ui';
+import { mountGoogleButton, googleExchange, type GoogleOutcome } from '../lib/google';
+
+const bullets = html`<ul class="checklist">
+  <li>${ic('circle-check')} One booking link for all your customers</li>
+  <li>${ic('circle-check')} Deposits paid securely with Paystack</li>
+  <li>${ic('circle-check')} No technical skills required</li>
+</ul>`;
+
+function pwField(id: string, label: string, autocomplete: string): Raw {
+  const isNew = autocomplete === 'new-password';
+  return html`<div class="field">
+    <label for="${id}">${label}</label>
+    <div class="input-icon">${ic('lock')}<input class="input" id="${id}" name="${id}" type="password" autocomplete="${autocomplete}" required minlength="${isNew ? 10 : 1}" placeholder="${isNew ? 'At least 10 characters' : 'Enter your password'}">
+      <button type="button" class="btn btn-ghost btn-sm btn-icon trail" data-toggle-pw aria-label="Show password">${ic('eye')}</button></div>
+  </div>`;
+}
+
+function wirePwToggle(el: HTMLElement): void {
+  el.querySelectorAll<HTMLButtonElement>('[data-toggle-pw]').forEach((b) => b.addEventListener('click', () => {
+    const input = b.parentElement!.querySelector('input')!;
+    const show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    b.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+  }));
+}
+
+function workspacePicker(workspaces: { slug: string; name: string }[], onPick: (slug: string) => void): void {
+  const host = $('#auth-body')!;
+  mount(host, html`
+    <h2 style="font-size:1.375rem">Choose a workspace</h2>
+    <p class="muted" style="margin:6px 0 16px">Your account belongs to more than one business.</p>
+    <div class="stack-sm">${workspaces.map((w) => html`<button class="option-card" data-ws="${w.slug}"><span class="icon-tile">${ic('store')}</span><span class="grow"><b>${w.name}</b><br><span class="muted small mono">${w.slug}</span></span>${ic('chevron-right')}</button>`)}</div>`);
+  host.querySelectorAll<HTMLElement>('[data-ws]').forEach((b) => b.addEventListener('click', () => onPick(b.dataset.ws!)));
+}
+
+const googleBlock = (): Raw => html`<div class="divider" style="margin:18px 0">OR</div><div id="g-btn" style="display:flex;justify-content:center;min-height:44px"></div>`;
+
+function wireGoogle(onOutcome: (o: GoogleOutcome) => void, showErr: (m: string) => void): void {
+  const host = $('#g-btn');
+  if (host) void mountGoogleButton(host, onOutcome, showErr);
+}
+
+export function renderSignIn(): void {
+  authLayout(html`
+    <div id="auth-body">
+      <h1 style="font-size:1.75rem;letter-spacing:-0.02em">Take bookings. Get paid. Stop chasing.</h1>
+      ${bullets}
+      <form id="f" class="form-grid" novalidate>
+        <div id="err" class="alert alert-error hidden" role="alert"></div>
+        <div class="field"><label for="email">Email address</label>
+          <div class="input-icon">${ic('mail')}<input class="input" id="email" name="email" type="email" autocomplete="username" required placeholder="you@company.com"></div></div>
+        ${pwField('password', 'Password', 'current-password')}
+        <button class="btn btn-primary btn-lg btn-block" type="submit">Sign in ${ic('arrow-right', 'ico-sm')}</button>
+      </form>
+      ${googleBlock()}
+      <p class="muted small" style="text-align:center;margin-top:22px">Your data is isolated per business and every change is logged.</p>
+      <p style="text-align:center;margin-top:8px;font-size:.9rem">New to ZexCore? <a href="/signup" data-link style="color:var(--primary);font-weight:600">Get started in 2 minutes</a></p>
+    </div>`);
+  const form = $('#f') as HTMLFormElement;
+  const err = $('#err')!;
+  wirePwToggle(form);
+  const showErr = (m: string) => { err.textContent = m; err.classList.remove('hidden'); };
+  const done = () => navigate('/app', true);
+
+  const submit = async (slug?: string) => {
+    err.classList.add('hidden');
+    const fd = new FormData(form);
+    try {
+      const r = await login(String(fd.get('email')).trim(), String(fd.get('password')), slug);
+      if (r.ok) return done();
+      workspacePicker(r.workspaces, (s) => void submit(s));
+    } catch (e) { showErr(e instanceof ApiError ? e.message : 'Sign in failed'); }
+  };
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!form.reportValidity()) return;
+    void busy(form.querySelector('button[type=submit]'), () => submit());
+  });
+  wireGoogle(async (o) => {
+    if (o.kind === 'signed-in') return done();
+    if (o.kind === 'choose') return workspacePicker(o.workspaces, async (s) => { await googleExchange(o.credential, { workspace: s }); done(); });
+    googleSignupStep(o);
+  }, showErr);
+}
+
+function googleSignupStep(o: Extract<GoogleOutcome, { kind: 'needs-signup' }>): void {
+  mount($('#auth-body')!, html`
+    <h2 style="font-size:1.375rem">One last step, ${o.name.split(' ')[0]}</h2>
+    <p class="muted" style="margin:6px 0 16px">We'll create a workspace for <b>${o.email}</b>.</p>
+    <form id="gf" class="form-grid">
+      <div id="gerr" class="alert alert-error hidden" role="alert"></div>
+      <div class="field"><label for="biz">Business name</label><input class="input" id="biz" required minlength="2" maxlength="120" placeholder="e.g. Metro Medical Clinic"></div>
+      <button class="btn btn-primary btn-lg btn-block" type="submit">Create workspace ${ic('arrow-right', 'ico-sm')}</button>
+    </form>`);
+  const f = $('#gf') as HTMLFormElement;
+  f.addEventListener('submit', (e) => {
+    e.preventDefault();
+    void busy(f.querySelector('button'), async () => {
+      try {
+        await googleExchange(o.credential, { tenantName: ($('#biz') as HTMLInputElement).value.trim() });
+        navigate('/app/onboarding', true);
+      } catch (x) { const g = $('#gerr')!; g.textContent = x instanceof ApiError ? x.message : 'Could not create workspace'; g.classList.remove('hidden'); }
+    });
+  });
+}
+
+export function renderSignUp(): void {
+  authLayout(html`
+    <div id="auth-body">
+      <h1 style="font-size:1.75rem;letter-spacing:-0.02em">Create your workspace</h1>
+      <p class="muted" style="margin:6px 0 18px">Free to start. Takes about two minutes.</p>
+      <form id="f" class="form-grid" novalidate>
+        <div id="err" class="alert alert-error hidden" role="alert"></div>
+        <div class="field"><label for="biz">Business name</label><input class="input" id="biz" name="biz" required minlength="2" maxlength="120" autocomplete="organization" placeholder="e.g. Metro Medical Clinic"></div>
+        <div class="field"><label for="name">Your name</label><input class="input" id="name" name="name" required minlength="2" maxlength="120" autocomplete="name" placeholder="Full name"></div>
+        <div class="field"><label for="email">Email address</label>
+          <div class="input-icon">${ic('mail')}<input class="input" id="email" name="email" type="email" autocomplete="email" required placeholder="you@company.com"></div></div>
+        ${pwField('password', 'Password', 'new-password')}
+        <button class="btn btn-primary btn-lg btn-block" type="submit">Create workspace ${ic('arrow-right', 'ico-sm')}</button>
+      </form>
+      ${googleBlock()}
+      <p class="muted small" style="text-align:center;margin-top:18px">By continuing you agree to our <a href="/terms" data-link style="text-decoration:underline">Terms</a> and <a href="/privacy" data-link style="text-decoration:underline">Privacy Policy</a>.</p>
+      <p style="text-align:center;margin-top:8px;font-size:.9rem">Already have an account? <a href="/signin" data-link style="color:var(--primary);font-weight:600">Sign in</a></p>
+    </div>`);
+  const form = $('#f') as HTMLFormElement;
+  const err = $('#err')!;
+  wirePwToggle(form);
+  const showErr = (m: string) => { err.textContent = m; err.classList.remove('hidden'); };
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!form.reportValidity()) return;
+    err.classList.add('hidden');
+    const fd = new FormData(form);
+    void busy(form.querySelector('button[type=submit]'), async () => {
+      try {
+        await register({ tenantName: String(fd.get('biz')).trim(), name: String(fd.get('name')).trim(), email: String(fd.get('email')).trim(), password: String(fd.get('password')) });
+        navigate('/app/onboarding', true);
+      } catch (x) { showErr(x instanceof ApiError ? x.message : 'Could not create your workspace'); }
+    });
+  });
+  wireGoogle(async (o) => {
+    if (o.kind === 'signed-in') return navigate('/app', true);
+    if (o.kind === 'choose') return navigate('/signin');
+    googleSignupStep(o);
+  }, showErr);
+}

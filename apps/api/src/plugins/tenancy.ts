@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
-import { runWithTenant, getDb, tenants, eq, verifyAuthToken } from '@zexcore/core';
+import { runWithTenant, resolveTenant, verifyAuthToken } from '@zexcore/core';
 
 const tenancyPluginAsync: FastifyPluginAsync = async (server) => {
   /**
@@ -39,11 +39,15 @@ const tenancyPluginAsync: FastifyPluginAsync = async (server) => {
       const tenantId = resolvedTenantId;
       let tenantSlug = headerTenantSlug;
 
-      // Subdomain resolution: e.g. "acme.api.zexcore.local" -> "acme"
-      if (!tenantId && !tenantSlug && request.hostname) {
-        const parts = request.hostname.split('.');
-        if (parts.length > 2 && parts[0] && parts[0] !== 'localhost' && parts[0] !== 'api') {
-          tenantSlug = parts[0];
+      // Subdomain resolution is opt-in: set TENANT_BASE_DOMAIN (e.g. "zexcore.me") so that "acme.zexcore.me"
+      // resolves to tenant "acme". Without it, host names such as IP addresses or the hosting provider's
+      // default domain must never be interpreted as tenant slugs.
+      const base = process.env.TENANT_BASE_DOMAIN?.toLowerCase();
+      if (!tenantId && !tenantSlug && base && request.hostname) {
+        const host = request.hostname.toLowerCase().replace(/:\d+$/, '');
+        if (host.endsWith(`.${base}`)) {
+          const sub = host.slice(0, -(base.length + 1));
+          if (/^[a-z0-9][a-z0-9-]{1,62}$/.test(sub) && sub !== 'api' && sub !== 'www') tenantSlug = sub;
         }
       }
 
@@ -51,17 +55,8 @@ const tenancyPluginAsync: FastifyPluginAsync = async (server) => {
         return done(); // Public endpoint — no tenant context required
       }
 
-      // Fetch tenant record from DB (tenants table has no RLS)
-      const db = getDb();
-      let tenantRecord;
-
-      if (tenantId) {
-        const results = await db.select().from(tenants).where(eq(tenants.id, tenantId)).limit(1);
-        tenantRecord = results[0];
-      } else if (tenantSlug) {
-        const results = await db.select().from(tenants).where(eq(tenants.slug, tenantSlug)).limit(1);
-        tenantRecord = results[0];
-      }
+      // Resolve via the SECURITY DEFINER lookup (the runtime role cannot read other tenants' rows)
+      const tenantRecord = await resolveTenant(tenantId ? { id: tenantId } : { slug: tenantSlug });
 
       if (!tenantRecord) {
         reply.status(404).send({ error: 'Tenant not found or inactive' });

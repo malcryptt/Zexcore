@@ -11,21 +11,34 @@ services:
       - key: PORT
         value: 10000
       - key: CORS_ORIGIN
-        value: https://zexcore-5d6c0.web.app,https://zexcore-5d6c0.firebaseapp.com
+        value: https://zexcore.com.ng,https://www.zexcore.com.ng,https://zexcore-5d6c0.web.app,https://zexcore-5d6c0.firebaseapp.com
       - key: JWT_SECRET
         generateValue: true
       - key: TRUST_PROXY
         value: "true"
       - key: PAYSTACK_SECRET_KEY
         sync: false
+      - key: PAYSTACK_PUBLIC_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: PUBLIC_APP_URL
+        value: https://zexcore.com.ng
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
       - key: FLUTTERWAVE_SECRET_HASH
         sync: false
-      - key: DATABASE_URL
+      # Schema owner = the managed DB's primary user (boot-time migrations only).
+      - key: ADMIN_DATABASE_URL
         fromDatabase:
           name: zexcore-db
           property: connectionString
+      # Restricted runtime role: create it once with scripts/db-setup-roles.sql (skip_owner=1),
+      # then paste its connection string here. The API refuses to boot in production without it.
+      - key: DATABASE_URL
+        sync: false
+      - key: NGN_PER_USD
+        value: "1500"
 
 databases:
   - name: zexcore-db

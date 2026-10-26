@@ -11,6 +11,7 @@ interface RateLimitOptions {
   max?: number;
   iotMax?: number;
   loginMax?: number;
+  publicWriteMax?: number;
 }
 
 /**
@@ -22,6 +23,7 @@ const rateLimitPluginAsync: FastifyPluginAsync<RateLimitOptions> = async (server
   const defaultMax = opts.max || 120; // 120 req/min for general API
   const iotMax = opts.iotMax || 5000; // 5,000 req/min for IoT telemetry ingest
   const loginMax = opts.loginMax || 10; // brute-force guard
+  const publicWriteMax = opts.publicWriteMax || 20; // public booking/message submissions per IP
 
   const buckets = new Map<string, RateLimitBucket>();
 
@@ -46,11 +48,12 @@ const rateLimitPluginAsync: FastifyPluginAsync<RateLimitOptions> = async (server
     // it is client-controlled unless a trusted proxy overwrites it.
     const ip = request.ip || '127.0.0.1';
 
-    const path = request.url.split('?')[0];
+    const path = request.url.split('?')[0] ?? '';
     const isIotIngest = path === '/api/iot/ingest';
-    const isLogin = path === '/api/auth/login';
-    const limit = isIotIngest ? iotMax : isLogin ? loginMax : defaultMax;
-    const bucketKey = `${ip}:${isIotIngest ? 'iot' : isLogin ? 'login' : 'gen'}`;
+    const isLogin = path === '/api/auth/login' || path === '/api/auth/register' || path === '/api/auth/google';
+    const isPublicWrite = request.method === 'POST' && /^\/api\/public\/[^/]+\/(bookings|messages)$/.test(path);
+    const limit = isIotIngest ? iotMax : isLogin ? loginMax : isPublicWrite ? publicWriteMax : defaultMax;
+    const bucketKey = `${ip}:${isIotIngest ? 'iot' : isLogin ? 'login' : isPublicWrite ? 'pub' : 'gen'}`;
 
     const now = Date.now();
     let bucket = buckets.get(bucketKey);

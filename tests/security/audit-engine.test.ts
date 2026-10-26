@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { runSecurityChecks } from '../../packages/module-audit/src/security/index.js';
 import { runFinanceChecks } from '../../packages/module-audit/src/finance/index.js';
-import { executeAuditRun, calculateDomainScore } from '../../packages/module-audit/src/engine/index.js';
+import { calculateDomainScore } from '../../packages/module-audit/src/engine/index.js';
 import {
   createHashChainBlock,
   verifyHashChainIntegrity,

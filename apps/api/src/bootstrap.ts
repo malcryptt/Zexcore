@@ -2,25 +2,32 @@ import type { FastifyInstance } from 'fastify';
 import {
   initializeDatabaseSchema,
   globalModuleRegistry,
-  getDb,
-  tenants,
-  users,
   records,
   eq,
   desc,
   withTenantDb,
   verifyPassword,
-  signAuthToken,
+  hashPassword,
+  lookupUserForLogin,
   createDefaultCoreContext,
-  memberships,
-  and,
+  grantRuntimeAccess,
+  checkRuntimeRoleSafety,
 } from '@zexcore/core';
+import { registerBillingRoutes } from './billing/routes.js';
+import { registerAccountRoutes } from './routes/account.js';
+import { registerGoogleRoutes } from './routes/google.js';
+import { startSession } from './auth/session.js';
+import { registerOverviewRoutes } from './routes/overview.js';
 import { cmsModule } from '@zexcore/module-cms';
 import { crmModule } from '@zexcore/module-crm';
 import { iotModule } from '@zexcore/module-iot';
 import { complianceModule } from '@zexcore/compliance';
 import { rulesModule } from '@zexcore/rules';
 import { auditModule } from '@zexcore/module-audit';
+import { bookingsModule } from '@zexcore/module-bookings';
+
+// Pre-computed hash used to equalise login timing for unknown users
+const DUMMY_HASH = await hashPassword('zexcore-timing-equaliser-' + Math.random());
 
 export async function bootstrapApp(server: FastifyInstance): Promise<void> {
   // 1. Initialize DB schema and RLS policies
@@ -46,9 +53,24 @@ export async function bootstrapApp(server: FastifyInstance): Promise<void> {
   server.log.info('[bootstrap] Registering Audit & Financial Health module...');
   globalModuleRegistry.register(auditModule);
 
+  server.log.info('[bootstrap] Registering Bookings module...');
+  globalModuleRegistry.register(bookingsModule);
+
   // 3. Initialize all modules (lifecycle onInit)
   const coreContext = createDefaultCoreContext();
   await globalModuleRegistry.initAll(coreContext);
+
+  // Module tables now exist: apply least-privilege grants for the runtime role, then (in production)
+  // refuse to serve if the runtime role could undermine tenant isolation.
+  await grantRuntimeAccess();
+  const roleSafety = await checkRuntimeRoleSafety();
+  if (!roleSafety.ok) {
+    const msg = `Runtime DB role is unsafe: ${roleSafety.problems.join('; ')}`;
+    if (process.env.NODE_ENV === 'production' && process.env.ZEXCORE_ALLOW_SINGLE_DB_ROLE !== 'true') {
+      throw new Error(`[FATAL SECURITY CONFIGURATION] ${msg}`);
+    }
+    server.log.warn(`[bootstrap] ${msg}`);
+  }
 
   // 4. Register health check
   server.get('/api/health', async () => {
@@ -68,55 +90,17 @@ export async function bootstrapApp(server: FastifyInstance): Promise<void> {
     if (typeof email !== 'string' || typeof password !== 'string') {
       return reply.status(400).send({ error: 'email and password required' });
     }
-    const db = getDb();
-
-    const [userRecord] = await db.select().from(users).where(eq(users.email, email)).limit(1);
-    if (!userRecord) {
+    const userRecord = await lookupUserForLogin(email.toLowerCase().trim());
+    // Always burn a password verification so unknown emails and wrong passwords take similar time.
+    const isValid = await verifyPassword(password, userRecord?.password_hash ?? DUMMY_HASH);
+    if (!userRecord || !isValid) {
       return reply.status(401).send({ error: 'Invalid email or password' });
     }
 
-    const isValid = await verifyPassword(password, userRecord.passwordHash);
-    if (!isValid) {
-      return reply.status(401).send({ error: 'Invalid email or password' });
-    }
-
-    let resolvedTenantId: string | undefined;
-    let role: 'owner' | 'admin' | 'member' | 'viewer' | undefined;
-    if (tenantSlug) {
-      const [t] = await db.select().from(tenants).where(eq(tenants.slug, tenantSlug)).limit(1);
-      if (!t) {
-        return reply.status(401).send({ error: 'Invalid email or password' });
-      }
-      // Membership is mandatory: a valid password does not grant access to a tenant you don't belong to.
-      const [m] = await withTenantDb(t.id, async (tx) =>
-        tx.select().from(memberships)
-          .where(and(eq(memberships.tenantId, t.id), eq(memberships.userId, userRecord.id)))
-          .limit(1),
-      );
-      if (!m && !userRecord.isPlatformAdmin) {
-        return reply.status(401).send({ error: 'Invalid email or password' });
-      }
-      resolvedTenantId = t.id;
-      role = m?.role as typeof role;
-    }
-
-    const token = signAuthToken({
-      userId: userRecord.id,
-      tenantId: resolvedTenantId,
-      role,
-      principalType: userRecord.isPlatformAdmin ? 'platform_admin' : 'tenant_user',
-      isPlatformAdmin: userRecord.isPlatformAdmin,
-    });
-
-    return reply.send({
-      token,
-      user: {
-        id: userRecord.id,
-        email: userRecord.email,
-        name: userRecord.name,
-        isPlatformAdmin: userRecord.isPlatformAdmin,
-      },
-    });
+    const session = await startSession(userRecord, tenantSlug);
+    if (session.kind === 'choose') return reply.send({ workspaces: session.workspaces });
+    if (session.kind === 'denied') return reply.status(401).send({ error: 'Invalid email or password' });
+    return reply.send({ token: session.token, user: session.user });
   });
 
   // 6. Generic records endpoint (Dynamic Content Engine)
@@ -138,6 +122,11 @@ export async function bootstrapApp(server: FastifyInstance): Promise<void> {
 
     return reply.send({ records: recordsList });
   });
+
+  registerBillingRoutes(server);
+  registerAccountRoutes(server);
+  registerGoogleRoutes(server);
+  registerOverviewRoutes(server);
 
   // 7. Mount registered module routes
   server.log.info('[bootstrap] Mounting module routes...');

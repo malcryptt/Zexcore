@@ -1,6 +1,7 @@
+import crypto from 'node:crypto';
 import {
   initializeDatabaseSchema,
-  getDb,
+  getAdminDb,
   closeDatabaseConnection,
   tenants,
   users,
@@ -9,32 +10,39 @@ import {
   records,
   hashPassword,
   eq,
-  sql,
   withTenantDb,
 } from '../packages/core/src/index.js';
 
 async function seed() {
+  if (process.env.NODE_ENV === 'production' && process.env.SEED_ALLOW_PRODUCTION !== 'true') {
+    throw new Error('Refusing to seed demo data in production (set SEED_ALLOW_PRODUCTION=true to override).');
+  }
+  // Never ship known passwords: take them from env, or generate random ones and print once.
+  const adminEmail = process.env.SEED_ADMIN_EMAIL || adminEmail;
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD || crypto.randomBytes(18).toString('base64url');
+  const ownerPassword = process.env.SEED_OWNER_PASSWORD || crypto.randomBytes(18).toString('base64url');
+  if (!process.env.SEED_ADMIN_PASSWORD) console.log(`[seed] Generated platform admin password (shown once): ${adminPassword}`);
+  if (!process.env.SEED_OWNER_PASSWORD) console.log(`[seed] Generated demo owner password (shown once): ${ownerPassword}`);
+
   console.log('[seed] Initializing database schema...');
   await initializeDatabaseSchema();
 
-  const db = getDb();
-
-  // Bypass RLS during platform seed provisioning
-  await db.execute(sql`SELECT set_config('app.bypass_rls', 'on', false)`);
+  // Provisioning runs on the ADMIN (schema owner) connection, like a real onboarding job.
+  const db = getAdminDb();
 
   console.log('[seed] Creating platform admin user...');
-  const adminPasswordHash = await hashPassword('thetaskmaster');
+  const adminPasswordHash = await hashPassword(adminPassword);
   let [platformAdmin] = await db
     .select()
     .from(users)
-    .where(eq(users.email, 'hello@zexcore.com.ng'))
+    .where(eq(users.email, adminEmail))
     .limit(1);
 
   if (!platformAdmin) {
     const [createdAdmin] = await db
       .insert(users)
       .values({
-        email: 'hello@zexcore.com.ng',
+        email: adminEmail,
         name: 'Platform Superadmin',
         passwordHash: adminPasswordHash,
         isPlatformAdmin: true,
@@ -45,7 +53,7 @@ async function seed() {
     await db
       .update(users)
       .set({ passwordHash: adminPasswordHash, isPlatformAdmin: true })
-      .where(eq(users.email, 'hello@zexcore.com.ng'));
+      .where(eq(users.email, adminEmail));
   }
 
   console.log('[seed] Creating demo tenant: Realty Pros...');
@@ -75,7 +83,7 @@ async function seed() {
   }
 
   console.log('[seed] Creating tenant owner user...');
-  const ownerPasswordHash = await hashPassword('owner1234');
+  const ownerPasswordHash = await hashPassword(ownerPassword);
   let [tenantOwner] = await db
     .select()
     .from(users)
@@ -95,16 +103,15 @@ async function seed() {
     tenantOwner = createdOwner;
 
     // Create owner membership
-    await db.insert(memberships).values({
-      tenantId: demoTenant!.id,
-      userId: tenantOwner!.id,
-      principalType: 'tenant_admin',
-      role: 'owner',
-    });
+    await withTenantDb(demoTenant!.id, (tx) =>
+      tx.insert(memberships).values({
+        tenantId: demoTenant!.id,
+        userId: tenantOwner!.id,
+        principalType: 'tenant_admin',
+        role: 'owner',
+      }),
+    );
   }
-
-  // Re-lock RLS
-  await db.execute(sql`SELECT set_config('app.bypass_rls', 'off', false)`);
 
   // Seed sample Realty Property ContentType scoped to tenant
   console.log('[seed] Seeding property listing content type for Realty Pros...');

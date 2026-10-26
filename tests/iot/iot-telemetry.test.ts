@@ -1,10 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createServer } from '../../apps/api/src/server.js';
 import {
-  getDb,
+  getAdminDb,
   closeDatabaseConnection,
   tenants,
-  sql,
   signAuthToken,
 } from '../../packages/core/src/index.js';
 import type { FastifyInstance } from 'fastify';
@@ -20,8 +19,7 @@ describe('IoT Module: Fleet Registration & Telemetry Ingestion', () => {
     server = await createServer();
     await server.ready();
 
-    const db = getDb();
-    await db.execute(sql`SELECT set_config('app.bypass_rls', 'on', false)`);
+    const db = getAdminDb();
 
     const [t] = await db
       .insert(tenants)
@@ -32,8 +30,6 @@ describe('IoT Module: Fleet Registration & Telemetry Ingestion', () => {
       })
       .returning();
     testTenantId = t!.id;
-
-    await db.execute(sql`SELECT set_config('app.bypass_rls', 'off', false)`);
 
     // Sign an admin JWT so routes that require authentication pass
     adminJwt = signAuthToken({
