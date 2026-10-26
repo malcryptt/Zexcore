@@ -11,13 +11,19 @@ services:
       - key: PORT
         value: 10000
       - key: CORS_ORIGIN
-        value: https://zexcore-5d6c0.web.app,https://zexcore-5d6c0.firebaseapp.com
+        value: https://zexcore.com.ng,https://www.zexcore.com.ng,https://zexcore-5d6c0.web.app,https://zexcore-5d6c0.firebaseapp.com
       - key: JWT_SECRET
         generateValue: true
       - key: TRUST_PROXY
         value: "true"
       - key: PAYSTACK_SECRET_KEY
         sync: false
+      - key: PAYSTACK_PUBLIC_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: PUBLIC_APP_URL
+        value: https://zexcore.com.ng
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
       - key: FLUTTERWAVE_SECRET_HASH

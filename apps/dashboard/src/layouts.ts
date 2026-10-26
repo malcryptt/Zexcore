@@ -21,6 +21,13 @@ const NAV: { label?: string; items: { href: string; icon: IconName; text: string
     { href: '/app/team', icon: 'id-card', text: 'Team' },
     { href: '/app/booking-page', icon: 'link', text: 'Booking page' },
   ] },
+  { label: 'Workspace tools', items: [
+    { href: '/app/crm', icon: 'handshake', text: 'CRM' },
+    { href: '/app/devices', icon: 'cpu', text: 'Devices' },
+    { href: '/app/automations', icon: 'workflow', text: 'Automations' },
+    { href: '/app/content', icon: 'globe', text: 'Website pages' },
+    { href: '/app/compliance', icon: 'scale', text: 'Data protection' },
+  ] },
   { label: 'Account', items: [
     { href: '/app/billing', icon: 'credit-card', text: 'Plan & billing' },
     { href: '/app/audit', icon: 'history', text: 'Audit log' },

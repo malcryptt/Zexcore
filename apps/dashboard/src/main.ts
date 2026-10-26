@@ -5,6 +5,7 @@ import './styles/base.css';
 import './styles/components.css';
 import './styles/layout.css';
 import './styles/site.css';
+import './styles/modules.css';
 
 import { route, setNotFound, setGuard, setAfter, startRouter, navigate } from './router';
 import { setUnauthorizedHandler } from './lib/api';
@@ -20,6 +21,11 @@ import { renderMessages } from './views/messages';
 import { renderCustomers } from './views/customers';
 import { renderMore, renderServices, renderTeam, renderBookingPage, renderSettings } from './views/manage';
 import { renderBilling, renderAudit } from './views/account';
+import { renderCrm } from './views/crm';
+import { renderDevices } from './views/devices';
+import { renderAutomations } from './views/automations';
+import { renderContent } from './views/content';
+import { renderCompliance } from './views/compliance';
 import { renderOnboarding } from './views/onboarding';
 import { renderPublicBooking } from './views/publicBooking';
 import { renderHome, renderProduct, renderPricing, renderSecurity, renderContact, renderPrivacy, renderTerms, renderNotFound } from './views/site';
@@ -30,6 +36,7 @@ const TITLES: Record<string, string> = {
   '/app': 'Home', '/app/bookings': 'Bookings', '/app/calendar': 'Calendar', '/app/messages': 'Messages', '/app/more': 'More',
   '/app/customers': 'Customers', '/app/services': 'Services', '/app/team': 'Team', '/app/booking-page': 'Booking page',
   '/app/billing': 'Plan & billing', '/app/audit': 'Audit log', '/app/settings': 'Settings',
+  '/app/crm': 'CRM', '/app/devices': 'Devices', '/app/automations': 'Automations', '/app/content': 'Website pages', '/app/compliance': 'Data protection',
 };
 
 setGuard(async (ctx) => {
@@ -41,7 +48,25 @@ setGuard(async (ctx) => {
   }
   if ((ctx.path === '/signin' || ctx.path === '/signup') && isSignedIn()) { if (await loadMe().catch(() => null)) return '/app'; }
 });
-setAfter((ctx) => { if (TITLES[ctx.path]) document.title = `${TITLES[ctx.path]} — ZexCore`; });
+const SITE = 'https://zexcore.com.ng';
+const SITE_PAGES = new Set(['/', '/product', '/pricing', '/security', '/contact', '/privacy', '/terms']);
+function setMeta(path: string): void {
+  const head = document.head;
+  let canon = head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+  let robots = head.querySelector<HTMLMetaElement>('meta[name="robots"]');
+  if (SITE_PAGES.has(path)) {
+    robots?.remove();
+    if (!canon) { canon = document.createElement('link'); canon.rel = 'canonical'; head.appendChild(canon); }
+    canon.href = SITE + (path === '/' ? '/' : path);
+  } else {
+    canon?.remove();
+    if (path === '/signin' || path === '/signup' || path.startsWith('/app')) {
+      if (!robots) { robots = document.createElement('meta'); robots.name = 'robots'; head.appendChild(robots); }
+      robots.content = 'noindex, nofollow';
+    } else robots?.remove();
+  }
+}
+setAfter((ctx) => { if (TITLES[ctx.path]) document.title = `${TITLES[ctx.path]} — ZexCore`; setMeta(ctx.path); });
 
 const appRoute = (path: string, render: (view: HTMLElement, ctx: { query: URLSearchParams }) => Promise<void> | void) =>
   route(path, async (ctx) => {
@@ -74,6 +99,11 @@ appRoute('/app/booking-page', (v) => renderBookingPage(v));
 appRoute('/app/billing', (v) => renderBilling(v));
 appRoute('/app/audit', (v) => renderAudit(v));
 appRoute('/app/settings', (v) => renderSettings(v));
+appRoute('/app/crm', (v) => renderCrm(v));
+appRoute('/app/devices', (v) => renderDevices(v));
+appRoute('/app/automations', (v) => renderAutomations(v));
+appRoute('/app/content', (v) => renderContent(v));
+appRoute('/app/compliance', (v) => renderCompliance(v));
 
 // A single path segment that is not a site page is a business's public booking page: /<slug>
 setNotFound((ctx) => {

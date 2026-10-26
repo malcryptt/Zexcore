@@ -36,3 +36,6 @@ code, kbd, .mono { font-family: var(--font-mono); font-size: 0.8125rem; font-wei
 .ico-sm { width: 16px; height: 16px; }
 .ico-lg { width: 24px; height: 24px; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+
+/* Route containers receive programmatic focus for screen readers; they need no visible ring. */
+.main:focus, .main:focus-visible, [tabindex="-1"]:focus-visible { outline: none; }
