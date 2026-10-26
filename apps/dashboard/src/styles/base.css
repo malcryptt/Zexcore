@@ -27,9 +27,9 @@ code, kbd, .mono { font-family: var(--font-mono); font-size: 0.8125rem; font-wei
 .between { justify-content: space-between; }
 .wrap { flex-wrap: wrap; }
 .grow { flex: 1 1 auto; min-width: 0; }
-.stack { display: grid; gap: 16px; }
-.stack-sm { display: grid; gap: 8px; }
-.stack-lg { display: grid; gap: 24px; }
+.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.stack-sm { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.stack-lg { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hidden { display: none !important; }
 .ico { width: 20px; height: 20px; flex: none; stroke-width: 2; }

@@ -1,6 +1,7 @@
 /** Tiny XSS-safe templating: interpolated values are HTML-escaped unless wrapped with raw()/html``. */
 export class Raw {
-  constructor(public readonly value: string) {}
+  readonly value: string;
+  constructor(value: string) { this.value = value; }
   toString(): string { return this.value; }
 }
 export const raw = (s: string): Raw => new Raw(s);

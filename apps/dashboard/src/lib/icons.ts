@@ -78,7 +78,7 @@ import keyRound from 'lucide-static/icons/key-round.svg?raw';
 import fingerprint from 'lucide-static/icons/fingerprint.svg?raw';
 import scale from 'lucide-static/icons/scale.svg?raw';
 import rocket from 'lucide-static/icons/rocket.svg?raw';
-import package from 'lucide-static/icons/package.svg?raw';
+import packageIcon from 'lucide-static/icons/package.svg?raw';
 import idCard from 'lucide-static/icons/id-card.svg?raw';
 import calendarCheck from 'lucide-static/icons/calendar-check.svg?raw';
 
@@ -159,7 +159,7 @@ const ICONS: Record<string, string> = {
   'fingerprint': fingerprint,
   'scale': scale,
   'rocket': rocket,
-  'package': package,
+  'package': packageIcon,
   'id-card': idCard,
   'calendar-check': calendarCheck,
 };

@@ -1,0 +1,30 @@
+import { api } from './api';
+
+export interface Settings {
+  businessType: string; publicName: string | null; phone: string | null; address: string | null; currency: string;
+  depositEnabled: boolean; depositMinor: number; openMinutes: number; closeMinutes: number; slotMinutes: number;
+  daysOpen: number[]; utcOffsetMinutes: number; leadMinutes: number; maxDaysAhead: number; onboarded: boolean;
+}
+export interface Service { id: string; name: string; description: string | null; durationMin: number; priceMinor: number; active: boolean }
+export interface Staff { id: string; name: string; title: string | null; active: boolean }
+export interface Booking {
+  id: string; ref: string; status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
+  serviceId: string; serviceName?: string; durationMin?: number; staffId: string | null; staffName: string | null;
+  customerName: string; customerPhone: string; customerEmail: string | null; startsAt: string; endsAt: string;
+  currency: string; priceMinor: number; depositMinor: number; depositStatus: 'none' | 'unpaid' | 'paid' | 'mismatch';
+  paymentReference: string | null; notes: string | null; source: string;
+}
+
+let settings: Settings | null = null;
+let slug = '';
+export async function loadSettings(force = false): Promise<Settings> {
+  if (settings && !force) return settings;
+  const r = await api<{ settings: Settings; tenant: { slug: string } }>('/api/bookings/settings');
+  settings = r.settings; slug = r.tenant.slug;
+  return settings;
+}
+export const tenantSlug = (): string => slug;
+export const offset = (): number => settings?.utcOffsetMinutes ?? 60;
+export const clearStore = (): void => { settings = null; slug = ''; };
+
+export const bookingUrl = (): string => `${location.origin}/${slug}`;

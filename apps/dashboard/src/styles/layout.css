@@ -4,11 +4,12 @@
   position: sticky; top: 0; z-index: 50; height: var(--nav-h); display: flex; align-items: center; gap: 10px; padding: 0 16px;
   background: rgba(255,255,255,.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--border);
 }
-.brand { display: inline-flex; align-items: center; gap: 8px; font-size: 1.375rem; letter-spacing: -0.03em; color: var(--primary); line-height: 1; }
+.brand { flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px; font-size: 1.375rem; letter-spacing: -0.03em; color: var(--primary); line-height: 1; }
 .brand img { width: 26px; height: auto; }
 .brand b { font-weight: 800; } .brand span { font-weight: 400; }
-.biz-chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: var(--r-full); background: var(--canvas); font-size: .8125rem; font-weight: 600; max-width: 160px; }
+.biz-chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: var(--r-full); background: var(--canvas); font-size: .8125rem; font-weight: 600; max-width: 160px; min-width: 0; }
 .biz-chip span.t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topbar > a { flex-shrink: 0; }
 .topbar .spacer { flex: 1; }
 .icon-circle { position: relative; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: var(--slate); }
 .icon-circle:hover { background: var(--canvas); color: var(--ink); }
@@ -21,7 +22,7 @@
 .menu-wrap { position: relative; }
 
 .sidebar { display: none; }
-.main { padding: 16px 16px calc(var(--bottom-nav-h) + 24px + var(--safe-b)); max-width: 1100px; margin: 0 auto; }
+.main { min-width: 0; padding: 16px 16px calc(var(--bottom-nav-h) + 24px + var(--safe-b)); max-width: 1100px; margin: 0 auto; }
 .bottom-nav {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; height: calc(var(--bottom-nav-h) + var(--safe-b)); padding-bottom: var(--safe-b);
   display: grid; grid-template-columns: repeat(5, 1fr); background: rgba(255,255,255,.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid var(--border);
@@ -91,7 +92,7 @@
 .booking-meta { background: var(--canvas); border-radius: var(--r); padding: 12px; display: grid; gap: 8px; font-size: .875rem; }
 .booking-meta .l { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
 .ref { font-family: var(--font-mono); font-size: .75rem; color: var(--slate); font-weight: 500; }
-.link-card { background: var(--canvas); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 16px; display: grid; gap: 12px; }
+.link-card { background: var(--canvas); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 16px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 
 /* Messages */
 .thread { display: grid; gap: 10px; padding: 16px; }
@@ -103,7 +104,7 @@
 .msg-pay { justify-self: stretch; display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: var(--r-md); background: linear-gradient(90deg, #d7f7e3, #fff 70%); border: 1px solid var(--success-border); font-size: .875rem; }
 .compose { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--border); background: #fff; }
 .compose .input { border-radius: var(--r-full); }
-.split { display: grid; gap: 16px; }
+.split { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 @media (min-width: 1024px) { .split { grid-template-columns: 340px 1fr; align-items: start; } .split .conv-list { max-height: calc(100dvh - 160px); overflow: auto; } }
 
 /* Calendar */
@@ -148,3 +149,4 @@ ul.checklist { padding: 0; }
 .notice .ico { color: var(--warning); margin-top: 2px; }
 .receipt { background: #fff; border: 1px solid var(--border); border-radius: var(--r-lg); position: relative; padding: 24px 20px; text-align: center; }
 .receipt::before { content: ''; position: absolute; left: 12px; right: 12px; top: 0; border-top: 2px dashed var(--border); }
+@media (max-width: 480px) { .topbar .icon-circle { display: none; } .biz-chip { min-width: 96px; } }

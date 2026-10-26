@@ -15,6 +15,7 @@ export function registerBillingRoutes(server: FastifyInstance): void {
   server.get('/api/billing/plans', async (_request, reply) => {
     return reply.send({
       currencyRates: { NGN_PER_USD: ngnPerUsd() },
+      paystackPublicKey: process.env.PAYSTACK_PUBLIC_KEY || null,
       plans: Object.entries(SERVER_PLANS).map(([tier, p]) => ({ tier, monthlyUsd: p.monthlyUsd, annualUsd: p.annualUsd })),
     });
   });

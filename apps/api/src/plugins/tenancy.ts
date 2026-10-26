@@ -39,11 +39,15 @@ const tenancyPluginAsync: FastifyPluginAsync = async (server) => {
       const tenantId = resolvedTenantId;
       let tenantSlug = headerTenantSlug;
 
-      // Subdomain resolution: e.g. "acme.api.zexcore.local" -> "acme"
-      if (!tenantId && !tenantSlug && request.hostname) {
-        const parts = request.hostname.split('.');
-        if (parts.length > 2 && parts[0] && parts[0] !== 'localhost' && parts[0] !== 'api') {
-          tenantSlug = parts[0];
+      // Subdomain resolution is opt-in: set TENANT_BASE_DOMAIN (e.g. "zexcore.me") so that "acme.zexcore.me"
+      // resolves to tenant "acme". Without it, host names such as IP addresses or the hosting provider's
+      // default domain must never be interpreted as tenant slugs.
+      const base = process.env.TENANT_BASE_DOMAIN?.toLowerCase();
+      if (!tenantId && !tenantSlug && base && request.hostname) {
+        const host = request.hostname.toLowerCase().replace(/:\d+$/, '');
+        if (host.endsWith(`.${base}`)) {
+          const sub = host.slice(0, -(base.length + 1));
+          if (/^[a-z0-9][a-z0-9-]{1,62}$/.test(sub) && sub !== 'api' && sub !== 'www') tenantSlug = sub;
         }
       }
 

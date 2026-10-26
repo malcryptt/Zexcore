@@ -286,7 +286,7 @@ BEGIN
   IF p_slug !~ '^[a-z0-9][a-z0-9-]{2,39}$' THEN
     RAISE EXCEPTION 'invalid_slug' USING ERRCODE = '22023';
   END IF;
-  IF p_slug = ANY (ARRAY['www','api','app','admin','console','dashboard','static','assets','docs','status','mail','support','billing','zexcore','zexlabs']) THEN
+  IF p_slug = ANY (ARRAY['www','api','app','admin','console','dashboard','static','assets','docs','status','mail','support','billing','zexcore','zexlabs','signin','signup','login','logout','pricing','product','security','contact','privacy','terms','about','blog','book','booking','bookings','onboarding','pay','legal','help','null','undefined']) THEN
     RAISE EXCEPTION 'reserved_slug' USING ERRCODE = '22023';
   END IF;
   IF v_email !~ '^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$' OR length(v_email) > 254 THEN

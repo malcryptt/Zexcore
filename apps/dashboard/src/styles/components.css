@@ -155,7 +155,7 @@
 [aria-pressed="true"] > .radio-dot .ico, [aria-checked="true"] > .radio-dot .ico { opacity: 1; }
 .icon-tile { width: 48px; height: 48px; border-radius: 12px; background: var(--canvas); color: var(--slate); display: grid; place-items: center; flex: none; }
 [aria-pressed="true"] > .icon-tile, [aria-checked="true"] > .icon-tile { background: var(--primary); color: #fff; }
-.copy-box { display: flex; align-items: center; gap: 8px; background: var(--canvas); border: 1px solid var(--border); border-radius: var(--r); padding: 6px 6px 6px 12px; }
+.copy-box { min-width: 0; max-width: 100%; display: flex; align-items: center; gap: 8px; background: var(--canvas); border: 1px solid var(--border); border-radius: var(--r); padding: 6px 6px 6px 12px; }
 .copy-box code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--slate); }
 .bar { height: 8px; border-radius: 99px; background: var(--canvas); overflow: hidden; }
 .bar > i { display: block; height: 100%; border-radius: 99px; background: var(--primary); }
