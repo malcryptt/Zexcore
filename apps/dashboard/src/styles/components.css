@@ -189,3 +189,16 @@
 .input:disabled, .select:disabled, .textarea:disabled { background: #f3f4f6; color: #7a8492; cursor: not-allowed; }
 .btn:focus-visible, .nav-link:focus-visible, .site-links a:focus-visible { outline-offset: 3px; }
 .alert { border-radius: 7px; }
+
+
+/* Clear status and empty-state treatments throughout the console. */
+.badge, .pill { font-weight: 650; letter-spacing: .005em; }
+.badge-success { background: #eaf7ef; color: #176b3a; border-color: #ccebd8; }
+.badge-warning { background: #fff6e5; color: #8a5700; border-color: #f3dfb5; }
+.badge-info { background: #edf4ff; color: #2456a6; border-color: #d4e3ff; }
+.empty { border: 1px dashed #d8dde4; border-radius: 8px; background: #fafbfc; padding: 28px 18px; }
+.skel { border-radius: 5px; }
+.alert-error { border-color: #f0c6cc; background: #fff5f6; color: #9f1428; }
+.btn-icon { flex-shrink: 0; }
+.chips { scrollbar-width: thin; }
+.chip-btn { white-space: nowrap; }
