@@ -8,9 +8,9 @@ import { busy } from '../lib/ui';
 import { mountGoogleButton, googleExchange, type GoogleOutcome } from '../lib/google';
 
 const bullets = html`<ul class="checklist">
-  <li>${ic('circle-check')} One booking link for all your customers</li>
-  <li>${ic('circle-check')} Deposits paid securely with Paystack</li>
-  <li>${ic('circle-check')} No technical skills required</li>
+  <li>${ic('circle-check')} A booking link customers can use anytime</li>
+  <li>${ic('circle-check')} Deposits verified securely through Paystack</li>
+  <li>${ic('circle-check')} Simple setup, no technical skills needed</li>
 </ul>`;
 
 function pwField(id: string, label: string, autocomplete: string): Raw {

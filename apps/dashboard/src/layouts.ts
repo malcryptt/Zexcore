@@ -38,7 +38,7 @@ const NAV: { label?: string; items: { href: string; icon: IconName; text: string
 ];
 
 export function brand(size = ''): Raw {
-  return html`<span class="brand ${size}"><img src="/brand-mark.png" alt="" width="26" height="30"><span><b>Zex</b><span>Core</span></span></span>`;
+  return html`<span class="brand ${size}"><img class="brand-lockup" src="https://zexcore.com.ng/zexcore-logo-horizontal.png" alt="ZexCore" width="156" height="36"></span>`;
 }
 
 let unread = 0;
@@ -48,6 +48,7 @@ export async function refreshUnread(): Promise<void> {
     unread = r.counts.waiting;
   } catch { unread = 0; }
   $$('[data-unread]').forEach((el) => { el.textContent = String(unread); el.classList.toggle('hidden', unread === 0); });
+  $$('[data-unread-pip]').forEach((el) => el.classList.toggle('hidden', unread === 0));
 }
 
 function isActive(href: string, path: string): boolean {
@@ -91,7 +92,6 @@ export async function appLayout(path: string, onNew: () => void): Promise<HTMLEl
         </div>
         <nav class="bottom-nav" aria-label="Primary">
           <a href="/app" data-link data-nav="/app">${ic('house')}Home</a>
-          <a href="/app/bookings" data-link data-nav="/app/bookings">${ic('calendar-check')}Bookings</a>
           <a href="/app/calendar" data-link data-nav="/app/calendar">${ic('calendar-days')}Calendar</a>
           <a href="/app/messages" data-link data-nav="/app/messages">${ic('message-square')}Messages<span class="badge-n hidden" data-unread>0</span></a>
           <a href="/app/more" data-link data-nav="/app/more">${ic('ellipsis')}More</a>
@@ -121,5 +121,12 @@ export function leaveApp(): void {
 }
 
 export function authLayout(inner: Raw): void {
-  mount(root(), html`<div class="auth-wrap"><div class="auth-card"><a class="auth-logo" href="/" data-link>${brand('lg')}</a>${inner}</div></div>`);
+  mount(root(), html`<div class="auth-wrap">
+    <a class="auth-logo" href="/" data-link aria-label="ZexCore home">${brand('lg')}</a>
+    <main class="auth-card">${inner}</main>
+    <footer class="auth-footer">
+      ${ic('shield-check', 'ico-sm')}
+      <span>Protected workspace access. Your business data stays isolated.</span>
+    </footer>
+  </div>`);
 }
