@@ -50,7 +50,7 @@ function wireGoogle(onOutcome: (o: GoogleOutcome) => void, showErr: (m: string) 
 export function renderSignIn(): void {
   authLayout(html`
     <div id="auth-body">
-      <h1 style="font-size:1.75rem;letter-spacing:-0.02em">Take bookings. Get paid. Stop chasing.</h1>
+      <h1 style="font-size:1.75rem;letter-spacing:-0.02em">Build on a stronger foundation.</h1>
       ${bullets}
       <form id="f" class="form-grid" novalidate>
         <div id="err" class="alert alert-error hidden" role="alert"></div>
