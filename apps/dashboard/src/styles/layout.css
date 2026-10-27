@@ -229,3 +229,34 @@ ul.checklist { padding: 0; }
 @media (max-width: 480px) {
   .topbar .brand-lockup { width: 124px; }
 }
+
+/* Shared shell refinement across every console route and auth screen. */
+.topbar, .bottom-nav { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.topbar { border-bottom-color: #e1e5ea; }
+.sidebar { box-shadow: none; }
+.nav-link { border-radius: 6px; }
+.nav-link[aria-current="page"] { background: #fff1f2; color: #b20e28; box-shadow: inset 3px 0 0 #c8102e; }
+.nav-label { letter-spacing: .07em; }
+.brand { gap: 0; }
+.brand-lockup { display: block; width: 148px; height: auto; object-fit: contain; }
+.topbar .brand-lockup { width: 132px; }
+.auth-logo .brand-lockup { width: 176px; }
+.auth-wrap { background: #f5f6f8; background-image: none; }
+.auth-logo { background: transparent; border: 0; box-shadow: none; }
+.auth-card { border-radius: 10px; border-color: #e1e5ea; box-shadow: 0 8px 26px -22px rgba(24,25,27,.25); }
+.auth-card h1 { font-size: clamp(1.55rem, 4vw, 1.85rem) !important; line-height: 1.2; letter-spacing: -.035em !important; }
+.auth-footer { max-width: 480px; }
+.page-head { align-items: flex-end; }
+.page-head h1 { letter-spacing: -.04em; }
+.card, .panel, .booking-card, .dev-card, .rule-card, .kpi, .pipe-card { box-shadow: none; }
+.card, .panel, .booking-card { border-radius: 8px; }
+.stat-tile { backdrop-filter: none; -webkit-backdrop-filter: none; }
+@media (min-width: 1024px) {
+  .sidebar .brand-lockup { width: 154px; }
+  .main { max-width: 1280px; }
+}
+@media (max-width: 767px) {
+  .auth-wrap { background: #f5f6f8; padding-top: max(24px, env(safe-area-inset-top)); }
+  .auth-card { border-radius: 9px; }
+  .auth-logo .brand-lockup { width: 158px; }
+}
