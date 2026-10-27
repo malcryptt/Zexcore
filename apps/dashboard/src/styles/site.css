@@ -125,3 +125,38 @@
 @media (prefers-reduced-motion: reduce) {
   .site *, .site *::before, .site *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+
+/* Product-wide polish: precise surfaces, real hierarchy, no glass effects. */
+.site-nav { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; border-bottom-color: #e3e6eb; }
+.site-nav .container { min-height: 64px; }
+.site .hero { background: #fff; }
+.site .hero::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; background: #c8102e; }
+.site .hero-grid { position: relative; }
+.site .eyebrow { background: #fff5f5; border-color: #f1c7cc; color: #b20e28; border-radius: 4px; letter-spacing: .015em; }
+.site .hero h1 { max-width: 720px; font-size: clamp(2.7rem, 5.2vw, 4.35rem); line-height: 1.04; letter-spacing: -.055em; }
+.site .hero h1 em { color: #c8102e; }
+.site .lead { color: #505b6b; line-height: 1.72; }
+.site .phone { border-radius: 12px; box-shadow: 0 14px 38px -28px rgba(24,25,27,.32); }
+.site .phone-screen { border-radius: 8px; }
+.site .step-row { border-radius: 7px; }
+.site .float-chip { border-radius: 7px; box-shadow: 0 6px 18px rgba(24,25,27,.06); }
+.site .section-head h2 { letter-spacing: -.04em; }
+.site .feature { border: 1px solid #e3e6eb; border-radius: 8px; padding: 22px; background: #fff; }
+.site .feature h3 { letter-spacing: -.02em; }
+.site .feature p, .site .section-head p { color: #596474; line-height: 1.7; }
+.site .icon-tile { border-radius: 6px; background: #fff3f4; color: #b20e28; }
+.site .steps-3 > div { border: 1px solid #e2e6eb; border-radius: 8px; background: #fff; }
+.site .cta-band { border-radius: 8px; background: #b80f29; }
+.site .price-card { border-radius: 8px; box-shadow: none; }
+.site .price-card:has(.btn-primary) { box-shadow: inset 0 3px 0 #c8102e; }
+.site .site-footer { background: #f7f8fa; color: #27303c; border-top: 1px solid #e3e6eb; }
+.site .site-footer .brand { color: #18191b; }
+.site .site-footer p, .site .site-footer a { color: #5c6675; }
+.site .site-footer a:hover { color: #b20e28; }
+.site .foot-bottom { border-top-color: #dfe3e8; }
+@media (max-width: 759px) {
+  .site .hero::before { width: 3px; }
+  .site .hero h1 { font-size: clamp(2.35rem, 10vw, 3.2rem); }
+  .site .feature { padding: 18px; }
+}
