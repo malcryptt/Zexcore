@@ -8,9 +8,9 @@ import { busy } from '../lib/ui';
 import { mountGoogleButton, googleExchange, type GoogleOutcome } from '../lib/google';
 
 const bullets = html`<ul class="checklist">
-  <li>${ic('circle-check')} A booking link customers can use anytime</li>
-  <li>${ic('circle-check')} Deposits verified securely through Paystack</li>
-  <li>${ic('circle-check')} Simple setup, no technical skills needed</li>
+  <li>${ic('circle-check')} Database-enforced tenant isolation</li>
+  <li>${ic('circle-check')} Deterministic rules and event-driven workflows</li>
+  <li>${ic('circle-check')} Auditable security and privacy controls</li>
 </ul>`;
 
 function pwField(id: string, label: string, autocomplete: string): Raw {
@@ -50,7 +50,9 @@ function wireGoogle(onOutcome: (o: GoogleOutcome) => void, showErr: (m: string) 
 export function renderSignIn(): void {
   authLayout(html`
     <div id="auth-body">
-      <h1 style="font-size:1.75rem;letter-spacing:-0.02em">Take bookings. Get paid. Stop chasing.</h1>
+      <p class="eyebrow" style="color:var(--primary);font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:.72rem;margin-bottom:14px">ZEXCORE PLATFORM ACCESS</p>
+      <h1 style="font-size:clamp(2rem,3vw,2.65rem);line-height:1.12;letter-spacing:-0.035em">The Operating System for <span style="color:var(--primary)">Vertical SaaS.</span></h1>
+      <p class="muted" style="margin:12px 0 22px;max-width:430px;line-height:1.7">Access your multi-tenant control console for tenant operations, business rules, customer workflows and compliance — from one unified platform.</p>
       ${bullets}
       <form id="f" class="form-grid" novalidate>
         <div id="err" class="alert alert-error hidden" role="alert"></div>
@@ -61,8 +63,8 @@ export function renderSignIn(): void {
         <button class="btn btn-primary btn-lg btn-block" type="submit">Sign in ${ic('arrow-right', 'ico-sm')}</button>
       </form>
       ${googleBlock()}
-      <p class="muted small" style="text-align:center;margin-top:22px">Your data is isolated per business and every change is logged.</p>
-      <p style="text-align:center;margin-top:8px;font-size:.9rem">New to ZexCore? <a href="/signup" data-link style="color:var(--primary);font-weight:600">Get started in 2 minutes</a></p>
+      <p class="muted small" style="text-align:center;margin-top:22px">Tenant-aware access. Auditable actions. Security built into the platform.</p>
+      <p style="text-align:center;margin-top:8px;font-size:.9rem">New to ZexCore? <a href="/signup" data-link style="color:var(--primary);font-weight:600">Create your workspace</a></p>
     </div>`);
   const form = $('#f') as HTMLFormElement;
   const err = $('#err')!;
