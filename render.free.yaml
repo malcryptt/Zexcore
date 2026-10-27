@@ -1,0 +1,46 @@
+# Free-tier variant: API on Render's free web plan, database on an external free Postgres (e.g. Neon).
+# Use via New > Blueprint > "Blueprint Path" = render.free.yaml. No managed database is created here.
+# Free web services sleep after ~15 min idle (first request is slow); move to a paid plan before real traffic.
+services:
+  - type: web
+    name: zexcore-api
+    runtime: docker
+    dockerfilePath: Dockerfile
+    plan: free
+    region: frankfurt
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: CORS_ORIGIN
+        value: https://zexcore.com.ng,https://www.zexcore.com.ng,https://zexcore-5d6c0.web.app,https://zexcore-5d6c0.firebaseapp.com
+      - key: JWT_SECRET
+        generateValue: true
+      - key: TRUST_PROXY
+        value: "true"
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: PAYSTACK_PUBLIC_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: PUBLIC_APP_URL
+        value: https://zexcore.com.ng
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: FLUTTERWAVE_SECRET_HASH
+        sync: false
+      # Schema owner: the external database's primary user (boot-time migrations only).
+      - key: ADMIN_DATABASE_URL
+        sync: false
+      # Restricted runtime role created once with scripts/db-init-production.sh. The API refuses to boot in
+      # production without it.
+      - key: DATABASE_URL
+        sync: false
+      - key: NGN_PER_USD
+        value: "1500"

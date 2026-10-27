@@ -30,3 +30,10 @@ Every merge to `main` then deploys. First deploy can be started from Actions →
 - Rotate any token that was pasted into chat or logs.
 - Enable Render database backups and a paid plan that retains them.
 - Send a real password reset and verification email end to end.
+
+## No payment card? Free-tier path
+1. Create a Postgres database on Neon (neon.tech, free, no card). Copy the **non-pooled** connection string (the "Direct" one).
+2. Render → New → Blueprint → repo `malcryptt/Zexcore`, branch `review/security-fixes-2026-10-24` (or `main` once merged), **Blueprint Path** `render.free.yaml`. This creates only the API on the free plan.
+3. Run `PRIMARY_URL='<neon direct url>' APP_PASSWORD='<24+ chars>' ./scripts/db-init-production.sh`.
+4. On the API service set `ADMIN_DATABASE_URL` = the Neon direct URL, and `DATABASE_URL` = the same URL but with user `zexcore_app` and your `APP_PASSWORD`. Redeploy.
+Limits: free web services sleep when idle, and Neon's free database also pauses when idle (first query is slower). Fine for testing; upgrade both before real customer traffic.
