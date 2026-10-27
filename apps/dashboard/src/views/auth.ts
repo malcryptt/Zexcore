@@ -8,8 +8,8 @@ import { busy } from '../lib/ui';
 import { mountGoogleButton, googleExchange, type GoogleOutcome } from '../lib/google';
 
 const bullets = html`<ul class="checklist">
-  <li>${ic('circle-check')} One booking link for all your customers</li>
-  <li>${ic('circle-check')} Deposits paid securely with Paystack</li>
+  <li>${ic('circle-check')} Instant WhatsApp booking reminders</li>
+  <li>${ic('circle-check')} Secure deposit payments with Paystack</li>
   <li>${ic('circle-check')} No technical skills required</li>
 </ul>`;
 
