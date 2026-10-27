@@ -45,7 +45,8 @@ export async function refreshUnread(): Promise<void> {
     const r = await api<{ counts: { waiting: number } }>('/api/bookings/conversations');
     unread = r.counts.waiting;
   } catch { unread = 0; }
-  $$('[data-unread]').forEach((el) => { el.textContent = String(unread); el.classList.toggle('hidden', unread === 0); });
+  $('[data-unread]').forEach((el) => { el.textContent = String(unread); el.classList.toggle('hidden', unread === 0); });
+  $('[data-unread-pip]').forEach((el) => el.classList.toggle('hidden', unread === 0));
 }
 
 function isActive(href: string, path: string): boolean {
