@@ -37,3 +37,29 @@
 /* Compliance */
 .sec-tabs { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 8px; scrollbar-width: none; }
 .sec-tabs::-webkit-scrollbar { display: none; }
+
+
+/* ───────── Enterprise polish: workspace tools ───────── */
+.kpi-row { gap: 12px; }
+.kpi, .dev-card, .rule-card { border-radius: 9px; box-shadow: none; }
+.kpi { padding: 16px 18px; }
+.kpi b { letter-spacing: -.035em; }
+.pipe { gap: 14px; }
+.pipe-col { background: #f5f6f8; border: 1px solid #e5e8ed; border-radius: 8px; padding: 10px; }
+.pipe-card { border-radius: 7px; box-shadow: none; }
+.pipe-card:hover { border-color: #e6a3aa; box-shadow: 0 3px 10px rgba(24,25,27,.04); }
+.pipe-add { border-radius: 7px; }
+.dev-card { padding: 18px; gap: 14px; }
+.metric { border-radius: 6px; background: #f5f6f8; }
+.codeblock { border-radius: 7px; border: 1px solid #30343a; }
+.rule-card { padding: 18px; }
+.flow .tag { border-radius: 4px; }
+.flow .tag.when { background: #fff1f2; color: #b80016; }
+.sec-tabs { border-bottom: 1px solid #e5e8ed; }
+.sec-tabs > * { border-radius: 5px; }
+@media (max-width: 600px) {
+  .kpi-row { gap: 8px; }
+  .kpi { padding: 12px; }
+  .kpi b { font-size: 1.25rem; }
+  .dev-card, .rule-card { padding: 14px; }
+}
