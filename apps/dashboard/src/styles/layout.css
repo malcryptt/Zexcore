@@ -161,3 +161,61 @@ ul.checklist { padding: 0; }
 .receipt { background: #fff; border: 1px solid var(--border); border-radius: var(--r-lg); position: relative; padding: 24px 20px; text-align: center; }
 .receipt::before { content: ''; position: absolute; left: 12px; right: 12px; top: 0; border-top: 2px dashed var(--border); }
 @media (max-width: 480px) { .topbar .icon-circle { display: none; } .biz-chip { min-width: 96px; } }
+
+
+/* ───────── Enterprise dashboard refresh ─────────
+   Keep the interface approachable: clear surfaces, restrained red accents,
+   no glass effects, and strong information hierarchy. */
+.hero-banner {
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  margin: 0 0 22px;
+  padding: 24px;
+  box-shadow: var(--shadow-1);
+}
+.hero-banner::before { display: none; }
+.hero-banner h1 { color: var(--ink); font-size: 1.65rem; letter-spacing: -.035em; }
+.hero-banner .date { color: var(--slate); opacity: 1; margin-top: 5px; }
+.live-pill {
+  color: #166534;
+  background: #f0fdf4;
+  border: 1px solid #dcfce7;
+  padding: 7px 11px;
+}
+.live-pill .dot { background: #16a34a !important; }
+.stat-grid { gap: 12px; margin-top: 22px; }
+.stat-tile {
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 15px 16px;
+  backdrop-filter: none;
+  min-width: 0;
+}
+.stat-tile .k { color: var(--slate); opacity: 1; font-size: .8125rem; gap: 8px; }
+.stat-tile .k .ico { color: var(--primary); }
+.stat-tile .v { font-size: 1.75rem; margin-top: 10px; }
+.home-grid { gap: 18px; }
+.home-grid .card, .home-grid .link-card { box-shadow: var(--shadow-1); }
+.home-grid .card-head { padding: 17px 20px; }
+.home-grid .card-pad { padding: 18px 20px; }
+.home-grid .empty { padding: 28px 18px; }
+.home-grid .chart-bars .bar-v { background: #f1dadd; }
+.home-grid .chart-bars .col.today .bar-v { background: var(--primary); }
+.home-grid .attn-item { background: #fafbfc; border: 1px solid #eef0f3; }
+.home-grid .link-card { background: #fff; padding: 18px; }
+@media (min-width: 1024px) {
+  .hero-banner { padding: 26px 28px 28px; }
+  .hero-banner h1 { font-size: 1.8rem; }
+  .stat-grid { gap: 14px; }
+}
+@media (max-width: 640px) {
+  .hero-banner { padding: 20px 16px; border-radius: var(--r-lg); }
+  .hero-banner h1 { font-size: 1.4rem; }
+  .live-pill { max-width: 48%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .stat-tile { padding: 12px; }
+  .stat-tile .v { font-size: 1.45rem; }
+}
