@@ -36,7 +36,7 @@ const NAV: { label?: string; items: { href: string; icon: IconName; text: string
 ];
 
 export function brand(size = ''): Raw {
-  return html`<span class="brand ${size}"><img src="/brand-mark.png" alt="" width="26" height="30"><span><b>Zex</b><span>Core</span></span></span>`;
+  return html`<span class="brand ${size}"><img class="brand-lockup" src="/zexcore-logo-horizontal.png" alt="ZexCore" width="176" height="44"></span>`;
 }
 
 let unread = 0;
