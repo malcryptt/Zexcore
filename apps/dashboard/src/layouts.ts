@@ -113,5 +113,12 @@ export function leaveApp(): void {
 }
 
 export function authLayout(inner: Raw): void {
-  mount(root(), html`<div class="auth-wrap"><div class="auth-card"><a class="auth-logo" href="/" data-link>${brand('lg')}</a>${inner}</div></div>`);
+  mount(root(), html`<div class="auth-wrap">
+    <a class="auth-logo" href="/" data-link aria-label="ZexCore home">${brand('lg')}</a>
+    <main class="auth-card">${inner}</main>
+    <footer class="auth-footer">
+      ${ic('shield-check', 'ico-sm')}
+      <span>Protected workspace access. Your business data stays isolated.</span>
+    </footer>
+  </div>`);
 }
