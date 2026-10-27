@@ -159,3 +159,19 @@
 .copy-box code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--slate); }
 .bar { height: 8px; border-radius: 99px; background: var(--canvas); overflow: hidden; }
 .bar > i { display: block; height: 100%; border-radius: 99px; background: var(--primary); }
+
+
+/* ───────── Enterprise interaction details ───────── */
+.btn { border-radius: 6px; box-shadow: none; }
+.btn-primary { background: #c8102e; }
+.btn-primary:hover:not(:disabled) { background: #a80d25; }
+.btn-secondary { border-color: #d8dde4; }
+.btn-secondary:hover:not(:disabled) { border-color: #c5cbd4; background: #f7f8fa; }
+.btn-ghost:hover:not(:disabled) { background: #f5f6f8; }
+.btn-lg { border-radius: 7px; }
+.input, .select, .textarea { border-color: #d8dde4; }
+.input:hover, .select:hover, .textarea:hover { border-color: #b9c1cc; }
+.field > label, .label { letter-spacing: .005em; }
+.form-grid { gap: 18px; }
+.alert { border-radius: 7px; }
+.badge, .pill { border-radius: 5px; }
