@@ -28,7 +28,7 @@ import { renderContent } from './views/content';
 import { renderCompliance } from './views/compliance';
 import { renderOnboarding } from './views/onboarding';
 import { renderPublicBooking } from './views/publicBooking';
-import { renderHome, renderProduct, renderPricing, renderSecurity, renderContact, renderPrivacy, renderTerms, renderNotFound } from './views/site';
+import { renderHome, renderProduct, renderArchitecture, renderModules, renderSolutions, renderDocs, renderPricing, renderSecurity, renderContact, renderPrivacy, renderTerms, renderNotFound } from './views/site';
 
 setUnauthorizedHandler(() => navigate('/signin', true));
 
@@ -49,7 +49,7 @@ setGuard(async (ctx) => {
   if ((ctx.path === '/signin' || ctx.path === '/signup') && isSignedIn()) { if (await loadMe().catch(() => null)) return '/app'; }
 });
 const SITE = 'https://zexcore.com.ng';
-const SITE_PAGES = new Set(['/', '/product', '/pricing', '/security', '/contact', '/privacy', '/terms']);
+const SITE_PAGES = new Set(['/', '/product', '/architecture', '/modules', '/solutions', '/docs', '/pricing', '/security', '/contact', '/privacy', '/terms']);
 function setMeta(path: string): void {
   const head = document.head;
   let canon = head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
@@ -78,6 +78,10 @@ const appRoute = (path: string, render: (view: HTMLElement, ctx: { query: URLSea
 
 route('/', renderHome);
 route('/product', renderProduct);
+route('/architecture', renderArchitecture);
+route('/modules', renderModules);
+route('/solutions', renderSolutions);
+route('/docs', renderDocs);
 route('/pricing', () => void renderPricing());
 route('/security', renderSecurity);
 route('/contact', renderContact);
