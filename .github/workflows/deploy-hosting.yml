@@ -1,0 +1,42 @@
+name: Deploy dashboard to Firebase Hosting
+
+# Runs on every merge to main. Needs two repository settings (Settings > Secrets and variables > Actions):
+#   secret   FIREBASE_SERVICE_ACCOUNT  service-account JSON with the "Firebase Hosting Admin" role only
+#   variable VITE_API_URL              public https URL of the deployed API, e.g. https://zexcore-api.onrender.com
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-hosting
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Require deploy configuration
+        run: |
+          [ -n "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" ] || { echo "::error::FIREBASE_SERVICE_ACCOUNT secret is not set"; exit 1; }
+          [ -n "${{ vars.VITE_API_URL }}" ] || { echo "::error::VITE_API_URL variable is not set"; exit 1; }
+      - run: pnpm build:dashboard
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: zexcore-5d6c0
+          channelId: live
