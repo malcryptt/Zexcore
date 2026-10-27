@@ -24,10 +24,10 @@ describe('Account security: verification, reset, sessions', () => {
   let n = 1;
   const call = (method: string, url: string, o: { token?: string; payload?: unknown } = {}) =>
     server.inject({ method: method as any, url, payload: o.payload as any, headers: o.token ? { authorization: `Bearer ${o.token}` } : {}, remoteAddress: `10.20.${Math.floor(n / 250)}.${(n++ % 250) + 1}` });
-  const lastMailTo = async (to: string, timeoutMs = 3000) => {
+  const lastMailTo = async (to: string, subject?: RegExp, timeoutMs = 5000) => {
     const t0 = Date.now();
     while (Date.now() - t0 < timeoutMs) {
-      const m = [...mailTestHooks.outbox].reverse().find((x) => x.to === to);
+      const m = [...mailTestHooks.outbox].reverse().find((x) => x.to === to && (!subject || subject.test(x.subject)));
       if (m) return m;
       await new Promise((r) => setTimeout(r, 25));
     }
@@ -38,6 +38,8 @@ describe('Account security: verification, reset, sessions', () => {
     const email = `u-${sfx}@sec.test`;
     const r = await call('POST', '/api/auth/register', { payload: { tenantName: `Sec ${sfx} Co`, name: 'Sade Okon', email, password: PW } });
     expect(r.statusCode).toBe(201);
+    // The confirmation email is sent in the background; wait for it so it cannot land in a later assertion's window.
+    expect(await lastMailTo(email, /confirm/i)).toBeDefined();
     return { email, token: r.json().token as string };
   };
 
@@ -47,7 +49,7 @@ describe('Account security: verification, reset, sessions', () => {
     server = await createServer();
     await server.ready();
   });
-  afterAll(async () => { await server.close(); await closeDatabaseConnection(); });
+  afterAll(async () => { await server?.close(); await closeDatabaseConnection(); });
 
   it('sign-up emails a confirmation link; payments wait for it; the link works once', async () => {
     const { email, token } = await signup(crypto.randomBytes(3).toString('hex'));
@@ -74,7 +76,7 @@ describe('Account security: verification, reset, sessions', () => {
     const first = linkToken((await lastMailTo(email))!.text);
     mailTestHooks.outbox.length = 0;
     expect((await call('POST', '/api/auth/email/resend', { token })).statusCode).toBe(200);
-    const second = linkToken((await lastMailTo(email))!.text);
+    const second = linkToken((await lastMailTo(email, /confirm/i))!.text);
     expect(second).not.toBe(first);
     expect((await call('POST', '/api/auth/email/verify', { payload: { token: first } })).statusCode).toBe(400);
     expect((await call('POST', '/api/auth/email/verify', { payload: { token: second } })).statusCode).toBe(200);
@@ -90,7 +92,7 @@ describe('Account security: verification, reset, sessions', () => {
     expect(unknown.statusCode).toBe(200);
     expect(known.statusCode).toBe(200);
     expect(known.json()).toEqual(unknown.json());
-    const mail = await lastMailTo(email);
+    const mail = await lastMailTo(email, /reset/i);
     expect(mail?.subject).toMatch(/reset/i);
     expect(mailTestHooks.outbox.some((m) => m.to.startsWith('nobody-'))).toBe(false);
 
