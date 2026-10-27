@@ -163,56 +163,72 @@ ul.checklist { padding: 0; }
 @media (max-width: 480px) { .topbar .icon-circle { display: none; } .biz-chip { min-width: 96px; } }
 
 
-/* ───────── Enterprise polish: app, authentication and public booking ───────── */
-.topbar { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; border-bottom-color: #e6e9ed; }
-.bottom-nav { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; }
-.main { max-width: 1240px; }
-.sidebar { background: #fff; }
-.nav-link { border-radius: 6px; }
-.nav-link[aria-current="page"] { background: #fff2f3; color: #b80016; box-shadow: inset 2px 0 0 #c8102e; }
-.nav-link:hover { background: #f7f8fa; }
-.page-head { margin-bottom: 24px; }
-.page-head h1 { font-size: clamp(1.55rem, 2vw, 1.9rem); letter-spacing: -.035em; }
-.page-head p { max-width: 680px; line-height: 1.55; }
-.card, .panel, .booking-card, .dev-card, .rule-card, .kpi, .pipe-card { box-shadow: none; }
-.card, .panel { border-radius: 9px; border-color: #e1e5ea; }
-.card:hover, .panel:hover { border-color: #d3d9e1; }
-.hero-banner { background: #fff; color: var(--ink); border: 1px solid #e1e5ea; border-radius: 10px; }
-.hero-banner::before { display: none; }
-.hero-banner h1 { color: var(--ink); }
-.hero-banner .date { color: var(--slate); opacity: 1; }
-.live-pill { background: #f1f8f3; color: #167342; border: 1px solid #cce8d5; border-radius: 5px; }
-.stat-tile { background: #f7f8fa; border: 1px solid #e7eaee; border-radius: 7px; backdrop-filter: none; }
-.stat-tile .k { color: #586273; opacity: 1; }
-.stat-tile .v { color: #18191b; }
-.attn-item { background: #f7f8fa; border-radius: 7px; }
-.booking-card.needs { border-left-width: 3px; }
-.booking-meta, .time-box { border-radius: 6px; background: #f7f8fa; }
-.msg { box-shadow: none; border-radius: 12px; }
-.msg.out { background: #fcebed; border: 1px solid #f5d0d5; }
-.cal-cell { border-radius: 6px; }
-.cal-cell[aria-pressed="true"] { border-width: 1px; background: #fff7f7; }
-.auth-wrap { background: #f7f8fa; background-image: none; }
-.auth-logo { border: 0; border-radius: 0; background: transparent; padding: 4px; }
-.auth-card { border-radius: 10px; box-shadow: 0 10px 30px -24px rgba(24,25,27,.22); }
-.auth-footer { color: #667085; }
-.input, .select, .textarea { border-radius: 6px; }
-.input:focus, .select:focus, .textarea:focus { box-shadow: 0 0 0 3px rgba(200,16,46,.09); }
-.public-head, .pay-bar { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; }
-.public-head { border-bottom-color: #e4e7eb; }
-.receipt { border-radius: 10px; }
-@media (min-width: 1024px) {
-  .sidebar { padding: 18px 12px; }
-  .sidebar .brand { padding: 4px 8px 20px; }
-  .main { padding: 30px 36px 52px; }
+/* ───────── Enterprise dashboard refresh ─────────
+   Keep the interface approachable: clear surfaces, restrained red accents,
+   no glass effects, and strong information hierarchy. */
+.hero-banner {
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  margin: 0 0 22px;
+  padding: 24px;
+  box-shadow: var(--shadow-1);
 }
-@media (max-width: 767px) {
-  .page-head { align-items: flex-start; }
-  .page-head > .actions, .page-head > .row { width: 100%; flex-wrap: wrap; }
-  .stat-grid { gap: 8px; }
+.hero-banner::before { display: none; }
+.hero-banner h1 { color: var(--ink); font-size: 1.65rem; letter-spacing: -.035em; }
+.hero-banner .date { color: var(--slate); opacity: 1; margin-top: 5px; }
+.live-pill {
+  color: #166534;
+  background: #f0fdf4;
+  border: 1px solid #dcfce7;
+  padding: 7px 11px;
+}
+.live-pill .dot { background: #16a34a !important; }
+.stat-grid { gap: 12px; margin-top: 22px; }
+.stat-tile {
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 15px 16px;
+  backdrop-filter: none;
+  min-width: 0;
+}
+.stat-tile .k { color: var(--slate); opacity: 1; font-size: .8125rem; gap: 8px; }
+.stat-tile .k .ico { color: var(--primary); }
+.stat-tile .v { font-size: 1.75rem; margin-top: 10px; }
+.home-grid { gap: 18px; }
+.home-grid .card, .home-grid .link-card { box-shadow: var(--shadow-1); }
+.home-grid .card-head { padding: 17px 20px; }
+.home-grid .card-pad { padding: 18px 20px; }
+.home-grid .empty { padding: 28px 18px; }
+.home-grid .chart-bars .bar-v { background: #f1dadd; }
+.home-grid .chart-bars .col.today .bar-v { background: var(--primary); }
+.home-grid .attn-item { background: #fafbfc; border: 1px solid #eef0f3; }
+.home-grid .link-card { background: #fff; padding: 18px; }
+@media (min-width: 1024px) {
+  .hero-banner { padding: 26px 28px 28px; }
+  .hero-banner h1 { font-size: 1.8rem; }
+  .stat-grid { gap: 14px; }
+}
+@media (max-width: 640px) {
+  .hero-banner { padding: 20px 16px; border-radius: var(--r-lg); }
+  .hero-banner h1 { font-size: 1.4rem; }
+  .live-pill { max-width: 48%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .stat-tile { padding: 12px; }
+  .stat-tile .v { font-size: 1.45rem; }
 }
 
+
+/* Use the official horizontal logo artwork rather than rebuilding the wordmark in text. */
+.brand { gap: 0; }
+.brand .brand-lockup { display: block; width: 148px; max-width: 100%; height: auto; object-fit: contain; }
+.sidebar > a:first-child .brand-lockup { width: 148px; }
+.auth-logo .brand-lockup { width: 156px; }
+@media (max-width: 480px) {
+  .topbar .brand-lockup { width: 124px; }
+}
 
 /* Shared shell refinement across every console route and auth screen. */
 .topbar, .bottom-nav { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; }
