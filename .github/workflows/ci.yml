@@ -51,4 +51,4 @@ jobs:
         env:
           VITE_API_URL: https://api.example.invalid
       - name: Tests
-        run: pnpm test
+        run: pnpm exec vitest run --reporter=default --reporter=github-actions
