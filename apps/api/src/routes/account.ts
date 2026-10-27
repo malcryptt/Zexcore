@@ -1,7 +1,9 @@
 import type { FastifyInstance } from 'fastify';
+import { issueToken } from '../auth/session.js';
+import { sendVerification } from './authSecurity.js';
 import {
   hashPassword,
-  signAuthToken,
+  getUserAccount,
   registerTenant,
   RegistrationError,
   withTenantDb,
@@ -68,7 +70,9 @@ export function registerAccountRoutes(server: FastifyInstance): void {
           userName: b.name!,
           passwordHash: await hashPassword(b.password!),
         });
-        const token = signAuthToken({ userId, tenantId, role: 'owner', principalType: 'tenant_user', isPlatformAdmin: false });
+        const token = await issueToken({ userId, tenantId, role: 'owner', principalType: 'tenant_user', isPlatformAdmin: false }, request);
+        // Fire and forget: a mail problem must never block sign-up. The app shows a banner with a resend button.
+        void sendVerification(server, { id: userId, email, name: b.name! });
         return reply.status(201).send({
           token,
           user: { id: userId, email, name: b.name },
@@ -107,11 +111,12 @@ export function registerAccountRoutes(server: FastifyInstance): void {
       return { tenant: rows[0], profile: profileRows[0] };
     });
     void getUserProfileInTenant; void getSqlClient;
+    const account = await getUserAccount(user.userId);
 
     return reply.send({
       user: result.profile
-        ? { id: result.profile.id, email: result.profile.email, name: result.profile.name }
-        : { id: user.userId, email: null, name: null },
+        ? { id: result.profile.id, email: result.profile.email, name: result.profile.name, emailVerified: Boolean(account?.email_verified) }
+        : { id: user.userId, email: null, name: null, emailVerified: Boolean(account?.email_verified) },
       tenant: result.tenant,
       role: user.role ?? null,
       isPlatformAdmin: Boolean(user.isPlatformAdmin),

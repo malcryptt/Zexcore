@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import crypto from 'node:crypto';
-import { withTenantDb, sql, logAuditEvent } from '@zexcore/core';
+import { withTenantDb, sql, logAuditEvent, getUserAccount, usageSnapshot, PLAN_LIMITS, LIMIT_LABELS } from '@zexcore/core';
 import { expectedAmountMinor, isPlanTier, ngnPerUsd, SERVER_PLANS, type BillingCycle, type Currency } from './plans.js';
 
 /**
@@ -16,8 +16,18 @@ export function registerBillingRoutes(server: FastifyInstance): void {
     return reply.send({
       currencyRates: { NGN_PER_USD: ngnPerUsd() },
       paystackPublicKey: process.env.PAYSTACK_PUBLIC_KEY || null,
-      plans: Object.entries(SERVER_PLANS).map(([tier, p]) => ({ tier, monthlyUsd: p.monthlyUsd, annualUsd: p.annualUsd })),
+      plans: Object.entries(SERVER_PLANS).map(([tier, p]) => ({ tier, monthlyUsd: p.monthlyUsd, annualUsd: p.annualUsd, limits: PLAN_LIMITS[tier] ?? null })),
+      freeLimits: PLAN_LIMITS.free,
+      limitLabels: LIMIT_LABELS,
     });
+  });
+
+  // What this workspace has used against what its plan includes.
+  server.get('/api/billing/usage', { preHandler: [server.authenticate] }, async (request, reply) => {
+    const tenant = (request as any).tenant;
+    if (!tenant?.id) return reply.status(400).send({ error: 'Tenant context required' });
+    const snap = await withTenantDb(tenant.id, (tx) => usageSnapshot(tx as any, tenant.id));
+    return reply.send({ ...snap, labels: LIMIT_LABELS });
   });
 
   // Payment history for the signed-in tenant
@@ -39,6 +49,10 @@ export function registerBillingRoutes(server: FastifyInstance): void {
     async (request, reply) => {
       const tenant = (request as any).tenant;
       if (!tenant?.id) return reply.status(400).send({ error: 'Tenant context required' });
+
+      // Payments are tied to a confirmed email so receipts and account recovery reach the right person.
+      const acct = await getUserAccount((request as any).user.userId);
+      if (acct && !acct.email_verified) return reply.status(403).send({ error: 'Confirm your email address before upgrading. We sent you a link when you signed up.', code: 'email_unverified' });
 
       const { tier, cycle = 'monthly', currency = 'NGN' } = request.body ?? {};
       if (!isPlanTier(tier)) return reply.status(400).send({ error: 'Unknown plan tier' });

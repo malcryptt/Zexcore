@@ -92,6 +92,35 @@ CREATE TABLE IF NOT EXISTS billing_payments (
   paid_at TIMESTAMPTZ
 );
 CREATE INDEX IF NOT EXISTS billing_payments_tenant_idx ON billing_payments (tenant_id, created_at);
+
+-- ── Auth: email verification + revocable sessions + one-time tokens ─────────────────
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ;
+
+CREATE TABLE IF NOT EXISTS auth_sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at TIMESTAMPTZ NOT NULL,
+  revoked_at TIMESTAMPTZ,
+  user_agent VARCHAR(255),
+  ip VARCHAR(64)
+);
+CREATE INDEX IF NOT EXISTS auth_sessions_user_idx ON auth_sessions (user_id);
+
+CREATE TABLE IF NOT EXISTS auth_tokens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  kind VARCHAR(16) NOT NULL CHECK (kind IN ('verify','reset')),
+  token_hash VARCHAR(64) NOT NULL UNIQUE,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS auth_tokens_user_idx ON auth_tokens (user_id, kind);
+-- Deny-by-default for the runtime role: only the SECURITY DEFINER functions below touch these tables.
+ALTER TABLE auth_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE auth_tokens ENABLE ROW LEVEL SECURITY;
 `;
 
 export const SECURITY_FUNCTIONS_SQL = `
@@ -286,7 +315,7 @@ BEGIN
   IF p_slug !~ '^[a-z0-9][a-z0-9-]{2,39}$' THEN
     RAISE EXCEPTION 'invalid_slug' USING ERRCODE = '22023';
   END IF;
-  IF p_slug = ANY (ARRAY['www','api','app','admin','console','dashboard','static','assets','docs','status','mail','support','billing','zexcore','zexlabs','signin','signup','login','logout','pricing','product','security','contact','privacy','terms','about','blog','book','booking','bookings','onboarding','pay','legal','help','null','undefined']) THEN
+  IF p_slug = ANY (ARRAY['www','api','app','admin','console','dashboard','static','assets','docs','status','mail','support','billing','zexcore','zexlabs','signin','signup','login','logout','forgot-password','reset-password','verify-email','security','pricing','product','security','contact','privacy','terms','about','blog','book','booking','bookings','onboarding','pay','legal','help','null','undefined']) THEN
     RAISE EXCEPTION 'reserved_slug' USING ERRCODE = '22023';
   END IF;
   IF v_email !~ '^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$' OR length(v_email) > 254 THEN
@@ -332,6 +361,98 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public AS $f$
      SELECT 1 FROM memberships m
       WHERE m.user_id = u.id AND m.tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid)
 $f$;
+
+-- ── Revocable sessions (the JWT carries the session id; every request re-checks it) ──
+CREATE OR REPLACE FUNCTION zex_session_create(p_user uuid, p_ttl_seconds int, p_ua text, p_ip text)
+RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public AS $f$
+DECLARE v_id uuid;
+BEGIN
+  DELETE FROM auth_sessions WHERE user_id = p_user AND (expires_at < now() - interval '14 days' OR revoked_at < now() - interval '14 days');
+  INSERT INTO auth_sessions (user_id, expires_at, user_agent, ip)
+    VALUES (p_user, now() + make_interval(secs => p_ttl_seconds), left(p_ua, 255), left(p_ip, 64)) RETURNING id INTO v_id;
+  RETURN v_id;
+END $f$;
+
+CREATE OR REPLACE FUNCTION zex_session_valid(p_sid uuid, p_user uuid)
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public AS $f$
+DECLARE v_ok boolean;
+BEGIN
+  SELECT true INTO v_ok FROM auth_sessions s JOIN users u ON u.id = s.user_id
+   WHERE s.id = p_sid AND s.user_id = p_user AND s.revoked_at IS NULL AND s.expires_at > now() AND u.status = 'active';
+  IF v_ok THEN
+    UPDATE auth_sessions SET last_seen_at = now() WHERE id = p_sid AND last_seen_at < now() - interval '5 minutes';
+  END IF;
+  RETURN coalesce(v_ok, false);
+END $f$;
+
+CREATE OR REPLACE FUNCTION zex_session_revoke(p_sid uuid, p_user uuid)
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public AS $f$
+DECLARE v_n int;
+BEGIN
+  UPDATE auth_sessions SET revoked_at = now() WHERE id = p_sid AND user_id = p_user AND revoked_at IS NULL;
+  GET DIAGNOSTICS v_n = ROW_COUNT;
+  RETURN v_n > 0;
+END $f$;
+
+CREATE OR REPLACE FUNCTION zex_session_revoke_all(p_user uuid, p_except uuid)
+RETURNS int LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public AS $f$
+DECLARE v_n int;
+BEGIN
+  UPDATE auth_sessions SET revoked_at = now()
+   WHERE user_id = p_user AND revoked_at IS NULL AND (p_except IS NULL OR id <> p_except);
+  GET DIAGNOSTICS v_n = ROW_COUNT;
+  RETURN v_n;
+END $f$;
+
+CREATE OR REPLACE FUNCTION zex_session_list(p_user uuid)
+RETURNS TABLE (id uuid, created_at timestamptz, last_seen_at timestamptz, user_agent varchar, ip varchar)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public AS $f$
+  SELECT s.id, s.created_at, s.last_seen_at, s.user_agent, s.ip FROM auth_sessions s
+   WHERE s.user_id = p_user AND s.revoked_at IS NULL AND s.expires_at > now()
+   ORDER BY s.last_seen_at DESC LIMIT 50
+$f$;
+
+-- ── One-time tokens (email verification, password reset). Only the SHA-256 hash is stored. ──
+CREATE OR REPLACE FUNCTION zex_token_issue(p_user uuid, p_kind text, p_hash text, p_ttl_seconds int)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public AS $f$
+BEGIN
+  DELETE FROM auth_tokens WHERE user_id = p_user AND kind = p_kind AND used_at IS NULL;
+  INSERT INTO auth_tokens (user_id, kind, token_hash, expires_at) VALUES (p_user, p_kind, p_hash, now() + make_interval(secs => p_ttl_seconds));
+END $f$;
+
+CREATE OR REPLACE FUNCTION zex_token_consume(p_hash text, p_kind text)
+RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public AS $f$
+DECLARE v_user uuid;
+BEGIN
+  UPDATE auth_tokens SET used_at = now()
+   WHERE token_hash = p_hash AND kind = p_kind AND used_at IS NULL AND expires_at > now()
+   RETURNING user_id INTO v_user;
+  RETURN v_user;
+END $f$;
+
+CREATE OR REPLACE FUNCTION zex_token_peek(p_hash text, p_kind text)
+RETURNS uuid LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public AS $f$
+  SELECT user_id FROM auth_tokens WHERE token_hash = p_hash AND kind = p_kind AND used_at IS NULL AND expires_at > now()
+$f$;
+
+-- Changing a password signs the account out everywhere.
+CREATE OR REPLACE FUNCTION zex_set_password(p_user uuid, p_hash text)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public AS $f$
+BEGIN
+  UPDATE users SET password_hash = p_hash, updated_at = now() WHERE id = p_user;
+  UPDATE auth_sessions SET revoked_at = now() WHERE user_id = p_user AND revoked_at IS NULL;
+END $f$;
+
+CREATE OR REPLACE FUNCTION zex_mark_email_verified(p_user uuid)
+RETURNS void LANGUAGE sql SECURITY DEFINER SET search_path = pg_catalog, public AS $f$
+  UPDATE users SET email_verified_at = coalesce(email_verified_at, now()), updated_at = now() WHERE id = p_user
+$f$;
+
+CREATE OR REPLACE FUNCTION zex_user_account(p_user uuid)
+RETURNS TABLE (id uuid, email varchar, name varchar, email_verified boolean, password_hash varchar)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public AS $f$
+  SELECT u.id, u.email, u.name, u.email_verified_at IS NOT NULL, u.password_hash FROM users u WHERE u.id = p_user AND u.status = 'active'
+$f$;
 `;
 
 const RUNTIME_FUNCTIONS = [
@@ -344,6 +465,17 @@ const RUNTIME_FUNCTIONS = [
   'zex_user_profile(uuid)',
   'zex_settle_deposit(text, text, bigint, text)',
   'zex_user_tenants(uuid)',
+  'zex_session_create(uuid, int, text, text)',
+  'zex_session_valid(uuid, uuid)',
+  'zex_session_revoke(uuid, uuid)',
+  'zex_session_revoke_all(uuid, uuid)',
+  'zex_session_list(uuid)',
+  'zex_token_issue(uuid, text, text, int)',
+  'zex_token_consume(text, text)',
+  'zex_token_peek(text, text)',
+  'zex_set_password(uuid, text)',
+  'zex_mark_email_verified(uuid)',
+  'zex_user_account(uuid)',
 ];
 const INTERNAL_FUNCTIONS = [
   'zex_audit_append_unchecked(uuid, uuid, text, text, text, text, jsonb, text, text)',
@@ -364,6 +496,8 @@ GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO ${r};
 
 -- Principle of least privilege on the sensitive tables
 REVOKE ALL ON users FROM ${r};
+REVOKE ALL ON auth_sessions FROM ${r};
+REVOKE ALL ON auth_tokens FROM ${r};
 REVOKE ALL ON tenants FROM ${r};
 GRANT SELECT ON tenants TO ${r};
 REVOKE ALL ON audit_log FROM ${r};

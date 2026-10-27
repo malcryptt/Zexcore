@@ -16,6 +16,7 @@ import {
 import { registerBillingRoutes } from './billing/routes.js';
 import { registerAccountRoutes } from './routes/account.js';
 import { registerGoogleRoutes } from './routes/google.js';
+import { registerAuthSecurityRoutes } from './routes/authSecurity.js';
 import { startSession } from './auth/session.js';
 import { registerOverviewRoutes } from './routes/overview.js';
 import { cmsModule } from '@zexcore/module-cms';
@@ -97,7 +98,7 @@ export async function bootstrapApp(server: FastifyInstance): Promise<void> {
       return reply.status(401).send({ error: 'Invalid email or password' });
     }
 
-    const session = await startSession(userRecord, tenantSlug);
+    const session = await startSession(userRecord, tenantSlug, request);
     if (session.kind === 'choose') return reply.send({ workspaces: session.workspaces });
     if (session.kind === 'denied') return reply.status(401).send({ error: 'Invalid email or password' });
     return reply.send({ token: session.token, user: session.user });
@@ -126,6 +127,7 @@ export async function bootstrapApp(server: FastifyInstance): Promise<void> {
   registerBillingRoutes(server);
   registerAccountRoutes(server);
   registerGoogleRoutes(server);
+  registerAuthSecurityRoutes(server);
   registerOverviewRoutes(server);
 
   // 7. Mount registered module routes

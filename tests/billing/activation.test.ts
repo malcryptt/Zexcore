@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { testToken } from '../helpers/db.js';
 import crypto from 'node:crypto';
 
 const PAYSTACK_SECRET = 'sk_test_activation_secret';
@@ -41,8 +42,8 @@ describe('Billing: server-priced checkout -> verified webhook -> plan activation
     await server.ready();
     slug = `bill-${crypto.randomBytes(4).toString('hex')}`;
     tenantId = await createTenant(slug, 'Billing Test', 'free');
-    adminAuth = { authorization: `Bearer ${core.signAuthToken({ userId: crypto.randomUUID(), tenantId, role: 'owner', principalType: 'tenant_user' })}` };
-    viewerAuth = { authorization: `Bearer ${core.signAuthToken({ userId: crypto.randomUUID(), tenantId, role: 'viewer', principalType: 'tenant_user' })}` };
+    adminAuth = { authorization: `Bearer ${await testToken({ userId: crypto.randomUUID(), tenantId, role: 'owner', principalType: 'tenant_user' })}` };
+    viewerAuth = { authorization: `Bearer ${await testToken({ userId: crypto.randomUUID(), tenantId, role: 'viewer', principalType: 'tenant_user' })}` };
   });
   afterAll(async () => {
     await server.close();

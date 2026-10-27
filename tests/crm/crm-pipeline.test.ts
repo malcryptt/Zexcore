@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { testToken } from '../helpers/db.js';
 import { createServer } from '../../apps/api/src/server.js';
 import {
   getAdminDb,
   closeDatabaseConnection,
   tenants,
-  signAuthToken,
 } from '../../packages/core/src/index.js';
 import type { FastifyInstance } from 'fastify';
 
@@ -44,13 +44,13 @@ describe('CRM Module: Contacts, Opportunities & Composite Key Defense', () => {
     tenantB = t2!.id;
 
     // Issue admin JWTs for both tenants
-    jwtA = signAuthToken({
+    jwtA = await testToken({
       userId: 'crm-admin-a',
       tenantId: tenantA,
       principalType: 'tenant_admin',
       role: 'admin',
     });
-    jwtB = signAuthToken({
+    jwtB = await testToken({
       userId: 'crm-admin-b',
       tenantId: tenantB,
       principalType: 'tenant_admin',

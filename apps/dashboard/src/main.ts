@@ -13,7 +13,8 @@ import { loadMe, isSignedIn, current } from './lib/session';
 import { appLayout, leaveApp } from './layouts';
 import { html, mount } from './lib/html';
 import { errorState } from './lib/ui';
-import { renderSignIn, renderSignUp } from './views/auth';
+import { renderSignIn, renderSignUp, renderForgot, renderReset, renderVerify } from './views/auth';
+import { renderSecurity as renderAccountSecurity } from './views/security';
 import { renderHome as renderAppHome } from './views/home';
 import { renderBookings, openNewBooking } from './views/bookings';
 import { renderCalendar } from './views/calendar';
@@ -35,7 +36,7 @@ setUnauthorizedHandler(() => navigate('/signin', true));
 const TITLES: Record<string, string> = {
   '/app': 'Home', '/app/bookings': 'Bookings', '/app/calendar': 'Calendar', '/app/messages': 'Messages', '/app/more': 'More',
   '/app/customers': 'Customers', '/app/services': 'Services', '/app/team': 'Team', '/app/booking-page': 'Booking page',
-  '/app/billing': 'Plan & billing', '/app/audit': 'Audit log', '/app/settings': 'Settings',
+  '/app/billing': 'Plan & billing', '/app/audit': 'Audit log', '/app/settings': 'Settings', '/app/security': 'Security',
   '/app/crm': 'CRM', '/app/devices': 'Devices', '/app/automations': 'Automations', '/app/content': 'Website pages', '/app/compliance': 'Data protection',
 };
 
@@ -60,7 +61,7 @@ function setMeta(path: string): void {
     canon.href = SITE + (path === '/' ? '/' : path);
   } else {
     canon?.remove();
-    if (path === '/signin' || path === '/signup' || path.startsWith('/app')) {
+    if (['/signin', '/signup', '/forgot-password', '/reset-password', '/verify-email'].includes(path) || path.startsWith('/app')) {
       if (!robots) { robots = document.createElement('meta'); robots.name = 'robots'; head.appendChild(robots); }
       robots.content = 'noindex, nofollow';
     } else robots?.remove();
@@ -85,6 +86,9 @@ route('/privacy', renderPrivacy);
 route('/terms', renderTerms);
 route('/signin', () => { leaveApp(); renderSignIn(); });
 route('/signup', () => { leaveApp(); renderSignUp(); });
+route('/forgot-password', () => { leaveApp(); renderForgot(); });
+route('/reset-password', () => { leaveApp(); renderReset(); });
+route('/verify-email', () => { leaveApp(); void renderVerify(); });
 
 route('/app/onboarding', async () => { await renderOnboarding(); });
 appRoute('/app', (v) => renderAppHome(v));
@@ -99,6 +103,7 @@ appRoute('/app/booking-page', (v) => renderBookingPage(v));
 appRoute('/app/billing', (v) => renderBilling(v));
 appRoute('/app/audit', (v) => renderAudit(v));
 appRoute('/app/settings', (v) => renderSettings(v));
+appRoute('/app/security', (v) => renderAccountSecurity(v));
 appRoute('/app/crm', (v) => renderCrm(v));
 appRoute('/app/devices', (v) => renderDevices(v));
 appRoute('/app/automations', (v) => renderAutomations(v));

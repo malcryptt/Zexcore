@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZexCoreContext } from '@zexcore/core';
+import { planLimitGuard } from '@zexcore/core';
 import { CRM_CAPABILITIES } from '../permissions.js';
 import { CRM_EVENTS } from '../events.js';
 
@@ -77,7 +78,7 @@ export function registerContactRoutes(server: FastifyInstance, core: ZexCoreCont
 
   // ── CREATE ──────────────────────────────────────────────────────────────────
   server.post('/api/crm/contacts', {
-    preHandler: [server.authenticate, server.requireCapability(CRM_CAPABILITIES.CONTACTS_CREATE)],
+    preHandler: [server.authenticate, server.requireCapability(CRM_CAPABILITIES.CONTACTS_CREATE), planLimitGuard('crmContacts')],
     schema: {
       body: {
         type: 'object',

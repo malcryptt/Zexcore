@@ -1,3 +1,4 @@
+import { limitLines, LIMIT_ORDER, type Limits, type Labels, type LimitKey } from '../lib/limits';
 import { html, mount, $, $$ } from '../lib/html';
 import { ic } from '../lib/icons';
 import { api, ApiError } from '../lib/api';
@@ -5,7 +6,8 @@ import { money, ago } from '../lib/format';
 import { toast, emptyState, errorState, skeletonRows, busy } from '../lib/ui';
 import { current, loadMe, canAdmin } from '../lib/session';
 
-interface PlanList { currencyRates: { NGN_PER_USD: number }; paystackPublicKey: string | null; plans: { tier: string; monthlyUsd: number; annualUsd: number }[] }
+interface PlanList { currencyRates: { NGN_PER_USD: number }; paystackPublicKey: string | null; plans: { tier: string; monthlyUsd: number; annualUsd: number; limits: Limits | null }[]; freeLimits: Limits; limitLabels: Labels }
+interface Usage { tier: string; effectiveTier: string; usage: Record<LimitKey, { used: number; limit: number | null }>; labels: Labels }
 interface Payment { reference: string; tier: string; cycle: string; currency: string; amount_minor: string | number; paid_minor: string | number | null; status: string; gateway: string | null; created_at: string; paid_at: string | null }
 const BLURB: Record<string, string> = { starter: 'For a single location getting started.', growth: 'For growing businesses with a busy calendar.', agency: 'For operators running several locations.', enterprise: 'For large organisations with advanced needs.', dedicated: 'Dedicated infrastructure and a named support contact.' };
 
@@ -20,6 +22,7 @@ export async function renderBilling(view: HTMLElement): Promise<void> {
   let cycle: 'monthly' | 'annual' = 'monthly';
   mount(view, html`<div class="page-head"><div><h1>Plan & billing</h1><p>Current plan: <b style="text-transform:capitalize">${me.tenant.tier}</b>${me.tenant.plan_expires_at ? ` · renews ${new Date(me.tenant.plan_expires_at).toISOString().slice(0, 10)}` : ''}</p></div>
     <div class="chips"><button class="chip-btn" data-c="monthly" aria-pressed="true">Monthly</button><button class="chip-btn" data-c="annual" aria-pressed="false">Annual · 2 months free</button></div></div>
+    <div id="usage"></div>
     <div id="plans" class="stack" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr))"></div>
     <h3 style="margin:28px 0 12px">Payment history</h3><div class="card" id="pay"></div>`);
   let plans: PlanList;
@@ -36,11 +39,25 @@ export async function renderBilling(view: HTMLElement): Promise<void> {
         <div class="row between"><h3 style="text-transform:capitalize">${p.tier}</h3>${cur ? html`<span class="badge badge-primary">Current</span>` : ''}</div>
         <div><span style="font-size:1.75rem;font-weight:700;letter-spacing:-.02em" class="num">${money(ngn, 'NGN')}</span><span class="muted small"> / ${cycle === 'annual' ? 'year' : 'month'}</span></div>
         <p class="muted small">${BLURB[p.tier]}</p>
+        <ul class="plan-list">${limitLines(p.limits, plans.limitLabels).map((l) => html`<li>${ic('check', 'ico-sm')} ${l}</li>`)}</ul>
         ${canAdmin() ? html`<button class="btn ${cur ? 'btn-secondary' : 'btn-primary'} btn-block" data-buy="${p.tier}" ${cur ? 'disabled' : ''}>${cur ? 'Your plan' : 'Choose plan'}</button>` : ''}</section>`;
     })}`);
     $$('[data-buy]', view).forEach((b) => b.addEventListener('click', () => void checkout(b.dataset.buy!, b as HTMLButtonElement)));
   };
   $$('[data-c]', view).forEach((b) => b.addEventListener('click', () => { cycle = b.dataset.c as typeof cycle; draw(); }));
+
+  // What the workspace has used so far against what its plan includes.
+  void api<Usage>('/api/billing/usage').then((u) => {
+    const rows = LIMIT_ORDER.map((k) => ({ k, ...u.usage[k], label: u.labels[k] }));
+    mount($('#usage', view)!, html`<section class="card card-pad stack" style="margin-bottom:20px"><div class="row between"><b>Usage on your ${u.effectiveTier} plan</b>${u.effectiveTier !== u.tier ? html`<span class="badge badge-warning">Plan expired</span>` : ''}</div>
+      ${u.effectiveTier !== u.tier ? html`<div class="alert alert-warn">${ic('triangle-alert', 'ico-sm')} Your ${u.tier} plan has lapsed, so free limits apply until you renew.</div>` : ''}
+      <div class="usage-grid">${rows.map((r) => {
+        const pct = r.limit === null ? 0 : Math.min(100, Math.round((r.used / Math.max(1, r.limit)) * 100));
+        return html`<div><div class="row between small"><span>${r.label.many[0]!.toUpperCase() + r.label.many.slice(1)}</span><b class="num">${r.used.toLocaleString('en-NG')}${r.limit === null ? '' : ` / ${r.limit.toLocaleString('en-NG')}`}</b></div>
+          <div class="bar" style="margin-top:6px"><i style="width:${r.limit === null ? 4 : Math.max(pct, r.used ? 3 : 0)}%;${pct >= 100 ? 'background:var(--danger,#b80016)' : pct >= 80 ? 'background:var(--warning)' : ''}"></i></div>
+          ${pct >= 100 ? html`<div class="small" style="color:var(--primary);margin-top:4px">Limit reached</div>` : ''}</div>`;
+      })}</div></section>`);
+  }).catch(() => undefined);
 
   async function checkout(tier: string, btn: HTMLButtonElement): Promise<void> {
     if (!plans.paystackPublicKey) { toast('Online payments are not enabled on this server yet.', 'error'); return; }

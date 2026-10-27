@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZexCoreContext } from '@zexcore/core';
+import { planLimitGuard } from '@zexcore/core';
 import { IOT_CAPABILITIES } from '../permissions.js';
 import { IOT_EVENTS } from '../events.js';
 import { createHash, randomBytes } from 'node:crypto';
@@ -71,7 +72,7 @@ export function registerDeviceRoutes(server: FastifyInstance, core: ZexCoreConte
 
   // ── REGISTER ──────────────────────────────────────────────────────────────
   server.post('/api/iot/devices', {
-    preHandler: [server.authenticate, server.requireCapability(IOT_CAPABILITIES.DEVICES_MANAGE)],
+    preHandler: [server.authenticate, server.requireCapability(IOT_CAPABILITIES.DEVICES_MANAGE), planLimitGuard('devices')],
     schema: {
       body: {
         type: 'object',

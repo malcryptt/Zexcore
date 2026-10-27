@@ -1,3 +1,4 @@
+import { limitLines, type Limits, type Labels } from '../lib/limits';
 import { html, mount, $, type Raw } from '../lib/html';
 import { ic, type IconName } from '../lib/icons';
 import { api } from '../lib/api';
@@ -104,10 +105,10 @@ export async function renderPricing(): Promise<void> {
         <details><summary>How do deposits reach me?</summary><p>Customers pay through Paystack. Your Paystack account settles to your bank according to Paystack's schedule. ZexCore never holds your customers' money.</p></details>
         <details><summary>Can I change or cancel my plan?</summary><p>Yes. Contact us at ${EMAIL} and we'll help you switch.</p></details></div></div></section>`);
   try {
-    const r = await api<{ currencyRates: { NGN_PER_USD: number }; plans: { tier: string; monthlyUsd: number; annualUsd: number }[] }>('/api/billing/plans', { auth: false });
+    const r = await api<{ currencyRates: { NGN_PER_USD: number }; plans: { tier: string; monthlyUsd: number; annualUsd: number; limits: Limits | null }[]; freeLimits: Limits; limitLabels: Labels }>('/api/billing/plans', { auth: false });
     const blurb: Record<string, string> = { starter: 'For a single location getting started.', growth: 'For growing businesses with a busy calendar.', agency: 'For operators running several locations.', enterprise: 'For large organisations with advanced needs.', dedicated: 'Dedicated infrastructure and a named support contact.' };
-    mount($('#pg')!, html`<div class="card price-card"><h3>Free</h3><div class="amt">${money(0)}</div><p class="muted small">to get started</p><p class="muted">Create your workspace, add services and start taking bookings.</p><a class="btn btn-secondary btn-block" href="/signup" data-link>Start free</a></div>
-      ${r.plans.map((p) => html`<div class="card price-card"><h3 style="text-transform:capitalize">${p.tier}</h3><div class="amt">${money(Math.round(p.monthlyUsd * r.currencyRates.NGN_PER_USD * 100))}<span class="muted small" style="font-weight:500"> / month</span></div><p class="muted small">or ${money(Math.round(p.annualUsd * r.currencyRates.NGN_PER_USD * 100))} billed yearly</p><p class="muted">${blurb[p.tier] ?? ''}</p><a class="btn btn-primary btn-block" href="/signup" data-link>Choose ${p.tier}</a></div>`)}`);
+    mount($('#pg')!, html`<div class="card price-card"><h3>Free</h3><div class="amt">${money(0)}</div><p class="muted small">to get started</p><p class="muted">Create your workspace, add services and start taking bookings.</p><ul class="plan-list">${limitLines(r.freeLimits, r.limitLabels).map((l) => html`<li>${ic('check', 'ico-sm')} ${l}</li>`)}</ul><a class="btn btn-secondary btn-block" href="/signup" data-link>Start free</a></div>
+      ${r.plans.map((p) => html`<div class="card price-card"><h3 style="text-transform:capitalize">${p.tier}</h3><div class="amt">${money(Math.round(p.monthlyUsd * r.currencyRates.NGN_PER_USD * 100))}<span class="muted small" style="font-weight:500"> / month</span></div><p class="muted small">or ${money(Math.round(p.annualUsd * r.currencyRates.NGN_PER_USD * 100))} billed yearly</p><p class="muted">${blurb[p.tier] ?? ''}</p><ul class="plan-list">${limitLines(p.limits, r.limitLabels).map((l) => html`<li>${ic('check', 'ico-sm')} ${l}</li>`)}</ul><a class="btn btn-primary btn-block" href="/signup" data-link>Choose ${p.tier}</a></div>`)}`);
   } catch { mount($('#pg')!, html`<div class="alert alert-warn">${ic('triangle-alert', 'ico-sm')} Prices could not be loaded right now. Please refresh, or email ${EMAIL}.</div>`); }
 }
 

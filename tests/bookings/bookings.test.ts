@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { testToken } from '../helpers/db.js';
 import crypto from 'node:crypto';
 import { createServer } from '../../apps/api/src/server.js';
-import { closeDatabaseConnection, getSqlClient, settleDeposit, signAuthToken } from '../../packages/core/src/index.js';
+import { closeDatabaseConnection, getSqlClient, settleDeposit } from '../../packages/core/src/index.js';
 import { localDateOf } from '../../packages/module-bookings/src/lib/slots.js';
 import type { FastifyInstance } from 'fastify';
 
@@ -157,7 +158,7 @@ describe('Bookings: public booking page, deposits, isolation', () => {
   });
 
   it('a viewer can read but not manage', async () => {
-    const viewer = signAuthToken({ userId: crypto.randomUUID(), tenantId: A.id, principalType: 'tenant_user', role: 'viewer' });
+    const viewer = await testToken({ userId: crypto.randomUUID(), tenantId: A.id, principalType: 'tenant_user', role: 'viewer' });
     expect((await call('GET', '/api/bookings', viewer)).statusCode).toBe(200);
     expect((await call('PATCH', `/api/bookings/${bookingId}`, viewer, { status: 'confirmed' })).statusCode).toBe(403);
     expect((await call('PUT', '/api/bookings/settings', viewer, { depositEnabled: false })).statusCode).toBe(403);

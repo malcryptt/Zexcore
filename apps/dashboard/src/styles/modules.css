@@ -37,3 +37,10 @@
 /* Compliance */
 .sec-tabs { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 8px; scrollbar-width: none; }
 .sec-tabs::-webkit-scrollbar { display: none; }
+
+/* Plans & usage */
+.plan-list { list-style: none; padding: 0; margin: 4px 0 8px; display: grid; gap: 6px; font-size: .875rem; color: var(--ink); }
+.plan-list li { display: flex; gap: 8px; align-items: flex-start; }
+.plan-list svg { color: var(--success); flex: none; margin-top: 2px; }
+.usage-grid { display: grid; gap: 14px 24px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 760px) { .usage-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
