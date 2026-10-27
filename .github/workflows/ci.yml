@@ -51,9 +51,10 @@ jobs:
         env:
           VITE_API_URL: https://api.example.invalid
       - name: Tests
+        shell: bash
         run: pnpm exec vitest run 2>&1 | tee vitest.log
       - name: Summarise test failures
-        if: failure()
+        if: always()
         run: |
-          grep -nE "FAIL|Unhandled|Error|ECONN|deadlock|already exists|timed out" vitest.log | grep -v '"level":30' | head -40 | cut -c1-300 > failures.txt || true
+          grep -nE "FAIL|Unhandled|Error|ECONN|deadlock|already exists|timed out|beforeAll|hook" vitest.log | grep -v '"level":30' | head -40 | cut -c1-300 > failures.txt || true
           echo "::error title=Vitest failures::$(sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g' failures.txt | cut -c1-3800)"
