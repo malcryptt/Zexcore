@@ -51,4 +51,13 @@ jobs:
         env:
           VITE_API_URL: https://api.example.invalid
       - name: Tests
-        run: pnpm exec vitest run --reporter=default --reporter=github-actions
+        run: pnpm exec vitest run --reporter=default --reporter=json --outputFile=vitest-results.json
+      - name: Summarise test failures
+        if: failure()
+        run: |
+          node -e '
+            const r = JSON.parse(require("fs").readFileSync("vitest-results.json","utf8"));
+            for (const f of r.testResults.filter(x => x.status === "failed")) {
+              const msgs = [f.message, ...f.assertionResults.flatMap(a => a.failureMessages ?? [])].filter(Boolean).join("\n---\n");
+              console.log("::error title=" + f.name.split("/").slice(-2).join("/") + "::" + msgs.slice(0, 3500).replace(/%/g,"%25").replace(/\r/g,"").replace(/\n/g,"%0A"));
+            }'
