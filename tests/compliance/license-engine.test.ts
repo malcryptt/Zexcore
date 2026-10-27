@@ -57,7 +57,8 @@ describe('Enterprise Cryptographic Licensing Engine', () => {
 
     // Tamper with the signature
     const parts = license.encoded.split('.');
-    const tamperedSig = parts[2].replace(/[a-f0-9]/, '0');
+    // Always change the first character (replacing it with '0' was a no-op 1 time in 16, making this test flaky).
+    const tamperedSig = (parts[2][0] === 'a' ? 'b' : 'a') + parts[2].slice(1);
     const tamperedKey = `${parts[0]}.${parts[1]}.${tamperedSig}`;
 
     const result = verifyEnterpriseLicense(tamperedKey, masterSecret);

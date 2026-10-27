@@ -11,11 +11,13 @@ import {
   lookupUserForLogin,
   createDefaultCoreContext,
   grantRuntimeAccess,
+  withBootstrapLock,
   checkRuntimeRoleSafety,
 } from '@zexcore/core';
 import { registerBillingRoutes } from './billing/routes.js';
 import { registerAccountRoutes } from './routes/account.js';
 import { registerGoogleRoutes } from './routes/google.js';
+import { registerAuthSecurityRoutes } from './routes/authSecurity.js';
 import { startSession } from './auth/session.js';
 import { registerOverviewRoutes } from './routes/overview.js';
 import { cmsModule } from '@zexcore/module-cms';
@@ -30,39 +32,42 @@ import { bookingsModule } from '@zexcore/module-bookings';
 const DUMMY_HASH = await hashPassword('zexcore-timing-equaliser-' + Math.random());
 
 export async function bootstrapApp(server: FastifyInstance): Promise<void> {
-  // 1. Initialize DB schema and RLS policies
-  server.log.info('[bootstrap] Initializing database schema & RLS policies...');
-  await initializeDatabaseSchema();
-
-  // 2. Register modules into the module registry
-  server.log.info('[bootstrap] Registering CMS module...');
-  globalModuleRegistry.register(cmsModule);
-
-  server.log.info('[bootstrap] Registering CRM module...');
-  globalModuleRegistry.register(crmModule);
-
-  server.log.info('[bootstrap] Registering IoT module...');
-  globalModuleRegistry.register(iotModule);
-
-  server.log.info('[bootstrap] Registering Compliance module...');
-  globalModuleRegistry.register(complianceModule);
-
-  server.log.info('[bootstrap] Registering Rules engine...');
-  globalModuleRegistry.register(rulesModule);
-
-  server.log.info('[bootstrap] Registering Audit & Financial Health module...');
-  globalModuleRegistry.register(auditModule);
-
-  server.log.info('[bootstrap] Registering Bookings module...');
-  globalModuleRegistry.register(bookingsModule);
-
-  // 3. Initialize all modules (lifecycle onInit)
+  // Serialised across instances: concurrent DDL on a fresh database deadlocks (see withBootstrapLock).
   const coreContext = createDefaultCoreContext();
-  await globalModuleRegistry.initAll(coreContext);
+  await withBootstrapLock(async () => {
+    // 1. Initialize DB schema and RLS policies
+    server.log.info('[bootstrap] Initializing database schema & RLS policies...');
+    await initializeDatabaseSchema();
 
-  // Module tables now exist: apply least-privilege grants for the runtime role, then (in production)
-  // refuse to serve if the runtime role could undermine tenant isolation.
-  await grantRuntimeAccess();
+    // 2. Register modules into the module registry
+    server.log.info('[bootstrap] Registering CMS module...');
+    globalModuleRegistry.register(cmsModule);
+
+    server.log.info('[bootstrap] Registering CRM module...');
+    globalModuleRegistry.register(crmModule);
+
+    server.log.info('[bootstrap] Registering IoT module...');
+    globalModuleRegistry.register(iotModule);
+
+    server.log.info('[bootstrap] Registering Compliance module...');
+    globalModuleRegistry.register(complianceModule);
+
+    server.log.info('[bootstrap] Registering Rules engine...');
+    globalModuleRegistry.register(rulesModule);
+
+    server.log.info('[bootstrap] Registering Audit & Financial Health module...');
+    globalModuleRegistry.register(auditModule);
+
+    server.log.info('[bootstrap] Registering Bookings module...');
+    globalModuleRegistry.register(bookingsModule);
+
+    // 3. Initialize all modules (lifecycle onInit)
+    await globalModuleRegistry.initAll(coreContext);
+
+    // Module tables now exist: apply least-privilege grants for the runtime role, then (in production)
+    // refuse to serve if the runtime role could undermine tenant isolation.
+    await grantRuntimeAccess();
+  });
   const roleSafety = await checkRuntimeRoleSafety();
   if (!roleSafety.ok) {
     const msg = `Runtime DB role is unsafe: ${roleSafety.problems.join('; ')}`;
@@ -97,7 +102,7 @@ export async function bootstrapApp(server: FastifyInstance): Promise<void> {
       return reply.status(401).send({ error: 'Invalid email or password' });
     }
 
-    const session = await startSession(userRecord, tenantSlug);
+    const session = await startSession(userRecord, tenantSlug, request);
     if (session.kind === 'choose') return reply.send({ workspaces: session.workspaces });
     if (session.kind === 'denied') return reply.status(401).send({ error: 'Invalid email or password' });
     return reply.send({ token: session.token, user: session.user });
@@ -126,6 +131,7 @@ export async function bootstrapApp(server: FastifyInstance): Promise<void> {
   registerBillingRoutes(server);
   registerAccountRoutes(server);
   registerGoogleRoutes(server);
+  registerAuthSecurityRoutes(server);
   registerOverviewRoutes(server);
 
   // 7. Mount registered module routes

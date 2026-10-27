@@ -22,6 +22,10 @@ services:
         sync: false
       - key: GOOGLE_CLIENT_ID
         sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
       - key: PUBLIC_APP_URL
         value: https://zexcore.com.ng
       - key: STRIPE_WEBHOOK_SECRET

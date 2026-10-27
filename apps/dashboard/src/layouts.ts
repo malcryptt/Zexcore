@@ -2,6 +2,7 @@ import { html, mount, $, $$, type Raw } from './lib/html';
 import { ic, type IconName } from './lib/icons';
 import { current, logout } from './lib/session';
 import { api } from './lib/api';
+import { toast } from './lib/ui';
 import { initials } from './lib/format';
 import { navigate } from './router';
 import { clearStore, loadSettings } from './lib/store';
@@ -30,6 +31,7 @@ const NAV: { label?: string; items: { href: string; icon: IconName; text: string
   ] },
   { label: 'Account', items: [
     { href: '/app/billing', icon: 'credit-card', text: 'Plan & billing' },
+    { href: '/app/security', icon: 'shield-check', text: 'Security' },
     { href: '/app/audit', icon: 'history', text: 'Audit log' },
     { href: '/app/settings', icon: 'settings', text: 'Settings' },
   ] },
@@ -85,6 +87,7 @@ export async function appLayout(path: string, onNew: () => void): Promise<HTMLEl
               </div>
             </div>
           </header>
+          ${me.user.emailVerified === false ? html`<div class="verify-banner" data-verify-banner role="status">${ic('mail')}<span class="grow"><b>Confirm your email.</b> We sent a link to ${me.user.email ?? 'your address'}. You need it to upgrade your plan.</span><button class="btn btn-secondary btn-sm" data-resend>Resend</button></div>` : ''}
           <main class="main" id="view" tabindex="-1"></main>
         </div>
         <nav class="bottom-nav" aria-label="Primary">
@@ -96,6 +99,11 @@ export async function appLayout(path: string, onNew: () => void): Promise<HTMLEl
       </div>`);
     view = $('#view')!;
     $('[data-new]')!.addEventListener('click', onNew);
+    $('[data-resend]')?.addEventListener('click', async (ev) => {
+      const b = ev.currentTarget as HTMLButtonElement; b.disabled = true;
+      try { await api('/api/auth/email/resend', { method: 'POST' }); b.textContent = 'Sent'; toast('Confirmation email sent', 'success'); }
+      catch (x) { b.disabled = false; toast(x instanceof Error ? x.message : 'Could not send the email', 'error'); }
+    });
     const menu = $('[data-menu]')!, panel = $('[data-menu-panel]')!;
     menu.addEventListener('click', (e) => { e.stopPropagation(); panel.classList.toggle('hidden'); });
     document.addEventListener('click', () => panel.classList.add('hidden'));

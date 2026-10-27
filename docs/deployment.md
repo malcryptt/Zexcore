@@ -92,6 +92,7 @@ pnpm seed
 | `HOST` | Bind host address | `0.0.0.0` |
 | `CORS_ORIGIN` | Allowed web origins (comma-separated) | `https://zexcore.com.ng,https://zexcore-5d6c0.web.app` |
 | `GOOGLE_CLIENT_ID` | Google OAuth web client; add the site origin under Authorized JavaScript origins. Empty hides the button | `123-abc.apps.googleusercontent.com` |
+| `RESEND_API_KEY` / `EMAIL_FROM` | Sends password-reset and email-confirmation emails (Resend; verify your sending domain first). Without them sign-up still works, but those emails cannot be delivered | `re_...` / `ZexCore <no-reply@zexcore.com.ng>` |
 | `PAYSTACK_PUBLIC_KEY` | Public key for Paystack checkout in the browser | `pk_live_...` |
 | `PUBLIC_APP_URL` | Origin used in payment links sent to customers | `https://zexcore.com.ng` |
 | `TENANT_BASE_DOMAIN` | Optional wildcard-subdomain routing | `zexcore.me` |

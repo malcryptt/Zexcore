@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { testToken } from '../helpers/db.js';
 import { createServer } from '../../apps/api/src/server.js';
 import {
   getAdminDb,
   closeDatabaseConnection,
   tenants,
-  signAuthToken,
 } from '../../packages/core/src/index.js';
 import type { FastifyInstance } from 'fastify';
 
@@ -32,7 +32,7 @@ describe('IoT Module: Fleet Registration & Telemetry Ingestion', () => {
     testTenantId = t!.id;
 
     // Sign an admin JWT so routes that require authentication pass
-    adminJwt = signAuthToken({
+    adminJwt = await testToken({
       userId: 'test-iot-admin',
       tenantId: testTenantId,
       principalType: 'tenant_admin',

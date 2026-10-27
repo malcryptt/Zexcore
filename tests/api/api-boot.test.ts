@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { testToken } from '../helpers/db.js';
 import { createServer } from '../../apps/api/src/server.js';
 import {
   getAdminDb,
   closeDatabaseConnection,
   tenants,
-  signAuthToken,
 } from '../../packages/core/src/index.js';
 import type { FastifyInstance } from 'fastify';
 
@@ -36,8 +36,8 @@ describe('API Server Integration: Booting Core + CMS Module', () => {
     testTenantId = t!.id;
     const [o] = await db.insert(tenants).values({ slug: `${testTenantSlug}-other`, name: 'Other Corp', tier: 'standard' }).returning();
     otherTenantId = o!.id;
-    adminAuth = { authorization: `Bearer ${signAuthToken({ userId: '00000000-0000-0000-0000-000000000001', tenantId: testTenantId, role: 'admin', principalType: 'tenant_user' })}` };
-    otherAuth = { authorization: `Bearer ${signAuthToken({ userId: '00000000-0000-0000-0000-000000000002', tenantId: otherTenantId, role: 'admin', principalType: 'tenant_user' })}` };
+    adminAuth = { authorization: `Bearer ${await testToken({ userId: '00000000-0000-0000-0000-000000000001', tenantId: testTenantId, role: 'admin', principalType: 'tenant_user' })}` };
+    otherAuth = { authorization: `Bearer ${await testToken({ userId: '00000000-0000-0000-0000-000000000002', tenantId: otherTenantId, role: 'admin', principalType: 'tenant_user' })}` };
   });
 
   afterAll(async () => {
@@ -133,7 +133,7 @@ describe('API Server Integration: Booting Core + CMS Module', () => {
   it('rejects a valid token from another tenant, and a viewer cannot write', async () => {
     const cross = await server.inject({ method: 'GET', url: '/api/cms/pages', headers: { 'x-tenant-id': testTenantId, ...otherAuth } });
     expect(cross.statusCode).toBe(403);
-    const viewer = { authorization: `Bearer ${signAuthToken({ userId: '00000000-0000-0000-0000-000000000003', tenantId: testTenantId, role: 'viewer', principalType: 'tenant_user' })}` };
+    const viewer = { authorization: `Bearer ${await testToken({ userId: '00000000-0000-0000-0000-000000000003', tenantId: testTenantId, role: 'viewer', principalType: 'tenant_user' })}` };
     const w = await server.inject({ method: 'POST', url: '/api/cms/pages', headers: viewer, payload: { slug: 'x', title: 'x' } });
     expect(w.statusCode).toBe(403);
   });

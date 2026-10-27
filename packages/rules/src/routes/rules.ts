@@ -15,6 +15,7 @@
 
 import type { FastifyInstance } from 'fastify';
 import type { ZexCoreContext } from '@zexcore/core';
+import { planLimitGuard } from '@zexcore/core';
 import { RuleDraftSchema } from '../schema/rule.js';
 import { evaluateConditionGroup } from '../evaluator/conditions.js';
 import { authorRule } from '../ai/author.js';
@@ -29,7 +30,7 @@ export function registerRulesRoutes(server: FastifyInstance, core: ZexCoreContex
   // Converts a plain-English intent into a RuleDraft via Gemini.
   // The result is stored with approved=false — a human must still approve it.
   server.post('/api/rules/ai-draft', {
-    preHandler: [server.authenticate, server.requireCapability(RULES_MANAGE)],
+    preHandler: [server.authenticate, server.requireCapability(RULES_MANAGE), planLimitGuard('rules')],
     schema: {
       body: {
         type: 'object',
@@ -180,7 +181,7 @@ export function registerRulesRoutes(server: FastifyInstance, core: ZexCoreContex
 
   // ── CREATE (draft) ────────────────────────────────────────────────────────
   server.post('/api/rules', {
-    preHandler: [server.authenticate, server.requireCapability(RULES_MANAGE)],
+    preHandler: [server.authenticate, server.requireCapability(RULES_MANAGE), planLimitGuard('rules')],
     handler: async (request, reply) => {
       const tenantId = request.tenant.id;
       const userId   = request.user.id;

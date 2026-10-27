@@ -2,6 +2,30 @@ import { getAdminSqlClient, getRuntimeRoleName } from './client.js';
 import { applyCoreRlsPolicies, applyRlsToTable } from './rls/index.js';
 import { STRUCTURE_SQL, SECURITY_FUNCTIONS_SQL, buildGrantsSql } from './sql/security.js';
 
+const BOOTSTRAP_LOCK_KEY = 727000;
+
+/**
+ * Runs the whole boot-time setup (schema, every module's tables, grants) as one critical section across
+ * all API instances/processes sharing a database. Concurrent DDL on a fresh database otherwise fails with
+ * "deadlock detected", "tuple concurrently updated" or "duplicate key ... pg_type_typname_nsp_index"
+ * (rolling deploys start the new instance while the old one is still booting or running).
+ * A session-level advisory lock is released automatically if the process dies.
+ */
+export async function withBootstrapLock<T>(fn: () => Promise<T>): Promise<T> {
+  const admin = getAdminSqlClient();
+  const conn = await admin.reserve();
+  try {
+    await conn`SELECT pg_advisory_lock(${BOOTSTRAP_LOCK_KEY})`;
+    try {
+      return await fn();
+    } finally {
+      await conn`SELECT pg_advisory_unlock(${BOOTSTRAP_LOCK_KEY})`.catch(() => undefined);
+    }
+  } finally {
+    conn.release();
+  }
+}
+
 /**
  * Re-applies least-privilege grants for the runtime role. Must run AFTER every module has created
  * its tables (tables are created by the admin role, so the runtime role has no access until this).

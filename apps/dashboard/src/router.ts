@@ -50,6 +50,12 @@ export function startRouter(): void {
   // Legacy hash links (#/platform) from the previous site map onto real paths.
   if (location.hash.startsWith('#/')) history.replaceState(null, '', location.hash.slice(1));
   window.addEventListener('popstate', () => void resolve());
+  window.addEventListener('hashchange', () => {
+    if (location.hash.startsWith('#/')) {
+      history.replaceState(null, '', location.hash.slice(1));
+      void resolve();
+    }
+  });
   document.addEventListener('click', (e) => {
     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     const a = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[data-link]');

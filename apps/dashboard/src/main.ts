@@ -13,7 +13,8 @@ import { loadMe, isSignedIn, current } from './lib/session';
 import { appLayout, leaveApp } from './layouts';
 import { html, mount } from './lib/html';
 import { errorState } from './lib/ui';
-import { renderSignIn, renderSignUp } from './views/auth';
+import { renderSignIn, renderSignUp, renderForgot, renderReset, renderVerify } from './views/auth';
+import { renderSecurity as renderAccountSecurity } from './views/security';
 import { renderHome as renderAppHome } from './views/home';
 import { renderBookings, openNewBooking } from './views/bookings';
 import { renderCalendar } from './views/calendar';
@@ -28,14 +29,15 @@ import { renderContent } from './views/content';
 import { renderCompliance } from './views/compliance';
 import { renderOnboarding } from './views/onboarding';
 import { renderPublicBooking } from './views/publicBooking';
-import { renderHome, renderProduct, renderPricing, renderSecurity, renderContact, renderPrivacy, renderTerms, renderNotFound } from './views/site';
+import { renderPrivacy, renderTerms, renderNotFound } from './views/site';
+import { renderLegacySite, clearLegacySiteStyles } from './legacySite';
 
 setUnauthorizedHandler(() => navigate('/signin', true));
 
 const TITLES: Record<string, string> = {
   '/app': 'Home', '/app/bookings': 'Bookings', '/app/calendar': 'Calendar', '/app/messages': 'Messages', '/app/more': 'More',
   '/app/customers': 'Customers', '/app/services': 'Services', '/app/team': 'Team', '/app/booking-page': 'Booking page',
-  '/app/billing': 'Plan & billing', '/app/audit': 'Audit log', '/app/settings': 'Settings',
+  '/app/billing': 'Plan & billing', '/app/audit': 'Audit log', '/app/settings': 'Settings', '/app/security': 'Security',
   '/app/crm': 'CRM', '/app/devices': 'Devices', '/app/automations': 'Automations', '/app/content': 'Website pages', '/app/compliance': 'Data protection',
 };
 
@@ -60,7 +62,7 @@ function setMeta(path: string): void {
     canon.href = SITE + (path === '/' ? '/' : path);
   } else {
     canon?.remove();
-    if (path === '/signin' || path === '/signup' || path.startsWith('/app')) {
+    if (['/signin', '/signup', '/forgot-password', '/reset-password', '/verify-email'].includes(path) || path.startsWith('/app')) {
       if (!robots) { robots = document.createElement('meta'); robots.name = 'robots'; head.appendChild(robots); }
       robots.content = 'noindex, nofollow';
     } else robots?.remove();
@@ -70,21 +72,40 @@ setAfter((ctx) => { if (TITLES[ctx.path]) document.title = `${TITLES[ctx.path]} 
 
 const appRoute = (path: string, render: (view: HTMLElement, ctx: { query: URLSearchParams }) => Promise<void> | void) =>
   route(path, async (ctx) => {
+    clearLegacySiteStyles();
     const view = await appLayout(ctx.path, () => void openNewBooking(() => navigate(location.pathname + location.search)));
     view.focus({ preventScroll: true });
     window.scrollTo(0, 0);
     await render(view, ctx);
   });
 
-route('/', renderHome);
-route('/product', renderProduct);
-route('/pricing', () => void renderPricing());
-route('/security', renderSecurity);
-route('/contact', renderContact);
-route('/privacy', renderPrivacy);
-route('/terms', renderTerms);
-route('/signin', () => { leaveApp(); renderSignIn(); });
-route('/signup', () => { leaveApp(); renderSignUp(); });
+route('/', () => renderLegacySite('home'));
+route('/home', () => { history.replaceState(null, '', '/'); renderLegacySite('home'); });
+route('/product', () => renderLegacySite('platform'));
+route('/platform', () => renderLegacySite('platform'));
+route('/architecture', () => renderLegacySite('architecture'));
+route('/modules', () => renderLegacySite('modules'));
+route('/solutions', () => renderLegacySite('solutions'));
+route('/security', () => renderLegacySite('security'));
+route('/docs', () => renderLegacySite('docs'));
+route('/documentation', () => renderLegacySite('docs'));
+route('/resources', () => renderLegacySite('resources'));
+route('/pricing', () => renderLegacySite('pricing'));
+route('/about', () => renderLegacySite('about'));
+route('/contact', () => renderLegacySite('contact'));
+route('/console', () => navigate('/app', true));
+route('/dashboard', () => navigate('/app', true));
+route('/console/:tab', (ctx) => {
+  const aliases: Record<string, string> = { overview: '/app', iot: '/app/devices', crm: '/app/crm', rules: '/app/automations', compliance: '/app/compliance', audit: '/app/audit', whitelabel: '/app/settings', license: '/app/billing', billing: '/app/billing' };
+  navigate(aliases[ctx.params.tab] || '/app', true);
+});
+route('/privacy', () => { clearLegacySiteStyles(); renderPrivacy(); });
+route('/terms', () => { clearLegacySiteStyles(); renderTerms(); });
+route('/signin', () => { clearLegacySiteStyles(); leaveApp(); renderSignIn(); });
+route('/signup', () => { clearLegacySiteStyles(); leaveApp(); renderSignUp(); });
+route('/forgot-password', () => { clearLegacySiteStyles(); leaveApp(); renderForgot(); });
+route('/reset-password', () => { clearLegacySiteStyles(); leaveApp(); renderReset(); });
+route('/verify-email', () => { clearLegacySiteStyles(); leaveApp(); void renderVerify(); });
 
 route('/app/onboarding', async () => { await renderOnboarding(); });
 appRoute('/app', (v) => renderAppHome(v));
@@ -99,6 +120,7 @@ appRoute('/app/booking-page', (v) => renderBookingPage(v));
 appRoute('/app/billing', (v) => renderBilling(v));
 appRoute('/app/audit', (v) => renderAudit(v));
 appRoute('/app/settings', (v) => renderSettings(v));
+appRoute('/app/security', (v) => renderAccountSecurity(v));
 appRoute('/app/crm', (v) => renderCrm(v));
 appRoute('/app/devices', (v) => renderDevices(v));
 appRoute('/app/automations', (v) => renderAutomations(v));
@@ -107,6 +129,7 @@ appRoute('/app/compliance', (v) => renderCompliance(v));
 
 // A single path segment that is not a site page is a business's public booking page: /<slug>
 setNotFound((ctx) => {
+  clearLegacySiteStyles();
   const m = /^\/([a-z0-9][a-z0-9-]{1,62})$/.exec(ctx.path);
   if (m) return renderPublicBooking(m[1]!, ctx.query.get('pay'));
   renderNotFound();

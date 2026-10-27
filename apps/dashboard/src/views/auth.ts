@@ -1,7 +1,7 @@
 import { html, mount, $, type Raw } from '../lib/html';
 import { ic } from '../lib/icons';
 import { login, register } from '../lib/session';
-import { ApiError } from '../lib/api';
+import { ApiError, api } from '../lib/api';
 import { authLayout } from '../layouts';
 import { navigate } from '../router';
 import { busy } from '../lib/ui';
@@ -57,6 +57,7 @@ export function renderSignIn(): void {
         <div class="field"><label for="email">Email address</label>
           <div class="input-icon">${ic('mail')}<input class="input" id="email" name="email" type="email" autocomplete="username" required placeholder="you@company.com"></div></div>
         ${pwField('password', 'Password', 'current-password')}
+        <div style="text-align:right;margin-top:-6px"><a href="/forgot-password" data-link class="small" style="color:var(--primary);font-weight:600">Forgot password?</a></div>
         <button class="btn btn-primary btn-lg btn-block" type="submit">Sign in ${ic('arrow-right', 'ico-sm')}</button>
       </form>
       ${googleBlock()}
@@ -150,4 +151,101 @@ export function renderSignUp(): void {
     if (o.kind === 'choose') return navigate('/signin');
     googleSignupStep(o);
   }, showErr);
+}
+
+// ── Password reset & email confirmation ──────────────────────────────────────
+
+export function renderForgot(): void {
+  authLayout(html`
+    <div id="auth-body">
+      <h1 style="font-size:1.5rem;letter-spacing:-0.02em">Reset your password</h1>
+      <p class="muted" style="margin:6px 0 18px">Enter your email and we will send you a link to choose a new password.</p>
+      <form id="f" class="form-grid" novalidate>
+        <div id="err" class="alert alert-error hidden" role="alert"></div>
+        <div class="field"><label for="email">Email address</label>
+          <div class="input-icon">${ic('mail')}<input class="input" id="email" name="email" type="email" autocomplete="username" required placeholder="you@company.com"></div></div>
+        <button class="btn btn-primary btn-lg btn-block" type="submit">Send reset link</button>
+      </form>
+      <p style="text-align:center;margin-top:18px;font-size:.9rem"><a href="/signin" data-link style="color:var(--primary);font-weight:600">Back to sign in</a></p>
+    </div>`);
+  const form = $('#f') as HTMLFormElement;
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!form.reportValidity()) return;
+    void busy(form.querySelector('button[type=submit]'), async () => {
+      const err = $('#err')!;
+      try {
+        const email = String(new FormData(form).get('email')).trim();
+        await api('/api/auth/password/forgot', { method: 'POST', body: { email }, auth: false });
+        mount($('#auth-body')!, html`
+          <div style="text-align:center"><span class="icon-tile" style="margin:0 auto 14px;background:var(--primary-tint);color:var(--primary)">${ic('mail')}</span>
+          <h1 style="font-size:1.5rem">Check your inbox</h1>
+          <p class="muted" style="margin:8px 0 18px">If <b>${email}</b> has a ZexCore account, a reset link is on its way. It works once and expires in an hour.</p>
+          <a class="btn btn-secondary btn-block" href="/signin" data-link>Back to sign in</a></div>`);
+      } catch (x) { err.textContent = x instanceof ApiError ? x.message : 'Something went wrong. Please try again.'; err.classList.remove('hidden'); }
+    });
+  });
+}
+
+/** Reads and removes the one-time token from the address bar so it does not linger in history or screenshots. */
+function takeToken(): string {
+  const t = new URLSearchParams(location.search).get('token') ?? '';
+  if (t) history.replaceState(null, '', location.pathname);
+  return t;
+}
+
+export function renderReset(): void {
+  const token = takeToken();
+  if (!token) {
+    authLayout(html`<div id="auth-body"><h1 style="font-size:1.5rem">This link is incomplete</h1><p class="muted" style="margin:8px 0 18px">Open the link from your email again, or request a new one.</p><a class="btn btn-primary btn-block" href="/forgot-password" data-link>Request a new link</a></div>`);
+    return;
+  }
+  authLayout(html`
+    <div id="auth-body">
+      <h1 style="font-size:1.5rem;letter-spacing:-0.02em">Choose a new password</h1>
+      <p class="muted" style="margin:6px 0 18px">You will be signed out of every device.</p>
+      <form id="f" class="form-grid" novalidate>
+        <div id="err" class="alert alert-error hidden" role="alert"></div>
+        ${pwField('password', 'New password', 'new-password')}
+        <button class="btn btn-primary btn-lg btn-block" type="submit">Save password</button>
+      </form>
+    </div>`);
+  const form = $('#f') as HTMLFormElement;
+  wirePwToggle(form);
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!form.reportValidity()) return;
+    void busy(form.querySelector('button[type=submit]'), async () => {
+      const err = $('#err')!;
+      err.classList.add('hidden');
+      try {
+        await api('/api/auth/password/reset', { method: 'POST', body: { token, password: String(new FormData(form).get('password')) }, auth: false });
+        mount($('#auth-body')!, html`
+          <div style="text-align:center"><span class="icon-tile" style="margin:0 auto 14px;background:var(--success-tint);color:var(--success)">${ic('circle-check')}</span>
+          <h1 style="font-size:1.5rem">Password updated</h1>
+          <p class="muted" style="margin:8px 0 18px">You can now sign in with your new password.</p>
+          <a class="btn btn-primary btn-block" href="/signin" data-link>Sign in</a></div>`);
+      } catch (x) {
+        err.innerHTML = '';
+        err.textContent = x instanceof ApiError ? x.message : 'Could not update your password. Please try again.';
+        err.classList.remove('hidden');
+      }
+    });
+  });
+}
+
+export async function renderVerify(): Promise<void> {
+  const token = takeToken();
+  authLayout(html`<div id="auth-body" style="text-align:center"><div class="spinner" style="margin:0 auto 14px"></div><p class="muted">Confirming your email…</p></div>`);
+  const body = $('#auth-body')!;
+  const done = (ok: boolean, msg: string) => mount(body, html`
+    <span class="icon-tile" style="margin:0 auto 14px;background:${ok ? 'var(--success-tint)' : 'var(--primary-tint)'};color:${ok ? 'var(--success)' : 'var(--primary)'}">${ic(ok ? 'circle-check' : 'circle-alert')}</span>
+    <h1 style="font-size:1.5rem">${ok ? 'Email confirmed' : 'Link not valid'}</h1>
+    <p class="muted" style="margin:8px 0 18px">${msg}</p>
+    <a class="btn btn-primary btn-block" href="/app" data-link>${ok ? 'Continue to ZexCore' : 'Go to ZexCore'}</a>`);
+  if (!token) return done(false, 'Open the link from your email again. You can request a new one from inside the app.');
+  try {
+    await api('/api/auth/email/verify', { method: 'POST', body: { token }, auth: false });
+    done(true, 'Thanks. Your account is now confirmed.');
+  } catch (x) { done(false, x instanceof ApiError ? x.message : 'We could not confirm your email. Please try again.'); }
 }

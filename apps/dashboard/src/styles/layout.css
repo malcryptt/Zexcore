@@ -161,6 +161,9 @@ ul.checklist { padding: 0; }
 .receipt { background: #fff; border: 1px solid var(--border); border-radius: var(--r-lg); position: relative; padding: 24px 20px; text-align: center; }
 .receipt::before { content: ''; position: absolute; left: 12px; right: 12px; top: 0; border-top: 2px dashed var(--border); }
 @media (max-width: 480px) { .topbar .icon-circle { display: none; } .biz-chip { min-width: 96px; } }
+.verify-banner { display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: var(--warning-tint); border-bottom: 1px solid var(--warning-border); color: var(--ink); font-size: .875rem; }
+.verify-banner > svg { color: var(--warning); flex: none; }
+@media (max-width: 520px) { .verify-banner { flex-wrap: wrap; } }
 
 
 /* ───────── Enterprise dashboard refresh ─────────

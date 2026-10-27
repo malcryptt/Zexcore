@@ -1,8 +1,8 @@
 import crypto from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
-import { hashPassword, lookupUserForLogin, registerTenant, RegistrationError, signAuthToken } from '@zexcore/core';
+import { hashPassword, lookupUserForLogin, registerTenant, RegistrationError, getUserAccount, setUserPassword, markEmailVerified } from '@zexcore/core';
 import { verifyGoogleIdToken, type GoogleIdentity } from '../auth/googleToken.js';
-import { startSession } from '../auth/session.js';
+import { startSession, issueToken } from '../auth/session.js';
 
 export const googleTestHooks: { getKeys?: () => Promise<any[]> } = {};
 
@@ -36,7 +36,14 @@ export function registerGoogleRoutes(server: FastifyInstance): void {
 
       const existing = await lookupUserForLogin(id.email);
       if (existing) {
-        const s = await startSession(existing, request.body.workspace);
+        // Google just proved this person owns the address. If the account was never verified, someone else may
+        // have pre-registered it with a password they know: kill that password and every session, then verify.
+        const acct = await getUserAccount(existing.id);
+        if (acct && !acct.email_verified) {
+          await setUserPassword(existing.id, await hashPassword(crypto.randomBytes(48).toString('base64url')));
+          await markEmailVerified(existing.id);
+        }
+        const s = await startSession(existing, request.body.workspace, request);
         if (s.kind === 'choose') return reply.send({ workspaces: s.workspaces });
         if (s.kind === 'denied') return reply.status(401).send({ error: 'No access to that workspace' });
         return reply.send({ token: s.token, user: s.user });
@@ -53,7 +60,8 @@ export function registerGoogleRoutes(server: FastifyInstance): void {
           slug, tenantName, email: id.email, userName: id.name,
           passwordHash: await hashPassword(crypto.randomBytes(48).toString('base64url')),
         });
-        const token = signAuthToken({ userId, tenantId, role: 'owner', principalType: 'tenant_user', isPlatformAdmin: false });
+        await markEmailVerified(userId);
+        const token = await issueToken({ userId, tenantId, role: 'owner', principalType: 'tenant_user', isPlatformAdmin: false }, request);
         return reply.status(201).send({ token, user: { id: userId, email: id.email, name: id.name }, tenant: { id: tenantId, slug, name: tenantName }, role: 'owner' });
       } catch (err) {
         if (err instanceof RegistrationError) {

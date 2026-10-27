@@ -1,7 +1,7 @@
 import { api, getToken, setToken, ApiError } from './api';
 
 export interface Me {
-  user: { id: string; email: string | null; name: string | null };
+  user: { id: string; email: string | null; name: string | null; emailVerified?: boolean };
   tenant: { id: string; slug: string; name: string; tier: string; plan_cycle: string | null; plan_expires_at: string | null };
   role: 'owner' | 'admin' | 'member' | 'viewer' | null;
   isPlatformAdmin: boolean;
@@ -43,4 +43,8 @@ export async function register(input: { tenantName: string; name: string; email:
   await loadMe(true);
 }
 
-export function logout(): void { setToken(null); me = null; }
+export function logout(): void {
+  // Revoke the session on the server first (best effort), so a copied token stops working immediately.
+  if (getToken()) void api('/api/auth/logout', { method: 'POST' }).catch(() => undefined);
+  setToken(null); me = null;
+}

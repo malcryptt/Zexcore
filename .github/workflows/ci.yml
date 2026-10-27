@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: zexcore_admin
+          POSTGRES_PASSWORD: zexcore_admin_secret
+          POSTGRES_DB: zexcore_db
+        ports: ['5433:5432']
+        options: >-
+          --health-cmd "pg_isready -U zexcore_admin -d zexcore_db"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgres://zexcore_app:zexcore_secret@localhost:5433/zexcore_db
+      ADMIN_DATABASE_URL: postgres://zexcore_owner:zexcore_owner_secret@localhost:5433/zexcore_db
+      JWT_SECRET: ci-only-jwt-secret-at-least-32-characters-long
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Create database roles
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+          psql "postgres://zexcore_admin:zexcore_admin_secret@localhost:5433/zexcore_db" \
+            -v owner_pass="'zexcore_owner_secret'" -v app_pass="'zexcore_secret'" \
+            -v dbname="zexcore_db" -f scripts/db-setup-roles.sql
+      - name: Build all packages (typecheck)
+        run: pnpm build
+        env:
+          VITE_API_URL: https://api.example.invalid
+      - name: Tests
+        shell: bash
+        run: pnpm exec vitest run 2>&1 | tee vitest.log
+      - name: Summarise test failures
+        if: always()
+        run: |
+          grep -nE "FAIL|Unhandled|Error|ECONN|deadlock|already exists|timed out|beforeAll|hook" vitest.log | grep -v '"level":30' | head -40 | cut -c1-300 > failures.txt || true
+          echo "::error title=Vitest failures::$(sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g' failures.txt | cut -c1-3800)"

@@ -7,6 +7,8 @@ export interface AuthTokenPayload {
   principalType: PrincipalType;
   role?: TenantRole;
   isPlatformAdmin?: boolean;
+  /** Server-side session id. Every API request re-checks it, so a session can be revoked instantly. */
+  sid?: string;
 }
 
 const DEFAULT_INSECURE_SECRET = 'zexcore-default-secret-key-change-me';

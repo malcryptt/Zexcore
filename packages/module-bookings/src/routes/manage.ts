@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import crypto from 'node:crypto';
-import { sql, withTenantDb, logAuditEvent } from '@zexcore/core';
+import { sql, withTenantDb, logAuditEvent, planLimitGuard } from '@zexcore/core';
 import { BOOKINGS_CAPABILITIES as CAP } from '../permissions.js';
 import { BLOCKING_SQL, BookingError, createBooking, loadSettings, rows } from '../lib/booking.js';
 import { localDateOf, localMidnightUtc, normalizePhone, formatLocal } from '../lib/slots.js';
@@ -126,7 +126,7 @@ export function registerManageRoutes(server: FastifyInstance): void {
     const r = await withTenantDb(request.tenant.id, (tx) => rows(tx, sql`SELECT * FROM bk_services ORDER BY active DESC, position, created_at`));
     return reply.send({ services: r.map(svcOut) });
   });
-  server.post('/api/bookings/services', { ...admin, schema: { body: { ...svcBody, required: ['name', 'durationMin'] } } }, async (request, reply) => {
+  server.post('/api/bookings/services', { preHandler: [...admin.preHandler, planLimitGuard('services')], schema: { body: { ...svcBody, required: ['name', 'durationMin'] } } }, async (request, reply) => {
     const b = request.body as any;
     const [row] = await withTenantDb(request.tenant.id, (tx) => rows(tx, sql`
       INSERT INTO bk_services (tenant_id, name, description, duration_min, price_minor, position)
@@ -158,7 +158,7 @@ export function registerManageRoutes(server: FastifyInstance): void {
     const r = await withTenantDb(request.tenant.id, (tx) => rows(tx, sql`SELECT * FROM bk_staff ORDER BY active DESC, created_at`));
     return reply.send({ staff: r.map(staffOut) });
   });
-  server.post('/api/bookings/staff', { ...admin, schema: { body: { ...staffBody, required: ['name'] } } }, async (request, reply) => {
+  server.post('/api/bookings/staff', { preHandler: [...admin.preHandler, planLimitGuard('staff')], schema: { body: { ...staffBody, required: ['name'] } } }, async (request, reply) => {
     const b = request.body as any;
     const [row] = await withTenantDb(request.tenant.id, (tx) => rows(tx, sql`
       INSERT INTO bk_staff (tenant_id, name, title) VALUES (${request.tenant.id}::uuid, ${b.name.trim()}, ${b.title?.trim() || null}) RETURNING *`));

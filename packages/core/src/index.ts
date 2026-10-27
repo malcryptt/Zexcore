@@ -37,4 +37,5 @@ export * from './security/ssrf.js';
 
 // Subscription Plans & Billing Integration
 export * from './billing/plans.js';
+export * from './billing/limits.js';
 export * from './billing/stripe.js';

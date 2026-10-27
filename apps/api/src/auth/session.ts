@@ -1,6 +1,13 @@
+import type { FastifyRequest } from 'fastify';
 import {
-  and, eq, memberships, withTenantDb, resolveTenant, listUserWorkspaces, signAuthToken, type LoginUser,
+  and, eq, memberships, withTenantDb, resolveTenant, listUserWorkspaces, signAuthToken, createSession, type LoginUser, type AuthTokenPayload,
 } from '@zexcore/core';
+
+/** Creates a server-side session row and returns a signed token bound to it. */
+export async function issueToken(payload: Omit<AuthTokenPayload, 'sid'>, request: Pick<FastifyRequest, 'ip' | 'headers'>): Promise<string> {
+  const sid = await createSession(payload.userId, { userAgent: String(request.headers['user-agent'] ?? ''), ip: request.ip });
+  return signAuthToken({ ...payload, sid });
+}
 
 export type SessionResult =
   | { kind: 'ok'; token: string; user: { id: string; email: string; name: string; isPlatformAdmin: boolean } }
@@ -8,7 +15,7 @@ export type SessionResult =
   | { kind: 'denied' };
 
 /** Shared by password and Google sign-in: pick the workspace, verify membership, mint the token. */
-export async function startSession(user: LoginUser, tenantSlug?: string): Promise<SessionResult> {
+export async function startSession(user: LoginUser, tenantSlug: string | undefined, request: Pick<FastifyRequest, 'ip' | 'headers'>): Promise<SessionResult> {
   let slug = tenantSlug;
   if (!slug && !user.is_platform_admin) {
     const workspaces = await listUserWorkspaces(user.id);
@@ -30,10 +37,10 @@ export async function startSession(user: LoginUser, tenantSlug?: string): Promis
     role = m?.role as typeof role;
   }
 
-  const token = signAuthToken({
+  const token = await issueToken({
     userId: user.id, tenantId, role,
     principalType: user.is_platform_admin ? 'platform_admin' : 'tenant_user',
     isPlatformAdmin: user.is_platform_admin,
-  });
+  }, request);
   return { kind: 'ok', token, user: { id: user.id, email: user.email, name: user.name, isPlatformAdmin: user.is_platform_admin } };
 }

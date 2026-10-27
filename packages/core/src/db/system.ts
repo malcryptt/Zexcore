@@ -127,3 +127,81 @@ export async function getUserProfileInTenant(tx: { unsafe: (q: string, p?: any[]
   const rows = await tx.unsafe(`SELECT * FROM zex_user_profile($1::uuid)`, [userId]);
   return rows[0];
 }
+
+// ── Sessions & one-time tokens (all access goes through SECURITY DEFINER functions) ──────────
+
+export const SESSION_TTL_SECONDS = 24 * 60 * 60;
+
+export async function createSession(userId: string, meta: { userAgent?: string; ip?: string } = {}): Promise<string> {
+  const sql = getSqlClient();
+  const rows = await sql.unsafe<{ id: string }[]>(
+    `SELECT zex_session_create($1::uuid, $2::int, $3::text, $4::text) AS id`,
+    [userId, SESSION_TTL_SECONDS, meta.userAgent ?? null, meta.ip ?? null] as any,
+  );
+  return rows[0]!.id;
+}
+
+export async function isSessionValid(sid: string, userId: string): Promise<boolean> {
+  if (!/^[0-9a-f-]{36}$/i.test(sid) || !/^[0-9a-f-]{36}$/i.test(userId)) return false;
+  const sql = getSqlClient();
+  const rows = await sql.unsafe<{ ok: boolean }[]>(`SELECT zex_session_valid($1::uuid, $2::uuid) AS ok`, [sid, userId] as any);
+  return rows[0]?.ok === true;
+}
+
+export async function revokeSession(sid: string, userId: string): Promise<boolean> {
+  const sql = getSqlClient();
+  const rows = await sql.unsafe<{ ok: boolean }[]>(`SELECT zex_session_revoke($1::uuid, $2::uuid) AS ok`, [sid, userId] as any);
+  return rows[0]?.ok === true;
+}
+
+export async function revokeOtherSessions(userId: string, keepSid: string | null): Promise<number> {
+  const sql = getSqlClient();
+  const rows = await sql.unsafe<{ n: number }[]>(`SELECT zex_session_revoke_all($1::uuid, $2::uuid) AS n`, [userId, keepSid] as any);
+  return Number(rows[0]?.n ?? 0);
+}
+
+export interface SessionInfo { id: string; created_at: string; last_seen_at: string; user_agent: string | null; ip: string | null }
+
+export async function listSessions(userId: string): Promise<SessionInfo[]> {
+  const sql = getSqlClient();
+  return sql.unsafe<SessionInfo[]>(`SELECT * FROM zex_session_list($1::uuid)`, [userId] as any);
+}
+
+export type OneTimeKind = 'verify' | 'reset';
+
+export async function issueOneTimeToken(userId: string, kind: OneTimeKind, tokenHash: string, ttlSeconds: number): Promise<void> {
+  const sql = getSqlClient();
+  await sql.unsafe(`SELECT zex_token_issue($1::uuid, $2::text, $3::text, $4::int)`, [userId, kind, tokenHash, ttlSeconds] as any);
+}
+
+/** Returns the user id if the token was valid and unused (and burns it), otherwise null. */
+export async function consumeOneTimeToken(tokenHash: string, kind: OneTimeKind): Promise<string | null> {
+  const sql = getSqlClient();
+  const rows = await sql.unsafe<{ id: string | null }[]>(`SELECT zex_token_consume($1::text, $2::text) AS id`, [tokenHash, kind] as any);
+  return rows[0]?.id ?? null;
+}
+
+/** Like consume, but leaves the token usable (so a weak password does not burn a reset link). */
+export async function peekOneTimeToken(tokenHash: string, kind: OneTimeKind): Promise<string | null> {
+  const sql = getSqlClient();
+  const rows = await sql.unsafe<{ id: string | null }[]>(`SELECT zex_token_peek($1::text, $2::text) AS id`, [tokenHash, kind] as any);
+  return rows[0]?.id ?? null;
+}
+
+export async function setUserPassword(userId: string, passwordHash: string): Promise<void> {
+  const sql = getSqlClient();
+  await sql.unsafe(`SELECT zex_set_password($1::uuid, $2::text)`, [userId, passwordHash] as any);
+}
+
+export async function markEmailVerified(userId: string): Promise<void> {
+  const sql = getSqlClient();
+  await sql.unsafe(`SELECT zex_mark_email_verified($1::uuid)`, [userId] as any);
+}
+
+export interface UserAccount { id: string; email: string; name: string; email_verified: boolean; password_hash: string }
+
+export async function getUserAccount(userId: string): Promise<UserAccount | undefined> {
+  const sql = getSqlClient();
+  const rows = await sql.unsafe<UserAccount[]>(`SELECT * FROM zex_user_account($1::uuid)`, [userId] as any);
+  return rows[0];
+}

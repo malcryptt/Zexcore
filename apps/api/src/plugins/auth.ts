@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
-import { verifyAuthToken, hasCapability } from '@zexcore/core';
+import { verifyAuthToken, hasCapability, isSessionValid } from '@zexcore/core';
 import type { PrincipalType, TenantRole } from '@zexcore/core';
 
 export interface RequestUser {
@@ -10,6 +10,8 @@ export interface RequestUser {
   role?: TenantRole;
   isPlatformAdmin: boolean;
   capabilities: string[];
+  /** Session id from the token (present for every signed-in user). */
+  sid?: string;
 }
 
 const authPluginAsync: FastifyPluginAsync = async (server) => {
@@ -20,7 +22,11 @@ const authPluginAsync: FastifyPluginAsync = async (server) => {
       const token = authHeader.substring(7);
       try {
         const payload = verifyAuthToken(token);
+        // A token is only as good as its server-side session: logout, password changes and "sign out
+        // everywhere" revoke the session, which kills the token even before it expires.
+        if (!payload.sid || !(await isSessionValid(payload.sid, payload.userId))) throw new Error('session_invalid');
         request.user = {
+          sid: payload.sid,
           id: payload.userId,
           userId: payload.userId,
           tenantId: payload.tenantId,

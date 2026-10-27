@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { sql } from '@zexcore/core';
+import { sql, assertRoom, PlanLimitError } from '@zexcore/core';
 import { formatLocal, isValidSlotStart, normalizePhone, type SlotSettings } from './slots.js';
 
 export type Tx = { execute(q: any): Promise<any> };
@@ -62,6 +62,15 @@ export async function createBooking(tx: Tx, tenant: { id: string; slug: string }
   if (!Number.isFinite(startMs)) throw new BookingError('invalid_time', 'Invalid start time');
 
   await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${'bk:' + tenant.id}, 0))`);
+  try {
+    await assertRoom(tx, tenant.id, 'bookingsPerMonth');
+  } catch (e) {
+    if (!(e instanceof PlanLimitError)) throw e;
+    // Customers are never told about the business's plan; the owner sees the real reason.
+    throw input.source === 'public'
+      ? new BookingError('unavailable', 'This business is not taking new online bookings right now. Please contact them directly.', 409)
+      : new BookingError('plan_limit', e.message, 402);
+  }
   const settings = await loadSettings(tx, tenant.id);
 
   const [service] = await rows<any>(tx, sql`SELECT id, name, duration_min, price_minor FROM bk_services WHERE id = ${input.serviceId}::uuid AND active`);

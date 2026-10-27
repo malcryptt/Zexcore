@@ -9,6 +9,7 @@ export interface RequestUser {
   role?: TenantRole;
   isPlatformAdmin: boolean;
   capabilities: string[];
+  sid?: string;
 }
 
 export interface RequestTenant {

@@ -3,7 +3,7 @@ import type { ZexCoreContext } from '@zexcore/core';
 import { cmsPages } from '../schema/pages.js';
 import { CMS_EVENTS } from '../events.js';
 import { eq, desc, and } from '@zexcore/core';
-import { withTenantDb } from '@zexcore/core';
+import { withTenantDb, planLimitGuard } from '@zexcore/core';
 import { CMS_CAPABILITIES } from '../permissions.js';
 
 const guard = (server: FastifyInstance, cap: string) => ({
@@ -43,7 +43,7 @@ export function registerCmsRoutes(server: FastifyInstance, core: ZexCoreContext)
   // 2. Create CMS page
   server.post<{ Body: CreatePageBody }>(
     '/api/cms/pages',
-    guard(server, CMS_CAPABILITIES.PAGES_CREATE),
+    { preHandler: [...guard(server, CMS_CAPABILITIES.PAGES_CREATE).preHandler, planLimitGuard('cmsPages')] },
     async (request: FastifyRequest<{ Body: CreatePageBody }>, reply: FastifyReply) => {
       const tenant = (request as any).tenant;
       if (!tenant || !tenant.id) {
