@@ -63,3 +63,14 @@
   .kpi b { font-size: 1.25rem; }
   .dev-card, .rule-card { padding: 14px; }
 }
+
+
+/* Dense work tools should feel like operational software, not decorative cards. */
+.kpi, .dev-card, .rule-card, .pipe-card { box-shadow: none; border-radius: 8px; }
+.kpi { border-color: #e0e4e9; }
+.pipe-col { border-radius: 8px; background: #f1f3f6; }
+.pipe-card { border-color: #e0e4e9; }
+.pipe-card:hover { border-color: #d69aa2; box-shadow: 0 2px 8px rgba(24,25,27,.04); }
+.dev-card, .rule-card { border-color: #e0e4e9; }
+.codeblock { border-radius: 6px; }
+.sec-tabs { border-color: #e0e4e9; }
