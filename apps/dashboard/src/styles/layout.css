@@ -219,3 +219,13 @@ ul.checklist { padding: 0; }
   .stat-tile { padding: 12px; }
   .stat-tile .v { font-size: 1.45rem; }
 }
+
+
+/* Use the official horizontal logo artwork rather than rebuilding the wordmark in text. */
+.brand { gap: 0; }
+.brand .brand-lockup { display: block; width: 148px; max-width: 100%; height: auto; object-fit: contain; }
+.sidebar > a:first-child .brand-lockup { width: 148px; }
+.auth-logo .brand-lockup { width: 156px; }
+@media (max-width: 480px) {
+  .topbar .brand-lockup { width: 124px; }
+}
