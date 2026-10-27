@@ -39,3 +39,13 @@ code, kbd, .mono { font-family: var(--font-mono); font-size: 0.8125rem; font-wei
 
 /* Route containers receive programmatic focus for screen readers; they need no visible ring. */
 .main:focus, .main:focus-visible, [tabindex="-1"]:focus-visible { outline: none; }
+
+
+/* Keyboard focus and reduced motion remain consistent across all routes. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid #c8102e;
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
