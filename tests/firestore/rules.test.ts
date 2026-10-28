@@ -211,18 +211,20 @@ describe('public booking', () => {
     await assertFails(book(anon(), 30, { startsAtDate: new Date(start().getTime() + 86400000 * 6), cells: cellsFor(new Date(start().getTime() + 86400000 * 6), 4) }));
   });
   it('rejects a booking id for another month', async () => {
-    const b = writeBatch(anon());
+    const db = anon();
+    const b = writeBatch(db);
     const s = start();
-    b.set(doc(anon(), 'workspaces', W, 'bookings', '200001_0'), { serviceId: 's_0', staffId: 'p_0', customerName: 'Chidi Okeke', customerPhone: '+2348031234567',
+    b.set(doc(db, 'workspaces', W, 'bookings', '200001_0'), { serviceId: 's_0', staffId: 'p_0', customerName: 'Chidi Okeke', customerPhone: '+2348031234567',
       startsAt: Timestamp.fromDate(s), endsAt: Timestamp.fromMillis(s.getTime() + 3600000), cells: cellsFor(s, 4), status: 'pending', source: 'public', createdAt: serverTimestamp() });
     await assertFails(b.commit());
   });
   it('lets staff cancel a booking and free its cells', async () => {
     const s = start(); const c = cellsFor(s, 4);
     await assertSucceeds(book(anon(), 0, { startsAtDate: s }));
-    const b = writeBatch(owner());
-    b.update(doc(owner(), 'workspaces', W, 'bookings', `${month()}_0`), { status: 'cancelled' });
-    for (const x of c) b.delete(doc(owner(), 'workspaces', W, 'locks', `p_0_${x}`));
+    const db = owner();
+    const b = writeBatch(db);
+    b.update(doc(db, 'workspaces', W, 'bookings', `${month()}_0`), { status: 'cancelled' });
+    for (const x of c) b.delete(doc(db, 'workspaces', W, 'locks', `p_0_${x}`));
     await assertSucceeds(b.commit());
     await assertSucceeds(book(anon(), 1, { startsAtDate: s }));
   });
