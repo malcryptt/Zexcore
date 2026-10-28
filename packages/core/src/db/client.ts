@@ -1,3 +1,4 @@
+import { retryDeadlock } from './retry.js';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema/index.js';
@@ -91,11 +92,14 @@ export async function withTenantDb<T>(
 ): Promise<T> {
   const { db } = getDatabaseConnection();
 
-  return await db.transaction(async (tx) => {
-    // Set local session variable for PostgreSQL RLS policies
-    await tx.execute(sql`SELECT set_config('app.current_tenant_id', ${tenantId}, true)`);
-    return await callback(tx as unknown as DrizzleDb);
-  });
+  // A deadlock victim is rolled back before commit, so re-running the whole transaction is safe.
+  return await retryDeadlock(() =>
+    db.transaction(async (tx) => {
+      // Set local session variable for PostgreSQL RLS policies
+      await tx.execute(sql`SELECT set_config('app.current_tenant_id', ${tenantId}, true)`);
+      return await callback(tx as unknown as DrizzleDb);
+    }),
+  );
 }
 
 /**

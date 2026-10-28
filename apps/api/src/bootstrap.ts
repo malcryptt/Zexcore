@@ -12,6 +12,7 @@ import {
   createDefaultCoreContext,
   grantRuntimeAccess,
   withBootstrapLock,
+  retryDeadlock,
   checkRuntimeRoleSafety,
 } from '@zexcore/core';
 import { registerBillingRoutes } from './billing/routes.js';
@@ -37,7 +38,7 @@ export async function bootstrapApp(server: FastifyInstance): Promise<void> {
   await withBootstrapLock(async () => {
     // 1. Initialize DB schema and RLS policies
     server.log.info('[bootstrap] Initializing database schema & RLS policies...');
-    await initializeDatabaseSchema();
+    await retryDeadlock(() => initializeDatabaseSchema());
 
     // 2. Register modules into the module registry
     server.log.info('[bootstrap] Registering CMS module...');
@@ -66,7 +67,7 @@ export async function bootstrapApp(server: FastifyInstance): Promise<void> {
 
     // Module tables now exist: apply least-privilege grants for the runtime role, then (in production)
     // refuse to serve if the runtime role could undermine tenant isolation.
-    await grantRuntimeAccess();
+    await retryDeadlock(() => grantRuntimeAccess());
   });
   const roleSafety = await checkRuntimeRoleSafety();
   if (!roleSafety.ok) {
