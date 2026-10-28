@@ -58,3 +58,27 @@ jobs:
         run: |
           grep -nE "FAIL|Unhandled|Error|ECONN|deadlock|already exists|timed out|beforeAll|hook" vitest.log | grep -v '"level":30' | head -40 | cut -c1-300 > failures.txt || true
           echo "::error title=Vitest failures::$(sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g' failures.txt | cut -c1-3800)"
+
+  firestore-rules:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: pnpm install --frozen-lockfile
+      - name: Firestore security rules tests (emulator)
+        shell: bash
+        run: pnpm test:rules 2>&1 | tee rules.log
+      - name: Summarise rules failures
+        if: failure()
+        run: |
+          grep -nE "FAIL|AssertionError|Error|✗|×|rules|line [0-9]+" rules.log | head -40 | cut -c1-300 > rules-failures.txt || true
+          echo "::error title=Rules tests::$(sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g' rules-failures.txt | cut -c1-3800)"
