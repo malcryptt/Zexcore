@@ -1,0 +1,12 @@
+name = "zexcore-payments"
+main = "src/index.ts"
+compatibility_date = "2025-10-01"
+workers_dev = true
+
+[vars]
+FIREBASE_PROJECT_ID = "zexcore-5d6c0"
+NGN_PER_USD = "1500"
+
+# Secrets (set in the Cloudflare dashboard: Worker > Settings > Variables and Secrets, never in git):
+#   PAYSTACK_SECRET_KEY        Paystack secret key (sk_live_... / sk_test_...)
+#   FIREBASE_SERVICE_ACCOUNT   JSON key of a service account with ONLY the "Cloud Datastore User" role

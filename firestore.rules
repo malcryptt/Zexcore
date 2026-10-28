@@ -89,6 +89,7 @@ service cloud.firestore {
       allow list: if false;
 
       allow create: if signedIn()
+        && wid.matches('^[A-Za-z0-9]{20}$')
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.plan == 'free'
         && !('planExpiresAt' in request.resource.data)
@@ -163,6 +164,23 @@ service cloud.firestore {
           && int(cell.split('_')[2]) in getAfter(bookingPath(wid, request.resource.data.bookingId)).data.cells;
         allow delete: if isMember(wid);   // staff cancelling a booking frees its cells
         allow update: if false;
+      }
+
+      // Upgrade orders. The dashboard creates a PENDING order, then opens Paystack with the order id as the payment
+      // reference. Only the payment Worker (service account, bypasses rules) can mark it paid and set the plan,
+      // after verifying the amount with Paystack. Clients can never update or delete an order.
+      match /orders/{ref} {
+        allow read: if isAdmin(wid);
+        allow create: if isAdmin(wid)
+          && ref.matches('^zx_' + wid + '_[a-z0-9]{8,24}$')
+          && request.resource.data.keys().hasOnly(['tier', 'cycle', 'currency', 'status', 'createdBy', 'createdAt'])
+          && request.resource.data.status == 'pending'
+          && request.resource.data.tier in ['starter', 'growth', 'agency', 'enterprise', 'dedicated']
+          && request.resource.data.cycle in ['monthly', 'annual']
+          && request.resource.data.currency in ['NGN', 'USD']
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.createdAt == request.time;
+        allow update, delete: if false;
       }
 
       match /audit/{id} {

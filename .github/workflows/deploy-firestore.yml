@@ -1,0 +1,40 @@
+name: Deploy Firestore rules
+
+# Publishes firestore.rules + firestore.indexes.json to project zexcore-5d6c0 on every merge to main that changes them.
+# Needs the repository secret FIREBASE_SERVICE_ACCOUNT (service-account JSON; role: Firebase Rules Admin + Cloud Datastore Index Admin).
+on:
+  push:
+    branches: [main]
+    paths: ['firestore.rules', 'firestore.indexes.json', '.github/workflows/deploy-firestore.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-firestore
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Require service account
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: '[ -n "$SA" ] || { echo "::error::FIREBASE_SERVICE_ACCOUNT secret is not set"; exit 1; }'
+      - name: Deploy rules and indexes
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
+          GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json" pnpm exec firebase deploy --only firestore --project zexcore-5d6c0 --non-interactive
+          rm -f "$RUNNER_TEMP/sa.json"
