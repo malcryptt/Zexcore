@@ -4,7 +4,7 @@ import { initializeTestEnvironment, assertSucceeds, assertFails, type RulesTestE
 import { doc, getDoc, getDocs, collection, setDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp, Timestamp } from 'firebase/firestore';
 
 let env: RulesTestEnvironment;
-const W = 'Ws1AbCdEfGhIjKlMnOp';
+const W = 'Ws1AbCdEfGhIjKlMnOpQ';
 const SLUG = 'sade-salon';
 
 const owner = () => env.authenticatedContext('owner1').firestore();
@@ -46,7 +46,7 @@ describe('workspace creation and plan fields', () => {
   it('refuses reserved and already-taken slugs', async () => {
     await assertFails(createWorkspace(owner(), W, 'admin'));
     await assertSucceeds(createWorkspace(owner()));
-    await assertFails(createWorkspace(env.authenticatedContext('owner1').firestore(), 'Ws2AbCdEfGhIjKlMnOp', SLUG));
+    await assertFails(createWorkspace(env.authenticatedContext('owner1').firestore(), 'Ws2AbCdEfGhIjKlMnOpQ', SLUG));
     await assertFails(createWorkspace(owner(), 'short', 'another-slug'));
   });
   it('refuses unauthenticated creation', async () => {
@@ -231,33 +231,21 @@ describe('public booking', () => {
   });
 });
 
-describe('upgrade orders', () => {
-  const ref = (rand = 'k3j2h1g0f9') => `zx_${W}_${rand}`;
-  const order = (extra = {}) => ({ tier: 'growth', cycle: 'monthly', currency: 'NGN', status: 'pending', createdBy: 'owner1', createdAt: serverTimestamp(), ...extra });
-  beforeEach(async () => { await createWorkspace(owner()); });
-
-  it('lets the owner open a pending order', async () => {
-    await assertSucceeds(setDoc(doc(owner(), 'workspaces', W, 'orders', ref()), order()));
+describe('plan payments (written only by the payments Worker)', () => {
+  const pay = { tier: 'growth', cycle: 'monthly', currency: 'NGN', amountMinor: 7350000, status: 'pending', createdBy: 'owner1' };
+  beforeEach(async () => {
+    await createWorkspace(owner());
+    await seed(async (db) => { await setDoc(doc(db, 'workspaces', W, 'payments', 'zx_ref1'), pay); });
   });
-  it('refuses a pre-paid order, unknown tiers, or someone else as the buyer', async () => {
-    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'orders', ref()), order({ status: 'paid' })));
-    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'orders', ref()), order({ tier: 'platinum' })));
-    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'orders', ref()), order({ createdBy: 'stranger' })));
-    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'orders', ref()), order({ amountMinor: 1 })));
+  it('lets admins read payment records, nobody else', async () => {
+    await assertSucceeds(getDoc(doc(owner(), 'workspaces', W, 'payments', 'zx_ref1')));
+    await assertFails(getDoc(doc(other(), 'workspaces', W, 'payments', 'zx_ref1')));
+    await assertFails(getDoc(doc(anon(), 'workspaces', W, 'payments', 'zx_ref1')));
   });
-  it('refuses references that do not belong to this workspace', async () => {
-    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'orders', 'zx_Other0000000000000000_k3j2h1g0f9'), order()));
-    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'orders', 'whatever'), order()));
-  });
-  it('never lets a client mark an order paid, edit or delete it', async () => {
-    await assertSucceeds(setDoc(doc(owner(), 'workspaces', W, 'orders', ref()), order()));
-    await assertFails(updateDoc(doc(owner(), 'workspaces', W, 'orders', ref()), { status: 'paid' }));
-    await assertFails(deleteDoc(doc(owner(), 'workspaces', W, 'orders', ref())));
-  });
-  it('keeps orders private to admins', async () => {
-    await assertSucceeds(setDoc(doc(owner(), 'workspaces', W, 'orders', ref()), order()));
-    await assertSucceeds(getDoc(doc(owner(), 'workspaces', W, 'orders', ref())));
-    await assertFails(getDoc(doc(other(), 'workspaces', W, 'orders', ref())));
-    await assertFails(setDoc(doc(other(), 'workspaces', W, 'orders', ref('zzzzzzzz1')), order({ createdBy: 'stranger' })));
+  it('never lets a client create, mark paid, edit or delete a payment', async () => {
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'payments', 'zx_ref2'), pay));
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'payments', 'zx_ref2'), { ...pay, status: 'paid' }));
+    await assertFails(updateDoc(doc(owner(), 'workspaces', W, 'payments', 'zx_ref1'), { status: 'paid' }));
+    await assertFails(deleteDoc(doc(owner(), 'workspaces', W, 'payments', 'zx_ref1')));
   });
 });

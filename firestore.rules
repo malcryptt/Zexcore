@@ -166,21 +166,11 @@ service cloud.firestore {
         allow update: if false;
       }
 
-      // Upgrade orders. The dashboard creates a PENDING order, then opens Paystack with the order id as the payment
-      // reference. Only the payment Worker (service account, bypasses rules) can mark it paid and set the plan,
-      // after verifying the amount with Paystack. Clients can never update or delete an order.
-      match /orders/{ref} {
+      // Plan payments. Created, and later marked paid, only by the payments Worker (service account, bypasses
+      // rules) after it prices the plan itself and verifies the charge with Paystack. Clients can only read them.
+      match /payments/{ref} {
         allow read: if isAdmin(wid);
-        allow create: if isAdmin(wid)
-          && ref.matches('^zx_' + wid + '_[a-z0-9]{8,24}$')
-          && request.resource.data.keys().hasOnly(['tier', 'cycle', 'currency', 'status', 'createdBy', 'createdAt'])
-          && request.resource.data.status == 'pending'
-          && request.resource.data.tier in ['starter', 'growth', 'agency', 'enterprise', 'dedicated']
-          && request.resource.data.cycle in ['monthly', 'annual']
-          && request.resource.data.currency in ['NGN', 'USD']
-          && request.resource.data.createdBy == request.auth.uid
-          && request.resource.data.createdAt == request.time;
-        allow update, delete: if false;
+        allow write: if false;
       }
 
       match /audit/{id} {
