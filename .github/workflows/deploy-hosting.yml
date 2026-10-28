@@ -28,9 +28,12 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Require deploy configuration
+        env:
+          SA_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          API_URL: ${{ vars.VITE_API_URL }}
         run: |
-          [ -n "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" ] || { echo "::error::FIREBASE_SERVICE_ACCOUNT secret is not set"; exit 1; }
-          [ -n "${{ vars.VITE_API_URL }}" ] || { echo "::error::VITE_API_URL variable is not set"; exit 1; }
+          [ -n "$SA_JSON" ] || { echo "::error::FIREBASE_SERVICE_ACCOUNT secret is not set"; exit 1; }
+          [ -n "$API_URL" ] || { echo "::error::VITE_API_URL variable is not set"; exit 1; }
       - run: pnpm build:dashboard
         env:
           VITE_API_URL: ${{ vars.VITE_API_URL }}
