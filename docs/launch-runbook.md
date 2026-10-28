@@ -30,3 +30,28 @@ Every merge to `main` then deploys. First deploy can be started from Actions →
 - Rotate any token that was pasted into chat or logs.
 - Enable Render database backups and a paid plan that retains them.
 - Send a real password reset and verification email end to end.
+
+## No payment card? Free-tier path
+1. Create a Postgres database on Neon (neon.tech, free, no card). Copy the **non-pooled** connection string (the "Direct" one).
+2. Render → New → Blueprint → repo `malcryptt/Zexcore`, branch `review/security-fixes-2026-10-24` (or `main` once merged), **Blueprint Path** `render.free.yaml`. This creates only the API on the free plan.
+3. Run `PRIMARY_URL='<neon direct url>' APP_PASSWORD='<24+ chars>' ./scripts/db-init-production.sh`.
+4. On the API service set `ADMIN_DATABASE_URL` = the Neon direct URL, and `DATABASE_URL` = the same URL but with user `zexcore_app` and your `APP_PASSWORD`. Redeploy.
+Limits: free web services sleep when idle, and Neon's free database also pauses when idle (first query is slower). Fine for testing; upgrade both before real customer traffic.
+
+## Firebase-only path (no server, no card)
+Architecture: dashboard on Firebase Hosting, accounts + data in Firebase Auth/Firestore, **security rules in `firestore.rules` are the
+security boundary**, and one Cloudflare Worker (`workers/payments`) handles Paystack (checkout + webhook) because only a trusted
+service may change a workspace's plan.
+
+1. Firestore database created in project `zexcore-5d6c0` (done: eur3).
+2. GitHub secrets: `FIREBASE_SERVICE_ACCOUNT`, `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`. Merging to `main` (or running
+   "Deploy Firebase rules and payments Worker" by hand) publishes the rules, indexes and the Worker.
+3. Cloudflare dashboard → Workers & Pages → `zexcore-payments` → Settings → Variables and Secrets → add secrets
+   `PAYSTACK_SECRET_KEY` and `FIREBASE_SERVICE_ACCOUNT` (a **new** service account with only the *Cloud Datastore User* role).
+4. Paystack dashboard → Settings → API Keys & Webhooks → webhook URL
+   `https://zexcore-payments.<your-subdomain>.workers.dev/api/paystack-webhook`.
+5. Check `https://zexcore-payments.<your-subdomain>.workers.dev/api/health` returns `{"status":"ok"}`.
+
+Known limits of this path: no 24/7 automations, no device telemetry ingestion, tamper-evident audit chain not available
+(the audit log is append-only via rules). Enable Firebase App Check (reCAPTCHA) before promoting the public booking page, to
+stop bots from using up a business's monthly booking allowance.

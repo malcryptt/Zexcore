@@ -1,0 +1,221 @@
+rules_version = '2';
+
+// ZexCore on Firebase. There is no application server: THESE RULES ARE THE SECURITY BOUNDARY.
+//
+// Model (everything for one business lives under workspaces/{wid}):
+//   slugs/{slug}                         public lookup + public booking-page profile (owner maintained)
+//   users/{uid}                          the signed-in user's own profile
+//   workspaces/{wid}                     plan fields are NEVER writable from a client (only the payment Worker,
+//                                        which uses a service account and bypasses these rules)
+//   workspaces/{wid}/members/{uid}       role: owner | admin | staff (created only together with the workspace)
+//   workspaces/{wid}/services|staff|contacts|pages/{kind_N}
+//                                        document ids are numbered slots (e.g. s_0 .. s_{limit-1}); the plan
+//                                        limit is enforced by refusing ids at or above it. Race-free, no counters.
+//   workspaces/{wid}/bookings/{YYYYMM_N} same idea per calendar month (bookings created this month <= limit)
+//   workspaces/{wid}/locks/{staff_cell}  create-only 15-minute cells; a second booking of a cell is refused,
+//                                        which is what prevents double booking without a server.
+//
+// Plan limits mirror packages/core/src/billing/limits.ts. Grace: 3 days after plan expiry, then free.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ───────────── helpers ─────────────
+    function signedIn() { return request.auth != null; }
+    function wsPath(wid) { return /databases/$(database)/documents/workspaces/$(wid); }
+    function memberPath(wid, uid) { return /databases/$(database)/documents/workspaces/$(wid)/members/$(uid); }
+    function isMember(wid) { return signedIn() && exists(memberPath(wid, request.auth.uid)); }
+    function memberRole(wid) { return get(memberPath(wid, request.auth.uid)).data.role; }
+    function isAdmin(wid) { return isMember(wid) && memberRole(wid) in ['owner', 'admin']; }
+    function onlyChanges(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
+    function noExtraKeys(allowed) { return request.resource.data.keys().hasOnly(allowed); }
+
+    function planOf(wid) {
+      let w = get(wsPath(wid)).data;
+      return (w.plan == 'free' || w.get('planExpiresAt', null) == null
+              || request.time < w.planExpiresAt + duration.value(3, 'd')) ? w.plan : 'free';
+    }
+    function limitOf(wid, key) {
+      return {
+        'free':       {'bookingsPerMonth': 30,   'staff': 1,   'services': 3,   'cmsPages': 3,   'crmContacts': 50},
+        'starter':    {'bookingsPerMonth': 200,  'staff': 3,   'services': 10,  'cmsPages': 10,  'crmContacts': 500},
+        'growth':     {'bookingsPerMonth': 1000, 'staff': 10,  'services': 30,  'cmsPages': 50,  'crmContacts': 5000},
+        'agency':     {'bookingsPerMonth': 5000, 'staff': 50,  'services': 100, 'cmsPages': 200, 'crmContacts': 50000},
+        'enterprise': {'bookingsPerMonth': 999999, 'staff': 999999, 'services': 999999, 'cmsPages': 999999, 'crmContacts': 999999},
+        'dedicated':  {'bookingsPerMonth': 999999, 'staff': 999999, 'services': 999999, 'cmsPages': 999999, 'crmContacts': 999999}
+      }.get(planOf(wid), {'bookingsPerMonth': 30, 'staff': 1, 'services': 3, 'cmsPages': 3, 'crmContacts': 50})[key];
+    }
+    // "<prefix>_<n>" with n below the plan limit for this resource
+    function slotId(wid, prefix, key, id) {
+      return id.matches('^' + prefix + '_[0-9]{1,6}$') && int(id.split('_')[1]) < limitOf(wid, key);
+    }
+
+    // ───────────── public booking-page lookup ─────────────
+    match /slugs/{slug} {
+      allow get: if true;
+      allow list: if false;
+      // claim a slug together with creating its workspace; never overwritten or deleted by clients
+      allow create: if signedIn()
+        && slug.matches('^[a-z0-9]([a-z0-9-]{1,38})[a-z0-9]$')
+        && !(slug in ['admin','api','app','www','signin','signup','login','pricing','security','contact','privacy','terms','docs',
+                      'about','console','dashboard','platform','solutions','modules','architecture','resources','book','b','static',
+                      'assets','zexcore','mail','support','help','status'])
+        && request.resource.data.wid is string
+        && request.resource.data.ownerUid == request.auth.uid
+        && getAfter(wsPath(request.resource.data.wid)).data.ownerUid == request.auth.uid
+        && getAfter(wsPath(request.resource.data.wid)).data.slug == slug
+        && noExtraKeys(['wid', 'ownerUid', 'name', 'timezone', 'currency', 'bookingEnabled', 'slotMinutes',
+                        'openMinutes', 'closeMinutes', 'closedWeekdays', 'depositNote', 'phone', 'address']);
+      allow update: if signedIn() && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.wid == resource.data.wid
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && noExtraKeys(['wid', 'ownerUid', 'name', 'timezone', 'currency', 'bookingEnabled', 'slotMinutes',
+                        'openMinutes', 'closeMinutes', 'closedWeekdays', 'depositNote', 'phone', 'address']);
+      allow delete: if false;
+    }
+
+    // ───────────── users ─────────────
+    match /users/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && noExtraKeys(['name', 'email', 'phone', 'workspaceIds', 'createdAt'])
+        && request.resource.data.workspaceIds is list && request.resource.data.workspaceIds.size() <= 5;
+      allow delete: if false;
+    }
+
+    // ───────────── workspaces ─────────────
+    match /workspaces/{wid} {
+      allow get: if isMember(wid);
+      allow list: if false;
+
+      allow create: if signedIn()
+        && wid.matches('^[A-Za-z0-9]{20}$')
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.plan == 'free'
+        && !('planExpiresAt' in request.resource.data)
+        && request.resource.data.slug is string
+        && request.resource.data.name is string && request.resource.data.name.size() >= 1 && request.resource.data.name.size() <= 120
+        && existsAfter(memberPath(wid, request.auth.uid))
+        && getAfter(memberPath(wid, request.auth.uid)).data.role == 'owner'
+        && noExtraKeys(['name', 'slug', 'ownerUid', 'plan', 'createdAt', 'settings']);
+
+      // plan / planExpiresAt / ownerUid / slug are immutable for clients
+      allow update: if isAdmin(wid) && onlyChanges(['name', 'settings']);
+      allow delete: if false;
+
+      match /members/{uid} {
+        allow read: if isMember(wid);
+        // only the founding owner row, written in the same batch as the workspace
+        allow create: if signedIn() && uid == request.auth.uid && request.resource.data.role == 'owner'
+          && !exists(wsPath(wid))
+          && existsAfter(wsPath(wid))
+          && getAfter(wsPath(wid)).data.ownerUid == request.auth.uid
+          && noExtraKeys(['role', 'name', 'email', 'createdAt']);
+        allow update, delete: if false;
+      }
+
+      // Visible to the public booking page (names, durations, prices); admins manage them
+      match /services/{id} {
+        allow get, list: if true;
+        allow create: if isAdmin(wid) && slotId(wid, 's', 'services', id);
+        allow update, delete: if isAdmin(wid);
+      }
+      match /staff/{id} {
+        allow get, list: if true;
+        allow create: if isAdmin(wid) && slotId(wid, 'p', 'staff', id);
+        allow update, delete: if isAdmin(wid);
+      }
+
+      match /contacts/{id} {
+        allow read: if isMember(wid);
+        allow create: if isMember(wid) && slotId(wid, 'c', 'crmContacts', id);
+        allow update, delete: if isMember(wid);
+      }
+      match /stages/{id} { allow read, write: if isAdmin(wid); allow read: if isMember(wid); }
+      match /leads/{id}  { allow read, write: if isMember(wid); }
+      match /customers/{id} { allow read, write: if isMember(wid); }
+
+      // Website pages: published pages are public
+      match /pages/{id} {
+        allow get, list: if resource.data.published == true || isMember(wid);
+        allow create: if isAdmin(wid) && slotId(wid, 'g', 'cmsPages', id);
+        allow update, delete: if isAdmin(wid);
+      }
+
+      // Bookings: staff manage freely; the public may only CREATE, never read or change
+      match /bookings/{id} {
+        allow read: if isMember(wid);
+        allow update, delete: if isMember(wid);
+
+        allow create: if (isMember(wid) || publicBookingOk(wid)) && bookingSlotOk(wid, id);
+      }
+
+      // Time cells: create-only. The booking batch must create every cell it occupies.
+      match /locks/{cell} {
+        allow read: if false;
+        // The cell must belong to a booking that is being CREATED in this same batch (not a guessable old one),
+        // for that booking's staff member, so nobody can litter the calendar with junk locks.
+        allow create: if request.resource.data.keys().hasOnly(['bookingId', 'createdAt'])
+          && request.resource.data.createdAt == request.time
+          && !exists(bookingPath(wid, request.resource.data.bookingId))
+          && existsAfter(bookingPath(wid, request.resource.data.bookingId))
+          && cell.split('_').size() == 3
+          && cell.split('_')[0] + '_' + cell.split('_')[1] == getAfter(bookingPath(wid, request.resource.data.bookingId)).data.staffId
+          && int(cell.split('_')[2]) in getAfter(bookingPath(wid, request.resource.data.bookingId)).data.cells;
+        allow delete: if isMember(wid);   // staff cancelling a booking frees its cells
+        allow update: if false;
+      }
+
+      // Plan payments. Created, and later marked paid, only by the payments Worker (service account, bypasses
+      // rules) after it prices the plan itself and verifies the charge with Paystack. Clients can only read them.
+      match /payments/{ref} {
+        allow read: if isAdmin(wid);
+        allow write: if false;
+      }
+
+      match /audit/{id} {
+        allow read: if isAdmin(wid);
+        allow create: if isMember(wid) && request.resource.data.actor == request.auth.uid
+          && request.resource.data.at == request.time;
+        allow update, delete: if false;     // append-only
+      }
+    }
+
+    // Public booking validation ------------------------------------------------------------------------------
+    function bookingSlotOk(wid, id) {
+      // <YYYYMM>_<n>, month = now, n below the plan's monthly limit
+      return id.matches('^[0-9]{6}_[0-9]{1,6}$')
+        && id.split('_')[0] == string(request.time.year() * 100 + request.time.month())
+        && int(id.split('_')[1]) < limitOf(wid, 'bookingsPerMonth');
+    }
+    function bookingPath(wid, bid) { return /databases/$(database)/documents/workspaces/$(wid)/bookings/$(bid); }
+    function cellDoc(wid, staffId, cell) {
+      return /databases/$(database)/documents/workspaces/$(wid)/locks/$(staffId + '_' + string(cell));
+    }
+    function cellOk(wid, d, i) {
+      return d.cells.size() <= i || (d.cells[i] == d.cells[0] + i && existsAfter(cellDoc(wid, d.staffId, d.cells[i])));
+    }
+    function publicBookingOk(wid) {
+      let d = request.resource.data;
+      let svc = get(/databases/$(database)/documents/workspaces/$(wid)/services/$(d.serviceId)).data;
+      return d.keys().hasOnly(['serviceId', 'staffId', 'customerName', 'customerPhone', 'customerEmail', 'notes',
+                              'startsAt', 'endsAt', 'cells', 'status', 'source', 'createdAt'])
+        && d.status == 'pending' && d.source == 'public' && d.createdAt == request.time
+        && d.customerName is string && d.customerName.size() >= 2 && d.customerName.size() <= 120
+        && d.customerPhone is string && d.customerPhone.matches('^\\+[0-9]{8,15}$')
+        && d.startsAt is timestamp && d.endsAt is timestamp && d.startsAt > request.time
+        && d.startsAt < request.time + duration.value(180, 'd')
+        && svc.active == true
+        && d.endsAt.toMillis() - d.startsAt.toMillis() == svc.durationMin * 60000
+        && exists(/databases/$(database)/documents/workspaces/$(wid)/staff/$(d.staffId))
+        && d.cells is list && d.cells.size() * 15 == svc.durationMin && d.cells.size() >= 1 && d.cells.size() <= 8
+        && d.cells[0] * 900000 == d.startsAt.toMillis()
+        && cellOk(wid, d, 1) && cellOk(wid, d, 2) && cellOk(wid, d, 3) && cellOk(wid, d, 4)
+        && cellOk(wid, d, 5) && cellOk(wid, d, 6) && cellOk(wid, d, 7)
+        && existsAfter(cellDoc(wid, d.staffId, d.cells[0]));
+    }
+
+    // everything else is closed
+    match /{document=**} { allow read, write: if false; }
+  }
+}

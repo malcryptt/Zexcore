@@ -16,13 +16,17 @@
     "db:migrate": "pnpm --filter @zexcore/core db:migrate",
     "seed": "tsx scripts/seed.ts",
     "build:dashboard": "pnpm --filter @zexcore/dashboard build",
-    "deploy": "pnpm build:dashboard && firebase deploy --only hosting"
+    "deploy": "pnpm build:dashboard && firebase deploy --only hosting",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-zexcore \"vitest run -c vitest.rules.config.ts\""
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
+    "@firebase/rules-unit-testing": "^6.0.0",
     "@types/node": "^22.13.9",
     "drizzle-orm": "^0.39.3",
     "eslint": "^9.21.0",
+    "firebase": "^13.1.0",
+    "firebase-tools": "^15.34.1",
     "globals": "^15.15.0",
     "prettier": "^3.5.3",
     "tsx": "^4.19.3",
