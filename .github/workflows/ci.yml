@@ -56,7 +56,7 @@ jobs:
       - name: Summarise test failures
         if: failure()
         run: |
-          grep -nE "FAIL|Unhandled|Error|ECONN|deadlock|already exists|timed out|beforeAll|hook" vitest.log | grep -v '"level":30' | head -40 | cut -c1-300 > failures.txt || true
+          sed 's/\x1b\[[0-9;]*m//g' vitest.log | grep -E " FAIL |Unhandled|PostgresError|ECONN|deadlock|timed out|AssertionError|TypeError" | sort -u | head -40 | cut -c1-300 > failures.txt || true
           echo "::error title=Vitest failures::$(sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g' failures.txt | cut -c1-3800)"
 
   firestore-rules:
@@ -80,5 +80,5 @@ jobs:
       - name: Summarise rules failures
         if: failure()
         run: |
-          grep -nE "FAIL|AssertionError|Error|✗|×|rules|line [0-9]+" rules.log | head -40 | cut -c1-300 > rules-failures.txt || true
+          sed 's/\x1b\[[0-9;]*m//g' rules.log | grep -E " FAIL |AssertionError|Error:|Property|evaluation|Tests |Test Files|false for" | sort -u | head -50 | cut -c1-260 > rules-failures.txt || true
           echo "::error title=Rules tests::$(sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g' rules-failures.txt | cut -c1-3800)"

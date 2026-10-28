@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { getAdminSqlClient, getRuntimeRoleName } from './client.js';
 import { applyCoreRlsPolicies, applyRlsToTable } from './rls/index.js';
 import { STRUCTURE_SQL, SECURITY_FUNCTIONS_SQL, buildGrantsSql } from './sql/security.js';
@@ -32,7 +33,27 @@ export async function withBootstrapLock<T>(fn: () => Promise<T>): Promise<T> {
  */
 export async function grantRuntimeAccess(): Promise<void> {
   const admin = getAdminSqlClient();
-  await admin.unsafe(buildGrantsSql(getRuntimeRoleName()));
+  const role = getRuntimeRoleName();
+  const grantsSql = buildGrantsSql(role);
+
+  // GRANT/REVOKE on every table contend with live traffic (and with another instance booting), which can deadlock
+  // a request. They are idempotent, so skip them when nothing changed since the last successful run.
+  await admin.unsafe(`CREATE TABLE IF NOT EXISTS zx_boot_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)`);
+  const [t] = await admin.unsafe<{ tables: string | null }[]>(
+    `SELECT string_agg(tablename, ',' ORDER BY tablename) AS tables FROM pg_tables WHERE schemaname = 'public' AND tablename <> 'zx_boot_meta'`,
+  );
+  const fingerprint = crypto.createHash('sha256').update(`${role}\n${grantsSql}\n${t?.tables ?? ''}`).digest('hex');
+  const force = process.env.ZEXCORE_FORCE_GRANTS === 'true';
+  if (!force) {
+    const [prev] = await admin.unsafe<{ value: string }[]>(`SELECT value FROM zx_boot_meta WHERE key = 'grants_fingerprint'`);
+    if (prev?.value === fingerprint) return;
+  }
+  await admin.unsafe(grantsSql);
+  await admin.unsafe(`REVOKE ALL ON zx_boot_meta FROM "${role}"`);
+  await admin.unsafe(
+    `INSERT INTO zx_boot_meta (key, value) VALUES ('grants_fingerprint', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+    [fingerprint],
+  );
 }
 
 /**
