@@ -1,0 +1,11 @@
+/* Phone ergonomics for the sign-in screens and the signed-in app: 44px touch targets, no iOS zoom on focus. */
+@media (max-width: 640px) {
+  .btn { min-height: 44px; }
+  .btn-icon { min-width: 44px; min-height: 44px; }
+  .auth-card a, .auth-card .link { display: inline-block; padding: 10px 2px; }
+  .input, .textarea, .select { font-size: 16px; min-height: 44px; } /* 16px stops iOS Safari zooming the page on focus */
+  .chip-btn { min-height: 40px; }
+}
+
+/* The logo file has a white background; on the light-grey auth screens that showed as a white box around it. */
+.brand-lockup { mix-blend-mode: multiply; }
