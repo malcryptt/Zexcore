@@ -6,6 +6,7 @@ import './styles/components.css';
 import './styles/layout.css';
 import './styles/site.css';
 import './styles/modules.css';
+import './styles/mobile-app.css';
 
 import { route, setNotFound, setGuard, setAfter, startRouter, navigate } from './router';
 import { setUnauthorizedHandler } from './lib/api';

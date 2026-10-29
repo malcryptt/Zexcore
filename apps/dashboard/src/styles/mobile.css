@@ -1,0 +1,40 @@
+/* Mobile hardening. Loaded last on purpose: the legacy marketing stylesheet is large and uses !important, so this layer
+   fixes the causes of sideways scrolling (grid/flex children that refuse to shrink, long code, wide button rows) in one place. */
+
+/* A grid or flex child may shrink below its content width; without this a long word or code line widens the whole page. */
+.page-wrapper :where(div, section, article, aside, main, nav, ul, ol, li, form, header, footer, figure, table) { min-width: 0; }
+.page-wrapper :where(img, svg, video, canvas, iframe) { max-width: 100%; height: auto; }
+.page-wrapper :where(h1, h2, h3, h4, p, li, a, td, th, span) { overflow-wrap: anywhere; }
+.page-wrapper :where(pre, .code-block, .code-pre, .sec-sql-box) { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.page-wrapper :where(.table-wrap, .table-scroll) { max-width: 100%; overflow-x: auto; }
+
+@media (max-width: 900px) {
+  .docs-layout-grid, .docs-container-layout, .hero-split-grid, .multi-tenant-split-grid, .powering-saas-grid,
+  .security-2x2-grid, .solution-h-card, .split-feature-row { grid-template-columns: minmax(0, 1fr) !important; }
+  .docs-sidebar { position: static !important; width: 100% !important; max-height: none !important; }
+  .docs-sidebar-card, .docs-main-content { width: 100%; max-width: 100%; }
+}
+
+@media (max-width: 640px) {
+  /* Button rows stack and stretch instead of pushing past the screen edge. */
+  .page-wrapper :where(.btn, .btn-lg) { white-space: normal; max-width: 100%; text-align: center; justify-content: center; }
+  .page-wrapper :where(.hero-actions, .hero-cta-row, .cta-row, .cta-buttons, .btn-row, .button-row, .final-cta-buttons) { flex-direction: column; flex-wrap: wrap; align-items: stretch; width: 100%; }
+  .page-wrapper :where(.hero-actions, .hero-cta-row, .cta-row, .cta-buttons, .btn-row, .button-row, .final-cta-buttons) > * { width: 100%; }
+  /* Comfortable touch targets */
+  .page-wrapper :where(a.btn, button.btn) { min-height: 44px !important; }
+  .sec-card { padding: 20px !important; }
+  .sec-card-header { flex-wrap: wrap; }
+  /* Stat cards: icon above the text so the words get the whole card width */
+  .hero-metric-card { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .hero-metric-card .metric-big-val { font-size: 1rem; }
+  /* Inline-styled "label: value" rows in the product previews wrap instead of running together */
+  .page-wrapper [style*="justify-content: space-between"] { flex-wrap: wrap; gap: 4px 14px; }
+  .page-wrapper [style*="white-space: nowrap"] { white-space: normal !important; }
+}
+
+/* The header's backdrop blur makes it the containing block for fixed children, so the drawer's `bottom: 0` collapsed it to a
+   sliver (only "Home" showed). Give it an explicit height instead, and make every link a proper tap target. */
+.mobile-drawer { bottom: auto !important; height: calc(100vh - 64px) !important; height: calc(100dvh - 64px) !important; overscroll-behavior: contain; }
+.mobile-nav-link { display: block; padding: 12px 4px; min-height: 44px; box-sizing: border-box; }
+.mobile-drawer-links { gap: 2px !important; }
+.page-wrapper :where(a[href^="tel:"], a[href^="mailto:"]) { display: inline-block; padding: 8px 0; }

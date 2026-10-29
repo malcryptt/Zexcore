@@ -1,4 +1,5 @@
 import legacyCss from './style.css?inline';
+import mobileCss from './styles/mobile.css?inline';
 import { renderHomePage, setupHomePageEvents } from './pages/home';
 import { renderPlatformPage } from './pages/platform';
 import { renderArchitecturePage } from './pages/architecture';
@@ -22,7 +23,7 @@ export function renderLegacySite(page: LegacyPage): void {
   clearLegacySiteStyles();
   const style = document.createElement('style');
   style.id = 'legacy-site-style';
-  style.textContent = legacyCss;
+  style.textContent = legacyCss + '\n' + mobileCss; // mobile layer last so it wins over the legacy rules
   document.head.appendChild(style);
   const root = document.getElementById('app');
   if (!root) return;

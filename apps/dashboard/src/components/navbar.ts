@@ -220,16 +220,19 @@ export function renderNavbar(activePage: string): string {
 export function setupNavbarEvents(): void {
   const toggleBtn = document.getElementById('btn-mobile-menu');
   const drawer = document.getElementById('mobile-drawer');
+  if (!toggleBtn || !drawer) return;
 
-  toggleBtn?.addEventListener('click', () => {
-    drawer?.classList.toggle('open');
-  });
+  const setOpen = (open: boolean): void => {
+    drawer.classList.toggle('open', open);
+    toggleBtn.setAttribute('aria-expanded', String(open));
+    document.body.style.overflow = open ? 'hidden' : ''; // the page behind the menu must not scroll
+  };
+  toggleBtn.setAttribute('aria-controls', 'mobile-drawer');
+  toggleBtn.setAttribute('aria-expanded', 'false');
+  toggleBtn.addEventListener('click', () => setOpen(!drawer.classList.contains('open')));
 
-  // Close drawer upon clicking any link inside it
-  drawer?.querySelectorAll('a').forEach((link) => {
-    link.addEventListener('click', () => {
-      drawer.classList.remove('open');
-    });
-  });
+  // Close the drawer on any link, on Escape, and when the screen grows past the phone layout
+  drawer.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => setOpen(false)));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && drawer.classList.contains('open')) setOpen(false); });
+  window.matchMedia('(min-width: 901px)').addEventListener('change', (m) => { if (m.matches) setOpen(false); });
 }
-

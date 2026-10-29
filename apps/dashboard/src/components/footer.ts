@@ -15,7 +15,7 @@ export function renderFooter(): string {
           <p class="footer-desc">
             The multi-tenant backend engine and operating system for vertical SaaS applications — providing shared infrastructure for identity, hard data isolation, deterministic rules, and compliance.
           </p>
-          <p style="margin-top: 12px; font-size: 0.85rem; color: #94a3b8;">
+          <p style="margin-top: 12px; font-size: 0.85rem; color: rgba(255,255,255,0.88);">
             Direct Contact: <a href="mailto:hello@zexcore.com.ng" style="color: #ffffff; text-decoration: underline; font-weight: 600;">hello@zexcore.com.ng</a>
           </p>
         </div>
