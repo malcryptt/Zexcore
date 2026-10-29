@@ -17,7 +17,7 @@
     "seed": "tsx scripts/seed.ts",
     "build:dashboard": "pnpm --filter @zexcore/dashboard build",
     "deploy": "pnpm build:dashboard && firebase deploy --only hosting",
-    "test:rules": "firebase emulators:exec --only firestore --project demo-zexcore \"vitest run -c vitest.rules.config.ts\""
+    "test:rules": "firebase emulators:exec --only firestore,auth --project demo-zexcore \"vitest run -c vitest.rules.config.ts\""
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",

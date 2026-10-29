@@ -11,12 +11,6 @@ interface Usage { tier: string; effectiveTier: string; usage: Record<LimitKey, {
 interface Payment { reference: string; tier: string; cycle: string; currency: string; amount_minor: string | number; paid_minor: string | number | null; status: string; gateway: string | null; created_at: string; paid_at: string | null }
 const BLURB: Record<string, string> = { starter: 'For a single location getting started.', growth: 'For growing businesses with a busy calendar.', agency: 'For operators running several locations.', enterprise: 'For large organisations with advanced needs.', dedicated: 'Dedicated infrastructure and a named support contact.' };
 
-let paystackP: Promise<void> | null = null;
-function loadPaystack(): Promise<void> {
-  paystackP ??= new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://js.paystack.co/v1/inline.js'; s.onload = () => res(); s.onerror = () => rej(new Error('blocked')); document.head.appendChild(s); });
-  return paystackP;
-}
-
 export async function renderBilling(view: HTMLElement): Promise<void> {
   const me = current()!;
   let cycle: 'monthly' | 'annual' = 'monthly';
@@ -63,14 +57,9 @@ export async function renderBilling(view: HTMLElement): Promise<void> {
     if (!plans.paystackPublicKey) { toast('Online payments are not enabled on this server yet.', 'error'); return; }
     await busy(btn, async () => {
       try {
-        const intent = await api<{ reference: string; amountMinor: number; currency: string }>('/api/billing/checkout', { method: 'POST', body: { tier, cycle, currency: 'NGN' } });
-        await loadPaystack();
-        const pop = (window as any).PaystackPop.setup({
-          key: plans.paystackPublicKey, email: me.user.email, amount: intent.amountMinor, currency: intent.currency, ref: intent.reference,
-          callback: () => { toast('Payment received. Activating your plan…', 'success'); void settle(); },
-          onClose: () => {},
-        });
-        pop.openIframe();
+        const intent = await api<{ authorizationUrl: string }>('/api/billing/checkout', { method: 'POST', body: { tier, cycle, currency: 'NGN' } });
+        if (!/^https:\/\/checkout\.paystack\.com\//.test(intent.authorizationUrl)) throw new ApiError(502, 'The payment service returned an unexpected address.');
+        location.assign(intent.authorizationUrl); // Paystack's hosted checkout; it returns here with ?reference=
       } catch (e) { toast(e instanceof ApiError ? e.message : 'Could not start checkout', 'error'); }
     });
   }
@@ -83,6 +72,8 @@ export async function renderBilling(view: HTMLElement): Promise<void> {
     toast('Payment is still being confirmed. Refresh in a minute.', 'info');
   }
   draw();
+  // Back from Paystack: the payments Worker upgrades the plan when Paystack confirms, so wait for it.
+  if (new URLSearchParams(location.search).get('reference')) { toast('Payment received. Activating your plan…', 'success'); void settle(); }
 
   const ph = $('#pay', view)!;
   mount(ph, skeletonRows(2));
