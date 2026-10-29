@@ -2,14 +2,14 @@
 import { block, cards, code, cta, shell, steps } from './ref';
 
 export function renderHomePage(): string {
-  const hero = `<section class="hz-hero" id="home-flagship-hero"><div class="site-container hz-hero-site-container"><div class="hz-hero-copy">
-    <h1 class="hz-hero-title hz-anim-fade-up">Run your service business<br /><span class="hz-hero-red">from one workspace.</span></h1>
-    <p class="hz-hero-desc hz-anim-fade-up">Online booking, customers, payments, conversations and automations for Nigerian businesses. Start free, take your first booking today, and grow into the rest when you need it.</p>
-    <div class="hz-hero-actions hz-anim-fade-up">
-      <a href="/signup" data-link class="hz-btn-primary" id="btn-hero-primary">Start free</a>
-      <a href="/architecture" data-link class="hz-btn-outline" id="btn-hero-secondary">See how it is built</a>
+  const hero = `<section class="rp-hero" id="home-flagship-hero"><div class="site-container"><div class="rp-hero-copy">
+    <h1 class="rp-hero-title">Run your service business<br /><span class="rp-hero-red">from one workspace.</span></h1>
+    <p class="rp-hero-desc">Online booking, customers, payments, conversations and automations for Nigerian businesses. Start free, take your first booking today, and grow into the rest when you need it.</p>
+    <div class="rp-hero-actions">
+      <a href="/signup" data-link class="btn btn-primary btn-lg" id="btn-hero-primary">Start free</a>
+      <a href="/architecture" data-link class="btn btn-secondary btn-lg" id="btn-hero-secondary">See how it is built</a>
     </div>
-    <div class="hero-guarantee-strip hz-anim-fade-up"><span>No card to start</span><span>Pay in naira with Paystack</span><span>Your data stays in your workspace</span></div>
+    <div class="rp-hero-strip"><span>No card to start</span><span>Pay in naira with Paystack</span><span>Your data stays in your workspace</span></div>
   </div></div></section>`;
 
   return shell('home',
