@@ -18,6 +18,7 @@ const loadBill = () => import('../../apps/dashboard/src/lib/fb/billing');
 
 const email = `sade${Date.now()}@example.com`;
 const PASSWORD = 'correct horse battery';
+const BIZ = `Sade Salon e2e ${Date.now().toString(36)}`;
 let slug = '';
 
 /** Next open weekday (not Sunday) at least two days out, as YYYY-MM-DD in Lagos time. */
@@ -38,10 +39,10 @@ beforeAll(async () => {
 
 describe('dashboard on Firebase, end to end', () => {
   it('signs a business up and creates its workspace, owner row, slug and first calendar', async () => {
-    await auth.register({ tenantName: 'Sade Salon', name: 'Sade Ade', email, password: PASSWORD });
+    await auth.register({ tenantName: BIZ, name: 'Sade Ade', email, password: PASSWORD });
     const me: any = await auth.me();
     slug = me.tenant.slug;
-    expect(slug).toBe('sade-salon');
+    expect(slug).toMatch(/^sade-salon-e2e-[a-z0-9]+$/);
     expect(me.role).toBe('owner');
     expect(me.tenant.tier).toBe('free');
     const staff = await cat.listStaff(await core.loadCtx());
@@ -52,7 +53,7 @@ describe('dashboard on Firebase, end to end', () => {
   it('refuses a second business with a taken slug name by picking a different address', async () => {
     const before = slug;
     await auth.logout();
-    await auth.register({ tenantName: 'Sade Salon', name: 'Other Owner', email: `other${Date.now()}@example.com`, password: PASSWORD });
+    await auth.register({ tenantName: BIZ, name: 'Other Owner', email: `other${Date.now()}@example.com`, password: PASSWORD });
     const me: any = await auth.me();
     expect(me.tenant.slug).not.toBe(before);
     await auth.logout();
@@ -66,7 +67,7 @@ describe('dashboard on Firebase, end to end', () => {
   });
 
   it('saves settings and enforces the free plan limit of 3 services', async () => {
-    await cat.putSettings({ onboarded: true, publicName: 'Sade Salon', phone: '08031234567', daysOpen: [1, 2, 3, 4, 5, 6] });
+    await cat.putSettings({ onboarded: true, publicName: BIZ, phone: '08031234567', daysOpen: [1, 2, 3, 4, 5, 6] });
     for (const n of ['Braids', 'Wash', 'Trim']) await cat.createService({ name: n, durationMin: 60, priceMinor: 1_500_000 });
     await expect(cat.createService({ name: 'Fourth', durationMin: 30, priceMinor: 0 })).rejects.toMatchObject({ status: 402, code: 'plan_limit' });
     await expect(cat.createService({ name: 'Bad length', durationMin: 25, priceMinor: 0 })).rejects.toMatchObject({ status: 400 });
@@ -83,7 +84,7 @@ describe('dashboard on Firebase, end to end', () => {
   it('shows the public booking page to a signed-out visitor', async () => {
     await auth.logout();
     const p: any = await pub.profile(slug);
-    expect(p.business.name).toBe('Sade Salon');
+    expect(p.business.name).toBe(BIZ);
     expect(p.services).toHaveLength(3);
     expect(p.staff).toHaveLength(1);
   });
@@ -103,7 +104,7 @@ describe('dashboard on Firebase, end to end', () => {
     expect(r.booking.status).toBe('pending');
     const after = await pub.slots(slug, new URLSearchParams({ date, serviceId }));
     expect(after.slots.find((s) => s.startsAt === slot)!.available).toBe(false);
-    expect(after.slots.filter((s) => !s.available).length).toBe(2); // a 60-minute service on 30-minute slots blocks two start times
+    expect(after.slots.filter((s) => !s.available).length).toBe(3); // a 60-minute service blocks the start before it, its own start, and the one after
   });
 
   it('refuses to double-book the same time', async () => {
@@ -118,7 +119,7 @@ describe('dashboard on Firebase, end to end', () => {
   it('refuses a booking with a bad phone number or in the past', async () => {
     const free = new Date(new Date(slot).getTime() + 4 * 3_600_000).toISOString();
     await expect(pub.book(slug, { serviceId, customerName: 'Chidi Okeke', customerPhone: '123', startsAt: free })).rejects.toMatchObject({ status: 400 });
-    await expect(pub.book(slug, { serviceId, customerName: 'Chidi Okeke', customerPhone: '08031234567', startsAt: new Date(Date.now() - 3_600_000).toISOString() })).rejects.toMatchObject({ status: 409 });
+    await expect(pub.book(slug, { serviceId, customerName: 'Chidi Okeke', customerPhone: '08031234567', startsAt: new Date(Math.floor((Date.now() - 3_600_000) / 900_000) * 900_000).toISOString() })).rejects.toMatchObject({ status: 409 });
   });
 
   it('lets the owner see, confirm, move and cancel bookings', async () => {
