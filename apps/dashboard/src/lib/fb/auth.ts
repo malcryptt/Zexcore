@@ -8,7 +8,7 @@ import { ApiError, DEFAULT_SETTINGS, clearCtx, loadCtx, toApiError, claimSlot, t
 import { syncBookingCap } from './catalog';
 
 const RESERVED = new Set(['admin', 'api', 'app', 'www', 'signin', 'signup', 'login', 'pricing', 'security', 'contact', 'privacy', 'terms', 'docs', 'about', 'console', 'dashboard',
-  'platform', 'solutions', 'modules', 'architecture', 'resources', 'book', 'b', 'static', 'assets', 'zexcore', 'mail', 'support', 'help', 'status', 'product', 'home', 'forgot-password', 'reset-password', 'verify-email']);
+  'platform', 'solutions', 'modules', 'architecture', 'resources', 'book', 'b', 'static', 'assets', 'zexcore', 'mail', 'support', 'help', 'status', 'product', 'home', 'forgot-password', 'reset-password', 'verify-email', 'multi-tenancy', 'automation']);
 const SLUG_RE = /^[a-z0-9]([a-z0-9-]{1,38})[a-z0-9]$/;
 
 export const slugify = (s: string): string => s.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 34).replace(/-+$/g, '');

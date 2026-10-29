@@ -3,6 +3,8 @@ import mobileCss from './styles/mobile.css?inline';
 import { renderHomePage, setupHomePageEvents } from './pages/home';
 import { renderPlatformPage } from './pages/platform';
 import { renderArchitecturePage } from './pages/architecture';
+import { renderTenancyPage } from './pages/tenancy';
+import { renderAutomationPage } from './pages/automation';
 import { renderModulesPage } from './pages/modules';
 import { renderSolutionsPage } from './pages/solutions';
 import { renderSecurityPage } from './pages/security';
@@ -13,7 +15,7 @@ import { renderAboutPage } from './pages/about';
 import { renderContactPage, setupContactPageEvents } from './pages/contact';
 import { setupNavbarEvents } from './components/navbar';
 
-type LegacyPage = 'home' | 'platform' | 'architecture' | 'modules' | 'solutions' | 'security' | 'docs' | 'resources' | 'pricing' | 'about' | 'contact';
+type LegacyPage = 'home' | 'platform' | 'architecture' | 'tenancy' | 'automation' | 'modules' | 'solutions' | 'security' | 'docs' | 'resources' | 'pricing' | 'about' | 'contact';
 
 export function clearLegacySiteStyles(): void {
   document.getElementById('legacy-site-style')?.remove();
@@ -31,6 +33,8 @@ export function renderLegacySite(page: LegacyPage): void {
     home: renderHomePage,
     platform: renderPlatformPage,
     architecture: renderArchitecturePage,
+    tenancy: renderTenancyPage,
+    automation: renderAutomationPage,
     modules: renderModulesPage,
     solutions: renderSolutionsPage,
     security: renderSecurityPage,
