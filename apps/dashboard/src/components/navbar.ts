@@ -23,7 +23,7 @@ export function renderNavbar(activePage: string): string {
             <div class="nav-dropdown-menu">
               <a href="#/console/crm" class="nav-dropdown-link">
                 <div class="nav-dropdown-icon">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 </div>
                 <div>
                   <div class="nav-dropdown-title">WhatsApp &amp; CRM Inbox</div>
@@ -32,7 +32,7 @@ export function renderNavbar(activePage: string): string {
               </a>
               <a href="#/console/iot" class="nav-dropdown-link">
                 <div class="nav-dropdown-icon">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
                 </div>
                 <div>
                   <div class="nav-dropdown-title">Live Sensor &amp; Fleet Hub</div>
@@ -41,7 +41,7 @@ export function renderNavbar(activePage: string): string {
               </a>
               <a href="#/console/rules" class="nav-dropdown-link">
                 <div class="nav-dropdown-icon">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
                 </div>
                 <div>
                   <div class="nav-dropdown-title">Automated Business Rules</div>
@@ -50,7 +50,7 @@ export function renderNavbar(activePage: string): string {
               </a>
               <a href="#/console/compliance" class="nav-dropdown-link">
                 <div class="nav-dropdown-icon">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 </div>
                 <div>
                   <div class="nav-dropdown-title">Data Privacy &amp; GDPR Vault</div>
@@ -59,7 +59,7 @@ export function renderNavbar(activePage: string): string {
               </a>
               <a href="#/console/audit" class="nav-dropdown-link">
                 <div class="nav-dropdown-icon">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
                 </div>
                 <div>
                   <div class="nav-dropdown-title">Audit Ledger &amp; Finance</div>
@@ -68,7 +68,7 @@ export function renderNavbar(activePage: string): string {
               </a>
               <div style="border-top: 1px solid var(--border-default); margin: 6px 0; padding-top: 6px;">
                 <a href="/platform" data-link class="nav-dropdown-link" style="padding: 6px 12px;">
-                  <span style="font-size: 0.78rem; font-weight: 700; color: #E50920;">Overview of All Platform Capabilities &rarr;</span>
+                  <span style="font-size: 0.78rem; font-weight: 700; color: #0F172A;">Overview of All Platform Capabilities &rarr;</span>
                 </a>
               </div>
             </div>
@@ -83,7 +83,7 @@ export function renderNavbar(activePage: string): string {
             <div class="nav-dropdown-menu">
               <a href="/solutions#solutions-agency" data-link class="nav-dropdown-link">
                 <div class="nav-dropdown-icon">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.26L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.26L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                 </div>
                 <div>
                   <div class="nav-dropdown-title">Web &amp; Software Agencies</div>
@@ -92,7 +92,7 @@ export function renderNavbar(activePage: string): string {
               </a>
               <a href="/solutions#solutions-regulated" data-link class="nav-dropdown-link">
                 <div class="nav-dropdown-icon">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 </div>
                 <div>
                   <div class="nav-dropdown-title">Clinics &amp; Wellness</div>
@@ -101,7 +101,7 @@ export function renderNavbar(activePage: string): string {
               </a>
               <a href="/solutions" data-link class="nav-dropdown-link">
                 <div class="nav-dropdown-icon">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/></svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/></svg>
                 </div>
                 <div>
                   <div class="nav-dropdown-title">Workshops &amp; Equipment</div>
@@ -110,7 +110,7 @@ export function renderNavbar(activePage: string): string {
               </a>
               <div style="border-top: 1px solid var(--border-default); margin: 6px 0; padding-top: 6px;">
                 <a href="/solutions" data-link class="nav-dropdown-link" style="padding: 6px 12px;">
-                  <span style="font-size: 0.78rem; font-weight: 700; color: #E50920;">Explore All Industry Blueprints &rarr;</span>
+                  <span style="font-size: 0.78rem; font-weight: 700; color: #0F172A;">Explore All Industry Blueprints &rarr;</span>
                 </a>
               </div>
             </div>
@@ -141,7 +141,7 @@ export function renderNavbar(activePage: string): string {
               </a>
               <a href="/architecture" data-link class="nav-dropdown-link">
                 <div class="nav-dropdown-icon">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
                 </div>
                 <div>
                   <div class="nav-dropdown-title">System Architecture</div>
@@ -150,7 +150,7 @@ export function renderNavbar(activePage: string): string {
               </a>
               <a href="/security" data-link class="nav-dropdown-link">
                 <div class="nav-dropdown-icon">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 </div>
                 <div>
                   <div class="nav-dropdown-title">Security model</div>
@@ -159,7 +159,7 @@ export function renderNavbar(activePage: string): string {
               </a>
               <a href="/docs" data-link class="nav-dropdown-link">
                 <div class="nav-dropdown-icon">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                 </div>
                 <div>
                   <div class="nav-dropdown-title">API &amp; Developer Docs</div>
@@ -174,8 +174,8 @@ export function renderNavbar(activePage: string): string {
         </nav>
 
         <div class="header-actions">
-          <a href="/signin" data-link class="btn btn-secondary btn-sm" id="btn-header-signin" style="font-weight: 600;">Sign In</a>
-          <a href="/console" data-link class="btn btn-primary" id="btn-header-launch" style="padding: 9px 18px; font-weight: 750; box-shadow: 0 4px 14px rgba(229, 9, 32, 0.28); border-radius: 6px;">
+          <a href="/signin" data-link class="btn btn-secondary btn-sm" id="btn-header-signin">Sign In</a>
+          <a href="/console" data-link class="btn btn-primary" id="btn-header-launch">
             Launch Console &rarr;
           </a>
           <button class="mobile-toggle" id="btn-mobile-menu" aria-label="Toggle navigation menu">
@@ -195,7 +195,7 @@ export function renderNavbar(activePage: string): string {
             <a href="/" data-link class="mobile-nav-link ${activePage === 'home' ? 'active' : ''}">Home</a>
             <a href="/about" data-link class="mobile-nav-link ${activePage === 'about' ? 'active' : ''}">About ZexCore</a>
             
-            <div style="padding: 10px 16px 4px; font-size: 0.72rem; font-weight: 800; color: #e50920; text-transform: uppercase; letter-spacing: 0.05em;">
+            <div style="padding: 10px 16px 4px; font-size: 0.72rem; font-weight: 800; color: #0F172A; text-transform: uppercase; letter-spacing: 0.05em;">
               Product Capabilities
             </div>
             <a href="#/console/crm" class="mobile-nav-link" style="padding-left: 28px;">WhatsApp &amp; CRM Inbox</a>
@@ -205,13 +205,13 @@ export function renderNavbar(activePage: string): string {
             <a href="#/console/audit" class="mobile-nav-link" style="padding-left: 28px;">Audit &amp; Financial Ledger</a>
             <a href="/platform" data-link class="mobile-nav-link" style="padding-left: 28px;">Platform Overview</a>
             
-            <div style="padding: 10px 16px 4px; font-size: 0.72rem; font-weight: 800; color: #e50920; text-transform: uppercase; letter-spacing: 0.05em; border-top: 1px solid var(--border-default); margin-top: 8px;">
+            <div style="padding: 10px 16px 4px; font-size: 0.72rem; font-weight: 800; color: #0F172A; text-transform: uppercase; letter-spacing: 0.05em; border-top: 1px solid var(--border-default); margin-top: 8px;">
               Industry Solutions
             </div>
             <a href="/solutions" data-link class="mobile-nav-link ${activePage === 'solutions' ? 'active' : ''}">All Industry Blueprints</a>
             <a href="/pricing" data-link class="mobile-nav-link ${activePage === 'pricing' ? 'active' : ''}">Pricing Plans</a>
 
-            <div style="padding: 10px 16px 4px; font-size: 0.72rem; font-weight: 800; color: #e50920; text-transform: uppercase; letter-spacing: 0.05em; border-top: 1px solid var(--border-default); margin-top: 8px;">
+            <div style="padding: 10px 16px 4px; font-size: 0.72rem; font-weight: 800; color: #0F172A; text-transform: uppercase; letter-spacing: 0.05em; border-top: 1px solid var(--border-default); margin-top: 8px;">
               Developers &amp; Engineering
             </div>
             <a href="/architecture" data-link class="mobile-nav-link ${activePage === 'architecture' ? 'active' : ''}" style="padding-left: 28px;">Architecture</a>
