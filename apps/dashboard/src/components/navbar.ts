@@ -87,7 +87,7 @@ export function renderNavbar(activePage: string): string {
                 </div>
                 <div>
                   <div class="nav-dropdown-title">Web &amp; Software Agencies</div>
-                  <div class="nav-dropdown-desc">White-labeled portals &amp; 25 private client workspaces</div>
+                  <div class="nav-dropdown-desc">A private workspace for every client</div>
                 </div>
               </a>
               <a href="/solutions#solutions-regulated" data-link class="nav-dropdown-link">
@@ -95,8 +95,8 @@ export function renderNavbar(activePage: string): string {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 </div>
                 <div>
-                  <div class="nav-dropdown-title">Healthcare &amp; Diagnostics</div>
-                  <div class="nav-dropdown-desc">Private patient records, doctor bookings &amp; HIPAA vault</div>
+                  <div class="nav-dropdown-title">Clinics &amp; Wellness</div>
+                  <div class="nav-dropdown-desc">Appointments, reminders &amp; visit records</div>
                 </div>
               </a>
               <a href="/solutions" data-link class="nav-dropdown-link">
@@ -104,8 +104,8 @@ export function renderNavbar(activePage: string): string {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/></svg>
                 </div>
                 <div>
-                  <div class="nav-dropdown-title">Cold-Chain &amp; Logistics</div>
-                  <div class="nav-dropdown-desc">Live truck temperature alerts &amp; WhatsApp driver updates</div>
+                  <div class="nav-dropdown-title">Workshops &amp; Equipment</div>
+                  <div class="nav-dropdown-desc">Equipment readings, alerts &amp; job bookings</div>
                 </div>
               </a>
               <div style="border-top: 1px solid var(--border-default); margin: 6px 0; padding-top: 6px;">
@@ -121,18 +121,36 @@ export function renderNavbar(activePage: string): string {
 
           <!-- Developers Dropdown -->
           <div class="nav-dropdown-item">
+<<<<<<< HEAD
+            <button class="nav-dropdown-btn ${(activePage === 'architecture' || activePage === 'tenancy' || activePage === 'automation' || activePage === 'security' || activePage === 'docs') ? 'active' : ''}">
+=======
             <button class="nav-dropdown-btn ${(activePage === 'architecture' || activePage === 'security') ? 'active' : ''}">
+>>>>>>> origin/main
               <span>Developers</span>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
             <div class="nav-dropdown-menu">
+              <a href="/multi-tenancy" data-link class="nav-dropdown-link">
+                <div class="nav-dropdown-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg></div>
+                <div>
+                  <div class="nav-dropdown-title">Multi-tenancy</div>
+                  <div class="nav-dropdown-desc">Private workspace for every business</div>
+                </div>
+              </a>
+              <a href="/automation" data-link class="nav-dropdown-link">
+                <div class="nav-dropdown-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E50920" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg></div>
+                <div>
+                  <div class="nav-dropdown-title">Automation</div>
+                  <div class="nav-dropdown-desc">Triggers, conditions and actions</div>
+                </div>
+              </a>
               <a href="/architecture" data-link class="nav-dropdown-link">
                 <div class="nav-dropdown-icon">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
                 </div>
                 <div>
                   <div class="nav-dropdown-title">System Architecture</div>
-                  <div class="nav-dropdown-desc">3-tier micro-kernel &amp; database design</div>
+                  <div class="nav-dropdown-desc">How the Firebase backend fits together</div>
                 </div>
               </a>
               <a href="/security" data-link class="nav-dropdown-link">
@@ -140,8 +158,8 @@ export function renderNavbar(activePage: string): string {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 </div>
                 <div>
-                  <div class="nav-dropdown-title">Security &amp; RLS Whitepaper</div>
-                  <div class="nav-dropdown-desc">PostgreSQL 17 session isolation &amp; proof</div>
+                  <div class="nav-dropdown-title">Security model</div>
+                  <div class="nav-dropdown-desc">Rules, roles and payments</div>
                 </div>
               </a>
               <a href="/docs" data-link class="nav-dropdown-link">
@@ -201,8 +219,10 @@ export function renderNavbar(activePage: string): string {
             <div style="padding: 10px 16px 4px; font-size: 0.72rem; font-weight: 800; color: #0F172A; text-transform: uppercase; letter-spacing: 0.05em; border-top: 1px solid var(--border-default); margin-top: 8px;">
               Developers &amp; Engineering
             </div>
-            <a href="/architecture" data-link class="mobile-nav-link ${activePage === 'architecture' ? 'active' : ''}" style="padding-left: 28px;">Architecture Stack</a>
-            <a href="/security" data-link class="mobile-nav-link ${activePage === 'security' ? 'active' : ''}" style="padding-left: 28px;">Security &amp; RLS Whitepaper</a>
+            <a href="/architecture" data-link class="mobile-nav-link ${activePage === 'architecture' ? 'active' : ''}" style="padding-left: 28px;">Architecture</a>
+            <a href="/multi-tenancy" data-link class="mobile-nav-link" style="padding-left: 28px;">Multi-tenancy</a>
+            <a href="/automation" data-link class="mobile-nav-link" style="padding-left: 28px;">Automation</a>
+            <a href="/security" data-link class="mobile-nav-link ${activePage === 'security' ? 'active' : ''}" style="padding-left: 28px;">Security</a>
             <a href="/docs" data-link class="mobile-nav-link ${activePage === 'docs' ? 'active' : ''}" style="padding-left: 28px;">Developer Documentation</a>
 
             <div style="border-top: 1px solid var(--border-default); margin: 8px 0;"></div>

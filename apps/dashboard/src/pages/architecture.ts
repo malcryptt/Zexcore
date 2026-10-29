@@ -1,279 +1,54 @@
-/**
- * ZexCore Architecture Page
- * Matches reference design column 2:
- * - Top: Tenant Applications container with pills (Web Apps | Mobile Apps | Admin Console | API Clients)
- * - Stack Diagram: REQUEST FLOW (Upwards) on left, 4 colored tiered boxes, DEPENDENCY FLOW (Downwards) on right
- * - Request Lifecycle: 6 numbered cards (1-6) + Response Returned card
- * - Core Invariants: 5 horizontal cards (Tenant Isolation, RLS Enforcement, Modular, Deterministic, Apply Securely)
- * - Technology Stack: Badges row
- */
-
-import { renderNavbar } from '../components/navbar';
-import { renderFooter } from '../components/footer';
+/** Architecture: modelled on Convex's "one coherent backend" story — data, rules, functions, live updates — described for the real Firebase build. */
+import { block, cards, code, cta, intro, shell, steps, table } from './ref';
 
 export function renderArchitecturePage(): string {
-  return `
-    <div class="page-wrapper">
-      ${renderNavbar('architecture')}
+  return shell('architecture',
+    intro('ARCHITECTURE', 'A backend with no server to babysit',
+      'ZexCore runs on Firebase Authentication, Cloud Firestore and Firebase Hosting, plus one small Cloudflare Worker for the things a browser must never do: take payments and hold secrets. Every request has exactly one place it is checked.',
+      [{ text: 'Start free', href: '/signup', primary: true }, { text: 'Read the docs', href: '/docs' }]),
 
-      <main>
-        <!-- Page Header -->
-        <section class="section-white page-intro-section">
-          <div class="page-hero-backdrop" style="background-image: url('/heroes/hero-architecture.jpg');"></div>
-          <div class="site-container">
-            <div class="page-intro-header page-hero-content-col">
-              <div class="section-eyebrow">SYSTEM SPECIFICATION</div>
-              <h1 class="page-intro-title">Technical Architecture &amp; Invariants</h1>
-              <p class="page-intro-desc">
-                An exhaustive engineering breakdown of request lifecycles, database invariants, PostgreSQL Row-Level Security, and asynchronous message topology in ZexCore.
-              </p>
-            </div>
-          </div>
-        </section>
+    block('The whole system on one page', 'Four parts. Each one has a single job, and none of them can do the job of another.', cards([
+      { tag: 'HOSTING', title: 'Dashboard & booking pages', text: 'A static single-page app on Firebase Hosting behind a strict Content-Security-Policy. No server renders anything.' },
+      { tag: 'AUTH', title: 'Firebase Authentication', text: 'Email and password sign-in, email verification and password reset. Every request carries a signed ID token.' },
+      { tag: 'DATA', title: 'Cloud Firestore', text: 'All business data lives under one workspace path. Security rules decide who may read or write every document.' },
+      { tag: 'WORKER', title: 'Payments Worker', text: 'A Cloudflare Worker that holds the Paystack secret and a service account. It is the only thing allowed to change a plan.' },
+    ])),
 
-        <!-- ── CORE ARCHITECTURE DIAGRAM ────────────────────────── -->
-        <section class="section-white section-padded" style="padding: 48px 0 64px 0; border-bottom: 1px solid #f3e5e8;">
-          <div class="site-container">
-            <div class="arch-diagram-wrapper">
-              
-              <!-- Top Box: Tenant Applications -->
-              <div class="arch-apps-container">
-                <div class="arch-apps-title">Tenant Applications</div>
-                <div class="arch-apps-pills">
-                  <span class="arch-app-pill">Web Apps</span>
-                  <span class="arch-app-pill">Mobile Apps</span>
-                  <span class="arch-app-pill">Admin Console</span>
-                  <span class="arch-app-pill">API Clients</span>
-                </div>
-              </div>
+    block('How a request travels', 'The browser talks straight to Firestore. The rules are the gate, so there is no middle layer to forget a check.', steps([
+      { title: 'You sign in', text: 'Firebase Authentication returns a signed ID token that proves who you are.' },
+      { title: 'The app asks Firestore', text: 'Reads and writes go directly to your workspace path, workspaces/{id}, with the token attached.' },
+      { title: 'Rules decide', text: 'Firestore security rules check that you are a member of that workspace, your role allows the action, the data is valid and your plan has room.' },
+      { title: 'Live updates arrive', text: 'Accepted writes are visible to the other members of the workspace straight away.' },
+      { title: 'Money goes through the Worker', text: 'Checkout and Paystack webhooks hit the Worker, which verifies the signature, re-checks the payment with Paystack and then updates the plan.' },
+    ]), true),
 
-              <!-- Main Flow Row: Left Arrow + 4 Stacked Boxes + Right Arrow -->
-              <div class="arch-flow-layout">
-                <!-- Left: Request Flow (Upwards) -->
-                <div class="arch-flow-sidebar left">
-                  <div class="arch-flow-label">REQUEST FLOW</div>
-                  <div class="arch-flow-sublabel">(Upwards)</div>
-                  <div class="arch-flow-arrow-up">&uarr;</div>
-                </div>
+    block('Guarantees enforced in the data layer', 'These are not conventions. Each one is a rule that refuses the write if it is broken.', table(
+      ['Guarantee', 'How it is enforced'],
+      [
+        ['Workspace isolation', 'Every document sits under workspaces/{id}. Rules require a members/{uid} record for that workspace before any read or write.'],
+        ['No double booking', 'A booking and its 15-minute lock cells are created in one atomic batch. A lock cell can be created only once, so a second booking of the same slot fails.'],
+        ['Plan limits', 'Services, staff, contacts and pages use numbered slots (s_0, s_1…). Rules refuse any slot at or above the plan limit. Bookings are counted per month the same way.'],
+        ['Plans cannot be forged', 'Plan fields are not writable from the browser at all. Only the Worker, using a service account, can change them.'],
+        ['Public booking is narrow', 'Visitors may create only a pending booking with a valid phone, a future time within 180 days and an existing staff member. They can read only the public profile, services, staff and slot availability.'],
+      ])),
 
-                <!-- Center: 4 Stacked Layers -->
-                <div class="arch-layers-stack">
-                  <!-- Layer 1: Applications (Solid Red) -->
-                  <div class="arch-layer-box layer-app">
-                    <div class="layer-title">Applications</div>
-                    <div class="layer-desc">API Services &amp; Central Console</div>
-                  </div>
+    block('What a rule looks like', 'This is the real shape of the check that protects your data.', code(
+`<b>function</b> isMember(wid) {
+  <b>return</b> request.auth != null
+    && exists(/databases/$(database)/documents/workspaces/$(wid)/members/$(request.auth.uid));
+}
 
-                  <!-- Layer 2: Industry Configuration Packs (Dark Red) -->
-                  <div class="arch-layer-box layer-packs">
-                    <div class="layer-title">Industry Configuration Packs</div>
-                    <div class="layer-desc">Vertical Schemas &amp; Workflows</div>
-                  </div>
+<b>match</b> /workspaces/{wid}/bookings/{id} {
+  <b>allow read:</b> if isMember(wid);
+  <b>allow create:</b> if isMember(wid) && slotId(wid, 'bookings', id);
+}`), true),
 
-                  <!-- Layer 3: Core Infrastructure (Deep Wine Red) -->
-                  <div class="arch-layer-box layer-core">
-                    <div class="layer-title">Core Infrastructure</div>
-                    <div class="layer-desc">Tenancy | RBAC | EventBus | Audit</div>
-                  </div>
+    block('The pieces around the edges', 'Everything else is a managed service you do not run.', cards([
+      { title: 'Payments Worker', text: 'Paystack checkout, signature-verified webhooks and idempotent plan updates. It scales to zero and costs nothing when idle.' },
+      { title: 'Firestore indexes & rules', text: 'Kept in the repository and deployed by CI, so the rules in production are always the rules you can read.' },
+      { title: 'Emulator-tested', text: 'The security rules and the full data layer are tested against the Firebase emulators on every change.' },
+    ])),
 
-                  <!-- Layer 4: PostgreSQL & Security Foundation (White/Light Gray with Border) -->
-                  <div class="arch-layer-box layer-db">
-                    <div class="layer-title">PostgreSQL &amp; Security Foundation</div>
-                    <div class="layer-desc">Persistent Storage | RLS | Encryption</div>
-                  </div>
-                </div>
-
-                <!-- Right: Dependency Flow (Downwards) -->
-                <div class="arch-flow-sidebar right">
-                  <div class="arch-flow-label">DEPENDENCY FLOW</div>
-                  <div class="arch-flow-sublabel">(Downwards)</div>
-                  <div class="arch-flow-arrow-down">&darr;</div>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </section>
-
-        <!-- ── REQUEST LIFECYCLE ────────────────────────────────── -->
-        <section class="section-tinted-red section-padded" style="padding: 64px 0;">
-          <div class="site-container">
-            <div class="section-header-block" style="text-align: left; margin-bottom: 36px;">
-              <h2 class="section-title" style="text-align: left; font-size: 1.85rem;">Request Lifecycle</h2>
-            </div>
-
-            <!-- 6 Numbered Cards Grid -->
-            <div class="lifecycle-grid">
-              <!-- Step 1 -->
-              <div class="lifecycle-card">
-                <div class="lifecycle-num">1</div>
-                <div class="lifecycle-body">
-                  <h4 class="lifecycle-title">Request Received</h4>
-                  <p class="lifecycle-desc">API gateway validates request and extracts tenant context.</p>
-                </div>
-              </div>
-
-              <!-- Step 2 -->
-              <div class="lifecycle-card">
-                <div class="lifecycle-num">2</div>
-                <div class="lifecycle-body">
-                  <h4 class="lifecycle-title">Tenant Resolved</h4>
-                  <p class="lifecycle-desc">Tenant is identified and context is loaded (read).</p>
-                </div>
-              </div>
-
-              <!-- Step 3 -->
-              <div class="lifecycle-card">
-                <div class="lifecycle-num">3</div>
-                <div class="lifecycle-body">
-                  <h4 class="lifecycle-title">Authorization</h4>
-                  <p class="lifecycle-desc">RBAC and policy checks are enforced.</p>
-                </div>
-              </div>
-
-              <!-- Step 4 -->
-              <div class="lifecycle-card">
-                <div class="lifecycle-num">4</div>
-                <div class="lifecycle-body">
-                  <h4 class="lifecycle-title">Database Transaction</h4>
-                  <p class="lifecycle-desc">RLS policies and tenant context are applied.</p>
-                </div>
-              </div>
-
-              <!-- Step 5 -->
-              <div class="lifecycle-card">
-                <div class="lifecycle-num">5</div>
-                <div class="lifecycle-body">
-                  <h4 class="lifecycle-title">Event Publication</h4>
-                  <p class="lifecycle-desc">Domain events are published to EventBus.</p>
-                </div>
-              </div>
-
-              <!-- Step 6 -->
-              <div class="lifecycle-card">
-                <div class="lifecycle-num">6</div>
-                <div class="lifecycle-body">
-                  <h4 class="lifecycle-title">Audit Logging</h4>
-                  <p class="lifecycle-desc">Action is recorded for traceability.</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Response Returned Card -->
-            <div class="lifecycle-response-card" style="margin-top: 20px;">
-              <div class="lifecycle-num check-num">&check;</div>
-              <div class="lifecycle-body">
-                <h4 class="lifecycle-title">Response Returned</h4>
-                <p class="lifecycle-desc">Result is returned to client, with proper isolation.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- ── CORE INVARIANTS ──────────────────────────────────── -->
-        <section class="section-white section-padded" style="padding: 64px 0; border-bottom: 1px solid #f3e5e8;">
-          <div class="site-container">
-            <div class="section-header-block" style="text-align: left; margin-bottom: 32px;">
-              <h2 class="section-title" style="text-align: left; font-size: 1.85rem;">Core Invariants</h2>
-            </div>
-
-            <div class="invariants-row">
-              <div class="invariant-card">
-                <div class="invariant-icon-wrap">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                    <line x1="3" y1="9" x2="21" y2="9"/>
-                    <line x1="9" y1="21" x2="9" y2="9"/>
-                  </svg>
-                </div>
-                <h4 class="invariant-title">Strict Tenant Isolation</h4>
-                <p class="invariant-desc">Guaranteed boundary enforcement preventing cross-tenant data bleed at all layers.</p>
-              </div>
-
-              <div class="invariant-card">
-                <div class="invariant-icon-wrap">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
-                    <ellipse cx="12" cy="5" rx="9" ry="3"/>
-                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
-                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
-                  </svg>
-                </div>
-                <h4 class="invariant-title">Database-Enforced RLS</h4>
-                <p class="invariant-desc">PostgreSQL 17 engine-native policies applied unconditionally to all queries.</p>
-              </div>
-
-              <div class="invariant-card">
-                <div class="invariant-icon-wrap">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
-                    <polygon points="12 2 2 7 12 12 22 7 12 2"/>
-                    <polyline points="2 17 12 22 22 17"/>
-                    <polyline points="2 12 12 17 22 12"/>
-                  </svg>
-                </div>
-                <h4 class="invariant-title">Explicit Module Boundaries</h4>
-                <p class="invariant-desc">Formal npm package export maps with strict zero circular dependency enforcement.</p>
-              </div>
-
-              <div class="invariant-card">
-                <div class="invariant-icon-wrap">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
-                    <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-                  </svg>
-                </div>
-                <h4 class="invariant-title">Deterministic Rule Execution</h4>
-                <p class="invariant-desc">Sandboxed AST evaluation ensuring predictable outcome without arbitrary JS execution.</p>
-              </div>
-
-              <div class="invariant-card">
-                <div class="invariant-icon-wrap">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
-                    <circle cx="18" cy="5" r="3"/>
-                    <circle cx="6" cy="12" r="3"/>
-                    <circle cx="18" cy="19" r="3"/>
-                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-                  </svg>
-                </div>
-                <h4 class="invariant-title">Asynchronous EventBus</h4>
-                <p class="invariant-desc">Decoupled pub/sub topology guaranteeing reliable cross-module event dispatching.</p>
-              </div>
-
-              <div class="invariant-card">
-                <div class="invariant-icon-wrap">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                  </svg>
-                </div>
-                <h4 class="invariant-title">Cryptographic Protection</h4>
-                <p class="invariant-desc">AES-256-GCM envelope encryption and blind indexing safeguarding sensitive records.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-
-
-        <!-- CTA Section -->
-        <section class="section-ambient-red final-cta-section">
-          <div class="site-container final-cta-inner">
-            <h2 class="final-cta-headline">Inspect the Complete Module Contract</h2>
-            <p class="final-cta-subtext">
-              Review how ZexCore modules register schemas, REST endpoints, and EventBus listeners via formal lifecycle hooks.
-            </p>
-            <div class="final-cta-buttons">
-              <a href="#/modules" class="btn btn-primary btn-lg">
-                Explore Core Modules &rarr;
-              </a>
-              <a href="#/docs" class="btn btn-secondary btn-lg">
-                View API Documentation
-              </a>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      ${renderFooter()}
-    </div>
-  `;
+    cta('Read the rules yourself', 'The security rules, indexes and Worker are in the repository. Nothing about the boundary is hidden.', [{ text: 'See the security model', href: '/security', primary: true }, { text: 'Multi-tenancy', href: '/multi-tenancy' }]),
+  );
 }
