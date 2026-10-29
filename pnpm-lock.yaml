@@ -108,6 +108,9 @@ importers:
       '@fontsource-variable/jetbrains-mono':
         specifier: ^5.3.0
         version: 5.3.0
+      firebase:
+        specifier: ^13.1.0
+        version: 13.1.0
     devDependencies:
       lucide-static:
         specifier: ^1.61.0

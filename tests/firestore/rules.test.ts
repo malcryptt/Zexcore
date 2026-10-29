@@ -49,6 +49,18 @@ describe('workspace creation and plan fields', () => {
     await assertFails(createWorkspace(env.authenticatedContext('owner1').firestore(), 'Ws2AbCdEfGhIjKlMnOpQ', SLUG));
     await assertFails(createWorkspace(owner(), 'short', 'another-slug'));
   });
+  it('accepts the exact sign-up batch the dashboard sends (workspace, owner, slug with hints, user profile)', async () => {
+    const db = owner(); const b = writeBatch(db);
+    b.set(doc(db, 'workspaces', W), { name: 'Sade Salon', slug: SLUG, ownerUid: 'owner1', plan: 'free', createdAt: serverTimestamp(), settings: { onboarded: false } });
+    b.set(doc(db, 'workspaces', W, 'members', 'owner1'), { role: 'owner', name: 'Sade', email: 'sade@example.com', createdAt: serverTimestamp() });
+    b.set(doc(db, 'slugs', SLUG), { wid: W, ownerUid: 'owner1', name: 'Sade Salon', timezone: 'Africa/Lagos', currency: 'NGN', bookingEnabled: true, slotMinutes: 30, openMinutes: 540,
+      closeMinutes: 1020, closedWeekdays: [0], bookingCap: 30, leadMinutes: 60, maxDaysAhead: 60 });
+    b.set(doc(db, 'users', 'owner1'), { name: 'Sade', email: 'sade@example.com', workspaceIds: [W], createdAt: serverTimestamp() });
+    await assertSucceeds(b.commit());
+    await assertSucceeds(updateDoc(doc(owner(), 'slugs', SLUG), { bookingCap: 200 }));
+    await assertFails(updateDoc(doc(other(), 'slugs', SLUG), { bookingCap: 999999 }));
+    await assertFails(updateDoc(doc(owner(), 'slugs', SLUG), { plan: 'enterprise' }));
+  });
   it('refuses unauthenticated creation', async () => {
     await assertFails(createWorkspace(anon()));
   });
@@ -206,6 +218,11 @@ describe('public booking', () => {
     await assertFails(getDocs(collection(anon(), 'workspaces', W, 'bookings')));
     await assertFails(updateDoc(doc(anon(), 'workspaces', W, 'bookings', `${month()}_0`), { status: 'cancelled' }));
     await assertFails(setDoc(doc(anon(), 'workspaces', W, 'locks', 'p_0_1'), { bookingId: `${month()}_0`, createdAt: serverTimestamp() }));
+  });
+  it('lets the public look up one time cell (to grey out taken times) but never list them', async () => {
+    await assertSucceeds(book(anon(), 0));
+    await assertSucceeds(getDoc(doc(anon(), 'workspaces', W, 'locks', `p_0_${cellsFor(start(), 4)[0]}`)));
+    await assertFails(getDocs(collection(anon(), 'workspaces', W, 'locks')));
   });
   it('stops at the plan’s monthly booking limit', async () => {
     await assertSucceeds(book(anon(), 29, { startsAtDate: new Date(start().getTime() + 86400000 * 5) , cells: cellsFor(new Date(start().getTime() + 86400000 * 5), 4) }));

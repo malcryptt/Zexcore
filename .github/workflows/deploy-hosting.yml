@@ -1,8 +1,8 @@
 name: Deploy dashboard to Firebase Hosting
 
-# Runs on every merge to main. Needs two repository settings (Settings > Secrets and variables > Actions):
+# Runs on every merge to main. Repository settings (Settings > Secrets and variables > Actions):
 #   secret   FIREBASE_SERVICE_ACCOUNT  service-account JSON with the "Firebase Hosting Admin" role only
-#   variable VITE_API_URL              public https URL of the deployed API, e.g. https://zexcore-api.onrender.com
+#   variable VITE_PAYMENTS_URL         optional: https URL of the payments Worker (turns on plan checkout)
 on:
   push:
     branches: [main]
@@ -30,13 +30,11 @@ jobs:
       - name: Require deploy configuration
         env:
           SA_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          API_URL: ${{ vars.VITE_API_URL }}
         run: |
           [ -n "$SA_JSON" ] || { echo "::error::FIREBASE_SERVICE_ACCOUNT secret is not set"; exit 1; }
-          [ -n "$API_URL" ] || { echo "::error::VITE_API_URL variable is not set"; exit 1; }
       - run: pnpm build:dashboard
         env:
-          VITE_API_URL: ${{ vars.VITE_API_URL }}
+          VITE_PAYMENTS_URL: ${{ vars.VITE_PAYMENTS_URL }}
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}

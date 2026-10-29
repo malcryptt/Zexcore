@@ -1,0 +1,80 @@
+import { doc, getDoc, getDocs, query, orderBy, collection } from 'firebase/firestore';
+import { fb } from './firebase';
+import { ApiError, DEFAULT_SETTINGS, toApiError } from './core';
+import { availability, createBooking, refOf } from './bookings';
+import type { SlotSettings } from './slots';
+
+interface PublicPage {
+  wid: string; name: string; phone: string | null; address: string | null; openMinutes: number; closeMinutes: number; slotMinutes: number;
+  daysOpen: number[]; leadMinutes: number; maxDaysAhead: number; bookingCap: number; bookingEnabled: boolean;
+}
+const cache = new Map<string, { at: number; page: PublicPage }>();
+
+async function page(slug: string): Promise<PublicPage> {
+  const hit = cache.get(slug);
+  if (hit && Date.now() - hit.at < 20_000) return hit.page;
+  let snap;
+  try { snap = await getDoc(doc(fb().db, 'slugs', slug)); } catch (e) { throw toApiError(e); }
+  const d = snap.data();
+  if (!snap.exists() || !d || d.bookingEnabled === false) throw new ApiError(404, 'Business not found', 'not_found');
+  const closed: number[] = Array.isArray(d.closedWeekdays) ? d.closedWeekdays : [0];
+  const p: PublicPage = {
+    wid: d.wid, name: d.name, phone: d.phone ?? null, address: d.address ?? null,
+    openMinutes: d.openMinutes ?? DEFAULT_SETTINGS.openMinutes, closeMinutes: d.closeMinutes ?? DEFAULT_SETTINGS.closeMinutes, slotMinutes: d.slotMinutes ?? 30,
+    daysOpen: [0, 1, 2, 3, 4, 5, 6].filter((x) => !closed.includes(x)), leadMinutes: d.leadMinutes ?? 60, maxDaysAhead: Math.min(d.maxDaysAhead ?? 60, 120),
+    bookingCap: Math.max(1, Math.min(Number(d.bookingCap) || 30, 999_999)), bookingEnabled: true,
+  };
+  cache.set(slug, { at: Date.now(), page: p });
+  return p;
+}
+export const slotSettings = (p: PublicPage): SlotSettings => ({ openMinutes: p.openMinutes, closeMinutes: p.closeMinutes, slotMinutes: p.slotMinutes, daysOpen: p.daysOpen, utcOffsetMinutes: 60, leadMinutes: p.leadMinutes, maxDaysAhead: p.maxDaysAhead });
+
+async function catalog(wid: string) {
+  const { db } = fb();
+  const [s, t] = await Promise.all([
+    getDocs(query(collection(db, 'workspaces', wid, 'services'), orderBy('seq'))),
+    getDocs(query(collection(db, 'workspaces', wid, 'staff'), orderBy('seq'))),
+  ]);
+  return {
+    services: s.docs.filter((d) => d.data().active !== false).map((d) => ({ id: d.id, name: d.data().name as string, description: (d.data().description ?? null) as string | null, durationMin: d.data().durationMin as number, priceMinor: (d.data().priceMinor ?? 0) as number })),
+    staff: t.docs.filter((d) => d.data().active !== false).map((d) => ({ id: d.id, name: d.data().name as string, title: (d.data().title ?? null) as string | null })),
+  };
+}
+
+export async function profile(slug: string): Promise<unknown> {
+  const p = await page(slug);
+  let cat; try { cat = await catalog(p.wid); } catch (e) { throw toApiError(e); }
+  return {
+    business: { slug, name: p.name, type: 'business', phone: p.phone, address: p.address }, currency: 'NGN', deposit: { enabled: false, amountMinor: 0 },
+    hours: { openMinutes: p.openMinutes, closeMinutes: p.closeMinutes, daysOpen: p.daysOpen, utcOffsetMinutes: 60, maxDaysAhead: p.maxDaysAhead },
+    paystackPublicKey: null, services: cat.services, staff: cat.staff,
+  };
+}
+
+export async function slots(slug: string, params: URLSearchParams): Promise<{ slots: { startsAt: string; available: boolean }[] }> {
+  const p = await page(slug);
+  const date = params.get('date') ?? '', serviceId = params.get('serviceId') ?? '', staffId = params.get('staffId') ?? '';
+  let cat; try { cat = await catalog(p.wid); } catch (e) { throw toApiError(e); }
+  const service = cat.services.find((s) => s.id === serviceId);
+  if (!service) throw new ApiError(400, 'Choose a service.');
+  const ids = staffId ? cat.staff.filter((s) => s.id === staffId).map((s) => s.id) : cat.staff.map((s) => s.id);
+  try { return { slots: await availability(p.wid, slotSettings(p), service, ids, date) }; } catch (e) { throw toApiError(e); }
+}
+
+export async function book(slug: string, b: Record<string, unknown>): Promise<unknown> {
+  const p = await page(slug);
+  const cat = await catalog(p.wid).catch((e) => { throw toApiError(e); });
+  const service = cat.services.find((s) => s.id === b.serviceId);
+  if (!service) throw new ApiError(400, 'Choose a service.');
+  const candidates = b.staffId ? cat.staff.filter((s) => s.id === b.staffId).map((s) => s.id) : cat.staff.map((s) => s.id);
+  const made = await createBooking({
+    wid: p.wid, source: 'public', service, staffCandidates: candidates, customerName: String(b.customerName ?? ''), customerPhone: String(b.customerPhone ?? ''),
+    customerEmail: b.customerEmail ? String(b.customerEmail).slice(0, 160) : null, notes: b.notes ? String(b.notes).slice(0, 500) : null, startMs: new Date(String(b.startsAt)).getTime(),
+    status: 'pending', maxTries: 24,
+    // The public page cannot read bookings, so it picks a random free-looking number below the plan's monthly cap.
+    nextN: () => Promise.resolve(Math.floor(Math.random() * p.bookingCap)),
+  });
+  return { booking: { ref: refOf(made.id), status: 'pending', startsAt: made.startsAt, serviceName: service.name }, payment: null };
+}
+
+export function payment(): never { throw new ApiError(404, 'Payment link not found', 'not_found'); }

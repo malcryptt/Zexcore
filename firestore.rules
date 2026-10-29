@@ -65,12 +65,14 @@ service cloud.firestore {
         && getAfter(wsPath(request.resource.data.wid)).data.ownerUid == request.auth.uid
         && getAfter(wsPath(request.resource.data.wid)).data.slug == slug
         && noExtraKeys(['wid', 'ownerUid', 'name', 'timezone', 'currency', 'bookingEnabled', 'slotMinutes',
-                        'openMinutes', 'closeMinutes', 'closedWeekdays', 'depositNote', 'phone', 'address']);
+                        'openMinutes', 'closeMinutes', 'closedWeekdays', 'depositNote', 'phone', 'address',
+                        'bookingCap', 'leadMinutes', 'maxDaysAhead']);
       allow update: if signedIn() && resource.data.ownerUid == request.auth.uid
         && request.resource.data.wid == resource.data.wid
         && request.resource.data.ownerUid == resource.data.ownerUid
         && noExtraKeys(['wid', 'ownerUid', 'name', 'timezone', 'currency', 'bookingEnabled', 'slotMinutes',
-                        'openMinutes', 'closeMinutes', 'closedWeekdays', 'depositNote', 'phone', 'address']);
+                        'openMinutes', 'closeMinutes', 'closedWeekdays', 'depositNote', 'phone', 'address',
+                        'bookingCap', 'leadMinutes', 'maxDaysAhead']);
       allow delete: if false;
     }
 
@@ -152,7 +154,10 @@ service cloud.firestore {
 
       // Time cells: create-only. The booking batch must create every cell it occupies.
       match /locks/{cell} {
-        allow read: if false;
+        // A cell can be looked up by its exact id (so the public page can grey out taken times) but never listed.
+        // It reveals only that a time is taken, and the id of a booking that nobody but staff can read.
+        allow get: if true;
+        allow list: if false;
         // The cell must belong to a booking that is being CREATED in this same batch (not a guessable old one),
         // for that booking's staff member, so nobody can litter the calendar with junk locks.
         allow create: if request.resource.data.keys().hasOnly(['bookingId', 'createdAt'])
