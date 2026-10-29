@@ -117,10 +117,15 @@ export function renderNavbar(activePage: string): string {
           </div>
 
           <a href="/pricing" data-link class="nav-link ${activePage === 'pricing' ? 'active' : ''}">Pricing</a>
+          <a href="/docs" data-link class="nav-link ${activePage === 'docs' ? 'active' : ''}">Docs</a>
 
           <!-- Developers Dropdown -->
           <div class="nav-dropdown-item">
+<<<<<<< HEAD
             <button class="nav-dropdown-btn ${(activePage === 'architecture' || activePage === 'tenancy' || activePage === 'automation' || activePage === 'security' || activePage === 'docs') ? 'active' : ''}">
+=======
+            <button class="nav-dropdown-btn ${(activePage === 'architecture' || activePage === 'security') ? 'active' : ''}">
+>>>>>>> origin/main
               <span>Developers</span>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
