@@ -7,7 +7,7 @@
  * - Real, rich engineering articles with dark code panels and accurate codebase references
  */
 
-import { renderNavbar } from '../components/navbar';
+import { renderNavbar, setupNavbarEvents } from '../components/navbar';
 import { renderFooter } from '../components/footer';
 
 export interface DocArticle {
@@ -809,6 +809,7 @@ export function renderDocsPage(): string {
     const app = document.getElementById('app');
     if (app) {
       app.innerHTML = renderDocsPage();
+      setupNavbarEvents();
       window.scrollTo({ top: 120, behavior: 'smooth' });
     }
   }

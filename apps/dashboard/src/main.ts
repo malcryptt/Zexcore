@@ -40,6 +40,7 @@ const TITLES: Record<string, string> = {
   '/app/customers': 'Customers', '/app/services': 'Services', '/app/team': 'Team', '/app/booking-page': 'Booking page',
   '/app/billing': 'Plan & billing', '/app/audit': 'Audit log', '/app/settings': 'Settings', '/app/security': 'Security',
   '/app/crm': 'CRM', '/app/devices': 'Devices', '/app/automations': 'Automations', '/app/content': 'Website pages', '/app/compliance': 'Data protection',
+  '/docs': 'Documentation', '/documentation': 'Documentation',
 };
 
 setGuard(async (ctx) => {
@@ -52,7 +53,7 @@ setGuard(async (ctx) => {
   if ((ctx.path === '/signin' || ctx.path === '/signup') && isSignedIn()) { if (await loadMe().catch(() => null)) return '/app'; }
 });
 const SITE = 'https://zexcore.com.ng';
-const SITE_PAGES = new Set(['/', '/product', '/pricing', '/security', '/contact', '/privacy', '/terms']);
+const SITE_PAGES = new Set(['/', '/product', '/pricing', '/security', '/contact', '/privacy', '/terms', '/docs', '/documentation']);
 function setMeta(path: string): void {
   const head = document.head;
   let canon = head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
