@@ -81,7 +81,7 @@ on('GET', '/api/billing/usage', () => bill.usage());
 on('POST', '/api/billing/checkout', ({ body }) => bill.checkout(body));
 on('GET', '/api/billing/payments', () => bill.payments());
 on('GET', '/api/audit-log', () => bill.auditLog());
-on('GET', '/api/audit-log/verify', () => { throw unavailable('Tamper-evidence verification'); });
+on('GET', '/api/audit-log/verify', () => bill.verifyAuditLog());
 
 // ── not in this release (need an always-on server) ──
 for (const [prefix, what] of [['/api/iot', 'Device monitoring'], ['/api/rules', 'Automations'], ['/api/compliance', 'Data-protection tools']] as const) {
