@@ -259,3 +259,34 @@ describe('dashboard on Firebase, end to end', () => {
     expect(await code(updateDoc(core.wsDoc(ctx), { plan: 'enterprise' }))).toBe('permission-denied');
   });
 });
+
+describe('data protection, end to end', () => {
+  it('records and revokes consent, sets retention, and erases a customer', async () => {
+    const comp = await import('../../apps/dashboard/src/lib/fb/compliance');
+    await comp.recordConsent({ subjectId: '0803 123 4567', purpose: 'Appointment reminders', legalBasis: 'consent' });
+    expect(await code(comp.recordConsent({ subjectId: 'nonsense', purpose: 'x1' }))).toBe(400);
+    let c: any = await comp.listConsent('08031234567');
+    expect(c.consents).toHaveLength(1);
+    expect(c.consents[0]).toMatchObject({ purpose: 'Appointment reminders', legal_basis: 'consent', revoked_at: null });
+    await comp.revokeConsent({ subjectId: '08031234567', purpose: 'Appointment reminders' });
+    c = await comp.listConsent('08031234567');
+    expect(c.consents[0].revoked_at).not.toBeNull();
+
+    await comp.setRetention({ entity: 'messages', retentionDays: 365, enabled: true });
+    expect(await code(comp.setRetention({ entity: 'passwords', retentionDays: 1 }))).toBe(400);
+    expect((await comp.listRetention() as any).policies[0]).toMatchObject({ entity: 'messages', retention_days: 365, enabled: true });
+    expect(await comp.runRetention()).toEqual({ summary: [{ entity: 'messages', purged: 0 }] });
+
+    const req = await comp.createErasure({ subjectId: '08031234567', reason: 'Customer asked' });
+    const done: any = await comp.executeErasure(req.id);
+    expect(done.summary.bookings).toBeGreaterThan(0);
+    expect(done.summary.consents).toBe(1);
+    const list: any = await bk.listBookings(new URLSearchParams({ limit: '500' }));
+    expect(list.bookings.some((b: any) => b.customerPhone === '+2348031234567')).toBe(false);
+    expect(list.bookings.some((b: any) => b.customerName === 'Erased customer')).toBe(true);
+    expect(await code(comp.executeErasure(req.id))).toBe(409);
+    expect((await comp.listErasures() as any).requests[0].status).toBe('completed');
+    await core.flushAudit();
+    expect(((await comp.accessLogs(new URLSearchParams())) as any).accessLogs.length).toBeGreaterThan(0);
+  });
+});

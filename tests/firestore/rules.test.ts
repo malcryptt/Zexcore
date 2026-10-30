@@ -113,6 +113,20 @@ describe('tenant isolation', () => {
     await assertSucceeds(setDoc(doc(owner(), 'workspaces', W, 'convState', '+2348011112222'), { readAt: serverTimestamp() }));
     await assertFails(setDoc(doc(anon(), 'workspaces', W, 'messages', 'm6'), msg()));
   });
+  it('keeps data-protection records to the right roles and the right shape', async () => {
+    await assertSucceeds(setDoc(doc(owner(), 'workspaces', W, 'retention', 'messages'), { retentionDays: 90, enabled: true, lastRunAt: null }));
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'retention', 'passwords'), { retentionDays: 90, enabled: true, lastRunAt: null }));
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'retention', 'bookings'), { retentionDays: 0, enabled: true, lastRunAt: null }));
+    await assertFails(getDoc(doc(other(), 'workspaces', W, 'retention', 'messages')));
+    await assertSucceeds(setDoc(doc(owner(), 'workspaces', W, 'erasures', 'e1'), { subjectId: '+2348011112222', status: 'pending', requestedAt: serverTimestamp() }));
+    await assertFails(deleteDoc(doc(owner(), 'workspaces', W, 'erasures', 'e1')));
+    await assertFails(updateDoc(doc(owner(), 'workspaces', W, 'erasures', 'e1'), { subjectId: '+2340000000000' }));
+    await assertSucceeds(setDoc(doc(owner(), 'workspaces', W, 'consents', 'k1'), { subjectId: '+2348011112222', purpose: 'Reminders', legalBasis: 'consent', grantedAt: serverTimestamp(), revokedAt: null, by: 'owner1' }));
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'consents', 'k2'), { subjectId: '+2348011112222', purpose: 'Reminders', legalBasis: 'consent', grantedAt: serverTimestamp(), revokedAt: null, by: 'someone-else' }));
+    await assertFails(updateDoc(doc(owner(), 'workspaces', W, 'consents', 'k1'), { purpose: 'Marketing' }));
+    await assertSucceeds(updateDoc(doc(owner(), 'workspaces', W, 'consents', 'k1'), { revokedAt: serverTimestamp() }));
+    await assertFails(getDoc(doc(other(), 'workspaces', W, 'consents', 'k1')));
+  });
   it('lets only the Worker write the audit chain; admins may read it', async () => {
     for (const col of ['audit', 'auditChain', 'auditMeta']) {
       await assertFails(setDoc(doc(owner(), 'workspaces', W, col, 'a1'), { actor: 'owner1', action: 'x', at: serverTimestamp() }));

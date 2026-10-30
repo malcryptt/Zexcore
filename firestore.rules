@@ -188,11 +188,32 @@ service cloud.firestore {
           && request.resource.data.body is string && request.resource.data.body.size() >= 1 && request.resource.data.body.size() <= 2000
           && request.resource.data.name is string && request.resource.data.name.size() <= 160
           && request.resource.data.createdAt == request.time && request.resource.data.by == request.auth.uid;
-        allow update, delete: if false;
+        allow update: if false;
+        allow delete: if isAdmin(wid);       // data-protection erasure and retention
       }
       match /convState/{phone} {
         allow read: if isMember(wid);
-        allow write: if isMember(wid) && phone.matches('^\\+[0-9]{8,15}$') && noExtraKeys(['readAt']) && request.resource.data.readAt == request.time;
+        allow delete: if isAdmin(wid);
+        allow create, update: if isMember(wid) && phone.matches('^\\+[0-9]{8,15}$') && noExtraKeys(['readAt']) && request.resource.data.readAt == request.time;
+      }
+
+      // Data protection (admins only except consent, which any member may record)
+      match /retention/{entity} {
+        allow read, delete: if isAdmin(wid);
+        allow create, update: if isAdmin(wid) && entity in ['messages', 'bookings'] && noExtraKeys(['retentionDays', 'enabled', 'lastRunAt'])
+          && request.resource.data.retentionDays is int && request.resource.data.retentionDays >= 1 && request.resource.data.retentionDays <= 3650;
+      }
+      match /erasures/{id} {
+        allow read, create: if isAdmin(wid);
+        allow update: if isAdmin(wid) && onlyChanges(['status', 'completedAt', 'summary']);
+        allow delete: if false;
+      }
+      match /consents/{id} {
+        allow read: if isMember(wid);
+        allow create: if isMember(wid) && noExtraKeys(['subjectId', 'purpose', 'legalBasis', 'grantedAt', 'revokedAt', 'by'])
+          && request.resource.data.grantedAt == request.time && request.resource.data.by == request.auth.uid && request.resource.data.revokedAt == null;
+        allow update: if isMember(wid) && onlyChanges(['revokedAt']) && request.resource.data.revokedAt == request.time;
+        allow delete: if isAdmin(wid);
       }
 
       // Tamper-evident audit trail. Written ONLY by the Worker (service account), which chains each entry to the

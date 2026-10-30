@@ -2,6 +2,7 @@ import { ApiError, toApiError, unavailable, loadCtx } from './core';
 import { fb } from './firebase';
 import * as authApi from './auth';
 import * as cat from './catalog';
+import * as comp from './compliance';
 import * as msg from './messages';
 import * as bk from './bookings';
 import * as pub from './public';
@@ -81,8 +82,20 @@ on('GET', '/api/billing/payments', () => bill.payments());
 on('GET', '/api/audit-log', () => bill.auditLog());
 on('GET', '/api/audit-log/verify', () => bill.verifyAuditLog());
 
+// ── data protection ──
+on('GET', '/api/compliance/retention', () => comp.listRetention());
+on('POST', '/api/compliance/retention', ({ body }) => comp.setRetention(body));
+on('POST', '/api/compliance/retention/run', () => comp.runRetention());
+on('GET', '/api/compliance/erasure', () => comp.listErasures());
+on('POST', '/api/compliance/erasure', ({ body }) => comp.createErasure(body));
+on('POST', '/api/compliance/erasure/:id/execute', ({ params }) => comp.executeErasure(params[0]!));
+on('POST', '/api/compliance/consent', ({ body }) => comp.recordConsent(body));
+on('POST', '/api/compliance/consent/revoke', ({ body }) => comp.revokeConsent(body));
+on('GET', '/api/compliance/consent/:subject', ({ params }) => comp.listConsent(params[0]!));
+on('GET', '/api/compliance/access-logs', ({ query }) => comp.accessLogs(query));
+
 // ── not in this release (need an always-on server) ──
-for (const [prefix, what] of [['/api/iot', 'Device monitoring'], ['/api/rules', 'Automations'], ['/api/compliance', 'Data-protection tools']] as const) {
+for (const [prefix, what] of [['/api/iot', 'Device monitoring'], ['/api/rules', 'Automations']] as const) {
   for (const m of ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']) on(m, `${prefix}(?:/.*)?`, () => { throw unavailable(what); });
 }
 
