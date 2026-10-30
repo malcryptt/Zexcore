@@ -50,8 +50,7 @@ function wireGoogle(onOutcome: (o: GoogleOutcome) => void, showErr: (m: string) 
 export function renderSignIn(): void {
   authLayout(html`
     <div id="auth-body">
-      <p class="eyebrow" style="color:var(--primary);font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:.72rem;margin-bottom:14px">ZEXCORE PLATFORM ACCESS</p>
-      <h1 style="font-size:clamp(2rem,3vw,2.65rem);line-height:1.12;letter-spacing:-0.035em">The Operating System for <span style="color:var(--primary)">Vertical SaaS.</span></h1>
+      <h1 style="font-size:clamp(1.85rem,3vw,2.4rem);line-height:1.15;letter-spacing:-0.035em">The Operating System for <span style="color:var(--primary)">Vertical SaaS.</span></h1>
       <p class="muted" style="margin:12px 0 22px;max-width:430px;line-height:1.7">Access your multi-tenant control console for tenant operations, business rules, customer workflows and compliance — from one unified platform.</p>
       ${bullets}
       <form id="f" class="form-grid" novalidate>
@@ -189,11 +188,16 @@ export function renderForgot(): void {
   });
 }
 
-/** Reads and removes the one-time token from the address bar so it does not linger in history or screenshots. */
+let cachedResetToken = '';
+/** Reads and caches the one-time token (Firebase oobCode or query token) */
 function takeToken(): string {
-  const t = new URLSearchParams(location.search).get('token') ?? '';
-  if (t) history.replaceState(null, '', location.pathname);
-  return t;
+  const p = new URLSearchParams(location.search);
+  const t = p.get('oobCode') ?? p.get('token') ?? p.get('code') ?? '';
+  if (t) {
+    cachedResetToken = t;
+    history.replaceState(null, '', location.pathname);
+  }
+  return cachedResetToken || t;
 }
 
 export function renderReset(): void {
@@ -205,7 +209,7 @@ export function renderReset(): void {
   authLayout(html`
     <div id="auth-body">
       <h1 style="font-size:1.5rem;letter-spacing:-0.02em">Choose a new password</h1>
-      <p class="muted" style="margin:6px 0 18px">You will be signed out of every device.</p>
+      <p class="muted" style="margin:6px 0 18px">Use at least 10 characters. You will be signed out of every device.</p>
       <form id="f" class="form-grid" novalidate>
         <div id="err" class="alert alert-error hidden" role="alert"></div>
         ${pwField('password', 'New password', 'new-password')}
@@ -222,6 +226,7 @@ export function renderReset(): void {
       err.classList.add('hidden');
       try {
         await api('/api/auth/password/reset', { method: 'POST', body: { token, password: String(new FormData(form).get('password')) }, auth: false });
+        cachedResetToken = '';
         mount($('#auth-body')!, html`
           <div style="text-align:center"><span class="icon-tile" style="margin:0 auto 14px;background:var(--success-tint);color:var(--success)">${ic('circle-check')}</span>
           <h1 style="font-size:1.5rem">Password updated</h1>

@@ -6,10 +6,11 @@ export const esc = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g,
 
 const CSS = `<style>
 .rp-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}
-.rp-card{border:1px solid var(--border-default,#e5e7eb);border-radius:14px;padding:22px;background:#fff;min-width:0}
+.rp-card{border:1px solid var(--border-default,#e5e7eb);border-radius:14px;padding:22px;background:#fff;min-width:0;transition:transform .18s ease,box-shadow .18s ease;cursor:default}
+.rp-card:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,0,0,0.08);border-color:rgba(229,9,32,.18)}
 .rp-card h3{margin:0 0 8px;font-size:1.05rem;color:#0f172a}
 .rp-card p{margin:0;color:#475569;line-height:1.6;font-size:.95rem}
-.rp-tag{display:inline-block;font:600 .7rem/1 'JetBrains Mono',monospace;color:#C90019;background:#FDF2F2;border:1px solid #FCA5A5;border-radius:999px;padding:5px 9px;margin-bottom:12px}
+.rp-tag{display:inline-flex;align-items:center;gap:5px;font:700 .68rem/1 'JetBrains Mono',monospace;color:#C90019;background:#FDF2F2;border:1px solid rgba(229,9,32,.25);border-radius:999px;padding:5px 10px;margin-bottom:12px;letter-spacing:.04em}
 .rp-code{background:#0f172a;color:#e2e8f0;border-radius:14px;padding:18px;overflow:auto;font:.82rem/1.65 'JetBrains Mono',monospace;margin:0}
 .rp-code b{color:#FCA5A5;font-weight:600}
 .rp-table{width:100%;min-width:520px;border-collapse:collapse;font-size:.92rem}
@@ -17,7 +18,8 @@ const CSS = `<style>
 .rp-table th{font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:#C90019}
 .rp-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .rp-steps{counter-reset:s;display:grid;gap:12px;padding:0;list-style:none;margin:0}
-.rp-steps li{counter-increment:s;display:flex;gap:14px;align-items:flex-start;border:1px solid #f1e3e5;border-radius:12px;padding:16px;background:#fff}
+.rp-steps li{counter-increment:s;display:flex;gap:14px;align-items:flex-start;border:1px solid #f1e3e5;border-radius:12px;padding:16px;background:#fff;transition:transform .18s ease,box-shadow .18s ease}
+.rp-steps li:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.06)}
 .rp-steps li:before{content:counter(s);flex:none;width:28px;height:28px;border-radius:50%;background:#E50920;color:#fff;font-weight:700;display:grid;place-items:center;font-size:.85rem}
 .rp-steps strong{display:block;color:#0f172a;margin-bottom:2px}
 .rp-steps span{color:#475569;font-size:.93rem;line-height:1.55}
@@ -32,7 +34,12 @@ const CSS = `<style>
 .rp-hero-red{color:#E50920}
 .rp-hero-desc{font-size:1.1rem;line-height:1.65;color:#475569;margin:0 auto 28px;max-width:640px}
 .rp-hero-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-.rp-hero-strip{display:flex;gap:10px 22px;justify-content:center;flex-wrap:wrap;margin-top:26px;font-size:.88rem;color:#64748b;font-weight:500}
+.rp-hero-strip{display:flex;gap:10px 0;justify-content:center;flex-wrap:wrap;margin-top:28px;font-size:.86rem;color:#64748b;font-weight:500}
+.rp-hero-strip-item{display:inline-flex;align-items:center;gap:6px;padding:0 18px}
+.rp-hero-strip-item+.rp-hero-strip-item{border-left:1px solid #dde1e7}
+.rp-hero-strip-item svg{color:#22c55e;flex-shrink:0}
+.rp-code-wrap{background:#0f172a;border-radius:12px;padding:20px 24px;overflow-x:auto;margin:16px 0}
+.rp-code-wrap code{color:#e2e8f0;font-family:'JetBrains Mono',monospace;font-size:.88rem;line-height:1.6}
 </style>`;
 
 export interface Cta { text: string; href: string; primary?: boolean }

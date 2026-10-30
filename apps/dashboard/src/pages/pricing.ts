@@ -20,15 +20,18 @@ export function renderPricingPage(): string {
       ${featured ? '<span class="rp-tag">MOST POPULAR</span>' : ''}<h3>${NAMES[t]}</h3>
       <div style="font-size:1.9rem;font-weight:800;color:#0f172a;margin:6px 0">${price}<span style="font-size:.9rem;font-weight:500;color:#64748b"> / month</span></div>
       <p>${BLURB[t]}</p>${annual}
-      <ul style="padding-left:18px;margin:14px 0;color:#475569;line-height:1.8;font-size:.93rem">
-        <li>${lim(LIMITS[t].bookingsPerMonth)} bookings a month</li><li>${lim(LIMITS[t].staff)} team ${LIMITS[t].staff === 1 ? 'member' : 'members'}</li>
-        <li>${lim(LIMITS[t].services)} services</li><li>${lim(LIMITS[t].crmContacts)} contacts</li></ul>
+      <ul style="padding:0;margin:14px 0;color:#475569;line-height:1.9;font-size:.93rem;list-style:none">
+        <li style="display:flex;align-items:center;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>${lim(LIMITS[t].bookingsPerMonth)} bookings a month</li>
+        <li style="display:flex;align-items:center;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>${lim(LIMITS[t].staff)} team ${LIMITS[t].staff === 1 ? 'member' : 'members'}</li>
+        <li style="display:flex;align-items:center;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>${lim(LIMITS[t].services)} services</li>
+        <li style="display:flex;align-items:center;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>${lim(LIMITS[t].crmContacts)} contacts</li>
+      </ul>
       <a href="${t === 'enterprise' || t === 'dedicated' ? '/contact' : '/signup'}" data-link class="btn ${featured ? 'btn-primary' : 'btn-secondary'}" style="width:100%;justify-content:center">${t === 'enterprise' || t === 'dedicated' ? 'Talk to us' : t === 'free' ? 'Start free' : 'Choose ' + NAMES[t]}</a></div>`;
   };
   return shell('pricing',
-    intro('PRICING', 'Simple, transparent pricing', 'Start free. Upgrade when you outgrow it. Prices are in USD and can be settled with international cards or local currency via Paystack.'),
+    intro('PRICING', 'One Platform, One Price. No Surprises.', 'Start free. Upgrade when you outgrow it. Prices are in USD and can be settled with international cards or local currency via Paystack.'),
     block('Choose a plan', 'Every plan includes online booking, customers and your public booking page.', `<div class="rp-grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))">${tiers.map(plan).join('')}</div>`, true),
-    block('Compare limits', 'Limits are enforced by the database, so they hold everywhere.', table(
+    block('Compare Plans', 'Every limit is enforced by the platform — not just the interface.', table(
       ['', ...tiers.map((t) => NAMES[t])],
       [
         ['Bookings / month', ...tiers.map((t) => lim(LIMITS[t].bookingsPerMonth))],
@@ -42,6 +45,6 @@ export function renderPricingPage(): string {
       <div class="rp-card"><h3>What happens if my plan expires?</h3><p>You get a 3-day grace period, then the workspace returns to Free. Nothing is deleted; the Free limits apply to new records.</p></div>
       <div class="rp-card"><h3>How do I pay?</h3><p>Through Paystack or card checkout with debit/credit card, bank transfer or USSD. Local currency conversion is calculated transparently at checkout.</p></div>
       <div class="rp-card"><h3>Can I change plans?</h3><p>Yes. Upgrade from the Billing page whenever you like, or email us and we will help you switch.</p></div></div>`, true),
-    cta('Start free today', 'No card needed. Upgrade only when your calendar fills up.', [{ text: 'Create your workspace', href: '/signup', primary: true }, { text: 'Contact us', href: '/contact' }]),
+    cta('Start Free Today', 'No card needed. Upgrade only when your calendar fills up.', [{ text: 'Create Your Workspace', href: '/signup', primary: true }, { text: 'Contact Us', href: '/contact' }]),
   );
 }

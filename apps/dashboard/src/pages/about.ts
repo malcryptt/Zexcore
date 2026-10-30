@@ -3,12 +3,12 @@ import { block, cards, cta, intro, shell } from './ref';
 
 export function renderAboutPage(): string {
   return shell('about',
-    intro('ABOUT', 'Built in Akure, for businesses everywhere', 'ZexCore is made by Zexlabs, a cybersecurity and application-development agency based in Nigeria and working with customers across Nigeria, the UK and the US.'),
-    block('What we believe', '', cards([
-      { title: 'Software should be easy to start', text: 'You should be taking bookings the same day you sign up, not after a month of setup.' },
-      { title: 'Security is a feature, not a footnote', text: 'We are a security company first. Access rules, payment checks and limits are enforced where they cannot be skipped.' },
-      { title: 'Say only what is true', text: 'Our pages describe what the product does today. If something is not built, we do not sell it.' },
+    intro('ABOUT', 'Enterprise-Grade Software. Built for the People Who Run Real Businesses.', 'ZexCore is made by Zexlabs — a cybersecurity and application-development agency serving clients across Nigeria, the United Kingdom and the United States.'),
+    block('What We Believe', '', cards([
+      { title: 'Software Should Be Easy to Start', text: 'You should be taking bookings the same day you sign up, not after a month of setup and configuration.' },
+      { title: 'Security Is a Feature, Not a Footnote', text: 'We are a security company first. Access controls, payment verification and capacity limits are enforced where they cannot be skipped or bypassed.' },
+      { title: 'Say Only What Is True', text: 'Our pages describe what the product does today. If something is not built, we do not sell it.' },
     ]), true),
-    cta('Talk to the team', 'Questions, ideas or a custom plan: we reply within one working day.', [{ text: 'Contact us', href: '/contact', primary: true }, { text: 'Start free', href: '/signup' }]),
+    cta('Talk to the Team', 'Questions, ideas or a custom plan — we reply within one working day.', [{ text: 'Contact Us', href: '/contact', primary: true }, { text: 'Start Free', href: '/signup' }]),
   );
 }

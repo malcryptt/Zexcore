@@ -120,8 +120,9 @@ export function leaveApp(): void {
   if ($('.app')) mount(root(), '');
 }
 
-export function authLayout(inner: Raw): void {
+export function authLayout(inner: Raw, showBack = true): void {
   mount(root(), html`<div class="auth-wrap">
+    ${showBack ? html`<a class="auth-back-link" href="/" data-link aria-label="Back to website">${ic('arrow-left', 'ico-sm')} Back to website</a>` : ''}
     <a class="auth-logo" href="/" data-link aria-label="ZexCore home">${brand('lg')}</a>
     <main class="auth-card">${inner}</main>
     <footer class="auth-footer">

@@ -3,18 +3,18 @@ import { block, cards, cta, intro, shell, steps } from './ref';
 
 export function renderPlatformPage(): string {
   return shell('platform',
-    intro('PRODUCT', 'The workspace for appointment-based businesses', 'Booking, customers, payments and conversations in one dashboard that works on your phone as well as your desktop.', [{ text: 'Start free', href: '/signup', primary: true }, { text: 'See modules', href: '/modules' }]),
-    block('What you get', '', cards([
-      { title: 'A booking page that works for you', text: 'Customers choose a service, a team member and a time. Your calendar updates instantly and a slot can never be sold twice.' },
-      { title: 'A customer list that builds itself', text: 'Each booking creates or updates a customer, so you always know who is returning.' },
-      { title: 'Payments you can trust', text: 'Plans are paid through Paystack. The platform verifies each payment with Paystack before anything changes.' },
-      { title: 'Works on mobile', text: 'The whole dashboard is designed for a phone screen, because that is where most owners work.' },
+    intro('PLATFORM CAPABILITIES', 'Unified Operational Infrastructure for Scaled Service Delivery', 'Client scheduling, automated CRM pipelines, instantaneous payment verification, and multi-channel communication inside one responsive command console.', [{ text: 'Start free', href: '/signup', primary: true }, { text: 'Explore modules', href: '/modules' }]),
+    block('Core Operational Capabilities', 'Engineered to replace fragile point solutions with a single sovereign source of truth.', cards([
+      { title: 'Deterministic booking engine', text: 'Clients select services, providers, and slots. Availability syncs in real time with strict concurrency locking that prevents double booking.' },
+      { title: 'Automated CRM & client lifecycle', text: 'Every appointment interaction enriches customer profiles, tracking booking history, preferences, and lifetime value.' },
+      { title: 'Verified payment reconciliation', text: 'Cryptographically verified checkout via Paystack with instant receipt dispatch and immutable transaction logs.' },
+      { title: 'Responsive mobile command', text: 'Full administrative access across mobile and desktop, designed for real-time operations on the clinic or salon floor.' },
     ]), true),
-    block('A day with ZexCore', '', steps([
-      { title: 'Morning', text: 'Open the dashboard and see today’s bookings and anything waiting for confirmation.' },
-      { title: 'During the day', text: 'Confirm, reschedule or cancel with one tap. Customers get the new time on the booking page.' },
-      { title: 'Evening', text: 'Review who booked, who is new and which services sell best.' },
+    block('Daily Operational Cadence', 'How modern teams streamline appointment workflows from morning dispatch to evening reconciliation.', steps([
+      { title: 'Morning preparation', text: 'Review the day’s scheduled appointments, staff assignments, and pending client requests in one consolidated view.' },
+      { title: 'Real-time execution', text: 'Check-in arrivals, adjust time allocations, or reschedule with a single tap. Automated alerts notify clients immediately.' },
+      { title: 'Evening analytics & reconciliation', text: 'Audit daily revenue, track completed sessions, and analyze service demand patterns across all team members.' },
     ])),
-    cta('See it with your own business', 'Create a workspace in a couple of minutes.', [{ text: 'Start free', href: '/signup', primary: true }, { text: 'Pricing', href: '/pricing' }]),
+    cta('Experience ZexCore in Your Operations', 'Deploy an isolated production workspace in minutes with complete feature access.', [{ text: 'Start free', href: '/signup', primary: true }, { text: 'View pricing', href: '/pricing' }]),
   );
 }
