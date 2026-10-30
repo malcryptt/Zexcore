@@ -7,11 +7,6 @@ import { navigate } from '../router';
 import { busy } from '../lib/ui';
 import { mountGoogleButton, googleExchange, type GoogleOutcome } from '../lib/google';
 
-const bullets = html`<ul class="checklist">
-  <li>${ic('circle-check')} Database-enforced tenant isolation</li>
-  <li>${ic('circle-check')} Deterministic rules and event-driven workflows</li>
-  <li>${ic('circle-check')} Auditable security and privacy controls</li>
-</ul>`;
 
 function pwField(id: string, label: string, autocomplete: string): Raw {
   const isNew = autocomplete === 'new-password';
@@ -50,20 +45,20 @@ function wireGoogle(onOutcome: (o: GoogleOutcome) => void, showErr: (m: string) 
 export function renderSignIn(): void {
   authLayout(html`
     <div id="auth-body">
-      <h1 style="font-size:clamp(1.85rem,3vw,2.4rem);line-height:1.15;letter-spacing:-0.035em">The Operating System for <span style="color:var(--primary)">Vertical SaaS.</span></h1>
-      <p class="muted" style="margin:12px 0 22px;max-width:430px;line-height:1.7">Access your multi-tenant control console for tenant operations, business rules, customer workflows and compliance — from one unified platform.</p>
-      ${bullets}
+      <div style="text-align:center;margin-bottom:24px">
+        <h1 style="font-size:1.55rem;font-weight:700;letter-spacing:-0.025em;color:var(--ink);margin-bottom:6px">Sign in to ZexCore</h1>
+        <p class="muted" style="font-size:0.875rem;line-height:1.5">Enter your email and password to access your workspace</p>
+      </div>
       <form id="f" class="form-grid" novalidate>
         <div id="err" class="alert alert-error hidden" role="alert"></div>
         <div class="field"><label for="email">Email address</label>
           <div class="input-icon">${ic('mail')}<input class="input" id="email" name="email" type="email" autocomplete="username" required placeholder="you@company.com"></div></div>
         ${pwField('password', 'Password', 'current-password')}
         <div style="text-align:right;margin-top:-6px"><a href="/forgot-password" data-link class="small" style="color:var(--primary);font-weight:600">Forgot password?</a></div>
-        <button class="btn btn-primary btn-lg btn-block" type="submit">Sign in ${ic('arrow-right', 'ico-sm')}</button>
+        <button class="btn btn-primary btn-lg btn-block" type="submit" style="margin-top:6px">Sign in ${ic('arrow-right', 'ico-sm')}</button>
       </form>
       ${googleBlock()}
-      <p class="muted small" style="text-align:center;margin-top:22px">Tenant-aware access. Auditable actions. Security built into the platform.</p>
-      <p style="text-align:center;margin-top:8px;font-size:.9rem">New to ZexCore? <a href="/signup" data-link style="color:var(--primary);font-weight:600">Create your workspace</a></p>
+      <p style="text-align:center;margin-top:22px;font-size:.9rem;color:var(--slate)">New to ZexCore? <a href="/signup" data-link style="color:var(--primary);font-weight:600">Create your workspace</a></p>
     </div>`);
   const form = $('#f') as HTMLFormElement;
   const err = $('#err')!;

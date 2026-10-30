@@ -38,7 +38,8 @@ const NAV: { label?: string; items: { href: string; icon: IconName; text: string
 ];
 
 export function brand(size = ''): Raw {
-  return html`<span class="brand ${size}"><img class="brand-lockup" src="/zexcore-logo-horizontal.png" alt="ZexCore" width="156" height="36"></span>`;
+  const h = size === 'lg' ? 44 : 32;
+  return html`<span class="brand ${size}"><img class="brand-lockup" src="/zexcore-logo-light.png" alt="ZexCore" height="${h}" style="height:${h}px;width:auto;display:block"></span>`;
 }
 
 let unread = 0;
@@ -123,7 +124,9 @@ export function leaveApp(): void {
 export function authLayout(inner: Raw, showBack = true): void {
   mount(root(), html`<div class="auth-wrap">
     ${showBack ? html`<a class="auth-back-link" href="/" data-link aria-label="Back to website">${ic('arrow-left', 'ico-sm')} Back to website</a>` : ''}
-    <a class="auth-logo" href="/" data-link aria-label="ZexCore home">${brand('lg')}</a>
+    <a class="auth-logo" href="/" data-link aria-label="ZexCore home">
+      <img src="/zexcore-logo-light.png" alt="ZexCore" width="168" height="44" style="height:44px;width:auto;display:block;margin:0 auto">
+    </a>
     <main class="auth-card">${inner}</main>
     <footer class="auth-footer">
       ${ic('shield-check', 'ico-sm')}
