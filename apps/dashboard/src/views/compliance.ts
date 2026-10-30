@@ -12,7 +12,7 @@ interface Erasure { id: string; subject_id: string; status: string; requested_at
 interface Consent { id: string; subject_id: string; purpose: string; legal_basis: string; granted_at: string; revoked_at: string | null }
 interface Access { id: string; subject_id: string | null; entity: string; action?: string; accessed_at: string; actor_id?: string | null }
 
-const ENTITIES: Record<string, string> = { iot_telemetry: 'Device readings', compliance_access_logs: 'Access logs' };
+const ENTITIES: Record<string, string> = { messages: 'Messages', bookings: 'Past bookings' };
 const BASIS: [string, string][] = [['consent', 'Consent'], ['contract', 'Contract'], ['legal_obligation', 'Legal obligation'], ['vital_interests', 'Vital interests'], ['legitimate_interests', 'Legitimate interests']];
 
 export async function renderCompliance(view: HTMLElement): Promise<void> {
@@ -58,7 +58,7 @@ export async function renderCompliance(view: HTMLElement): Promise<void> {
           : html`<div class="list">${requests.map((r) => html`<div class="list-item"><span class="icon-tile">${ic('clipboard-list')}</span><div class="grow"><b class="mono">${r.subject_id}</b><br><span class="muted small">Requested ${ago(r.requested_at)}</span></div>${badge(r.status, r.status === 'completed' ? 'success' : r.status === 'pending' ? 'warning' : '')}${canAdmin() && r.status === 'pending' ? html`<button class="btn btn-soft-danger btn-sm" data-exec="${r.id}">Carry out</button>` : ''}</div>`)}</div>`)}`);
       $('[data-new]', host)!.addEventListener('click', () => formModal({
         title: 'Erasure request', submitLabel: 'Record request',
-        body: html`<div class="field"><label for="es">Subject ID</label><input class="input mono" id="es" required placeholder="Customer ID, email or phone"></div><div class="field"><label for="er">Reason <span class="faint">(optional)</span></label><input class="input" id="er" maxlength="255"></div>`,
+        body: html`<div class="field"><label for="es">Phone or email</label><input class="input mono" id="es" required placeholder="Phone number or email"></div><div class="field"><label for="er">Reason <span class="faint">(optional)</span></label><input class="input" id="er" maxlength="255"></div>`,
         submit: async (el) => { if (!inp(el, '#es')) throw new ApiError(0, 'Enter who the request is for'); const b: Record<string, unknown> = { subjectId: inp(el, '#es') }; if (inp(el, '#er')) b.reason = inp(el, '#er'); await api('/api/compliance/erasure', { method: 'POST', body: b }); toast('Request recorded', 'success'); void erasure(); },
       }));
       host.querySelectorAll<HTMLElement>('[data-exec]').forEach((b) => b.addEventListener('click', async () => {
@@ -70,7 +70,7 @@ export async function renderCompliance(view: HTMLElement): Promise<void> {
   };
 
   const consent = (): void => {
-    mount(host, html`<form class="card card-pad" id="cf" style="margin-bottom:16px"><div class="row" style="gap:8px;flex-wrap:wrap"><input class="input grow" id="cs" placeholder="Subject ID (customer ID, email or phone)" aria-label="Subject ID" style="min-width:220px"><button class="btn btn-primary">Look up</button>${canManage() ? html`<button type="button" class="btn btn-secondary" data-rec>${ic('plus', 'ico-sm')} Record consent</button>` : ''}</div></form><div id="cr"></div>`);
+    mount(host, html`<form class="card card-pad" id="cf" style="margin-bottom:16px"><div class="row" style="gap:8px;flex-wrap:wrap"><input class="input grow" id="cs" placeholder="Phone number or email" aria-label="Subject ID" style="min-width:220px"><button class="btn btn-primary">Look up</button>${canManage() ? html`<button type="button" class="btn btn-secondary" data-rec>${ic('plus', 'ico-sm')} Record consent</button>` : ''}</div></form><div id="cr"></div>`);
     const look = async (id: string): Promise<void> => {
       const box = $('#cr', host)!; mount(box, card(skeletonRows(2)));
       try {
@@ -85,7 +85,7 @@ export async function renderCompliance(view: HTMLElement): Promise<void> {
     $('#cf', host)!.addEventListener('submit', (ev) => { ev.preventDefault(); const v = ($('#cs', host) as HTMLInputElement).value.trim(); if (v) void look(v); });
     $('[data-rec]', host)?.addEventListener('click', () => formModal({
       title: 'Record consent', submitLabel: 'Record',
-      body: html`<div class="field"><label for="ks">Subject ID</label><input class="input mono" id="ks" required value="${($('#cs', host) as HTMLInputElement).value}"></div><div class="field"><label for="kp">Purpose</label><input class="input" id="kp" maxlength="128" required placeholder="Appointment reminders"></div>
+      body: html`<div class="field"><label for="ks">Phone or email</label><input class="input mono" id="ks" required value="${($('#cs', host) as HTMLInputElement).value}"></div><div class="field"><label for="kp">Purpose</label><input class="input" id="kp" maxlength="128" required placeholder="Appointment reminders"></div>
         <div class="field"><label for="kb">Legal basis</label><select class="input" id="kb">${BASIS.map(([v, l]) => html`<option value="${v}">${l}</option>`)}</select></div>`,
       submit: async (el) => { if (!inp(el, '#ks') || inp(el, '#kp').length < 2) throw new ApiError(0, 'Enter the subject and a purpose'); await api('/api/compliance/consent', { method: 'POST', body: { subjectId: inp(el, '#ks'), purpose: inp(el, '#kp'), legalBasis: inp(el, '#kb') } }); toast('Consent recorded', 'success'); void look(inp(el, '#ks')); },
     }));
@@ -95,8 +95,8 @@ export async function renderCompliance(view: HTMLElement): Promise<void> {
     mount(host, card(skeletonRows(3)));
     try {
       const { accessLogs } = await api<{ accessLogs: Access[] }>('/api/compliance/access-logs?limit=100');
-      mount(host, card(accessLogs.length === 0 ? emptyState({ icon: 'eye', title: 'No access records', text: 'When someone views personal data it is logged here.' })
-        : html`<div class="table-wrap"><table class="table"><thead><tr><th>When</th><th>Data</th><th>Subject</th></tr></thead><tbody>${accessLogs.map((a) => html`<tr><td class="muted small">${ago(a.accessed_at)}</td><td>${a.entity}</td><td class="mono small">${a.subject_id ?? '–'}</td></tr>`)}</tbody></table></div>`));
+      mount(host, card(accessLogs.length === 0 ? emptyState({ icon: 'eye', title: 'No activity yet', text: 'Retention runs, erasures and consent changes are recorded here.' })
+        : html`<div class="table-wrap"><table class="table"><thead><tr><th>When</th><th>Action</th><th>Subject</th></tr></thead><tbody>${accessLogs.map((a) => html`<tr><td class="muted small">${ago(a.accessed_at)}</td><td>${a.entity}</td><td class="mono small">${a.subject_id ?? '–'}</td></tr>`)}</tbody></table></div>`));
     } catch (e) { mount(host, card(fail(host, e, () => void access(), 'Could not load access logs'))); }
   };
 

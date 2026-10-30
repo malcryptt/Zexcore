@@ -1,5 +1,6 @@
 import { addDoc, getDocs, getDoc, updateDoc, query, orderBy, limit as qLimit, serverTimestamp, type QueryDocumentSnapshot } from 'firebase/firestore';
 import { ApiError, audit, claimSlot, iso, loadCtx, requireAdmin, wsCol, wsDoc } from './core';
+import { emit } from './rules';
 
 const str = (v: unknown, max: number): string | null => { const s = String(v ?? '').trim().slice(0, max); return s || null; };
 
@@ -67,6 +68,7 @@ export async function createLead(b: Record<string, unknown>): Promise<{ id: stri
   if (value !== null && (!Number.isInteger(value) || value < 0)) throw new ApiError(400, 'Enter a valid value.');
   const ref = await addDoc(wsCol(c, 'leads'), { title, contactId: String(b.contactId ?? ''), stageId: String(b.stageId ?? ''), value, currency: 'NGN', closedAt: null, closeReason: null, createdAt: serverTimestamp() });
   void audit(c, 'lead.create', 'lead', ref.id);
+  emit('crm.lead.created', c.wid, ref.id);
   return { id: ref.id };
 }
 export async function moveLead(id: string, b: Record<string, unknown>): Promise<{ ok: true }> {

@@ -37,13 +37,13 @@ service cloud.firestore {
     }
     function limitOf(wid, key) {
       return {
-        'free':       {'bookingsPerMonth': 30,   'staff': 1,   'services': 3,   'cmsPages': 3,   'crmContacts': 50},
-        'starter':    {'bookingsPerMonth': 200,  'staff': 3,   'services': 10,  'cmsPages': 10,  'crmContacts': 500},
-        'growth':     {'bookingsPerMonth': 1000, 'staff': 10,  'services': 30,  'cmsPages': 50,  'crmContacts': 5000},
-        'agency':     {'bookingsPerMonth': 5000, 'staff': 50,  'services': 100, 'cmsPages': 200, 'crmContacts': 50000},
-        'enterprise': {'bookingsPerMonth': 999999, 'staff': 999999, 'services': 999999, 'cmsPages': 999999, 'crmContacts': 999999},
-        'dedicated':  {'bookingsPerMonth': 999999, 'staff': 999999, 'services': 999999, 'cmsPages': 999999, 'crmContacts': 999999}
-      }.get(planOf(wid), {'bookingsPerMonth': 30, 'staff': 1, 'services': 3, 'cmsPages': 3, 'crmContacts': 50})[key];
+        'free':       {'bookingsPerMonth': 30,   'staff': 1,   'services': 3,   'cmsPages': 3,   'crmContacts': 50, 'devices': 1, 'rules': 2},
+        'starter':    {'bookingsPerMonth': 200,  'staff': 3,   'services': 10,  'cmsPages': 10,  'crmContacts': 500, 'devices': 5, 'rules': 5},
+        'growth':     {'bookingsPerMonth': 1000, 'staff': 10,  'services': 30,  'cmsPages': 50,  'crmContacts': 5000, 'devices': 25, 'rules': 25},
+        'agency':     {'bookingsPerMonth': 5000, 'staff': 50,  'services': 100, 'cmsPages': 200, 'crmContacts': 50000, 'devices': 100, 'rules': 100},
+        'enterprise': {'bookingsPerMonth': 999999, 'staff': 999999, 'services': 999999, 'cmsPages': 999999, 'crmContacts': 999999, 'devices': 999999, 'rules': 999999},
+        'dedicated':  {'bookingsPerMonth': 999999, 'staff': 999999, 'services': 999999, 'cmsPages': 999999, 'crmContacts': 999999, 'devices': 999999, 'rules': 999999}
+      }.get(planOf(wid), {'bookingsPerMonth': 30, 'staff': 1, 'services': 3, 'cmsPages': 3, 'crmContacts': 50, 'devices': 1, 'rules': 2})[key];
     }
     // "<prefix>_<n>" with n below the plan limit for this resource
     function slotId(wid, prefix, key, id) {
@@ -177,6 +177,85 @@ service cloud.firestore {
       match /payments/{ref} {
         allow read: if isAdmin(wid);
         allow write: if false;
+      }
+
+      // Devices. Admins register them (numbered slots enforce the plan limit) and rotate their token; only the Worker
+      // records readings and "last seen", so a browser can never fake telemetry. The token itself is never stored,
+      // only its SHA-256 hash.
+      match /devices/{id} {
+        allow read: if isMember(wid);
+        allow create: if isAdmin(wid) && slotId(wid, 'd', 'devices', id)
+          && noExtraKeys(['name', 'deviceKey', 'kind', 'tokenHash', 'createdAt', 'seq'])
+          && request.resource.data.tokenHash.matches('^[a-f0-9]{64}$') && request.resource.data.createdAt == request.time;
+        allow update: if isAdmin(wid) && onlyChanges(['name', 'tokenHash'])
+          && request.resource.data.tokenHash.matches('^[a-f0-9]{64}$');
+        allow delete: if isAdmin(wid);
+        match /readings/{rid} {
+          allow read: if isMember(wid);
+          allow delete: if isAdmin(wid);
+          allow write: if false;
+        }
+      }
+      match /alertRules/{id} {
+        allow read: if isMember(wid);
+        allow create: if isAdmin(wid) && noExtraKeys(['deviceId', 'metric', 'op', 'threshold', 'severity', 'message', 'enabled', 'createdAt', 'lastFiredAt'])
+          && request.resource.data.op in ['gt', 'gte', 'lt', 'lte', 'eq'] && request.resource.data.threshold is number
+          && request.resource.data.severity in ['low', 'medium', 'high', 'critical'] && request.resource.data.createdAt == request.time;
+        allow update: if isAdmin(wid) && onlyChanges(['enabled']);
+        allow delete: if isAdmin(wid);
+      }
+      match /alerts/{id} { allow read: if isMember(wid); allow delete: if isAdmin(wid); allow write: if false; }
+
+      // Automations. Anyone on the team may draft a rule; only an admin can approve it, and nothing runs until then.
+      // Runs are written by the Worker.
+      match /rules/{id} {
+        allow read: if isMember(wid);
+        allow create: if isMember(wid) && slotId(wid, 'r', 'rules', id)
+          && noExtraKeys(['name', 'description', 'trigger', 'conditions', 'actions', 'enabled', 'approved', 'createdAt', 'createdBy', 'seq', 'lastRunAt'])
+          && request.resource.data.approved == false && request.resource.data.enabled == false
+          && request.resource.data.createdBy == request.auth.uid && request.resource.data.createdAt == request.time
+          && request.resource.data.actions is list && request.resource.data.actions.size() >= 1 && request.resource.data.actions.size() <= 3;
+        allow update: if isAdmin(wid) && onlyChanges(['approved', 'enabled', 'approvedBy']);
+        allow delete: if isMember(wid);
+      }
+      match /automationRuns/{id} { allow read: if isAdmin(wid); allow write: if false; }
+      match /automationMarkers/{id} { allow read, write: if false; }
+
+      // Inbox: replies the team sends (and customer replies they log), and which conversations have been read.
+      match /messages/{id} {
+        allow read: if isMember(wid);
+        allow create: if isMember(wid) && noExtraKeys(['phone', 'name', 'direction', 'kind', 'body', 'createdAt', 'by'])
+          && request.resource.data.phone.matches('^\\+[0-9]{8,15}$')
+          && request.resource.data.direction in ['in', 'out'] && request.resource.data.kind == 'text'
+          && request.resource.data.body is string && request.resource.data.body.size() >= 1 && request.resource.data.body.size() <= 2000
+          && request.resource.data.name is string && request.resource.data.name.size() <= 160
+          && request.resource.data.createdAt == request.time && request.resource.data.by == request.auth.uid;
+        allow update: if false;
+        allow delete: if isAdmin(wid);       // data-protection erasure and retention
+      }
+      match /convState/{phone} {
+        allow read: if isMember(wid);
+        allow delete: if isAdmin(wid);
+        allow create, update: if isMember(wid) && phone.matches('^\\+[0-9]{8,15}$') && noExtraKeys(['readAt']) && request.resource.data.readAt == request.time;
+      }
+
+      // Data protection (admins only except consent, which any member may record)
+      match /retention/{entity} {
+        allow read, delete: if isAdmin(wid);
+        allow create, update: if isAdmin(wid) && entity in ['messages', 'bookings'] && noExtraKeys(['retentionDays', 'enabled', 'lastRunAt'])
+          && request.resource.data.retentionDays is int && request.resource.data.retentionDays >= 1 && request.resource.data.retentionDays <= 3650;
+      }
+      match /erasures/{id} {
+        allow read, create: if isAdmin(wid);
+        allow update: if isAdmin(wid) && onlyChanges(['status', 'completedAt', 'summary']);
+        allow delete: if false;
+      }
+      match /consents/{id} {
+        allow read: if isMember(wid);
+        allow create: if isMember(wid) && noExtraKeys(['subjectId', 'purpose', 'legalBasis', 'grantedAt', 'revokedAt', 'by'])
+          && request.resource.data.grantedAt == request.time && request.resource.data.by == request.auth.uid && request.resource.data.revokedAt == null;
+        allow update: if isMember(wid) && onlyChanges(['revokedAt']) && request.resource.data.revokedAt == request.time;
+        allow delete: if isAdmin(wid);
       }
 
       // Tamper-evident audit trail. Written ONLY by the Worker (service account), which chains each entry to the

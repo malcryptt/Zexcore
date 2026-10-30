@@ -4,11 +4,12 @@ import { ApiError, audit, iso, limitError, loadCtx, monthPrefix, toApiError, wsC
 import { listServices, listStaff, type ServiceDto, type StaffDto } from './catalog';
 import { CELL_MS, cellsFor, generateSlotStarts, localDateOf, localMidnightUtc, normalizePhone, weekdayOf, type SlotSettings } from './slots';
 import { slotLimit } from './plan';
+import { emit } from './rules';
 
 export interface BookingDto {
   id: string; ref: string; status: string; serviceId: string; serviceName: string; durationMin: number; staffId: string | null; staffName: string | null;
   customerName: string; customerPhone: string; customerEmail: string | null; startsAt: string; endsAt: string; currency: string; priceMinor: number;
-  depositMinor: number; depositStatus: 'none'; paymentReference: null; notes: string | null; source: string;
+  depositMinor: number; depositStatus: 'none'; paymentReference: null; notes: string | null; source: string; createdAt: string | null;
 }
 
 export const refOf = (id: string): string => `ZX-${id.replace('_', '-')}`;
@@ -20,7 +21,7 @@ function toDto(d: QueryDocumentSnapshot, svcs: Map<string, ServiceDto>, staff: M
     id: d.id, ref: refOf(d.id), status: x.status, serviceId: x.serviceId, serviceName: s?.name ?? 'Service', durationMin: s?.durationMin ?? Math.round((x.endsAt.toMillis() - x.startsAt.toMillis()) / 60000),
     staffId: x.staffId ?? null, staffName: p?.name ?? null, customerName: x.customerName, customerPhone: x.customerPhone, customerEmail: x.customerEmail ?? null,
     startsAt: iso(x.startsAt)!, endsAt: iso(x.endsAt)!, currency: 'NGN', priceMinor: s?.priceMinor ?? 0, depositMinor: 0, depositStatus: 'none', paymentReference: null,
-    notes: x.notes ?? null, source: x.source ?? 'staff',
+    notes: x.notes ?? null, source: x.source ?? 'staff', createdAt: iso(x.createdAt),
   };
 }
 
@@ -120,6 +121,7 @@ export async function staffCreate(b: Record<string, unknown>): Promise<{ booking
     nextN: () => nextMonthlyN(c), maxTries: 3,
   });
   void audit(c, 'booking.create', 'booking', made.id);
+  emit('bookings.booking.created', c.wid, made.id);
   const snap = await getDoc(wsDoc(c, 'bookings', made.id));
   const m = await maps(c);
   return { booking: toDto(snap as QueryDocumentSnapshot, m.svcs, m.staff) };

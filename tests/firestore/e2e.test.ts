@@ -1,6 +1,6 @@
 // End-to-end: the real dashboard data layer (apps/dashboard/src/lib/fb) against the real security rules, in the emulators.
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { emulatorBase, installWorker } from './worker-harness';
+import { emulatorBase, installWorker, WORKER_URL } from './worker-harness';
 
 vi.stubEnv('VITE_FIREBASE_PROJECT_ID', 'demo-zexcore');
 vi.stubEnv('VITE_FIREBASE_API_KEY', 'demo-key');
@@ -224,6 +224,26 @@ describe('dashboard on Firebase, end to end', () => {
     expect((await bill.payments()).payments).toEqual([]);
   });
 
+  it('runs the inbox: logs replies, groups by phone, tracks read state', async () => {
+    const msg = await import('../../apps/dashboard/src/lib/fb/messages');
+    const sent: any = await msg.send({ phone: '08011112222', name: 'Ada', body: 'See you at 10' });
+    expect(sent.whatsappUrl).toBe('https://wa.me/2348011112222?text=See%20you%20at%2010');
+    expect(await code(msg.send({ phone: '123', body: 'x' }))).toBe(400);
+    const list: any = await msg.conversations(new URLSearchParams());
+    const conv = list.conversations.find((x: any) => x.phone === '+2348011112222');
+    expect(conv).toMatchObject({ name: 'Ada', lastBody: 'See you at 10', lastDirection: 'out', unread: 0 });
+    const thread: any = await msg.conversation(new URLSearchParams({ phone: '+2348011112222' }));
+    expect(thread.messages).toHaveLength(1);
+    // the public booking made earlier is an inbound request waiting for a reply
+    expect(list.counts.waiting).toBeGreaterThan(0);
+    const waiting: any = await msg.conversations(new URLSearchParams({ filter: 'waiting' }));
+    const w = waiting.conversations[0];
+    expect(w.unread).toBeGreaterThan(0);
+    await msg.markRead({ phone: w.phone });
+    const after: any = await msg.conversations(new URLSearchParams());
+    expect(after.conversations.find((x: any) => x.phone === w.phone).unread).toBe(0);
+  });
+
   it('detects a tampered audit entry', async () => {
     const ctx = await core.loadCtx();
     const r = await fetch(`${emulatorBase}/workspaces/${ctx.wid}/auditChain/0000000002?updateMask.fieldPaths=action`, {
@@ -237,5 +257,99 @@ describe('dashboard on Firebase, end to end', () => {
     const { updateDoc } = await import('firebase/firestore');
     const ctx = await core.loadCtx();
     expect(await code(updateDoc(core.wsDoc(ctx), { plan: 'enterprise' }))).toBe('permission-denied');
+  });
+});
+
+describe('data protection, end to end', () => {
+  it('records and revokes consent, sets retention, and erases a customer', async () => {
+    const comp = await import('../../apps/dashboard/src/lib/fb/compliance');
+    await comp.recordConsent({ subjectId: '0803 123 4567', purpose: 'Appointment reminders', legalBasis: 'consent' });
+    expect(await code(comp.recordConsent({ subjectId: 'nonsense', purpose: 'x1' }))).toBe(400);
+    let c: any = await comp.listConsent('08031234567');
+    expect(c.consents).toHaveLength(1);
+    expect(c.consents[0]).toMatchObject({ purpose: 'Appointment reminders', legal_basis: 'consent', revoked_at: null });
+    await comp.revokeConsent({ subjectId: '08031234567', purpose: 'Appointment reminders' });
+    c = await comp.listConsent('08031234567');
+    expect(c.consents[0].revoked_at).not.toBeNull();
+
+    await comp.setRetention({ entity: 'messages', retentionDays: 365, enabled: true });
+    expect(await code(comp.setRetention({ entity: 'passwords', retentionDays: 1 }))).toBe(400);
+    expect((await comp.listRetention() as any).policies[0]).toMatchObject({ entity: 'messages', retention_days: 365, enabled: true });
+    expect(await comp.runRetention()).toEqual({ summary: [{ entity: 'messages', purged: 0 }] });
+
+    const req = await comp.createErasure({ subjectId: '08031234567', reason: 'Customer asked' });
+    const done: any = await comp.executeErasure(req.id);
+    expect(done.summary.bookings).toBeGreaterThan(0);
+    expect(done.summary.consents).toBe(1);
+    const list: any = await bk.listBookings(new URLSearchParams({ limit: '500' }));
+    expect(list.bookings.some((b: any) => b.customerPhone === '+2348031234567')).toBe(false);
+    expect(list.bookings.some((b: any) => b.customerName === 'Erased customer')).toBe(true);
+    expect(await code(comp.executeErasure(req.id))).toBe(409);
+    expect((await comp.listErasures() as any).requests[0].status).toBe('completed');
+    await core.flushAudit();
+    expect(((await comp.accessLogs(new URLSearchParams())) as any).accessLogs.length).toBeGreaterThan(0);
+  });
+});
+
+describe('devices and automations, end to end', () => {
+  it('registers a device, ingests readings through the Worker, raises an alert and runs an approved rule', async () => {
+    const iot = await import('../../apps/dashboard/src/lib/fb/iot');
+    const rl = await import('../../apps/dashboard/src/lib/fb/rules');
+    const ctx = await core.loadCtx(true);
+    const made: any = await iot.createDevice({ name: 'Cold room', deviceKey: 'cold-room-1', kind: 'temperature_sensor' });
+    expect(made.token).toMatch(/^[0-9a-f]{64}$/);
+    expect(await code(iot.createDevice({ name: 'Second', deviceKey: 'second-1', kind: 'x' }))).toBe('plan_limit');   // free plan: 1 device
+    expect(await code(iot.createDevice({ name: 'Dup', deviceKey: 'cold-room-1', kind: 'x' }))).toBe('conflict');
+    const devId = made.device.id;
+    await iot.createAlertRule({ deviceId: devId, metric: 'temperature', op: 'gt', threshold: 8, severity: 'high', message: 'Cold room too warm' });
+
+    // automations: a draft does nothing until an admin approves it
+    expect(await code(rl.createRule({ name: 'x', trigger: { source: 'event:nonsense' }, actions: [] }))).toBe(400);
+    expect(await code(rl.createRule({ name: 'Bad hook', trigger: { source: 'event:iot.reading' }, actions: [{ type: 'webhook', url: 'http://127.0.0.1/x' }] }))).toBe(400);
+    const rule: any = await rl.createRule({ name: 'Hot reading', trigger: { source: 'event:iot.reading' }, conditions: { field: 'metrics.temperature', op: 'gt', value: 8 }, actions: [{ type: 'notify', message: '{{device.name}} is at {{metrics.temperature}}' }] });
+    expect((await rl.testRun(rule.id, { payload: { metrics: { temperature: 9 } } })) as any).toMatchObject({ wouldExecute: true });
+    expect((await rl.testRun(rule.id, { payload: { metrics: { temperature: 5 } } })) as any).toMatchObject({ conditionsPassed: false, wouldExecute: false });
+
+    const send = (token: string, metrics: object, tenant = ctx.wid) => fetch(`${WORKER_URL}/api/iot/ingest`, { method: 'POST', headers: { 'x-tenant-id': tenant, 'x-device-token': token, 'content-type': 'application/json' }, body: JSON.stringify({ metrics }) });
+    expect((await send('0'.repeat(64), { temperature: 4 })).status).toBe(401);
+    expect((await send(made.token, { 'bad name': 1 })).status).toBe(400);
+    const first = await send(made.token, { temperature: 9.5, door: 'closed' });
+    expect(first.status).toBe(201);
+    expect(await first.json()).toMatchObject({ ok: true, alertsFired: 1 });
+    expect((await send(made.token, { temperature: 9.6 })).status).toBe(429);
+
+    const alerts: any = await iot.recentAlerts();
+    expect(alerts.alerts[0]).toMatchObject({ device_name: 'Cold room', severity: 'high', message: 'Cold room too warm' });
+    expect(((await iot.latest()) as any).latest[0].metrics).toMatchObject({ temperature: 9.5 });
+    expect(((await iot.listDevices()) as any).devices[0].status).toBe('online');
+
+    // not approved yet: nothing ran. Approve, send again, and the run is recorded.
+    expect(((await rl.runs()) as any).runs).toHaveLength(0);
+    await rl.approveRule(rule.id);
+    await new Promise((r) => setTimeout(r, 1100));
+    expect((await send(made.token, { temperature: 12 })).status).toBe(201);
+    const runs: any = await rl.runs();
+    expect(runs.runs[0]).toMatchObject({ rule: 'Hot reading', outcome: 'ok' });
+    expect(runs.runs[0].detail).toContain('Cold room is at 12');
+
+    // a rotated token replaces the old one
+    const rotated = await iot.rotateToken(devId);
+    await new Promise((r) => setTimeout(r, 1100));
+    expect((await send(made.token, { temperature: 4 })).status).toBe(401);
+    expect((await send(rotated.token, { temperature: 4 })).status).toBe(201);
+    // one workspace's device token never works against another
+    expect((await send(rotated.token, { temperature: 4 }, 'AAAAAAAAAAAAAAAAAAAA')).status).toBe(401);
+
+    // the booking page tells the Worker about a public booking exactly once
+    const list: any = await bk.listBookings(new URLSearchParams({ limit: '5' }));
+    const pubBooking = list.bookings.find((b: any) => b.source === 'public');
+    if (pubBooking) {
+      const body = JSON.stringify({ slug: ctx.slug, bookingId: pubBooking.id });
+      const again = await fetch(`${WORKER_URL}/api/public/booked`, { method: 'POST', body });
+      expect(again.status).toBe(200);
+      expect(await again.json()).toMatchObject({ duplicate: true });
+    }
+    await iot.removeDevice(devId);
+    expect(((await iot.listDevices()) as any).devices).toHaveLength(0);
   });
 });

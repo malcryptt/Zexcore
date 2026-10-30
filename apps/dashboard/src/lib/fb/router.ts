@@ -2,6 +2,10 @@ import { ApiError, toApiError, unavailable, loadCtx } from './core';
 import { fb } from './firebase';
 import * as authApi from './auth';
 import * as cat from './catalog';
+import * as iot from './iot';
+import * as rl from './rules';
+import * as comp from './compliance';
+import * as msg from './messages';
 import * as bk from './bookings';
 import * as pub from './public';
 import * as crm from './crm';
@@ -26,8 +30,6 @@ on('POST', '/api/auth/password/reset', async ({ body }) => { await authApi.reset
 on('POST', '/api/auth/password/change', async ({ body }) => { await authApi.changePassword(body.currentPassword, body.newPassword); return { token: 'firebase' }; });
 on('POST', '/api/auth/email/verify', async ({ body }) => { await authApi.verifyEmail(body.token); return { ok: true }; });
 on('POST', '/api/auth/email/resend', async () => { await authApi.resendVerification(); return { ok: true }; });
-on('GET', '/api/auth/google/config', () => ({ clientId: null }));
-on('POST', '/api/auth/google', () => { throw unavailable('Google sign-in'); });
 // Firebase signs a device out from the Firebase console / by password change; per-device session lists are not exposed.
 on('GET', '/api/auth/sessions', () => ({ sessions: [] }));
 on('POST', '/api/auth/sessions/revoke-others', () => { throw unavailable('Signing out other devices'); });
@@ -50,11 +52,10 @@ on('GET', '/api/bookings', ({ query }) => bk.listBookings(query));
 on('POST', '/api/bookings', ({ body }) => bk.staffCreate(body));
 on('PATCH', '/api/bookings/:id', ({ params, body }) => bk.patchBooking(params[0]!, body));
 on('POST', '/api/bookings/:id/payment-link', () => { throw unavailable('Deposit payment links'); });
-// WhatsApp conversations are not stored in this release; the inbox simply shows as empty.
-on('GET', '/api/bookings/conversations', () => ({ conversations: [], counts: { all: 0, waiting: 0, booked: 0 } }));
-on('GET', '/api/bookings/conversation', () => { throw unavailable('Messaging'); });
-on('POST', '/api/bookings/conversation/read', () => ({ ok: true }));
-on('POST', '/api/bookings/messages', () => { throw unavailable('Messaging'); });
+on('GET', '/api/bookings/conversations', ({ query }) => msg.conversations(query));
+on('GET', '/api/bookings/conversation', ({ query }) => msg.conversation(query));
+on('POST', '/api/bookings/conversation/read', ({ body }) => msg.markRead(body));
+on('POST', '/api/bookings/messages', ({ body }) => msg.send(body));
 
 // ── public booking page ──
 on('GET', '/api/public/:slug', ({ params }) => pub.profile(params[0]!));
@@ -83,10 +84,40 @@ on('GET', '/api/billing/payments', () => bill.payments());
 on('GET', '/api/audit-log', () => bill.auditLog());
 on('GET', '/api/audit-log/verify', () => bill.verifyAuditLog());
 
-// ── not in this release (need an always-on server) ──
-for (const [prefix, what] of [['/api/iot', 'Device monitoring'], ['/api/rules', 'Automations'], ['/api/compliance', 'Data-protection tools']] as const) {
-  for (const m of ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']) on(m, `${prefix}(?:/.*)?`, () => { throw unavailable(what); });
-}
+// ── data protection ──
+on('GET', '/api/compliance/retention', () => comp.listRetention());
+on('POST', '/api/compliance/retention', ({ body }) => comp.setRetention(body));
+on('POST', '/api/compliance/retention/run', () => comp.runRetention());
+on('GET', '/api/compliance/erasure', () => comp.listErasures());
+on('POST', '/api/compliance/erasure', ({ body }) => comp.createErasure(body));
+on('POST', '/api/compliance/erasure/:id/execute', ({ params }) => comp.executeErasure(params[0]!));
+on('POST', '/api/compliance/consent', ({ body }) => comp.recordConsent(body));
+on('POST', '/api/compliance/consent/revoke', ({ body }) => comp.revokeConsent(body));
+on('GET', '/api/compliance/consent/:subject', ({ params }) => comp.listConsent(params[0]!));
+on('GET', '/api/compliance/access-logs', ({ query }) => comp.accessLogs(query));
+
+// ── devices ──
+on('GET', '/api/iot/devices', () => iot.listDevices());
+on('POST', '/api/iot/devices', ({ body }) => iot.createDevice(body));
+on('PATCH', '/api/iot/devices/:id', ({ params, body }) => iot.patchDevice(params[0]!, body));
+on('POST', '/api/iot/devices/:id/rotate-token', ({ params }) => iot.rotateToken(params[0]!));
+on('DELETE', '/api/iot/devices/:id', ({ params }) => iot.removeDevice(params[0]!));
+on('GET', '/api/iot/telemetry/latest', () => iot.latest());
+on('GET', '/api/iot/alerts', () => iot.listAlertRules());
+on('POST', '/api/iot/alerts', ({ body }) => iot.createAlertRule(body));
+on('DELETE', '/api/iot/alerts/:id', ({ params }) => iot.removeAlertRule(params[0]!));
+on('GET', '/api/iot/alert-events', () => iot.recentAlerts());
+
+// ── automations ──
+on('GET', '/api/rules', () => rl.listRules());
+on('POST', '/api/rules', ({ body }) => rl.createRule(body));
+on('GET', '/api/rules/runs', () => rl.runs());
+on('POST', '/api/rules/ai-draft', ({ body }) => rl.aiDraft(body));
+on('POST', '/api/rules/:id/approve', ({ params }) => rl.approveRule(params[0]!));
+on('POST', '/api/rules/:id/disable', ({ params }) => rl.setEnabled(params[0]!, false));
+on('POST', '/api/rules/:id/enable', ({ params }) => rl.setEnabled(params[0]!, true));
+on('POST', '/api/rules/:id/test-run', ({ params, body }) => rl.testRun(params[0]!, body));
+on('DELETE', '/api/rules/:id', ({ params }) => rl.removeRule(params[0]!));
 
 export async function dispatch(path: string, method: string, body: unknown): Promise<unknown> {
   const url = new URL(path, 'https://zexcore.local');

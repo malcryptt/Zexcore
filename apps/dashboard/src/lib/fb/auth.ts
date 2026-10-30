@@ -1,6 +1,6 @@
 import {
   createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, sendEmailVerification, sendPasswordResetEmail,
-  confirmPasswordReset, applyActionCode, EmailAuthProvider, reauthenticateWithCredential, updatePassword, deleteUser,
+  confirmPasswordReset, applyActionCode, GoogleAuthProvider, signInWithPopup, type User, EmailAuthProvider, reauthenticateWithCredential, updatePassword, deleteUser,
 } from 'firebase/auth';
 import { collection, doc, getDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { fb } from './firebase';
@@ -64,38 +64,70 @@ export async function ensureUserWorkspace(user: { uid: string; displayName?: str
 }
 
 export async function register(b: { tenantName: string; name: string; email: string; password: string; tenantSlug?: string }): Promise<void> {
-  const { auth, db } = fb();
+  const { auth } = fb();
   const tenantName = String(b.tenantName ?? '').trim(), name = String(b.name ?? '').trim(), email = String(b.email ?? '').trim();
   if (tenantName.length < 2 || tenantName.length > 120) throw new ApiError(400, 'Enter your business name.');
   if (name.length < 2) throw new ApiError(400, 'Enter your name.');
   if (String(b.password ?? '').length < 10) throw new ApiError(400, 'Use at least 10 characters for your password.');
   let cred;
   try { cred = await createUserWithEmailAndPassword(auth, email, b.password); } catch (e) { throw authMessage(e); }
-  const user = cred.user;
+  await createWorkspaceFor(cred.user, tenantName, name, b.tenantSlug, true);
+  void sendEmailVerification(cred.user).catch(() => undefined);
+}
+
+/** Creates the workspace, owner row, public slug and first calendar for a signed-in user. Rolls the account back if `rollback` and it fails. */
+async function createWorkspaceFor(user: User, tenantName: string, name: string, wantedSlug: string | undefined, rollback: boolean): Promise<void> {
+  const { db } = fb();
   try {
-    const slug = await freeSlug(b.tenantSlug || tenantName);
+    const slug = await freeSlug(wantedSlug || tenantName);
     const wid = doc(collection(db, 'workspaces')).id;
     const batch = writeBatch(db);
     batch.set(doc(db, 'workspaces', wid), { name: tenantName, slug, ownerUid: user.uid, plan: 'free', createdAt: serverTimestamp(), settings: { ...DEFAULT_SETTINGS, publicName: tenantName } });
-    batch.set(doc(db, 'workspaces', wid, 'members', user.uid), { role: 'owner', name, email, createdAt: serverTimestamp() });
+    batch.set(doc(db, 'workspaces', wid, 'members', user.uid), { role: 'owner', name, email: user.email ?? '', createdAt: serverTimestamp() });
     batch.set(doc(db, 'slugs', slug), {
       wid, ownerUid: user.uid, name: tenantName, timezone: 'Africa/Lagos', currency: 'NGN', bookingEnabled: true, slotMinutes: DEFAULT_SETTINGS.slotMinutes,
       openMinutes: DEFAULT_SETTINGS.openMinutes, closeMinutes: DEFAULT_SETTINGS.closeMinutes, closedWeekdays: [0], bookingCap: 30,
       leadMinutes: DEFAULT_SETTINGS.leadMinutes, maxDaysAhead: DEFAULT_SETTINGS.maxDaysAhead,
     });
-    batch.set(doc(db, 'users', user.uid), { name, email, workspaceIds: [wid], createdAt: serverTimestamp() });
+    batch.set(doc(db, 'users', user.uid), { name, email: user.email ?? '', workspaceIds: [wid], createdAt: serverTimestamp() });
     await batch.commit();
   } catch (e) {
     clearCtx();
-    await deleteUser(user).catch(() => undefined); // do not leave a half-created account behind
+    if (rollback) await deleteUser(user).catch(() => undefined); // do not leave a half-created account behind
     throw e instanceof ApiError ? e : authMessage(e);
   }
   clearCtx();
   await updateProfile(user, { displayName: name }).catch(() => undefined);
-  void sendEmailVerification(user).catch(() => undefined);
   // Every business needs one bookable calendar. It is replaced if the owner adds their own team member (see staff handler).
   const ctx = await loadCtx(true);
   await claimSlot(ctx, 'staff', 'p', 'staff', { name, title: 'Owner', active: true, auto: true }).catch(() => undefined);
+}
+
+/** Google sign-in through Firebase Authentication. Returns whether the person already has a workspace. */
+export async function googleSignIn(): Promise<{ hasWorkspace: boolean; email: string; name: string }> {
+  const { auth, db } = fb();
+  let user: User;
+  try { user = (await signInWithPopup(auth, new GoogleAuthProvider())).user; }
+  catch (e) {
+    const code = (e as { code?: string }).code ?? '';
+    if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') throw new ApiError(0, 'Google sign-in was cancelled.', code);
+    if (code === 'auth/popup-blocked') throw new ApiError(400, 'Your browser blocked the Google window. Allow pop-ups for this site and try again.', code);
+    if (code === 'auth/operation-not-allowed') throw new ApiError(503, 'Google sign-in is not switched on yet.', code);
+    throw authMessage(e);
+  }
+  clearCtx();
+  const u = await getDoc(doc(db, 'users', user.uid));
+  const has = Array.isArray(u.data()?.workspaceIds) && (u.data()!.workspaceIds as unknown[]).length > 0;
+  return { hasWorkspace: has, email: user.email ?? '', name: user.displayName ?? (user.email ?? '').split('@')[0] ?? 'there' };
+}
+
+/** Second step of Google sign-up: the Google account becomes the owner of a new workspace. */
+export async function googleCreateWorkspace(tenantName: string): Promise<void> {
+  const user = fb().auth.currentUser;
+  if (!user) throw new ApiError(401, 'Please sign in with Google again.');
+  const n = String(tenantName ?? '').trim();
+  if (n.length < 2 || n.length > 120) throw new ApiError(400, 'Enter your business name.');
+  await createWorkspaceFor(user, n, user.displayName ?? n, undefined, false);
 }
 
 export async function login(email: string, password: string): Promise<void> {

@@ -100,6 +100,58 @@ describe('tenant isolation', () => {
     await assertFails(updateDoc(doc(other(), 'workspaces', W, 'contacts', 'c_0'), { name: 'hacked' }));
     await assertFails(deleteDoc(doc(other(), 'workspaces', W, 'bookings', '202001_0')));
   });
+  it('lets members log messages in their own name, never edit them, and keeps strangers out', async () => {
+    const msg = (extra = {}) => ({ phone: '+2348011112222', name: 'Ada', direction: 'out', kind: 'text', body: 'See you at 10', createdAt: serverTimestamp(), by: 'owner1', ...extra });
+    await assertSucceeds(setDoc(doc(owner(), 'workspaces', W, 'messages', 'm1'), msg()));
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'messages', 'm2'), msg({ by: 'someone-else' })));
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'messages', 'm3'), msg({ phone: 'not-a-phone' })));
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'messages', 'm4'), msg({ body: '' })));
+    await assertFails(updateDoc(doc(owner(), 'workspaces', W, 'messages', 'm1'), { body: 'edited' }));
+    await assertFails(getDoc(doc(other(), 'workspaces', W, 'messages', 'm1')));
+    await assertFails(setDoc(doc(other(), 'workspaces', W, 'messages', 'm5'), msg()));
+    await assertSucceeds(setDoc(doc(owner(), 'workspaces', W, 'convState', '+2348011112222'), { readAt: serverTimestamp() }));
+    await assertFails(setDoc(doc(anon(), 'workspaces', W, 'messages', 'm6'), msg()));
+    await assertFails(deleteDoc(doc(other(), 'workspaces', W, 'messages', 'm1')));
+    await assertSucceeds(deleteDoc(doc(owner(), 'workspaces', W, 'messages', 'm1')));   // admins only: erasure and retention
+  });
+  it('keeps data-protection records to the right roles and the right shape', async () => {
+    await assertSucceeds(setDoc(doc(owner(), 'workspaces', W, 'retention', 'messages'), { retentionDays: 90, enabled: true, lastRunAt: null }));
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'retention', 'passwords'), { retentionDays: 90, enabled: true, lastRunAt: null }));
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'retention', 'bookings'), { retentionDays: 0, enabled: true, lastRunAt: null }));
+    await assertFails(getDoc(doc(other(), 'workspaces', W, 'retention', 'messages')));
+    await assertSucceeds(setDoc(doc(owner(), 'workspaces', W, 'erasures', 'e1'), { subjectId: '+2348011112222', status: 'pending', requestedAt: serverTimestamp() }));
+    await assertFails(deleteDoc(doc(owner(), 'workspaces', W, 'erasures', 'e1')));
+    await assertFails(updateDoc(doc(owner(), 'workspaces', W, 'erasures', 'e1'), { subjectId: '+2340000000000' }));
+    await assertSucceeds(setDoc(doc(owner(), 'workspaces', W, 'consents', 'k1'), { subjectId: '+2348011112222', purpose: 'Reminders', legalBasis: 'consent', grantedAt: serverTimestamp(), revokedAt: null, by: 'owner1' }));
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'consents', 'k2'), { subjectId: '+2348011112222', purpose: 'Reminders', legalBasis: 'consent', grantedAt: serverTimestamp(), revokedAt: null, by: 'someone-else' }));
+    await assertFails(updateDoc(doc(owner(), 'workspaces', W, 'consents', 'k1'), { purpose: 'Marketing' }));
+    await assertSucceeds(updateDoc(doc(owner(), 'workspaces', W, 'consents', 'k1'), { revokedAt: serverTimestamp() }));
+    await assertFails(getDoc(doc(other(), 'workspaces', W, 'consents', 'k1')));
+  });
+  it('limits devices by plan, keeps readings Worker-only, and makes rules wait for approval', async () => {
+    const hash = 'a'.repeat(64);
+    const dev = (extra = {}) => ({ name: 'Cold room', deviceKey: 'cold-1', kind: 'sensor', tokenHash: hash, createdAt: serverTimestamp(), seq: 0, ...extra });
+    await assertSucceeds(setDoc(doc(owner(), 'workspaces', W, 'devices', 'd_0'), dev()));
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'devices', 'd_1'), dev({ seq: 1 })));             // free plan: 1 device
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'devices', 'd_9'), dev({ tokenHash: 'plain-token' })));
+    await assertFails(updateDoc(doc(owner(), 'workspaces', W, 'devices', 'd_0'), { latest: { temperature: 3 } }));   // no forged telemetry
+    await assertFails(updateDoc(doc(owner(), 'workspaces', W, 'devices', 'd_0'), { lastSeenAt: serverTimestamp() }));
+    await assertSucceeds(updateDoc(doc(owner(), 'workspaces', W, 'devices', 'd_0'), { name: 'Freezer', tokenHash: 'b'.repeat(64) }));
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'devices', 'd_0', 'readings', 'r1'), { metrics: { t: 1 } }));
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'alerts', 'x'), { message: 'fake' }));
+    await assertFails(getDoc(doc(other(), 'workspaces', W, 'devices', 'd_0')));
+    await assertSucceeds(setDoc(doc(owner(), 'workspaces', W, 'alertRules', 'a1'), { deviceId: 'd_0', metric: 'temperature', op: 'gt', threshold: 8, severity: 'high', message: '', enabled: true, createdAt: serverTimestamp(), lastFiredAt: null }));
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'alertRules', 'a2'), { deviceId: 'd_0', metric: 'temperature', op: 'between', threshold: 8, severity: 'high', message: '', enabled: true, createdAt: serverTimestamp(), lastFiredAt: null }));
+
+    const rule = (extra = {}) => ({ name: 'Big booking', trigger: { source: 'event:bookings.booking.created' }, conditions: null, actions: [{ type: 'notify', message: 'hi' }], description: '', enabled: false, approved: false, createdBy: 'owner1', createdAt: serverTimestamp(), seq: 0, ...extra });
+    await assertSucceeds(setDoc(doc(owner(), 'workspaces', W, 'rules', 'r_0'), rule()));
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'rules', 'r_1'), rule({ seq: 1, approved: true, enabled: true })));   // cannot self-approve on create
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'rules', 'r_2'), rule({ seq: 2 })).then(() => setDoc(doc(owner(), 'workspaces', W, 'rules', 'r_3'), rule({ seq: 3 }))).then(() => setDoc(doc(owner(), 'workspaces', W, 'rules', 'r_4'), rule({ seq: 4 }))));   // free plan: 2 rules
+    await assertSucceeds(updateDoc(doc(owner(), 'workspaces', W, 'rules', 'r_0'), { approved: true, enabled: true, approvedBy: 'owner1' }));
+    await assertFails(updateDoc(doc(owner(), 'workspaces', W, 'rules', 'r_0'), { actions: [] }));
+    await assertFails(getDoc(doc(owner(), 'workspaces', W, 'automationMarkers', 'm')));
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'automationRuns', 'x'), { ruleName: 'fake' }));
+  });
   it('lets only the Worker write the audit chain; admins may read it', async () => {
     for (const col of ['audit', 'auditChain', 'auditMeta']) {
       await assertFails(setDoc(doc(owner(), 'workspaces', W, col, 'a1'), { actor: 'owner1', action: 'x', at: serverTimestamp() }));

@@ -78,7 +78,7 @@ export const wsCol = (c: Ctx, name: string) => collection(fb().db, 'workspaces',
 export const canWrite = (c: Ctx): boolean => c.role === 'owner' || c.role === 'admin';
 export function requireAdmin(c: Ctx): void { if (!canWrite(c)) throw new ApiError(403, 'Only a workspace owner or admin can do that.', 'forbidden'); }
 
-const NOUN: Record<EnforcedKey, string> = { bookingsPerMonth: 'bookings a month', staff: 'team members', services: 'services', cmsPages: 'website pages', crmContacts: 'contacts' };
+const NOUN: Record<EnforcedKey, string> = { bookingsPerMonth: 'bookings a month', staff: 'team members', services: 'services', cmsPages: 'website pages', crmContacts: 'contacts', devices: 'devices', rules: 'automations' };
 export const limitError = (c: Ctx, key: EnforcedKey): ApiError =>
   new ApiError(402, `Your ${c.tier} plan includes ${slotLimit(c.tier, key).toLocaleString('en-NG')} ${NOUN[key]}. Upgrade your plan to add more.`, 'plan_limit');
 
