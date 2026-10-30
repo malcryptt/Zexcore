@@ -1,9 +1,11 @@
 // End-to-end: the real dashboard data layer (apps/dashboard/src/lib/fb) against the real security rules, in the emulators.
 import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { emulatorBase, installWorker } from './worker-harness';
 
 vi.stubEnv('VITE_FIREBASE_PROJECT_ID', 'demo-zexcore');
 vi.stubEnv('VITE_FIREBASE_API_KEY', 'demo-key');
 vi.stubEnv('VITE_FIREBASE_APP_ID', '1:1:web:demo');
+installWorker();
 
 type Mod<T> = T extends Promise<infer U> ? U : never;
 let auth: Mod<ReturnType<typeof loadAuth>>, cat: Mod<ReturnType<typeof loadCat>>, bk: Mod<ReturnType<typeof loadBk>>;
@@ -214,9 +216,21 @@ describe('dashboard on Firebase, end to end', () => {
     expect(u.effectiveTier).toBe('free');
     expect(u.usage.services).toEqual({ used: 3, limit: 3 });
     expect((bill.plans() as any).plans.map((p: any) => p.tier)).toContain('growth');
+    await core.flushAudit();
     const a = await bill.auditLog();
     expect(a.entries.length).toBeGreaterThan(5);
+    expect((a.entries[0] as any).hash).toMatch(/^[0-9a-f]{64}$/);
+    expect(await bill.verifyAuditLog()).toMatchObject({ valid: true });
     expect((await bill.payments()).payments).toEqual([]);
+  });
+
+  it('detects a tampered audit entry', async () => {
+    const ctx = await core.loadCtx();
+    const r = await fetch(`${emulatorBase}/workspaces/${ctx.wid}/auditChain/0000000002?updateMask.fieldPaths=action`, {
+      method: 'PATCH', headers: { authorization: 'Bearer owner', 'content-type': 'application/json' }, body: JSON.stringify({ fields: { action: { stringValue: 'booking.cancelled' } } }),
+    });
+    expect(r.ok).toBe(true);
+    expect(await bill.verifyAuditLog()).toMatchObject({ valid: false, brokenSeq: 2 });
   });
 
   it('cannot change its own plan from the browser', async () => {

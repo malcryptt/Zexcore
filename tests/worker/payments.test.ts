@@ -50,7 +50,7 @@ function mockFetch(): typeof fetch {
     }
     if (url.includes('firestore.googleapis.com')) {
       const d = store.get(fsPath(url));
-      return d ? Response.json({ fields: d.fields, updateTime: String(d.v) }) : new Response('{}', { status: 404 });
+      return d ? Response.json({ name: `projects/${PROJECT}/databases/(default)/documents/${fsPath(url)}`, fields: d.fields, updateTime: String(d.v) }) : new Response('{}', { status: 404 });
     }
     if (url.endsWith('/transaction/initialize')) { paystackInit.push(JSON.parse(init.body)); return Response.json({ status: true, data: { authorization_url: 'https://checkout.paystack.com/abc' } }); }
     if (url.includes('/transaction/verify/')) { const ref = decodeURIComponent(url.split('/verify/')[1]!); return Response.json(paystackVerify[ref] ?? { status: false }); }

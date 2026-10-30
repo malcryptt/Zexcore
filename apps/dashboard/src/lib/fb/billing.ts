@@ -1,5 +1,6 @@
 import { getDocs, query, orderBy, limit as qLimit, where, documentId, type QueryDocumentSnapshot } from 'firebase/firestore';
 import { fb, paymentsUrl } from './firebase';
+import { worker } from './worker';
 import { ApiError, iso, loadCtx, monthPrefix, requireAdmin, wsCol } from './core';
 import { LABELS, LIMITS, NGN_PER_USD, PRICES, toLimits, type EnforcedKey } from './plan';
 
@@ -55,6 +56,12 @@ export async function payments(): Promise<{ payments: unknown[] }> {
 
 export async function auditLog(): Promise<{ entries: unknown[] }> {
   const c = await loadCtx(); requireAdmin(c);
-  const s = await getDocs(query(wsCol(c, 'audit'), orderBy('at', 'desc'), qLimit(100)));
-  return { entries: s.docs.map((d, i) => ({ seq: s.size - i, action: d.data().action, entity: d.data().entity, entity_id: d.data().entityId ?? null, principal_type: 'user', created_at: iso(d.data().at) ?? new Date().toISOString(), hash: '' })) };
+  const s = await getDocs(query(wsCol(c, 'auditChain'), orderBy('seq', 'desc'), qLimit(100)));
+  return { entries: s.docs.map((d) => { const x = d.data(); const [entity, ...id] = String(x.target ?? '').split(':'); return { seq: x.seq, action: x.action, entity: entity || null, entity_id: id.join(':') || null, principal_type: 'user', created_at: iso(x.at) ?? new Date().toISOString(), hash: x.hash ?? '' }; }) };
+}
+
+export async function verifyAuditLog(): Promise<unknown> {
+  const c = await loadCtx(); requireAdmin(c);
+  const r = await worker<{ ok: boolean; entries: number; brokenAt?: number; reason?: string; headHash?: string }>('/api/audit/verify', { query: { workspaceId: c.wid } });
+  return { valid: r.ok, total: r.entries, brokenSeq: r.ok ? null : r.brokenAt ?? null, reason: r.ok ? null : r.reason ?? null, headHash: r.headHash ?? null };
 }

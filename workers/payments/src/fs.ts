@@ -82,7 +82,7 @@ export async function fsQuery(env: Env, d: Deps, q: FsQuery): Promise<FsDoc[]> {
     ...(filters.length ? { where: filters.length === 1 ? filters[0] : { compositeFilter: { op: 'AND', filters } } } : {}),
     ...(q.orderBy?.length ? { orderBy: q.orderBy.map((o) => ({ field: { fieldPath: o.field }, direction: o.desc ? 'DESCENDING' : 'ASCENDING' })) } : {}),
     ...(q.limit ? { limit: q.limit } : {}),
-    ...(q.startAfterId ? { startAt: { values: [toFs(q.startAfterId)], before: false } } : {}),
+    ...(q.startAfterId ? { startAt: { values: [{ referenceValue: fsName(env, `${q.parent ? q.parent + '/' : ''}${q.collection}/${q.startAfterId}`) }], before: false } } : {}),
   };
   const r = await d.fetch(`${fsRoot(env)}${q.parent ? `/${q.parent}` : ''}:runQuery`, { method: 'POST', headers: await auth(env, d), body: JSON.stringify({ structuredQuery }) });
   if (!r.ok) throw new Error(`firestore query ${r.status}`);

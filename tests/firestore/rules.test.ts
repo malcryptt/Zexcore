@@ -100,13 +100,14 @@ describe('tenant isolation', () => {
     await assertFails(updateDoc(doc(other(), 'workspaces', W, 'contacts', 'c_0'), { name: 'hacked' }));
     await assertFails(deleteDoc(doc(other(), 'workspaces', W, 'bookings', '202001_0')));
   });
-  it('keeps the audit log append-only and admin-readable', async () => {
-    await assertSucceeds(setDoc(doc(owner(), 'workspaces', W, 'audit', 'a1'), { actor: 'owner1', action: 'x', at: serverTimestamp() }));
-    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'audit', 'a2'), { actor: 'someone-else', action: 'x', at: serverTimestamp() }));
-    await assertFails(updateDoc(doc(owner(), 'workspaces', W, 'audit', 'a1'), { action: 'edited' }));
-    await assertFails(deleteDoc(doc(owner(), 'workspaces', W, 'audit', 'a1')));
-    await assertFails(getDoc(doc(other(), 'workspaces', W, 'audit', 'a1')));
+  it('lets only the Worker write the audit chain; admins may read it', async () => {
+    for (const col of ['audit', 'auditChain', 'auditMeta']) {
+      await assertFails(setDoc(doc(owner(), 'workspaces', W, col, 'a1'), { actor: 'owner1', action: 'x', at: serverTimestamp() }));
+      await assertSucceeds(getDoc(doc(owner(), 'workspaces', W, col, 'a1')));
+      await assertFails(getDoc(doc(other(), 'workspaces', W, col, 'a1')));
+    }
   });
+
 });
 
 describe('plan limits (enforced by numbered slots)', () => {

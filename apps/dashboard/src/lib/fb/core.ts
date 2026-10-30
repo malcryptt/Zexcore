@@ -1,4 +1,5 @@
-import { doc, getDoc, getDocs, collection, query, orderBy, limit as qLimit, runTransaction, serverTimestamp, addDoc, Timestamp, type DocumentData } from 'firebase/firestore';
+import { worker } from './worker';
+import { doc, getDoc, getDocs, collection, query, orderBy, limit as qLimit, runTransaction, serverTimestamp, Timestamp, type DocumentData } from 'firebase/firestore';
 import { fb, isConfigured } from './firebase';
 import { effectiveTier, slotLimit, UNLIMITED_SLOTS, type EnforcedKey, type Tier } from './plan';
 
@@ -66,6 +67,7 @@ export async function loadCtx(force = false): Promise<Ctx> {
       planExpiresAt: iso(w.planExpiresAt), tier: effectiveTier(w.plan as string, exp), role: mem.data().role as Role,
       settings: { ...DEFAULT_SETTINGS, ...(w.settings as Partial<WorkspaceSettings> | undefined) },
     };
+    void flushAudit();
     return cached;
   } catch (e) { throw toApiError(e); }
 }
@@ -112,9 +114,27 @@ export async function claimSlot(c: Ctx, name: string, prefix: string, key: Enfor
   throw new ApiError(409, 'Another change was saved at the same time. Please try again.', 'conflict');
 }
 
-/** Best-effort audit trail (append-only in the rules). Never blocks the action it describes. */
+const AUDIT_Q = 'zx.auditq';
+const readQ = (): { wid: string; action: string; target: string; detail: string }[] => { try { return JSON.parse(localStorage.getItem(AUDIT_Q) ?? '[]'); } catch { return []; } };
+const writeQ = (q: unknown[]): void => { try { localStorage.setItem(AUDIT_Q, JSON.stringify(q.slice(-50))); } catch { /* storage unavailable */ } };
+let flushing = false;
+/** Sends queued entries to the Worker, oldest first; anything that fails stays queued for the next attempt. */
+export async function flushAudit(): Promise<void> {
+  if (flushing) return; flushing = true;
+  try {
+    let q = readQ();
+    while (q.length) {
+      const e = q[0]!;
+      try { await worker('/api/audit', { body: { workspaceId: e.wid, action: e.action, target: e.target, detail: e.detail } }); }
+      catch (err) { if (err instanceof ApiError && err.status >= 400 && err.status < 500 && err.status !== 401 && err.status !== 429) { q = readQ().slice(1); writeQ(q); continue; } break; }
+      q = readQ().slice(1); writeQ(q);
+    }
+  } finally { flushing = false; }
+}
+/** Tamper-evident audit trail: the Worker chains and signs each entry. Queued locally if the Worker is unreachable. Never blocks the action it describes. */
 export async function audit(c: Ctx, action: string, entity: string, entityId: string | null): Promise<void> {
-  try { await addDoc(wsCol(c, 'audit'), { actor: c.uid, at: serverTimestamp(), action, entity, entityId }); } catch { /* the action already succeeded */ }
+  writeQ([...readQ(), { wid: c.wid, action: action.replace(/[^a-z0-9_.]/g, '_'), target: `${entity}${entityId ? ':' + entityId : ''}`, detail: '' }]);
+  void flushAudit();
 }
 
 export const monthPrefix = (ms = Date.now()): string => { const d = new Date(ms); return String(d.getUTCFullYear() * 100 + d.getUTCMonth() + 1); };

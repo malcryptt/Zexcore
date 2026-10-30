@@ -179,12 +179,11 @@ service cloud.firestore {
         allow write: if false;
       }
 
-      match /audit/{id} {
-        allow read: if isAdmin(wid);
-        allow create: if isMember(wid) && request.resource.data.actor == request.auth.uid
-          && request.resource.data.at == request.time;
-        allow update, delete: if false;     // append-only
-      }
+      // Tamper-evident audit trail. Written ONLY by the Worker (service account), which chains each entry to the
+      // previous one and takes the actor from the verified ID token. Admins can read it; nobody can write it here.
+      match /auditChain/{id} { allow read: if isAdmin(wid); allow write: if false; }
+      match /auditMeta/{id}  { allow read: if isAdmin(wid); allow write: if false; }
+      match /audit/{id}      { allow read: if isAdmin(wid); allow write: if false; }   // legacy entries
     }
 
     // Public booking validation ------------------------------------------------------------------------------
