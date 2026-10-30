@@ -19,13 +19,13 @@ export function renderContactPage(): string {
           <div class="page-hero-backdrop" style="background-image: url('/hero-team.jpg');"></div>
           <div class="site-container">
             <div class="page-intro-header page-hero-content-col">
-              <div class="section-eyebrow">GET IN TOUCH</div>
+              <div class="section-eyebrow">ENTERPRISE SUPPORT &amp; ADVISORY</div>
               <h1 class="page-intro-title" style="margin-bottom: 16px;">
-                Talk to a Real Person.<br />
-                <span class="text-brand">Get Answers Today.</span>
+                Direct Advisory &amp;<br />
+                <span class="text-brand">Engineering Support</span>
               </h1>
               <p class="page-intro-desc">
-                No bots. No canned replies. Whether you want a live demo, have pricing questions, or are evaluating ZexCore for your organisation — our team responds directly within <strong>48 hours</strong>.
+                Consult directly with our engineering and operations team. Whether you need a guided live demonstration, custom enterprise deployment review, or architecture briefing — we respond within <strong>24–48 hours</strong>.
               </p>
             </div>
           </div>
@@ -53,7 +53,7 @@ export function renderContactPage(): string {
                     See ZexCore running live — sensors, WhatsApp alerts, client workspaces, and automation in action. No slides, just the real product.
                   </div>
                   <a
-                    href="https://wa.me/2349164703407?text=Hi%2C%20I'd%20like%20to%20book%20a%20free%2015-minute%20ZexCore%20demo"
+                    href="https://wa.me/2348102085840?text=Hi%2C%20I'd%20like%20to%20book%20a%20free%2015-minute%20ZexCore%20demo"
                     target="_blank"
                     rel="noopener noreferrer"
                     id="contact-book-demo-btn"
@@ -79,7 +79,7 @@ export function renderContactPage(): string {
                     </div>
                     <div>
                       <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px;">Phone</div>
-                      <a href="tel:+2349131744823" style="font-size: 0.95rem; font-weight: 700; color: #17191D; text-decoration: none;">+234 913 174 4823</a>
+                      <a href="tel:+2348102085840" style="font-size: 0.95rem; font-weight: 700; color: #17191D; text-decoration: none;">+234 810 208 5840</a>
                     </div>
                   </div>
 
@@ -92,7 +92,7 @@ export function renderContactPage(): string {
                     </div>
                     <div>
                       <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px;">WhatsApp</div>
-                      <a href="https://wa.me/2349164703407" target="_blank" rel="noopener noreferrer" style="font-size: 0.95rem; font-weight: 700; color: #17191D; text-decoration: none;">+234 916 470 3407</a>
+                      <a href="https://wa.me/2348102085840" target="_blank" rel="noopener noreferrer" style="font-size: 0.95rem; font-weight: 700; color: #17191D; text-decoration: none;">+234 810 208 5840</a>
                     </div>
                   </div>
 

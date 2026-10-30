@@ -110,6 +110,19 @@ route('/signup', () => { clearLegacySiteStyles(); leaveApp(); renderSignUp(); })
 route('/forgot-password', () => { clearLegacySiteStyles(); leaveApp(); renderForgot(); });
 route('/reset-password', () => { clearLegacySiteStyles(); leaveApp(); renderReset(); });
 route('/verify-email', () => { clearLegacySiteStyles(); leaveApp(); void renderVerify(); });
+route('/__/auth/action', (ctx) => {
+  clearLegacySiteStyles();
+  leaveApp();
+  const mode = ctx.query.get('mode');
+  const code = ctx.query.get('oobCode') || ctx.query.get('token') || ctx.query.get('code') || '';
+  if (mode === 'resetPassword') {
+    navigate(`/reset-password?oobCode=${encodeURIComponent(code)}`, true);
+  } else if (mode === 'verifyEmail') {
+    navigate(`/verify-email?oobCode=${encodeURIComponent(code)}`, true);
+  } else {
+    navigate('/signin', true);
+  }
+});
 
 route('/app/onboarding', async () => { await renderOnboarding(); });
 appRoute('/app', (v) => renderAppHome(v));

@@ -30,15 +30,38 @@ const authMessage = (e: unknown): ApiError => {
   const code = (e as { code?: string })?.code ?? '';
   const map: Record<string, [number, string]> = {
     'auth/invalid-credential': [401, 'Incorrect email or password.'], 'auth/wrong-password': [401, 'Incorrect email or password.'], 'auth/user-not-found': [401, 'Incorrect email or password.'],
-    'auth/invalid-email': [400, 'Enter a valid email address.'], 'auth/email-already-in-use': [409, 'An account with this email already exists. Try signing in.'],
+    'auth/invalid-email': [400, 'Enter a valid email address.'], 'auth/missing-email': [400, 'Enter a valid email address.'], 'auth/email-already-in-use': [409, 'An account with this email already exists. Try signing in.'],
     'auth/weak-password': [400, 'Use a stronger password (at least 10 characters).'], 'auth/too-many-requests': [429, 'Too many attempts. Please wait a few minutes and try again.'],
-    'auth/user-disabled': [403, 'This account has been disabled.'], 'auth/expired-action-code': [400, 'This link has expired. Request a new one.'],
-    'auth/invalid-action-code': [400, 'This link is no longer valid. Request a new one.'], 'auth/requires-recent-login': [401, 'Sign in again, then retry.'],
+    'auth/user-disabled': [403, 'This account has been disabled.'], 'auth/expired-action-code': [400, 'This reset link has expired. Please request a new one.'],
+    'auth/invalid-action-code': [400, 'This reset link is invalid or has already been used. Please request a new one.'], 'auth/requires-recent-login': [401, 'Sign in again, then retry.'],
     'auth/operation-not-allowed': [503, 'Email sign-in is not switched on yet. Please contact support.'],
   };
   const hit = map[code];
   return hit ? new ApiError(hit[0], hit[1], code) : toApiError(e);
 };
+
+export async function ensureUserWorkspace(user: { uid: string; displayName?: string | null; email?: string | null }): Promise<string> {
+  const { db } = fb();
+  const u = await getDoc(doc(db, 'users', user.uid));
+  const wid = (u.data()?.workspaceIds as string[] | undefined)?.[0];
+  if (wid) return wid;
+
+  const baseName = user.displayName || user.email?.split('@')[0] || 'My Business';
+  const tenantName = (baseName.charAt(0).toUpperCase() + baseName.slice(1)).slice(0, 100);
+  const slug = await freeSlug(tenantName);
+  const newWid = doc(collection(db, 'workspaces')).id;
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'workspaces', newWid), { name: tenantName, slug, ownerUid: user.uid, plan: 'free', createdAt: serverTimestamp(), settings: { ...DEFAULT_SETTINGS, publicName: tenantName } });
+  batch.set(doc(db, 'workspaces', newWid, 'members', user.uid), { role: 'owner', name: user.displayName || tenantName, email: user.email || '', createdAt: serverTimestamp() });
+  batch.set(doc(db, 'slugs', slug), {
+    wid: newWid, ownerUid: user.uid, name: tenantName, timezone: 'Africa/Lagos', currency: 'NGN', bookingEnabled: true, slotMinutes: DEFAULT_SETTINGS.slotMinutes,
+    openMinutes: DEFAULT_SETTINGS.openMinutes, closeMinutes: DEFAULT_SETTINGS.closeMinutes, closedWeekdays: [0], bookingCap: 30,
+    leadMinutes: DEFAULT_SETTINGS.leadMinutes, maxDaysAhead: DEFAULT_SETTINGS.maxDaysAhead,
+  });
+  batch.set(doc(db, 'users', user.uid), { name: user.displayName || tenantName, email: user.email || '', workspaceIds: [newWid], createdAt: serverTimestamp() }, { merge: true });
+  await batch.commit();
+  return newWid;
+}
 
 export async function register(b: { tenantName: string; name: string; email: string; password: string; tenantSlug?: string }): Promise<void> {
   const { auth } = fb();
@@ -109,8 +132,10 @@ export async function googleCreateWorkspace(tenantName: string): Promise<void> {
 
 export async function login(email: string, password: string): Promise<void> {
   const { auth } = fb();
-  try { await signInWithEmailAndPassword(auth, String(email).trim(), password); } catch (e) { throw authMessage(e); }
+  let cred;
+  try { cred = await signInWithEmailAndPassword(auth, String(email).trim(), password); } catch (e) { throw authMessage(e); }
   clearCtx();
+  await ensureUserWorkspace(cred.user).catch(() => undefined);
 }
 
 export async function logout(): Promise<void> {
@@ -130,8 +155,26 @@ export const me = async (): Promise<unknown> => {
 };
 
 export async function forgot(email: string): Promise<void> {
-  try { await sendPasswordResetEmail(fb().auth, String(email).trim()); }
-  catch (e) { const code = (e as { code?: string }).code; if (code !== 'auth/user-not-found') throw authMessage(e); } // never reveal whether an address has an account
+  const clean = String(email ?? '').trim();
+  if (!clean) throw new ApiError(400, 'Enter your email address.');
+  try {
+    const origin = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'https://zexcore-5d6c0.web.app';
+    try {
+      await sendPasswordResetEmail(fb().auth, clean, {
+        url: `${origin}/reset-password`,
+        handleCodeInApp: true,
+      });
+    } catch (err: any) {
+      if (err?.code === 'auth/unauthorized-continue-uri' || err?.code === 'auth/invalid-continue-uri') {
+        await sendPasswordResetEmail(fb().auth, clean);
+      } else {
+        throw err;
+      }
+    }
+  } catch (e: any) {
+    const code = e?.code;
+    if (code !== 'auth/user-not-found') throw authMessage(e);
+  }
 }
 export async function reset(token: string, password: string): Promise<void> {
   if (String(password).length < 10) throw new ApiError(400, 'Use at least 10 characters for your password.');
