@@ -9,6 +9,8 @@ import { realDeps, type Ctx, type Deps, type Env } from './env';
 import { HttpError, cors, json } from './util';
 import { checkout, webhook } from './routes/billing';
 import { audit, verifyAudit } from './routes/audit';
+import { ingest } from './routes/iot';
+import { aiDraft, memberEvent, publicBooked } from './routes/events';
 
 export type { Env, Deps } from './env';
 export { amountMinor, isTier, PLANS } from './routes/billing';
@@ -24,6 +26,10 @@ const ROUTES: Record<string, Handler> = {
   'POST /api/paystack-webhook': (c) => webhook(c.req, c.env, c.d),
   'POST /api/audit': audit,
   'GET /api/audit/verify': verifyAudit,
+  'POST /api/iot/ingest': ingest,
+  'POST /api/events': memberEvent,
+  'POST /api/public/booked': publicBooked,
+  'POST /api/rules/ai-draft': aiDraft,
 };
 
 export async function handle(req: Request, env: Env, d: Deps = realDeps()): Promise<Response> {

@@ -4,14 +4,14 @@ import type { LimitKey, Limits, Labels } from '../limits';
 export type Tier = 'free' | 'starter' | 'growth' | 'agency' | 'enterprise' | 'dedicated';
 const UNLIMITED = null;
 
-// Only the five things the Firebase edition enforces are listed; devices and rules do not exist in this edition.
-export const LIMITS: Record<Tier, Record<'bookingsPerMonth' | 'staff' | 'services' | 'cmsPages' | 'crmContacts', number | null>> = {
-  free:       { bookingsPerMonth: 30,   staff: 1,   services: 3,   cmsPages: 3,   crmContacts: 50 },
-  starter:    { bookingsPerMonth: 200,  staff: 3,   services: 10,  cmsPages: 10,  crmContacts: 500 },
-  growth:     { bookingsPerMonth: 1000, staff: 10,  services: 30,  cmsPages: 50,  crmContacts: 5000 },
-  agency:     { bookingsPerMonth: 5000, staff: 50,  services: 100, cmsPages: 200, crmContacts: 50000 },
-  enterprise: { bookingsPerMonth: UNLIMITED, staff: UNLIMITED, services: UNLIMITED, cmsPages: UNLIMITED, crmContacts: UNLIMITED },
-  dedicated:  { bookingsPerMonth: UNLIMITED, staff: UNLIMITED, services: UNLIMITED, cmsPages: UNLIMITED, crmContacts: UNLIMITED },
+// Everything the database rules enforce per plan. Must match firestore.rules.
+export const LIMITS: Record<Tier, Record<'bookingsPerMonth' | 'staff' | 'services' | 'cmsPages' | 'crmContacts' | 'devices' | 'rules', number | null>> = {
+  free:       { bookingsPerMonth: 30,   staff: 1,   services: 3,   cmsPages: 3,   crmContacts: 50, devices: 1, rules: 2 },
+  starter:    { bookingsPerMonth: 200,  staff: 3,   services: 10,  cmsPages: 10,  crmContacts: 500, devices: 5, rules: 5 },
+  growth:     { bookingsPerMonth: 1000, staff: 10,  services: 30,  cmsPages: 50,  crmContacts: 5000, devices: 25, rules: 25 },
+  agency:     { bookingsPerMonth: 5000, staff: 50,  services: 100, cmsPages: 200, crmContacts: 50000, devices: 100, rules: 100 },
+  enterprise: { bookingsPerMonth: UNLIMITED, staff: UNLIMITED, services: UNLIMITED, cmsPages: UNLIMITED, crmContacts: UNLIMITED, devices: UNLIMITED, rules: UNLIMITED },
+  dedicated:  { bookingsPerMonth: UNLIMITED, staff: UNLIMITED, services: UNLIMITED, cmsPages: UNLIMITED, crmContacts: UNLIMITED, devices: UNLIMITED, rules: UNLIMITED },
 };
 /** The rules treat "unlimited" as this many slots. */
 export const UNLIMITED_SLOTS = 999_999;
@@ -48,5 +48,5 @@ export const slotLimit = (tier: Tier, key: EnforcedKey): number => LIMITS[tier][
 
 export function toLimits(tier: Tier): Limits {
   const l = LIMITS[tier];
-  return { ...l, devices: 0, rules: 0 } as Record<LimitKey, number | null>;
+  return { ...l } as Record<LimitKey, number | null>;
 }

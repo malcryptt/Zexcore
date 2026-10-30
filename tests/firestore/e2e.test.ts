@@ -1,6 +1,6 @@
 // End-to-end: the real dashboard data layer (apps/dashboard/src/lib/fb) against the real security rules, in the emulators.
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { emulatorBase, installWorker } from './worker-harness';
+import { emulatorBase, installWorker, WORKER_URL } from './worker-harness';
 
 vi.stubEnv('VITE_FIREBASE_PROJECT_ID', 'demo-zexcore');
 vi.stubEnv('VITE_FIREBASE_API_KEY', 'demo-key');
@@ -288,5 +288,68 @@ describe('data protection, end to end', () => {
     expect((await comp.listErasures() as any).requests[0].status).toBe('completed');
     await core.flushAudit();
     expect(((await comp.accessLogs(new URLSearchParams())) as any).accessLogs.length).toBeGreaterThan(0);
+  });
+});
+
+describe('devices and automations, end to end', () => {
+  it('registers a device, ingests readings through the Worker, raises an alert and runs an approved rule', async () => {
+    const iot = await import('../../apps/dashboard/src/lib/fb/iot');
+    const rl = await import('../../apps/dashboard/src/lib/fb/rules');
+    const ctx = await core.loadCtx(true);
+    const made: any = await iot.createDevice({ name: 'Cold room', deviceKey: 'cold-room-1', kind: 'temperature_sensor' });
+    expect(made.token).toMatch(/^[0-9a-f]{64}$/);
+    expect(await code(iot.createDevice({ name: 'Second', deviceKey: 'second-1', kind: 'x' }))).toBe('plan_limit');   // free plan: 1 device
+    expect(await code(iot.createDevice({ name: 'Dup', deviceKey: 'cold-room-1', kind: 'x' }))).toBe('conflict');
+    const devId = made.device.id;
+    await iot.createAlertRule({ deviceId: devId, metric: 'temperature', op: 'gt', threshold: 8, severity: 'high', message: 'Cold room too warm' });
+
+    // automations: a draft does nothing until an admin approves it
+    expect(await code(rl.createRule({ name: 'x', trigger: { source: 'event:nonsense' }, actions: [] }))).toBe(400);
+    expect(await code(rl.createRule({ name: 'Bad hook', trigger: { source: 'event:iot.reading' }, actions: [{ type: 'webhook', url: 'http://127.0.0.1/x' }] }))).toBe(400);
+    const rule: any = await rl.createRule({ name: 'Hot reading', trigger: { source: 'event:iot.reading' }, conditions: { field: 'metrics.temperature', op: 'gt', value: 8 }, actions: [{ type: 'notify', message: '{{device.name}} is at {{metrics.temperature}}' }] });
+    expect((await rl.testRun(rule.id, { payload: { metrics: { temperature: 9 } } })) as any).toMatchObject({ wouldExecute: true });
+    expect((await rl.testRun(rule.id, { payload: { metrics: { temperature: 5 } } })) as any).toMatchObject({ conditionsPassed: false, wouldExecute: false });
+
+    const send = (token: string, metrics: object, tenant = ctx.wid) => fetch(`${WORKER_URL}/api/iot/ingest`, { method: 'POST', headers: { 'x-tenant-id': tenant, 'x-device-token': token, 'content-type': 'application/json' }, body: JSON.stringify({ metrics }) });
+    expect((await send('0'.repeat(64), { temperature: 4 })).status).toBe(401);
+    expect((await send(made.token, { 'bad name': 1 })).status).toBe(400);
+    const first = await send(made.token, { temperature: 9.5, door: 'closed' });
+    expect(first.status).toBe(201);
+    expect(await first.json()).toMatchObject({ ok: true, alertsFired: 1 });
+    expect((await send(made.token, { temperature: 9.6 })).status).toBe(429);
+
+    const alerts: any = await iot.recentAlerts();
+    expect(alerts.alerts[0]).toMatchObject({ device_name: 'Cold room', severity: 'high', message: 'Cold room too warm' });
+    expect(((await iot.latest()) as any).latest[0].metrics).toMatchObject({ temperature: 9.5 });
+    expect(((await iot.listDevices()) as any).devices[0].status).toBe('online');
+
+    // not approved yet: nothing ran. Approve, send again, and the run is recorded.
+    expect(((await rl.runs()) as any).runs).toHaveLength(0);
+    await rl.approveRule(rule.id);
+    await new Promise((r) => setTimeout(r, 1100));
+    expect((await send(made.token, { temperature: 12 })).status).toBe(201);
+    const runs: any = await rl.runs();
+    expect(runs.runs[0]).toMatchObject({ rule: 'Hot reading', outcome: 'ok' });
+    expect(runs.runs[0].detail).toContain('Cold room is at 12');
+
+    // a rotated token replaces the old one
+    const rotated = await iot.rotateToken(devId);
+    await new Promise((r) => setTimeout(r, 1100));
+    expect((await send(made.token, { temperature: 4 })).status).toBe(401);
+    expect((await send(rotated.token, { temperature: 4 })).status).toBe(201);
+    // one workspace's device token never works against another
+    expect((await send(rotated.token, { temperature: 4 }, 'AAAAAAAAAAAAAAAAAAAA')).status).toBe(401);
+
+    // the booking page tells the Worker about a public booking exactly once
+    const list: any = await bk.listBookings(new URLSearchParams({ limit: '5' }));
+    const pubBooking = list.bookings.find((b: any) => b.source === 'public');
+    if (pubBooking) {
+      const body = JSON.stringify({ slug: ctx.slug, bookingId: pubBooking.id });
+      const again = await fetch(`${WORKER_URL}/api/public/booked`, { method: 'POST', body });
+      expect(again.status).toBe(200);
+      expect(await again.json()).toMatchObject({ duplicate: true });
+    }
+    await iot.removeDevice(devId);
+    expect(((await iot.listDevices()) as any).devices).toHaveLength(0);
   });
 });

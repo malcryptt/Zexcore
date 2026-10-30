@@ -4,6 +4,7 @@ import { ApiError, audit, iso, limitError, loadCtx, monthPrefix, toApiError, wsC
 import { listServices, listStaff, type ServiceDto, type StaffDto } from './catalog';
 import { CELL_MS, cellsFor, generateSlotStarts, localDateOf, localMidnightUtc, normalizePhone, weekdayOf, type SlotSettings } from './slots';
 import { slotLimit } from './plan';
+import { emit } from './rules';
 
 export interface BookingDto {
   id: string; ref: string; status: string; serviceId: string; serviceName: string; durationMin: number; staffId: string | null; staffName: string | null;
@@ -120,6 +121,7 @@ export async function staffCreate(b: Record<string, unknown>): Promise<{ booking
     nextN: () => nextMonthlyN(c), maxTries: 3,
   });
   void audit(c, 'booking.create', 'booking', made.id);
+  emit('bookings.booking.created', c.wid, made.id);
   const snap = await getDoc(wsDoc(c, 'bookings', made.id));
   const m = await maps(c);
   return { booking: toDto(snap as QueryDocumentSnapshot, m.svcs, m.staff) };

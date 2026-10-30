@@ -5,6 +5,7 @@ import { ago } from '../lib/format';
 import { toast, emptyState, errorState, skeletonRows, confirmDialog, copyText, openModal } from '../lib/ui';
 import { formModal, inp } from './shared';
 import { current, canAdmin } from '../lib/session';
+import { ingestUrl } from '../lib/fb/iot';
 
 const readOnlyNotice = (allowed: boolean): Raw => allowed ? html`` : html`<div class="alert alert-info" style="margin-bottom:16px">${ic('info', 'ico-sm')} Only owners and admins can change this.</div>`;
 
@@ -14,7 +15,7 @@ interface AlertRule { id: string; device_id: string | null; metric: string; op: 
 
 const OPS: Record<string, string> = { gt: 'is above', gte: 'is at least', lt: 'is below', lte: 'is at most', eq: 'equals' };
 const SEV: Record<string, string> = { low: '', medium: 'badge-info', high: 'badge-warning', critical: 'badge-primary' };
-const apiOrigin = (): string => ((import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '')) || location.origin;
+const ingestEndpoint = (): string => ingestUrl();
 
 export async function renderDevices(view: HTMLElement): Promise<void> {
   const can = canAdmin();
@@ -66,7 +67,7 @@ export async function renderDevices(view: HTMLElement): Promise<void> {
   }
 
   function showToken(d: Device, token: string): void {
-    const sample = `curl -X POST ${apiOrigin()}/api/iot/ingest \\\n  -H "x-tenant-id: ${current()?.tenant.id ?? ''}" \\\n  -H "x-device-token: ${token}" \\\n  -H "content-type: application/json" \\\n  -d '{"metrics":{"temperature":4.2}}'`;
+    const sample = `curl -X POST ${ingestEndpoint()} \\\n  -H "x-tenant-id: ${current()?.tenant.id ?? ''}" \\\n  -H "x-device-token: ${token}" \\\n  -H "content-type: application/json" \\\n  -d '{"metrics":{"temperature":4.2}}'`;
     openModal({
       title: 'Device token', subtitle: `Copy this now for ${d.name}. It is shown once and cannot be recovered.`,
       body: html`<div class="stack"><div class="copy-box"><code>${token}</code><button class="btn btn-secondary btn-sm" data-copy-token>${ic('copy', 'ico-sm')} Copy</button></div>
@@ -112,6 +113,9 @@ export async function renderDevices(view: HTMLElement): Promise<void> {
       if (!alerts.length) { mount(host, html`${bar}<div class="card">${emptyState({ icon: 'siren', title: 'No alert rules', text: devices.length ? 'Get flagged when a reading crosses a limit, for example temperature above 8.' : 'Add a device first, then set limits for its readings.' })}</div>`); }
       else mount(host, html`${bar}<div class="card list">${alerts.map((a) => html`<div class="list-item"><span class="icon-tile">${ic('siren')}</span><div class="grow"><b>${name(a.device_id)}: ${a.metric} ${OPS[a.op] ?? a.op} ${a.threshold}</b><div class="muted small">${a.message ?? 'No custom message'}</div></div><span class="badge ${SEV[a.severity] ?? ''}">${a.severity}</span></div>`)}</div>`);
       $('[data-add-alert]', host)?.addEventListener('click', () => addAlert(devices));
+      const feed = await api<{ alerts: { id: string; device_name: string; severity: string; message: string; at: string }[] }>('/api/iot/alert-events').catch(() => ({ alerts: [] }));
+      host.insertAdjacentHTML('beforeend', '<div id="af" style="margin-top:16px"></div>');
+      mount($('#af', host)!, html`<h3 style="margin:0 0 8px;font-size:1rem">Recent alerts</h3><div class="card">${feed.alerts.length === 0 ? emptyState({ icon: 'siren', title: 'No alerts yet', text: 'When a reading crosses one of your limits it appears here.' }) : html`<div class="list">${feed.alerts.map((a) => html`<div class="list-item"><span class="icon-tile">${ic('siren')}</span><div class="grow"><b>${a.message}</b><div class="muted small">${a.device_name} · ${ago(a.at)}</div></div><span class="badge ${SEV[a.severity] ?? ''}">${a.severity}</span></div>`)}</div>`}</div>`);
     } catch (e) { fail(e, () => void showAlerts()); }
   }
 

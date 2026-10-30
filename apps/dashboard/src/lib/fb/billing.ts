@@ -16,11 +16,11 @@ export async function usage(): Promise<unknown> {
   const c = await loadCtx(true);
   const count = async (name: string): Promise<number> => (await getDocs(wsCol(c, name))).size;
   const ym = monthPrefix();
-  const [services, staff, contacts, pages, bookings] = await Promise.all([
-    count('services'), count('staff'), count('contacts'), count('pages'),
+  const [services, staff, contacts, pages, devices, rules, bookings] = await Promise.all([
+    count('services'), count('staff'), count('contacts'), count('pages'), count('devices'), count('rules'),
     getDocs(query(wsCol(c, 'bookings'), where(documentId(), '>=', `${ym}_`), where(documentId(), '<', `${ym}\``))).then((s) => s.size),
   ]);
-  const used: Record<EnforcedKey, number> = { bookingsPerMonth: bookings, staff, services, cmsPages: pages, crmContacts: contacts };
+  const used: Record<EnforcedKey, number> = { bookingsPerMonth: bookings, staff, services, cmsPages: pages, crmContacts: contacts, devices, rules };
   const lim = LIMITS[c.tier];
   const out = Object.fromEntries((Object.keys(used) as EnforcedKey[]).map((k) => [k, { used: used[k], limit: lim[k] }]));
   return { tier: c.plan, effectiveTier: c.tier, usage: out, labels: LABELS };

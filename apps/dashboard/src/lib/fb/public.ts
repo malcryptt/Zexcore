@@ -1,3 +1,4 @@
+import { paymentsUrl } from './firebase';
 import { doc, getDoc, getDocs, query, orderBy, collection } from 'firebase/firestore';
 import { fb } from './firebase';
 import { ApiError, DEFAULT_SETTINGS, toApiError } from './core';
@@ -74,6 +75,8 @@ export async function book(slug: string, b: Record<string, unknown>): Promise<un
     // The public page cannot read bookings, so it picks a random free-looking number below the plan's monthly cap.
     nextN: () => Promise.resolve(Math.floor(Math.random() * p.bookingCap)),
   });
+  // Tell the Worker so the owner is notified and approved automations run. Best effort: the booking already exists.
+  if (paymentsUrl()) void fetch(`${paymentsUrl()}/api/public/booked`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ slug, bookingId: made.id }) }).catch(() => undefined);
   return { booking: { ref: refOf(made.id), status: 'pending', startsAt: made.startsAt, serviceName: service.name }, payment: null };
 }
 

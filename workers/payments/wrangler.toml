@@ -12,3 +12,9 @@ NGN_PER_USD = "1500"
 # Secrets (set in the Cloudflare dashboard, never in this file):
 #   PAYSTACK_SECRET_KEY        Paystack secret key (sk_live_... / sk_test_...)
 #   FIREBASE_SERVICE_ACCOUNT   service-account JSON with the "Cloud Datastore User" role only
+
+# Workers AI (free tier) drafts automation rules; a person always reviews and approves them.
+[ai]
+binding = "AI"
+
+# Optional secrets: RESEND_API_KEY and MAIL_FROM turn on e-mail alerts to the workspace owner.

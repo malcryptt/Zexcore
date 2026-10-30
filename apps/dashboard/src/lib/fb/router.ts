@@ -2,6 +2,8 @@ import { ApiError, toApiError, unavailable, loadCtx } from './core';
 import { fb } from './firebase';
 import * as authApi from './auth';
 import * as cat from './catalog';
+import * as iot from './iot';
+import * as rl from './rules';
 import * as comp from './compliance';
 import * as msg from './messages';
 import * as bk from './bookings';
@@ -94,10 +96,28 @@ on('POST', '/api/compliance/consent/revoke', ({ body }) => comp.revokeConsent(bo
 on('GET', '/api/compliance/consent/:subject', ({ params }) => comp.listConsent(params[0]!));
 on('GET', '/api/compliance/access-logs', ({ query }) => comp.accessLogs(query));
 
-// ── not in this release (need an always-on server) ──
-for (const [prefix, what] of [['/api/iot', 'Device monitoring'], ['/api/rules', 'Automations']] as const) {
-  for (const m of ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']) on(m, `${prefix}(?:/.*)?`, () => { throw unavailable(what); });
-}
+// ── devices ──
+on('GET', '/api/iot/devices', () => iot.listDevices());
+on('POST', '/api/iot/devices', ({ body }) => iot.createDevice(body));
+on('PATCH', '/api/iot/devices/:id', ({ params, body }) => iot.patchDevice(params[0]!, body));
+on('POST', '/api/iot/devices/:id/rotate-token', ({ params }) => iot.rotateToken(params[0]!));
+on('DELETE', '/api/iot/devices/:id', ({ params }) => iot.removeDevice(params[0]!));
+on('GET', '/api/iot/telemetry/latest', () => iot.latest());
+on('GET', '/api/iot/alerts', () => iot.listAlertRules());
+on('POST', '/api/iot/alerts', ({ body }) => iot.createAlertRule(body));
+on('DELETE', '/api/iot/alerts/:id', ({ params }) => iot.removeAlertRule(params[0]!));
+on('GET', '/api/iot/alert-events', () => iot.recentAlerts());
+
+// ── automations ──
+on('GET', '/api/rules', () => rl.listRules());
+on('POST', '/api/rules', ({ body }) => rl.createRule(body));
+on('GET', '/api/rules/runs', () => rl.runs());
+on('POST', '/api/rules/ai-draft', ({ body }) => rl.aiDraft(body));
+on('POST', '/api/rules/:id/approve', ({ params }) => rl.approveRule(params[0]!));
+on('POST', '/api/rules/:id/disable', ({ params }) => rl.setEnabled(params[0]!, false));
+on('POST', '/api/rules/:id/enable', ({ params }) => rl.setEnabled(params[0]!, true));
+on('POST', '/api/rules/:id/test-run', ({ params, body }) => rl.testRun(params[0]!, body));
+on('DELETE', '/api/rules/:id', ({ params }) => rl.removeRule(params[0]!));
 
 export async function dispatch(path: string, method: string, body: unknown): Promise<unknown> {
   const url = new URL(path, 'https://zexcore.local');
