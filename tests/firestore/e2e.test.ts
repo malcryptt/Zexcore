@@ -224,6 +224,26 @@ describe('dashboard on Firebase, end to end', () => {
     expect((await bill.payments()).payments).toEqual([]);
   });
 
+  it('runs the inbox: logs replies, groups by phone, tracks read state', async () => {
+    const msg = await import('../../apps/dashboard/src/lib/fb/messages');
+    const sent: any = await msg.send({ phone: '08011112222', name: 'Ada', body: 'See you at 10' });
+    expect(sent.whatsappUrl).toBe('https://wa.me/2348011112222?text=See%20you%20at%2010');
+    expect(await code(msg.send({ phone: '123', body: 'x' }))).toBe(400);
+    const list: any = await msg.conversations(new URLSearchParams());
+    const conv = list.conversations.find((x: any) => x.phone === '+2348011112222');
+    expect(conv).toMatchObject({ name: 'Ada', lastBody: 'See you at 10', lastDirection: 'out', unread: 0 });
+    const thread: any = await msg.conversation(new URLSearchParams({ phone: '+2348011112222' }));
+    expect(thread.messages).toHaveLength(1);
+    // the public booking made earlier is an inbound request waiting for a reply
+    expect(list.counts.waiting).toBeGreaterThan(0);
+    const waiting: any = await msg.conversations(new URLSearchParams({ filter: 'waiting' }));
+    const w = waiting.conversations[0];
+    expect(w.unread).toBeGreaterThan(0);
+    await msg.markRead({ phone: w.phone });
+    const after: any = await msg.conversations(new URLSearchParams());
+    expect(after.conversations.find((x: any) => x.phone === w.phone).unread).toBe(0);
+  });
+
   it('detects a tampered audit entry', async () => {
     const ctx = await core.loadCtx();
     const r = await fetch(`${emulatorBase}/workspaces/${ctx.wid}/auditChain/0000000002?updateMask.fieldPaths=action`, {

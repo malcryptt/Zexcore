@@ -179,6 +179,22 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // Inbox: replies the team sends (and customer replies they log), and which conversations have been read.
+      match /messages/{id} {
+        allow read: if isMember(wid);
+        allow create: if isMember(wid) && noExtraKeys(['phone', 'name', 'direction', 'kind', 'body', 'createdAt', 'by'])
+          && request.resource.data.phone.matches('^\\+[0-9]{8,15}$')
+          && request.resource.data.direction in ['in', 'out'] && request.resource.data.kind == 'text'
+          && request.resource.data.body is string && request.resource.data.body.size() >= 1 && request.resource.data.body.size() <= 2000
+          && request.resource.data.name is string && request.resource.data.name.size() <= 160
+          && request.resource.data.createdAt == request.time && request.resource.data.by == request.auth.uid;
+        allow update, delete: if false;
+      }
+      match /convState/{phone} {
+        allow read: if isMember(wid);
+        allow write: if isMember(wid) && phone.matches('^\\+[0-9]{8,15}$') && noExtraKeys(['readAt']) && request.resource.data.readAt == request.time;
+      }
+
       // Tamper-evident audit trail. Written ONLY by the Worker (service account), which chains each entry to the
       // previous one and takes the actor from the verified ID token. Admins can read it; nobody can write it here.
       match /auditChain/{id} { allow read: if isAdmin(wid); allow write: if false; }

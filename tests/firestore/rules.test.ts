@@ -100,6 +100,19 @@ describe('tenant isolation', () => {
     await assertFails(updateDoc(doc(other(), 'workspaces', W, 'contacts', 'c_0'), { name: 'hacked' }));
     await assertFails(deleteDoc(doc(other(), 'workspaces', W, 'bookings', '202001_0')));
   });
+  it('lets members log messages in their own name, never edit them, and keeps strangers out', async () => {
+    const msg = (extra = {}) => ({ phone: '+2348011112222', name: 'Ada', direction: 'out', kind: 'text', body: 'See you at 10', createdAt: serverTimestamp(), by: 'owner1', ...extra });
+    await assertSucceeds(setDoc(doc(owner(), 'workspaces', W, 'messages', 'm1'), msg()));
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'messages', 'm2'), msg({ by: 'someone-else' })));
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'messages', 'm3'), msg({ phone: 'not-a-phone' })));
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'messages', 'm4'), msg({ body: '' })));
+    await assertFails(updateDoc(doc(owner(), 'workspaces', W, 'messages', 'm1'), { body: 'edited' }));
+    await assertFails(deleteDoc(doc(owner(), 'workspaces', W, 'messages', 'm1')));
+    await assertFails(getDoc(doc(other(), 'workspaces', W, 'messages', 'm1')));
+    await assertFails(setDoc(doc(other(), 'workspaces', W, 'messages', 'm5'), msg()));
+    await assertSucceeds(setDoc(doc(owner(), 'workspaces', W, 'convState', '+2348011112222'), { readAt: serverTimestamp() }));
+    await assertFails(setDoc(doc(anon(), 'workspaces', W, 'messages', 'm6'), msg()));
+  });
   it('lets only the Worker write the audit chain; admins may read it', async () => {
     for (const col of ['audit', 'auditChain', 'auditMeta']) {
       await assertFails(setDoc(doc(owner(), 'workspaces', W, col, 'a1'), { actor: 'owner1', action: 'x', at: serverTimestamp() }));

@@ -8,7 +8,7 @@ import { slotLimit } from './plan';
 export interface BookingDto {
   id: string; ref: string; status: string; serviceId: string; serviceName: string; durationMin: number; staffId: string | null; staffName: string | null;
   customerName: string; customerPhone: string; customerEmail: string | null; startsAt: string; endsAt: string; currency: string; priceMinor: number;
-  depositMinor: number; depositStatus: 'none'; paymentReference: null; notes: string | null; source: string;
+  depositMinor: number; depositStatus: 'none'; paymentReference: null; notes: string | null; source: string; createdAt: string | null;
 }
 
 export const refOf = (id: string): string => `ZX-${id.replace('_', '-')}`;
@@ -20,7 +20,7 @@ function toDto(d: QueryDocumentSnapshot, svcs: Map<string, ServiceDto>, staff: M
     id: d.id, ref: refOf(d.id), status: x.status, serviceId: x.serviceId, serviceName: s?.name ?? 'Service', durationMin: s?.durationMin ?? Math.round((x.endsAt.toMillis() - x.startsAt.toMillis()) / 60000),
     staffId: x.staffId ?? null, staffName: p?.name ?? null, customerName: x.customerName, customerPhone: x.customerPhone, customerEmail: x.customerEmail ?? null,
     startsAt: iso(x.startsAt)!, endsAt: iso(x.endsAt)!, currency: 'NGN', priceMinor: s?.priceMinor ?? 0, depositMinor: 0, depositStatus: 'none', paymentReference: null,
-    notes: x.notes ?? null, source: x.source ?? 'staff',
+    notes: x.notes ?? null, source: x.source ?? 'staff', createdAt: iso(x.createdAt),
   };
 }
 

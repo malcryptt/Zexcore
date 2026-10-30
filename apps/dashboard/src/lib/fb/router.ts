@@ -2,6 +2,7 @@ import { ApiError, toApiError, unavailable, loadCtx } from './core';
 import { fb } from './firebase';
 import * as authApi from './auth';
 import * as cat from './catalog';
+import * as msg from './messages';
 import * as bk from './bookings';
 import * as pub from './public';
 import * as crm from './crm';
@@ -26,8 +27,6 @@ on('POST', '/api/auth/password/reset', async ({ body }) => { await authApi.reset
 on('POST', '/api/auth/password/change', async ({ body }) => { await authApi.changePassword(body.currentPassword, body.newPassword); return { token: 'firebase' }; });
 on('POST', '/api/auth/email/verify', async ({ body }) => { await authApi.verifyEmail(body.token); return { ok: true }; });
 on('POST', '/api/auth/email/resend', async () => { await authApi.resendVerification(); return { ok: true }; });
-on('GET', '/api/auth/google/config', () => ({ clientId: null }));
-on('POST', '/api/auth/google', () => { throw unavailable('Google sign-in'); });
 // Firebase signs a device out from the Firebase console / by password change; per-device session lists are not exposed.
 on('GET', '/api/auth/sessions', () => ({ sessions: [] }));
 on('POST', '/api/auth/sessions/revoke-others', () => { throw unavailable('Signing out other devices'); });
@@ -50,11 +49,10 @@ on('GET', '/api/bookings', ({ query }) => bk.listBookings(query));
 on('POST', '/api/bookings', ({ body }) => bk.staffCreate(body));
 on('PATCH', '/api/bookings/:id', ({ params, body }) => bk.patchBooking(params[0]!, body));
 on('POST', '/api/bookings/:id/payment-link', () => { throw unavailable('Deposit payment links'); });
-// WhatsApp conversations are not stored in this release; the inbox simply shows as empty.
-on('GET', '/api/bookings/conversations', () => ({ conversations: [], counts: { all: 0, waiting: 0, booked: 0 } }));
-on('GET', '/api/bookings/conversation', () => { throw unavailable('Messaging'); });
-on('POST', '/api/bookings/conversation/read', () => ({ ok: true }));
-on('POST', '/api/bookings/messages', () => { throw unavailable('Messaging'); });
+on('GET', '/api/bookings/conversations', ({ query }) => msg.conversations(query));
+on('GET', '/api/bookings/conversation', ({ query }) => msg.conversation(query));
+on('POST', '/api/bookings/conversation/read', ({ body }) => msg.markRead(body));
+on('POST', '/api/bookings/messages', ({ body }) => msg.send(body));
 
 // ── public booking page ──
 on('GET', '/api/public/:slug', ({ params }) => pub.profile(params[0]!));
