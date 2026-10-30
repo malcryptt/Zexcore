@@ -9,7 +9,7 @@ export function renderHomePage(): string {
       <a href="/signup" data-link class="btn btn-primary btn-lg" id="btn-hero-primary">Start free</a>
       <a href="/architecture" data-link class="btn btn-secondary btn-lg" id="btn-hero-secondary">See how it is built</a>
     </div>
-    <div class="rp-hero-strip"><span>No card to start</span><span>Pay in naira with Paystack</span><span>Your data stays in your workspace</span></div>
+    <div class="rp-hero-strip"><span>No card to start</span><span>Pay with card or Paystack</span><span>Your data stays in your workspace</span></div>
   </div></div></section>`;
 
   return shell('home',
