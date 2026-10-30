@@ -2,6 +2,7 @@ import type { Deps, Env } from '../env';
 import { verifyFirebaseIdToken } from '../auth';
 import { fsCommit, fsGet } from '../fs';
 import { ID_RE, json, paystackSignature, randomRef, timingSafeEqual } from '../util';
+import { settleDeposit } from './deposits';
 
 // ───────────── pricing (mirrors apps/api/src/billing/plans.ts) ─────────────
 export type Tier = 'starter' | 'growth' | 'agency' | 'enterprise' | 'dedicated';
@@ -66,6 +67,7 @@ export async function webhook(req: Request, env: Env, d: Deps): Promise<Response
   if (event?.event !== 'charge.success') return json({ ok: true, ignored: true });
   const reference = event.data?.reference;
   const metaWid = event.data?.metadata?.workspaceId;
+  if (event.data?.metadata?.kind === 'deposit' && typeof reference === 'string' && typeof metaWid === 'string' && ID_RE.test(metaWid)) return json({ ok: true, deposit: await settleDeposit(env, d, metaWid, reference) });
   if (typeof reference !== 'string' || typeof metaWid !== 'string' || !ID_RE.test(metaWid)) return json({ ok: true, ignored: true });
 
   // Our own record of what was asked for is the only source of tier, cycle, currency and price.

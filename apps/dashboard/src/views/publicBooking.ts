@@ -13,10 +13,8 @@ interface Profile {
   services: { id: string; name: string; description: string | null; durationMin: number; priceMinor: number }[];
   staff: { id: string; name: string; title: string | null }[];
 }
-interface PayInfo { ref: string; status: string; depositStatus: string; amountMinor: number; currency: string; email: string | null; startsAt: string; serviceName: string; paystackPublicKey: string | null }
+interface PayInfo { ref: string; status: string; depositStatus: string; amountMinor: number; currency: string; startsAt: string; serviceName: string }
 
-let paystackP: Promise<void> | null = null;
-const loadPaystack = (): Promise<void> => (paystackP ??= new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://js.paystack.co/v1/inline.js'; s.onload = () => res(); s.onerror = () => rej(new Error('blocked')); document.head.appendChild(s); }));
 
 function head(name: string, sub: string): Raw {
   return html`<header class="public-head"><div class="row between"><div class="row"><span class="avatar red" style="border-radius:12px">${initials(name)}</span><div><b style="font-size:1.0625rem">${name}</b><div class="muted small">${sub}</div></div></div><span class="badge" title="Powered by ZexCore">${brand()}</span></div></header>`;
@@ -44,38 +42,21 @@ export async function renderPublicBooking(slug: string, payRef: string | null): 
         <p class="muted small" style="margin-top:16px">Save your reference. ${p.business.phone ? html`Questions? Call <a href="tel:${p.business.phone}" style="text-decoration:underline">${p.business.phone}</a>.` : ''}</p></div></div>`);
   };
 
-  const pollPaid = async (payment: string): Promise<boolean> => {
-    for (let i = 0; i < 12; i++) {
-      await new Promise((r) => setTimeout(r, 2000));
-      try { const s = await api<PayInfo>(`/api/public/${slug}/payments/${payment}`, { auth: false }); if (s.depositStatus === 'paid') { showReceipt(s.ref, s.serviceName, s.startsAt, s.status, true); return true; } } catch { /* keep polling */ }
-    }
-    return false;
-  };
-  const pay = async (key: string | null, ref: string, amount: number, currency: string, email: string, onFail: (m: string) => void): Promise<void> => {
-    if (!key) { onFail('Online payment is not available right now. The business will contact you to arrange your deposit.'); return; }
-    try {
-      await loadPaystack();
-      (window as any).PaystackPop.setup({
-        key, email, amount, currency, ref,
-        callback: () => { mount(root, html`<div class="auth-wrap"><div class="auth-card" style="text-align:center"><div class="spinner" style="margin:0 auto 14px"></div><h3>Confirming your payment…</h3><p class="muted small" style="margin-top:6px">This usually takes a few seconds.</p></div></div>`); void pollPaid(ref).then((ok) => { if (!ok) mount(root, html`<div class="auth-wrap"><div class="auth-card" style="text-align:center"><h3>Payment received</h3><p class="muted" style="margin:8px 0">We are still confirming it. You'll be contacted shortly. Reference <span class="mono">${ref}</span>.</p></div></div>`); }); },
-        onClose: () => {},
-      }).openIframe();
-    } catch { onFail('Could not open the payment window. Disable ad blockers and try again.'); }
-  };
+  const status = (ref: string): Promise<PayInfo> => api<PayInfo>(`/api/public/${slug}/payments/${encodeURIComponent(ref)}`, { auth: false });
+  const waiting = (): void => mount(root, html`<div class="auth-wrap"><div class="auth-card" style="text-align:center"><div class="spinner" style="margin:0 auto 14px"></div><h3>Confirming your payment…</h3><p class="muted small" style="margin-top:6px">This usually takes a few seconds.</p></div></div>`);
 
-  // ── Pay-link mode: a booking already exists, just collect the deposit ──
+  // ── Returning from Paystack: confirm the deposit with the server (it verifies with Paystack itself) ──
   if (payRef) {
-    try {
-      const s = await api<PayInfo>(`/api/public/${slug}/payments/${encodeURIComponent(payRef)}`, { auth: false });
-      if (s.depositStatus === 'paid') { showReceipt(s.ref, s.serviceName, s.startsAt, s.status, true); return; }
-      mount(root, html`<div class="public-wrap">${head(p.business.name, sub)}
-        <div class="card card-pad stack"><h2>Secure your booking</h2>
-          <div class="booking-meta"><div class="l"><span class="muted">Service</span><b>${s.serviceName}</b></div><div class="l"><span class="muted">When</span><b>${whenLabel(s.startsAt, off)}</b></div><div class="l"><span class="muted">Reference</span><span class="ref">${s.ref}</span></div></div>
-          <div id="perr" class="alert alert-error hidden" role="alert"></div>
-          <button class="btn btn-primary btn-lg btn-block" data-pay>${ic('lock', 'ico-sm')} Pay ${money(s.amountMinor, s.currency)} deposit</button>
-          <p class="muted small" style="text-align:center">Secured by Paystack. The balance is settled at your appointment.</p></div></div>`);
-      $('[data-pay]')!.addEventListener('click', (e) => void busy(e.currentTarget as HTMLButtonElement, () => pay(s.paystackPublicKey, payRef, s.amountMinor, s.currency, s.email || 'customer@zexcore.app', (m) => { const x = $('#perr')!; x.textContent = m; x.classList.remove('hidden'); })));
-    } catch { mount(root, html`<div class="public-wrap">${head(p.business.name, sub)}<div class="card">${html`<div class="empty"><h3>This payment link is not valid</h3><p>Ask ${p.business.name} to send you a new one.</p></div>`}</div></div>`); }
+    waiting();
+    for (let i = 0; i < 10; i++) {
+      try {
+        const s = await status(payRef);
+        if (s.depositStatus === 'paid') { showReceipt(s.ref, s.serviceName, s.startsAt, s.status, true); return; }
+        if (s.depositStatus === 'mismatch') break;
+      } catch (e) { if (e instanceof ApiError && e.status === 404) break; }
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+    mount(root, html`<div class="public-wrap">${head(p.business.name, sub)}<div class="card"><div class="empty"><h3>We have not received your payment yet</h3><p>If you were charged, your booking will be confirmed automatically within a few minutes. Otherwise ${p.business.phone ? html`call ${p.business.phone}` : 'contact the business'} to complete it.</p></div></div></div>`);
     return;
   }
 
@@ -145,9 +126,9 @@ export async function renderPublicBooking(slug: string, payRef: string | null): 
     if (needDeposit && !/^\S+@\S+\.\S+$/.test(email)) return fail('Please enter a valid email for your receipt.');
     await busy(btn, async () => {
       try {
-        const r = await api<{ booking: { ref: string; status: string; startsAt: string; serviceName: string }; payment: { reference: string; amountMinor: number; currency: string; email: string } | null }>(`/api/public/${slug}/bookings`, { method: 'POST', auth: false, body: { serviceId: st.serviceId, staffId: st.staffId || null, customerName: name, customerPhone: phone, customerEmail: email || null, startsAt: st.slot } });
-        if (!r.payment) { showReceipt(r.booking.ref, r.booking.serviceName, r.booking.startsAt, r.booking.status, false); return; }
-        await pay(p.paystackPublicKey, r.payment.reference, r.payment.amountMinor, r.payment.currency, r.payment.email, (m) => { showReceipt(r.booking.ref, r.booking.serviceName, r.booking.startsAt, r.booking.status, false); toast(m, 'info'); });
+        const r = await api<{ booking: { ref: string; status: string; startsAt: string; serviceName: string }; payment: { reference: string; amountMinor: number; authorizationUrl: string } | null }>(`/api/public/${slug}/bookings`, { method: 'POST', auth: false, body: { serviceId: st.serviceId, staffId: st.staffId || null, customerName: name, customerPhone: phone, customerEmail: email || null, startsAt: st.slot } });
+        if (!r.payment) { showReceipt(r.booking.ref, r.booking.serviceName, r.booking.startsAt, r.booking.status, false); if (needDeposit) toast('Your request is in. The business will arrange your deposit with you.', 'info'); return; }
+        location.assign(r.payment.authorizationUrl);
       } catch (e) { fail(e instanceof ApiError ? e.message : 'Could not complete your booking'); if (e instanceof ApiError && e.status === 409) void loadSlots(); }
     });
   }

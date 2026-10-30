@@ -1,26 +1,35 @@
-import { doc, getDoc, getDocs, query, where, orderBy, limit as qLimit, documentId, serverTimestamp, Timestamp, writeBatch, type QueryDocumentSnapshot } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, getDocs, query, where, orderBy, limit as qLimit, documentId, serverTimestamp, Timestamp, writeBatch, type QueryDocumentSnapshot } from 'firebase/firestore';
 import { fb } from './firebase';
 import { ApiError, audit, iso, limitError, loadCtx, monthPrefix, toApiError, wsCol, wsDoc, type Ctx } from './core';
 import { listServices, listStaff, type ServiceDto, type StaffDto } from './catalog';
 import { CELL_MS, cellsFor, generateSlotStarts, localDateOf, localMidnightUtc, normalizePhone, weekdayOf, type SlotSettings } from './slots';
 import { slotLimit } from './plan';
+import { worker } from './worker';
 import { emit } from './rules';
 
 export interface BookingDto {
   id: string; ref: string; status: string; serviceId: string; serviceName: string; durationMin: number; staffId: string | null; staffName: string | null;
   customerName: string; customerPhone: string; customerEmail: string | null; startsAt: string; endsAt: string; currency: string; priceMinor: number;
-  depositMinor: number; depositStatus: 'none'; paymentReference: null; notes: string | null; source: string; createdAt: string | null;
+  depositMinor: number; depositStatus: 'none' | 'unpaid' | 'paid'; paymentReference: string | null; notes: string | null; source: string; createdAt: string | null;
 }
 
 export const refOf = (id: string): string => `ZX-${id.replace('_', '-')}`;
 
-function toDto(d: QueryDocumentSnapshot, svcs: Map<string, ServiceDto>, staff: Map<string, StaffDto>): BookingDto {
+const depOf = (c: Ctx): Dep => ({ enabled: c.settings.depositEnabled, minor: c.settings.depositMinor });
+interface Dep { enabled: boolean; minor: number }
+/** A public booking made while deposits are on is "unpaid" until the Worker (or staff) records the payment. */
+function deposit(x: Record<string, any>, price: number, dep: Dep): { depositMinor: number; depositStatus: 'none' | 'unpaid' | 'paid'; paymentReference: string | null } {
+  if (x.depositStatus === 'paid') return { depositMinor: Number(x.depositMinor) || 0, depositStatus: 'paid', paymentReference: x.paymentReference ?? null };
+  const owed = x.source === 'public' && dep.enabled && dep.minor > 0 && x.status !== 'cancelled';
+  return owed ? { depositMinor: price > 0 ? Math.min(dep.minor, price) : dep.minor, depositStatus: 'unpaid', paymentReference: null } : { depositMinor: 0, depositStatus: 'none', paymentReference: null };
+}
+function toDto(d: QueryDocumentSnapshot, svcs: Map<string, ServiceDto>, staff: Map<string, StaffDto>, dep: Dep): BookingDto {
   const x = d.data();
   const s = svcs.get(x.serviceId), p = staff.get(x.staffId);
   return {
     id: d.id, ref: refOf(d.id), status: x.status, serviceId: x.serviceId, serviceName: s?.name ?? 'Service', durationMin: s?.durationMin ?? Math.round((x.endsAt.toMillis() - x.startsAt.toMillis()) / 60000),
     staffId: x.staffId ?? null, staffName: p?.name ?? null, customerName: x.customerName, customerPhone: x.customerPhone, customerEmail: x.customerEmail ?? null,
-    startsAt: iso(x.startsAt)!, endsAt: iso(x.endsAt)!, currency: 'NGN', priceMinor: s?.priceMinor ?? 0, depositMinor: 0, depositStatus: 'none', paymentReference: null,
+    startsAt: iso(x.startsAt)!, endsAt: iso(x.endsAt)!, currency: 'NGN', priceMinor: s?.priceMinor ?? 0, ...deposit(x, s?.priceMinor ?? 0, dep),
     notes: x.notes ?? null, source: x.source ?? 'staff', createdAt: iso(x.createdAt),
   };
 }
@@ -124,7 +133,7 @@ export async function staffCreate(b: Record<string, unknown>): Promise<{ booking
   emit('bookings.booking.created', c.wid, made.id);
   const snap = await getDoc(wsDoc(c, 'bookings', made.id));
   const m = await maps(c);
-  return { booking: toDto(snap as QueryDocumentSnapshot, m.svcs, m.staff) };
+  return { booking: toDto(snap as QueryDocumentSnapshot, m.svcs, m.staff, depOf(c)) };
 }
 
 // ───────────── read ─────────────
@@ -141,7 +150,7 @@ export async function listBookings(params: URLSearchParams): Promise<{ bookings:
     if (to) parts.push(where('startsAt', '<=', Timestamp.fromDate(new Date(to))));
     q = query(wsCol(c, 'bookings'), ...parts, orderBy('startsAt'), qLimit(500));
   } else q = query(wsCol(c, 'bookings'), orderBy('startsAt', 'desc'), qLimit(500));
-  let rows = (await getDocs(q)).docs.map((d) => toDto(d, m.svcs, m.staff));
+  let rows = (await getDocs(q)).docs.map((d) => toDto(d, m.svcs, m.staff, depOf(c)));
 
   const now = Date.now();
   const upcoming = (b: BookingDto) => new Date(b.startsAt).getTime() >= now && (b.status === 'pending' || b.status === 'confirmed');
@@ -162,7 +171,15 @@ export async function patchBooking(id: string, b: Record<string, unknown>): Prom
   const snap = await getDoc(ref);
   if (!snap.exists()) throw new ApiError(404, 'That booking no longer exists.');
   const cur = snap.data();
-  if (b.markDepositPaid) throw new ApiError(400, 'Online deposits are not available in this release yet.', 'unavailable');
+
+  if (b.markDepositPaid) {
+    const row = toDto(snap as QueryDocumentSnapshot, new Map(), new Map(), depOf(c));
+    const minor = Math.round(Number(b.depositMinor ?? row.depositMinor));
+    if (!(minor > 0)) throw new ApiError(400, 'There is no deposit to record on this booking.');
+    await updateDoc(ref, { depositStatus: 'paid', depositMinor: minor, paymentReference: 'recorded-by-staff', ...(cur.status === 'pending' ? { status: 'confirmed' } : {}) }).catch((e) => { throw toApiError(e); });
+    void audit(c, 'booking.deposit.recorded', 'booking', id);
+    return { ok: true, id };
+  }
 
   if (b.startsAt !== undefined) {
     // Moving a booking creates a fresh booking at the new time and removes the old one in one atomic step: the
@@ -231,7 +248,8 @@ export async function summary(): Promise<unknown> {
     getDocs(query(wsCol(c, 'bookings'), where('status', '==', 'pending'), qLimit(200))),
   ]);
   const sm = new Map(svcs.map((x) => [x.id, x])), tm = new Map(staff.map((x) => [x.id, x]));
-  const rows = wk.docs.map((d) => toDto(d, sm, tm)).filter((b) => b.status !== 'cancelled');
+  const rows = wk.docs.map((d) => toDto(d, sm, tm, depOf(c))).filter((b) => b.status !== 'cancelled');
+  const unpaid = rows.filter((b) => b.depositStatus === 'unpaid' && b.status !== 'completed' && b.status !== 'no_show');
   const dayStart = localMidnightUtc(today, off)!;
   const perDay = [0, 0, 0, 0, 0, 0, 0];
   const names = new Map<string, number>();
@@ -241,10 +259,22 @@ export async function summary(): Promise<unknown> {
   }
   return {
     businessName: s.publicName ?? c.wsName, currency: 'NGN', today, utcOffsetMinutes: off,
-    setup: { onboarded: s.onboarded, services: svcs.length, staff: staff.length, depositEnabled: false },
+    setup: { onboarded: s.onboarded, services: svcs.length, staff: staff.length, depositEnabled: s.depositEnabled },
     todayBookings: rows.filter((b) => { const t = new Date(b.startsAt).getTime(); return t >= dayStart && t < dayStart + 86_400_000; }),
-    week: { total: rows.length, depositsMinor: 0, noShows: rows.filter((b) => b.status === 'no_show').length, perDay },
-    attention: { pending: pend.size, unpaidCount: 0, unpaidMinor: 0, waitingReplies: 0 },
+    week: { total: rows.length, depositsMinor: rows.reduce((n, b) => n + (b.depositStatus === 'paid' ? b.depositMinor : 0), 0), noShows: rows.filter((b) => b.status === 'no_show').length, perDay },
+    attention: { pending: pend.size, unpaidCount: unpaid.length, unpaidMinor: unpaid.reduce((n, b) => n + b.depositMinor, 0), waitingReplies: 0 },
     popularServices: [...names].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([name, count]) => ({ name, count, pct: rows.length ? Math.round((count / rows.length) * 100) : 0 })),
   };
+}
+
+/** Creates a Paystack checkout link for a booking's deposit, for the business to send to the customer. */
+export async function paymentLink(id: string, b: Record<string, unknown>): Promise<{ url: string; message: string; phone: string; reference: string; amountMinor: number }> {
+  const c = await loadCtx();
+  const snap = await getDoc(wsDoc(c, 'bookings', id));
+  if (!snap.exists()) throw new ApiError(404, 'That booking no longer exists.');
+  const x = snap.data();
+  const r = await worker<{ authorizationUrl: string; reference: string; amountMinor: number }>('/api/deposit/link', { method: 'POST', body: { workspaceId: c.wid, bookingId: id, email: b?.email ?? x.customerEmail ?? '' } });
+  void audit(c, 'booking.deposit.link', 'booking', id);
+  return { url: r.authorizationUrl, reference: r.reference, amountMinor: r.amountMinor, phone: String(x.customerPhone ?? ''),
+    message: `Hello ${x.customerName}, here is the link to pay your deposit for booking ${refOf(id)}: ${r.authorizationUrl}` };
 }
