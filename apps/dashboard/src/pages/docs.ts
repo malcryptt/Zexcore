@@ -22,6 +22,9 @@ const ARTICLES: Article[] = [
   { id: 'payments', group: 'Account', title: 'Payments with Paystack', body: `
     <p>Upgrading opens Paystack checkout. When the payment succeeds, Paystack notifies our secure payments worker. The worker verifies the signature, independently confirms the transaction with Paystack, then activates the plan. Replays are ignored.</p>
     <p>The plan is never changed by the browser directly, so closing the tab mid-payment cannot lose or fake an upgrade.</p>` },
+  { id: 'deposits', group: 'Account', title: 'Customer deposits', body: `
+    <p>Owners add the bank account that should receive deposits in Settings. We check the account name with the bank through Paystack before saving, and only the last four digits are kept. Deposits are paid by the customer through Paystack checkout straight into that account.</p>
+    <p>The deposit amount is decided on the server from your settings, never by the browser. A booking is confirmed only after the payments worker confirms the full amount with Paystack, and a webhook completes it even if the customer closes the page. You can also send any booking a payment link, or record a deposit you received another way.</p>` },
   { id: 'data', group: 'Platform', title: 'Data Model', body: `<p>Everything a business owns sits under one workspace path, isolated from every other tenant on the platform.</p>` + code(
 `workspaces/{id}
   <b>members</b> · <b>services</b> · <b>staff</b> · <b>bookings</b> · <b>locks</b>
@@ -30,7 +33,7 @@ const ARTICLES: Article[] = [
     <p>There is no application server. Data-layer access policies are the boundary: workspace membership, role, data shape and plan limits are all verified before a write is accepted. See the <a href="/security" data-link>security model</a> and <a href="/architecture" data-link>architecture overview</a> for full details.</p>` },
   { id: 'worker', group: 'Platform', title: 'Payments Worker API', body: `<p>A small, isolated serverless worker handles all payment processing. Endpoints:</p>` + table(
       ['Endpoint', 'Purpose'],
-      [['GET /api/health', 'Liveness check.'], ['POST /api/checkout', 'Initiates Paystack checkout for the signed-in workspace owner. Requires a valid identity token.'], ['POST /api/paystack-webhook', 'Receives Paystack events. Requires a valid HMAC signature.']]) },
+      [['GET /api/health', 'Liveness check.'], ['POST /api/checkout', 'Initiates Paystack checkout for the signed-in workspace owner. Requires a valid identity token.'], ['POST /api/paystack-webhook', 'Receives Paystack events. Requires a valid HMAC signature.'], ['POST /api/payout/setup', 'Owner only. Verifies a bank account and creates the payout account for deposits.'], ['POST /api/public/deposit', 'Starts a deposit payment for a booking just made on the public page.'], ['POST /api/deposit/link', 'Team members: payment link for an existing booking.'], ['GET /api/public/deposit-status', 'Confirms with Paystack whether a deposit was paid.']]) },
   { id: 'deploy', group: 'Platform', title: 'Deploying Your Own', body: `
     <p>ZexCore is a cloud-hosted application with a single serverless payments worker. Deployment is fully automated through CI.</p>
     <ol><li>Configure cloud authentication (email/password sign-in) and a managed database.</li>

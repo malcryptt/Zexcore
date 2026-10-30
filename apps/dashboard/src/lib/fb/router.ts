@@ -10,6 +10,7 @@ import * as bk from './bookings';
 import * as pub from './public';
 import * as crm from './crm';
 import * as bill from './billing';
+import * as payout from './payout';
 
 type Params = string[];
 interface Req { method: string; params: Params; query: URLSearchParams; body: Record<string, any> }
@@ -51,7 +52,10 @@ on('GET', '/api/bookings/customers', ({ query }) => bk.customers(query));
 on('GET', '/api/bookings', ({ query }) => bk.listBookings(query));
 on('POST', '/api/bookings', ({ body }) => bk.staffCreate(body));
 on('PATCH', '/api/bookings/:id', ({ params, body }) => bk.patchBooking(params[0]!, body));
-on('POST', '/api/bookings/:id/payment-link', () => { throw unavailable('Deposit payment links'); });
+on('POST', '/api/bookings/:id/payment-link', ({ params, body }) => bk.paymentLink(params[0]!, body));
+on('GET', '/api/payout', () => payout.getPayout());
+on('GET', '/api/payout/banks', () => payout.listBanks());
+on('POST', '/api/payout', ({ body }) => payout.savePayout(body));
 on('GET', '/api/bookings/conversations', ({ query }) => msg.conversations(query));
 on('GET', '/api/bookings/conversation', ({ query }) => msg.conversation(query));
 on('POST', '/api/bookings/conversation/read', ({ body }) => msg.markRead(body));
@@ -61,7 +65,7 @@ on('POST', '/api/bookings/messages', ({ body }) => msg.send(body));
 on('GET', '/api/public/:slug', ({ params }) => pub.profile(params[0]!));
 on('GET', '/api/public/:slug/availability', ({ params, query }) => pub.slots(params[0]!, query));
 on('POST', '/api/public/:slug/bookings', ({ params, body }) => pub.book(params[0]!, body));
-on('GET', '/api/public/:slug/payments/:ref', () => pub.payment());
+on('GET', '/api/public/:slug/payments/:ref', ({ params }) => pub.payment(params[0]!, params[1]!));
 
 // ── CRM + website pages ──
 on('GET', '/api/crm/stages', () => crm.listStages());

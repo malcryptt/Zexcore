@@ -319,3 +319,32 @@ describe('plan payments (written only by the payments Worker)', () => {
     await assertFails(deleteDoc(doc(owner(), 'workspaces', W, 'payments', 'zx_ref1')));
   });
 });
+
+describe('deposits and payouts (written only by the payments Worker)', () => {
+  beforeEach(async () => {
+    await createWorkspace(owner());
+    await seed(async (db) => {
+      await setDoc(doc(db, 'workspaces', W, 'payout', 'main'), { subaccountCode: 'ACCT_x', bankName: 'Bank', accountName: 'A B', last4: '1234' });
+      await setDoc(doc(db, 'workspaces', W, 'depositPayments', 'zx_r1'), { reference: 'zx_r1', status: 'pending', amountMinor: 500000 });
+    });
+  });
+  it('lets admins read payout and deposit records, nobody else', async () => {
+    for (const p of [['payout', 'main'], ['depositPayments', 'zx_r1']] as const) {
+      await assertSucceeds(getDoc(doc(owner(), 'workspaces', W, p[0], p[1])));
+      await assertFails(getDoc(doc(other(), 'workspaces', W, p[0], p[1])));
+      await assertFails(getDoc(doc(anon(), 'workspaces', W, p[0], p[1])));
+    }
+  });
+  it('never lets a client point deposits at their own account or mark a deposit paid', async () => {
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'payout', 'main'), { subaccountCode: 'ACCT_attacker' }));
+    await assertFails(updateDoc(doc(owner(), 'workspaces', W, 'payout', 'main'), { subaccountCode: 'ACCT_attacker' }));
+    await assertFails(deleteDoc(doc(owner(), 'workspaces', W, 'payout', 'main')));
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'depositPayments', 'zx_r2'), { status: 'paid' }));
+    await assertFails(updateDoc(doc(owner(), 'workspaces', W, 'depositPayments', 'zx_r1'), { status: 'paid' }));
+  });
+  it('lets the owner publish the deposit amount on the public page, but not unknown keys', async () => {
+    await assertSucceeds(updateDoc(doc(owner(), 'slugs', SLUG), { depositEnabled: true, depositMinor: 500000 }));
+    await assertFails(updateDoc(doc(owner(), 'slugs', SLUG), { subaccountCode: 'ACCT_x' }));
+    await assertFails(updateDoc(doc(other(), 'slugs', SLUG), { depositEnabled: true }));
+  });
+});

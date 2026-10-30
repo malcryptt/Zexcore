@@ -1,4 +1,4 @@
-import { doc, getDocs, updateDoc, query, orderBy, type QueryDocumentSnapshot } from 'firebase/firestore';
+import { doc, getDoc, getDocs, updateDoc, query, orderBy, type QueryDocumentSnapshot } from 'firebase/firestore';
 import { ApiError, DEFAULT_SETTINGS, audit, claimSlot, loadCtx, requireAdmin, wsCol, wsDoc, type Ctx, type WorkspaceSettings } from './core';
 import { fb } from './firebase';
 import { slotLimit } from './plan';
@@ -109,15 +109,27 @@ export async function putSettings(b: Record<string, unknown>): Promise<{ setting
   }
   if (b.leadMinutes !== undefined) s.leadMinutes = int(b.leadMinutes, 0, 10080, 'Notice period');
   if (b.maxDaysAhead !== undefined) s.maxDaysAhead = int(b.maxDaysAhead, 1, 120, 'Booking horizon');
-  if (b.depositEnabled === true || (b.depositMinor !== undefined && Number(b.depositMinor) > 0)) throw new ApiError(400, 'Online deposits are not available in this release yet. Remove the deposit to save.', 'unavailable');
+  if (b.depositMinor !== undefined) {
+    const m = Math.round(Number(b.depositMinor));
+    if (!Number.isFinite(m) || m < 0 || m > 5_000_000_00) throw new ApiError(400, 'Enter a deposit between ₦0 and ₦5,000,000.');
+    if (m > 0 && m < 100_00) throw new ApiError(400, 'The smallest deposit is ₦100.');
+    s.depositMinor = m;
+  }
+  if (b.depositEnabled !== undefined) s.depositEnabled = b.depositEnabled === true;
+  if (s.depositEnabled && !(s.depositMinor > 0)) throw new ApiError(400, 'Set a deposit amount before turning deposits on.');
+  if (s.depositEnabled && !c.settings.depositEnabled) {
+    const p = await getDoc(doc(fb().db, 'workspaces', c.wid, 'payout', 'main'));
+    if (!p.exists() || !p.data()?.subaccountCode) throw new ApiError(400, 'Add the bank account where deposits should be paid before turning deposits on.', 'payout_missing');
+  }
   if (b.onboarded !== undefined) s.onboarded = Boolean(b.onboarded);
-  s.depositEnabled = false; s.depositMinor = 0; s.utcOffsetMinutes = 60; s.currency = 'NGN';
+  s.utcOffsetMinutes = 60; s.currency = 'NGN';
 
   await updateDoc(wsDoc(c), { settings: s });
   await updateDoc(doc(fb().db, 'slugs', c.slug), {
     name: s.publicName || c.wsName, openMinutes: s.openMinutes, closeMinutes: s.closeMinutes, slotMinutes: s.slotMinutes,
     closedWeekdays: [0, 1, 2, 3, 4, 5, 6].filter((d) => !s.daysOpen.includes(d)), phone: s.phone, address: s.address,
     leadMinutes: s.leadMinutes, maxDaysAhead: s.maxDaysAhead, bookingCap: slotLimit(c.tier, 'bookingsPerMonth'),
+    depositEnabled: s.depositEnabled, depositMinor: s.depositMinor,
   });
   void audit(c, 'settings.update', 'workspace', c.wid);
   await loadCtx(true);

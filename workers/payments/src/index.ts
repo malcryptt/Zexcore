@@ -10,6 +10,7 @@ import { HttpError, cors, json } from './util';
 import { checkout, webhook } from './routes/billing';
 import { audit, verifyAudit } from './routes/audit';
 import { ingest } from './routes/iot';
+import { banks, depositLink, depositStatus, payoutSetup, publicDeposit } from './routes/deposits';
 import { aiDraft, memberEvent, publicBooked } from './routes/events';
 
 export type { Env, Deps } from './env';
@@ -27,6 +28,11 @@ const ROUTES: Record<string, Handler> = {
   'POST /api/audit': audit,
   'GET /api/audit/verify': verifyAudit,
   'POST /api/iot/ingest': ingest,
+  'GET /api/banks': banks,
+  'POST /api/payout/setup': payoutSetup,
+  'POST /api/public/deposit': publicDeposit,
+  'POST /api/deposit/link': depositLink,
+  'GET /api/public/deposit-status': depositStatus,
   'POST /api/events': memberEvent,
   'POST /api/public/booked': publicBooked,
   'POST /api/rules/ai-draft': aiDraft,

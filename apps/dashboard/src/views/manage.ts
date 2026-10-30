@@ -130,11 +130,13 @@ export async function renderSettings(view: HTMLElement): Promise<void> {
         <div class="field"><label>Open days</label><div class="day-pills">${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => html`<label><input type="checkbox" name="day" value="${i}" ${s.daysOpen.includes(i) ? 'checked' : ''} ${dis}><span>${d}</span></label>`)}</div></div>
         <div class="form-grid two"><div class="field"><label for="sl">Slot length (minutes)</label><select class="select" id="sl" ${dis}>${[15, 20, 30, 45, 60].map((n) => html`<option value="${n}" ${n === s.slotMinutes ? 'selected' : ''}>${n}</option>`)}</select></div>
         <div class="field"><label for="ld">Minimum notice (hours)</label><input class="input" id="ld" type="number" min="0" max="168" value="${s.leadMinutes / 60}" ${dis}></div></div></section>
-      <section class="card card-pad form-grid"><div class="row between"><div><h3>Upfront deposit</h3><p class="muted small">Customers pay this by card through Paystack to secure their slot.</p></div><label class="switch"><input type="checkbox" id="dep" ${s.depositEnabled ? 'checked' : ''} ${dis} aria-label="Require deposit"><span></span></label></div>
+      <section class="card card-pad form-grid" id="payout"><h3>Where deposits are paid</h3><p class="muted small">Loading…</p></section>
+      <section class="card card-pad form-grid"><div class="row between"><div><h3>Upfront deposit</h3><p class="muted small">Customers pay this by card through Paystack to secure their slot. The money goes straight to your bank account below.</p></div><label class="switch"><input type="checkbox" id="dep" ${s.depositEnabled ? 'checked' : ''} ${dis} aria-label="Require deposit"><span></span></label></div>
         <div class="field" id="depf"><label for="depn">Deposit per booking (₦)</label><input class="input" id="depn" type="number" min="0" value="${s.depositMinor / 100}" ${dis}></div></section>
       ${canAdmin() ? html`<div><button class="btn btn-primary btn-lg" type="submit">Save changes</button></div>` : ''}
     </form>
     <section class="card card-pad stack-sm" style="margin-top:20px"><h3>Account</h3><div class="muted small">Signed in as <b>${me.user.email}</b> · role <b>${me.role}</b></div><div class="muted small">Workspace <span class="mono">${me.tenant.slug}</span> · plan <b style="text-transform:capitalize">${me.tenant.tier}</b></div></section>`);
+  void paintPayout(view, s.depositEnabled);
   const form = $('#st', view) as HTMLFormElement;
   form.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -152,4 +154,40 @@ export async function renderSettings(view: HTMLElement): Promise<void> {
       } catch (x) { err.textContent = x instanceof ApiError ? x.message : 'Could not save'; err.classList.remove('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
     });
   });
+}
+
+interface PayoutInfo { setUp: boolean; bankName: string | null; accountName: string | null; last4: string | null }
+async function paintPayout(view: HTMLElement, depositsOn: boolean): Promise<void> {
+  const box = $('#payout', view); if (!box) return;
+  let p: PayoutInfo;
+  try { p = await api<PayoutInfo>('/api/payout'); } catch { box.innerHTML = ''; return; }
+  const show = (editing: boolean): void => {
+    if (p.setUp && !editing) {
+      mount(box, html`<div class="row between wrap" style="gap:12px"><div><h3>Where deposits are paid</h3><p class="muted small">${p.accountName} · ${p.bankName ?? 'Bank'} · account ending ${p.last4}</p></div>${canAdmin() && current()?.role === 'owner' ? html`<button class="btn btn-secondary btn-sm" type="button" id="po-edit">Change account</button>` : ''}</div>`);
+      $('#po-edit', box)?.addEventListener('click', () => show(true));
+      return;
+    }
+    if (current()?.role !== 'owner') { mount(box, html`<h3>Where deposits are paid</h3><p class="muted small">${depositsOn ? 'Deposits are on.' : 'The workspace owner has not added a bank account yet.'} Only the owner can add or change it.</p>`); return; }
+    mount(box, html`<h3>Where deposits are paid</h3><p class="muted small">Add the bank account that should receive deposits. We check the account name with your bank before saving.</p>
+      <div id="po-err" class="alert alert-error hidden" role="alert"></div>
+      <div class="form-grid two"><div class="field"><label for="po-bank">Bank</label><select class="select" id="po-bank"><option value="">Loading banks…</option></select></div>
+      <div class="field"><label for="po-acct">Account number</label><input class="input" id="po-acct" inputmode="numeric" maxlength="10" placeholder="10 digits" autocomplete="off"></div></div>
+      <div class="row" style="gap:8px"><button class="btn btn-primary" type="button" id="po-save">Verify and save</button>${p.setUp ? html`<button class="btn btn-ghost" type="button" id="po-cancel">Cancel</button>` : ''}</div>`);
+    const sel = $('#po-bank', box) as HTMLSelectElement;
+    void api<{ banks: { name: string; code: string }[] }>('/api/payout/banks').then((r) => {
+      sel.innerHTML = '<option value="">Choose your bank</option>' + r.banks.map((b) => `<option value="${b.code}">${b.name.replace(/[<>&"]/g, '')}</option>`).join('');
+    }).catch((e) => { sel.innerHTML = '<option value="">Banks unavailable</option>'; const er = $('#po-err', box)!; er.textContent = e instanceof ApiError ? e.message : 'Could not load banks.'; er.classList.remove('hidden'); });
+    $('#po-cancel', box)?.addEventListener('click', () => show(false));
+    $('#po-save', box)?.addEventListener('click', (ev) => {
+      void busy(ev.currentTarget as HTMLButtonElement, async () => {
+        const er = $('#po-err', box)!; er.classList.add('hidden');
+        try {
+          const r = await api<{ accountName: string; last4: string }>('/api/payout', { method: 'POST', body: { bankCode: sel.value, bankName: sel.selectedOptions[0]?.textContent ?? '', accountNumber: ($('#po-acct', box) as HTMLInputElement).value.trim() } });
+          p = { setUp: true, bankName: sel.selectedOptions[0]?.textContent ?? null, accountName: r.accountName, last4: r.last4 };
+          toast(`Saved. Deposits will be paid to ${r.accountName}.`, 'success'); show(false);
+        } catch (x) { er.textContent = x instanceof ApiError ? x.message : 'Could not save the account.'; er.classList.remove('hidden'); }
+      });
+    });
+  };
+  show(false);
 }

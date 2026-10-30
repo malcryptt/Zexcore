@@ -7,7 +7,7 @@ import type { SlotSettings } from './slots';
 
 interface PublicPage {
   wid: string; name: string; phone: string | null; address: string | null; openMinutes: number; closeMinutes: number; slotMinutes: number;
-  daysOpen: number[]; leadMinutes: number; maxDaysAhead: number; bookingCap: number; bookingEnabled: boolean;
+  daysOpen: number[]; leadMinutes: number; maxDaysAhead: number; bookingCap: number; bookingEnabled: boolean; depositEnabled: boolean; depositMinor: number;
 }
 const cache = new Map<string, { at: number; page: PublicPage }>();
 
@@ -24,6 +24,7 @@ async function page(slug: string): Promise<PublicPage> {
     openMinutes: d.openMinutes ?? DEFAULT_SETTINGS.openMinutes, closeMinutes: d.closeMinutes ?? DEFAULT_SETTINGS.closeMinutes, slotMinutes: d.slotMinutes ?? 30,
     daysOpen: [0, 1, 2, 3, 4, 5, 6].filter((x) => !closed.includes(x)), leadMinutes: d.leadMinutes ?? 60, maxDaysAhead: Math.min(d.maxDaysAhead ?? 60, 120),
     bookingCap: Math.max(1, Math.min(Number(d.bookingCap) || 30, 999_999)), bookingEnabled: true,
+    depositEnabled: d.depositEnabled === true && Number(d.depositMinor) > 0, depositMinor: d.depositEnabled === true ? Math.max(0, Number(d.depositMinor) || 0) : 0,
   };
   cache.set(slug, { at: Date.now(), page: p });
   return p;
@@ -46,7 +47,7 @@ export async function profile(slug: string): Promise<unknown> {
   const p = await page(slug);
   let cat; try { cat = await catalog(p.wid); } catch (e) { throw toApiError(e); }
   return {
-    business: { slug, name: p.name, type: 'business', phone: p.phone, address: p.address }, currency: 'NGN', deposit: { enabled: false, amountMinor: 0 },
+    business: { slug, name: p.name, type: 'business', phone: p.phone, address: p.address }, currency: 'NGN', deposit: { enabled: p.depositEnabled, amountMinor: p.depositMinor },
     hours: { openMinutes: p.openMinutes, closeMinutes: p.closeMinutes, daysOpen: p.daysOpen, utcOffsetMinutes: 60, maxDaysAhead: p.maxDaysAhead },
     paystackPublicKey: null, services: cat.services, staff: cat.staff,
   };
@@ -77,7 +78,24 @@ export async function book(slug: string, b: Record<string, unknown>): Promise<un
   });
   // Tell the Worker so the owner is notified and approved automations run. Best effort: the booking already exists.
   if (paymentsUrl()) void fetch(`${paymentsUrl()}/api/public/booked`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ slug, bookingId: made.id }) }).catch(() => undefined);
-  return { booking: { ref: refOf(made.id), status: 'pending', startsAt: made.startsAt, serviceName: service.name }, payment: null };
+  const booking = { ref: refOf(made.id), status: 'pending', startsAt: made.startsAt, serviceName: service.name };
+  if (!p.depositEnabled || !paymentsUrl()) return { booking, payment: null };
+  // The Worker creates the Paystack checkout (amount is decided server-side from the business's own settings).
+  try {
+    const r = await fetch(`${paymentsUrl()}/api/public/deposit`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ slug, bookingId: made.id, email: b.customerEmail ?? '' }) });
+    const j = (await r.json().catch(() => ({}))) as { authorizationUrl?: string; reference?: string; amountMinor?: number };
+    if (r.ok && j.authorizationUrl) return { booking, payment: { reference: j.reference, amountMinor: j.amountMinor, authorizationUrl: j.authorizationUrl } };
+  } catch { /* the booking still stands; the business can send a payment link */ }
+  return { booking, payment: null };
 }
 
-export function payment(): never { throw new ApiError(404, 'Payment link not found', 'not_found'); }
+export async function payment(slug: string, ref: string): Promise<unknown> {
+  const base = paymentsUrl();
+  if (!base) throw new ApiError(503, 'Payments are not switched on yet.', 'unavailable');
+  let r: Response;
+  try { r = await fetch(`${base}/api/public/deposit-status?${new URLSearchParams({ slug, reference: ref })}`); }
+  catch { throw new ApiError(0, 'Cannot reach the payment service.', 'network'); }
+  const j = (await r.json().catch(() => ({}))) as Record<string, unknown> & { error?: string };
+  if (!r.ok) throw new ApiError(r.status, j.error ?? 'Payment not found', r.status === 404 ? 'not_found' : undefined);
+  return j;
+}

@@ -25,7 +25,7 @@ async function idToken(over: Record<string, unknown> = {}, key = idKey.privateKe
 
 // ── in-memory Firestore + Google + Paystack ──
 type Doc = { fields: Record<string, any>; v: number };
-let store: Map<string, Doc>; let commits: any[]; let paystackInit: any[]; let paystackVerify: Record<string, any>;
+let store: Map<string, Doc>; let commits: any[]; let paystackInit: any[]; let paystackVerify: Record<string, any>; let paystackSub: any[];
 const fsPath = (u: string) => decodeURIComponent(u.split('/documents/')[1]!.split('?')[0]!);
 function mockFetch(): typeof fetch {
   return (async (input: any, init: any = {}) => {
@@ -54,6 +54,8 @@ function mockFetch(): typeof fetch {
     }
     if (url.endsWith('/transaction/initialize')) { paystackInit.push(JSON.parse(init.body)); return Response.json({ status: true, data: { authorization_url: 'https://checkout.paystack.com/abc' } }); }
     if (url.includes('/transaction/verify/')) { const ref = decodeURIComponent(url.split('/verify/')[1]!); return Response.json(paystackVerify[ref] ?? { status: false }); }
+    if (url.includes('/bank/resolve')) return url.includes('account_number=0000000000') ? Response.json({ status: false }, { status: 422 }) : Response.json({ status: true, data: { account_name: 'SADE SALON LTD' } });
+    if (url.endsWith('/subaccount') || url.includes('/subaccount/')) { paystackSub.push(JSON.parse(init.body)); return Response.json({ status: true, data: { subaccount_code: 'ACCT_test123' } }); }
     throw new Error(`unexpected fetch ${url}`);
   }) as typeof fetch;
 }
@@ -71,7 +73,7 @@ beforeAll(async () => {
 });
 beforeEach(() => {
   resetTokenCache(); resetJwksCache();
-  store = new Map(); commits = []; paystackInit = []; paystackVerify = {};
+  store = new Map(); commits = []; paystackInit = []; paystackVerify = {}; paystackSub = [];
   env = { PAYSTACK_SECRET_KEY: SECRET, FIREBASE_PROJECT_ID: PROJECT, APP_URL: 'https://zexcore.com.ng', ALLOWED_ORIGINS: 'https://zexcore.com.ng,https://zexcore-5d6c0.web.app', NGN_PER_USD: '1500',
     FIREBASE_SERVICE_ACCOUNT: JSON.stringify({ client_email: 'w@x.iam.gserviceaccount.com', private_key: saPem }) };
   seedDoc(`workspaces/${WID}`, { name: 'Sade Salon', plan: 'free', ownerUid: 'owner1', slug: 'sade-salon' });
@@ -187,5 +189,85 @@ describe('POST /api/paystack-webhook', () => {
     await send(event());
     const exp = fromFs(store.get(`workspaces/${WID}`)!.fields.planExpiresAt) as Date;
     expect(exp.getTime()).toBe(NOW.getTime() + 41 * 86400000);
+  });
+});
+
+describe('deposits', () => {
+  const DW = 'wsdeposit0000000000a';
+  beforeEach(() => { seedDoc(`workspaces/${DW}`, { name: 'Sade Salon', plan: 'free', ownerUid: 'owner1', slug: 'sade-salon' }); seedDoc(`workspaces/${DW}/members/owner1`, { role: 'owner' }); seedDoc(`workspaces/${DW}/members/staff1`, { role: 'staff' }); });
+  const BOOKING = '202611_7';
+  const seedDeposit = (over: Record<string, unknown> = {}) => {
+    seedDoc(`workspaces/${DW}`, { name: 'Sade Salon', plan: 'growth', ownerUid: 'owner1', slug: 'sade-salon', settings: { depositEnabled: true, depositMinor: 500_000 } });
+    seedDoc('slugs/sade-salon', { wid: DW, ownerUid: 'owner1' });
+    seedDoc(`workspaces/${DW}/payout/main`, { subaccountCode: 'ACCT_test123', bankName: 'Test Bank', accountName: 'SADE SALON LTD', last4: '1234' });
+    seedDoc(`workspaces/${DW}/services/s_0`, { name: 'Braids', priceMinor: 2_000_000 });
+    seedDoc(`workspaces/${DW}/bookings/${BOOKING}`, { status: 'pending', source: 'public', serviceId: 's_0', customerName: 'Ada', createdAt: new Date(NOW.getTime() - 60_000), startsAt: new Date(NOW.getTime() + 86_400_000), ...over });
+  };
+  const start = (over: Record<string, unknown> = {}) => call('/api/public/deposit', { headers: { 'content-type': 'application/json' }, body: JSON.stringify({ slug: 'sade-salon', bookingId: BOOKING, email: 'ada@example.com', ...over }) });
+
+  it('verifies the bank account with Paystack before creating a payout account; owner only', async () => {
+    const body = (o: object = {}) => JSON.stringify({ workspaceId: DW, bankCode: '058', bankName: 'GTBank', accountNumber: '0123456789', ...o });
+    expect((await call('/api/payout/setup', { body: body(), headers: { ...(await authed({ sub: 'staff1' })) } })).status).toBe(403);
+    expect((await call('/api/payout/setup', { body: body({ accountNumber: '0000000000' }), headers: await authed() })).status).toBe(422);
+    expect(paystackSub).toHaveLength(0);
+    const r = await call('/api/payout/setup', { body: body(), headers: await authed() });
+    expect(r.status).toBe(200);
+    expect(await r.json()).toMatchObject({ ok: true, accountName: 'SADE SALON LTD', last4: '6789' });
+    expect(paystackSub[0]).toMatchObject({ settlement_bank: '058', account_number: '0123456789', percentage_charge: 0 });
+    expect(fromFs(store.get(`workspaces/${DW}/payout/main`)!.fields.subaccountCode)).toBe('ACCT_test123');
+    // the full account number is never stored
+    expect(JSON.stringify(store.get(`workspaces/${DW}/payout/main`))).not.toContain('0123456789');
+  });
+
+  it('prices the deposit from the business settings and pays it out to their account, ignoring the browser', async () => {
+    seedDeposit();
+    const r = await start({ amount: 1 });
+    expect(r.status).toBe(201);
+    expect(await r.json()).toMatchObject({ authorizationUrl: 'https://checkout.paystack.com/abc', amountMinor: 500_000 });
+    expect(paystackInit[0]).toMatchObject({ amount: 500_000, subaccount: 'ACCT_test123', bearer: 'subaccount', currency: 'NGN', metadata: { kind: 'deposit', bookingId: BOOKING } });
+    expect(paystackInit[0].callback_url).toMatch(/^https:\/\/zexcore\.com\.ng\/sade-salon\?pay=zx_/);
+  });
+
+  it('refuses when deposits are off, payouts are missing, the booking is old, cancelled or already paid', async () => {
+    seedDeposit({ createdAt: new Date(NOW.getTime() - 3_600_000) }); expect((await start()).status).toBe(404);
+    seedDeposit({ status: 'cancelled' }); expect((await start()).status).toBe(409);
+    seedDeposit({ depositStatus: 'paid' }); expect((await start()).status).toBe(409);
+    seedDeposit(); store.delete(`workspaces/${DW}/payout/main`); expect((await start()).status).toBe(409);
+    seedDeposit(); seedDoc(`workspaces/${DW}`, { name: 'x', plan: 'growth', ownerUid: 'owner1', slug: 'sade-salon', settings: { depositEnabled: false, depositMinor: 0 } }); expect((await start()).status).toBe(409);
+    expect(paystackInit).toHaveLength(0);
+  });
+
+  it('confirms the booking only when Paystack verifies the full amount, and is idempotent', async () => {
+    seedDeposit();
+    const { reference } = (await (await start()).json()) as { reference: string };
+    const status = () => call(`/api/public/deposit-status?slug=sade-salon&reference=${reference}`, { method: 'GET' });
+    expect(((await (await status()).json()) as any).depositStatus).toBe('unpaid');
+    paystackVerify[reference] = { status: true, data: { status: 'success', amount: 100, currency: 'NGN', reference } };
+    expect(((await (await status()).json()) as any).depositStatus).toBe('mismatch');
+    expect(fromFs(store.get(`workspaces/${DW}/bookings/${BOOKING}`)!.fields.status)).toBe('pending');
+    seedDoc(`workspaces/${DW}/depositPayments/${reference}`, { reference, bookingId: BOOKING, amountMinor: 500_000, currency: 'NGN', status: 'pending' });
+    paystackVerify[reference] = { status: true, data: { status: 'success', amount: 500_000, currency: 'NGN', reference } };
+    const j = (await (await status()).json()) as any;
+    expect(j).toMatchObject({ depositStatus: 'paid', status: 'confirmed', amountMinor: 500_000, serviceName: 'Braids' });
+    const b = store.get(`workspaces/${DW}/bookings/${BOOKING}`)!.fields;
+    expect(fromFs(b.depositStatus)).toBe('paid'); expect(fromFs(b.status)).toBe('confirmed'); expect(fromFs(b.paymentReference)).toBe(reference);
+    expect(((await (await status()).json()) as any).depositStatus).toBe('paid');
+  });
+
+  it('settles a deposit from the webhook too, so closing the tab never loses a payment', async () => {
+    seedDeposit();
+    const { reference } = (await (await start()).json()) as { reference: string };
+    paystackVerify[reference] = { status: true, data: { status: 'success', amount: 500_000, currency: 'NGN', reference } };
+    const body = JSON.stringify({ event: 'charge.success', data: { reference, metadata: { kind: 'deposit', workspaceId: DW, bookingId: BOOKING } } });
+    expect((await call('/api/paystack-webhook', { body, headers: { 'x-paystack-signature': await paystackSignature(body, SECRET) } })).status).toBe(200);
+    expect(fromFs(store.get(`workspaces/${DW}/bookings/${BOOKING}`)!.fields.depositStatus)).toBe('paid');
+  });
+
+  it('lets team members (not outsiders) create a payment link for any booking', async () => {
+    seedDeposit({ source: 'staff', createdAt: new Date(NOW.getTime() - 9 * 86_400_000) });
+    const body = JSON.stringify({ workspaceId: DW, bookingId: BOOKING, email: 'ada@example.com' });
+    expect((await call('/api/deposit/link', { body, headers: await authed({ sub: 'stranger' }) })).status).toBe(403);
+    const r = await call('/api/deposit/link', { body, headers: await authed({ sub: 'staff1' }) });
+    expect(r.status).toBe(201);
   });
 });
