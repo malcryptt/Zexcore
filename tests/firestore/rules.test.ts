@@ -107,11 +107,12 @@ describe('tenant isolation', () => {
     await assertFails(setDoc(doc(owner(), 'workspaces', W, 'messages', 'm3'), msg({ phone: 'not-a-phone' })));
     await assertFails(setDoc(doc(owner(), 'workspaces', W, 'messages', 'm4'), msg({ body: '' })));
     await assertFails(updateDoc(doc(owner(), 'workspaces', W, 'messages', 'm1'), { body: 'edited' }));
-    await assertFails(deleteDoc(doc(owner(), 'workspaces', W, 'messages', 'm1')));
     await assertFails(getDoc(doc(other(), 'workspaces', W, 'messages', 'm1')));
     await assertFails(setDoc(doc(other(), 'workspaces', W, 'messages', 'm5'), msg()));
     await assertSucceeds(setDoc(doc(owner(), 'workspaces', W, 'convState', '+2348011112222'), { readAt: serverTimestamp() }));
     await assertFails(setDoc(doc(anon(), 'workspaces', W, 'messages', 'm6'), msg()));
+    await assertFails(deleteDoc(doc(other(), 'workspaces', W, 'messages', 'm1')));
+    await assertSucceeds(deleteDoc(doc(owner(), 'workspaces', W, 'messages', 'm1')));   // admins only: erasure and retention
   });
   it('keeps data-protection records to the right roles and the right shape', async () => {
     await assertSucceeds(setDoc(doc(owner(), 'workspaces', W, 'retention', 'messages'), { retentionDays: 90, enabled: true, lastRunAt: null }));
