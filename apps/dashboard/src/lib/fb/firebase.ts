@@ -5,9 +5,21 @@ import { getFirestore, connectFirestoreEmulator, type Firestore } from 'firebase
 const env = import.meta.env as Record<string, string | undefined>;
 // A Firebase web config is a public identifier, not a secret: access is decided by firestore.rules and Auth.
 // Defaults are the production project; override with VITE_FIREBASE_* for a staging project.
+// When running on the custom domain, use that hostname as authDomain so the Firebase
+// auth popup is served from the same origin — this avoids third-party cookie blocks
+// (Safari ITP, Chrome partitioned storage) that otherwise drop the popup token.
+const _defaultAuthDomain = (() => {
+  if (typeof window !== 'undefined') {
+    const h = window.location.hostname;
+    // Custom production domain — must also be in Google Cloud Console's Authorized redirect URIs
+    if (h === 'zexcore.com.ng' || h === 'www.zexcore.com.ng') return h;
+  }
+  return 'zexcore-5d6c0.firebaseapp.com';
+})();
+
 const cfg = {
   apiKey: env.VITE_FIREBASE_API_KEY || 'AIzaSyD_g3SVv0zBlKyUsvgVV58sqiI-9BJot9g',
-  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || 'zexcore-5d6c0.firebaseapp.com',
+  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || _defaultAuthDomain,
   projectId: env.VITE_FIREBASE_PROJECT_ID || 'zexcore-5d6c0',
   appId: env.VITE_FIREBASE_APP_ID || '1:683742152729:web:a1c4842d3c28b013464288',
   messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || '683742152729',
@@ -28,8 +40,8 @@ export function fb(): { app: FirebaseApp; auth: Auth; db: Firestore } {
   return { app, auth, db };
 }
 
-/** URL of the payments Worker (Cloudflare). Empty until the Worker is deployed. */
-export const paymentsUrl = (): string => (env.VITE_PAYMENTS_URL ?? '').replace(/\/$/, '');
+/** URL of the payments Worker (Cloudflare). */
+export const paymentsUrl = (): string => (env.VITE_PAYMENTS_URL || 'https://zexcore-payments.mal4crypt404.workers.dev').replace(/\/$/, '');
 
 /** Test hook: points the app at the local Firebase emulators (used by tests/firestore/e2e.test.ts only). */
 export function useEmulators(host = '127.0.0.1'): void {

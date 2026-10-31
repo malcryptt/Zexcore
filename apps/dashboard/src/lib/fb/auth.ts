@@ -11,6 +11,14 @@ const RESERVED = new Set(['admin', 'api', 'app', 'www', 'signin', 'signup', 'log
   'platform', 'solutions', 'modules', 'architecture', 'resources', 'book', 'b', 'static', 'assets', 'zexcore', 'mail', 'support', 'help', 'status', 'product', 'home', 'forgot-password', 'reset-password', 'verify-email', 'multi-tenancy', 'automation']);
 const SLUG_RE = /^[a-z0-9]([a-z0-9-]{1,38})[a-z0-9]$/;
 
+/** Returns the canonical app origin — uses the real domain in production, localhost in development. */
+const appOrigin = (): string => {
+  if (typeof window === 'undefined') return 'https://zexcore.com.ng';
+  const h = window.location.hostname;
+  if (h === 'localhost' || h === '127.0.0.1') return window.location.origin;
+  return 'https://zexcore.com.ng';
+};
+
 export const slugify = (s: string): string => s.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 34).replace(/-+$/g, '');
 const rand = (n: number): string => Array.from(crypto.getRandomValues(new Uint8Array(n)), (b) => 'abcdefghjkmnpqrstuvwxyz23456789'[b % 31]).join('');
 
@@ -35,6 +43,8 @@ const authMessage = (e: unknown): ApiError => {
     'auth/user-disabled': [403, 'This account has been disabled.'], 'auth/expired-action-code': [400, 'This reset link has expired. Please request a new one.'],
     'auth/invalid-action-code': [400, 'This reset link is invalid or has already been used. Please request a new one.'], 'auth/requires-recent-login': [401, 'Sign in again, then retry.'],
     'auth/operation-not-allowed': [503, 'Email sign-in is not switched on yet. Please contact support.'],
+    'auth/unauthorized-domain': [403, 'Google sign-in is not authorised for this domain. Please contact support.'],
+    'auth/internal-error': [500, 'An authentication error occurred. Please try again.'],
   };
   const hit = map[code];
   return hit ? new ApiError(hit[0], hit[1], code) : toApiError(e);
@@ -72,7 +82,7 @@ export async function register(b: { tenantName: string; name: string; email: str
   let cred;
   try { cred = await createUserWithEmailAndPassword(auth, email, b.password); } catch (e) { throw authMessage(e); }
   await createWorkspaceFor(cred.user, tenantName, name, b.tenantSlug, true);
-  void sendEmailVerification(cred.user).catch(() => undefined);
+  void sendEmailVerification(cred.user, { url: `${appOrigin()}/verify-email`, handleCodeInApp: false }).catch(() => undefined);
 }
 
 /** Creates the workspace, owner row, public slug and first calendar for a signed-in user. Rolls the account back if `rollback` and it fails. */
@@ -113,6 +123,7 @@ export async function googleSignIn(): Promise<{ hasWorkspace: boolean; email: st
     if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') throw new ApiError(0, 'Google sign-in was cancelled.', code);
     if (code === 'auth/popup-blocked') throw new ApiError(400, 'Your browser blocked the Google window. Allow pop-ups for this site and try again.', code);
     if (code === 'auth/operation-not-allowed') throw new ApiError(503, 'Google sign-in is not switched on yet.', code);
+    if (code === 'auth/unauthorized-domain') throw new ApiError(403, 'Google sign-in is not authorised for this domain. Please contact support.', code);
     throw authMessage(e);
   }
   clearCtx();
@@ -159,9 +170,7 @@ export async function forgot(email: string): Promise<void> {
   const clean = String(email ?? '').trim();
   if (!clean) throw new ApiError(400, 'Enter your email address.');
   try {
-    const host = typeof window !== 'undefined' ? window.location?.hostname : '';
-    // Hosting addresses and the real domain all send people to the real domain; local development stays local.
-    const origin = host === 'localhost' || host === '127.0.0.1' ? window.location.origin : 'https://zexcore.com.ng';
+    const origin = appOrigin();
     try {
       await sendPasswordResetEmail(fb().auth, clean, {
         url: `${origin}/reset-password`,
@@ -196,7 +205,7 @@ export async function emailStatus(): Promise<{ verified: boolean }> {
 export async function resendVerification(): Promise<void> {
   const u = fb().auth.currentUser;
   if (!u) throw new ApiError(401, 'Please sign in again.');
-  try { await sendEmailVerification(u); } catch (e) { throw authMessage(e); }
+  try { await sendEmailVerification(u, { url: `${appOrigin()}/verify-email`, handleCodeInApp: false }); } catch (e) { throw authMessage(e); }
 }
 export async function changePassword(current: string, next: string): Promise<void> {
   const u = fb().auth.currentUser;

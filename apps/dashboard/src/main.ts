@@ -110,7 +110,7 @@ route('/signup', () => { clearLegacySiteStyles(); leaveApp(); renderSignUp(); })
 route('/forgot-password', () => { clearLegacySiteStyles(); leaveApp(); renderForgot(); });
 route('/reset-password', () => { clearLegacySiteStyles(); leaveApp(); renderReset(); });
 route('/verify-email', () => { clearLegacySiteStyles(); leaveApp(); void renderVerify(); });
-route('/__/auth/action', (ctx) => {
+const handleAuthAction = (ctx: { query: URLSearchParams }) => {
   clearLegacySiteStyles();
   leaveApp();
   const mode = ctx.query.get('mode');
@@ -122,7 +122,9 @@ route('/__/auth/action', (ctx) => {
   } else {
     navigate('/signin', true);
   }
-});
+};
+route('/auth/action', handleAuthAction);
+route('/__/auth/action', handleAuthAction);
 
 route('/app/onboarding', async () => { await renderOnboarding(); });
 appRoute('/app', (v) => renderAppHome(v));

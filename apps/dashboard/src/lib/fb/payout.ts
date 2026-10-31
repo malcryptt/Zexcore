@@ -16,7 +16,8 @@ export async function getPayout(): Promise<Payout> {
 }
 
 export async function listBanks(): Promise<{ banks: { name: string; code: string }[] }> {
-  return worker('/api/banks');
+  const c = await loadCtx();
+  return worker('/api/banks', { query: { workspaceId: c.wid } });
 }
 
 export async function savePayout(b: Record<string, unknown>): Promise<{ ok: true; accountName: string; last4: string }> {
