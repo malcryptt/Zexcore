@@ -7,7 +7,7 @@ workers_dev = true
 FIREBASE_PROJECT_ID = "zexcore-5d6c0"
 APP_URL = "https://zexcore.com.ng"
 ALLOWED_ORIGINS = "https://zexcore.com.ng,https://www.zexcore.com.ng,https://zexcore-5d6c0.web.app,https://zexcore-5d6c0.firebaseapp.com"
-NGN_PER_USD = "1500"
+NGN_PER_USD = "auto"
 
 # Secrets (set in the Cloudflare dashboard, never in this file):
 #   PAYSTACK_SECRET_KEY        Paystack secret key (sk_live_... / sk_test_...)

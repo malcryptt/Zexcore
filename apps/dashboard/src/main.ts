@@ -34,7 +34,11 @@ setGuard(async (ctx) => {
     try { if (!(await loadMe())) return '/signin'; }
     catch { mount(document.getElementById('app')!, html`<div class="auth-wrap"><div class="auth-card">${errorState('We could not reach ZexCore. Check your connection and try again.')}</div></div>`); document.querySelector('[data-retry]')?.addEventListener('click', () => location.reload()); return ctx.path; }
   }
-  if ((ctx.path === '/signin' || ctx.path === '/signup') && isSignedIn()) { if (await loadMe().catch(() => null)) return '/app'; }
+  if ((ctx.path === '/signin' || ctx.path === '/signup') && isSignedIn()) {
+    // Only bother with the async Firebase call when we already have a local session token
+    const me = await loadMe().catch(() => null);
+    if (me) return '/app';
+  }
 });
 const SITE = 'https://zexcore.com.ng';
 const SITE_PAGES = new Set(['/', '/product', '/pricing', '/security', '/contact', '/privacy', '/terms', '/docs', '/documentation']);
@@ -160,3 +164,17 @@ setNotFound(async (ctx) => {
 
 void current;
 startRouter();
+
+// Pre-warm the most-visited view chunks during browser idle time.
+// This means the first navigation to /app, /signin, etc. hits the module cache
+// instead of triggering a network fetch + parse on demand.
+const _prewarmChunks = () => {
+  void import('./views/auth');
+  void import('./views/home');
+  void import('./views/bookings');
+};
+if (typeof requestIdleCallback !== 'undefined') {
+  requestIdleCallback(_prewarmChunks, { timeout: 2000 });
+} else {
+  setTimeout(_prewarmChunks, 300);
+}

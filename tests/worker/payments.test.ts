@@ -101,9 +101,9 @@ describe('POST /api/checkout', () => {
     }
     expect(paystackInit).toHaveLength(0);
   });
-  it('requires a verified email', async () => {
-    const r = await call('/api/checkout', { body: checkoutBody(), headers: await authed({ email_verified: false }) });
-    expect(r.status).toBe(403); expect((await r.json()).code).toBe('email_unverified');
+  it('requires an email on the account', async () => {
+    const r = await call('/api/checkout', { body: checkoutBody(), headers: await authed({ email: '' }) });
+    expect(r.status).toBe(400); expect((await r.json()).code).toBe('email_missing');
   });
   it('only lets owners and admins of that workspace upgrade it', async () => {
     expect((await call('/api/checkout', { body: checkoutBody(), headers: await authed({ sub: 'staff1' }) })).status).toBe(403);

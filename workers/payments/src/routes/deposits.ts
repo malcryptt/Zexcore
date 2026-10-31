@@ -14,6 +14,7 @@ import { requireMember } from '../auth';
 import type { Ctx, Deps, Env } from '../env';
 import { FsConflict, fsCommit, fsGet } from '../fs';
 import { HttpError, ID_RE, json, randomRef, readJson } from '../util';
+import { getLiveNgnRate } from '../rates';
 
 const PAYSTACK = 'https://api.paystack.co';
 const BOOKING_RE = /^\d{6}_\d{1,6}$/;
@@ -74,8 +75,10 @@ async function planDeposit(c: Ctx, wid: string, slug: string, bookingId: string,
   const price = Number(svc?.data.priceMinor ?? 0);
   // Prices and deposits are US-dollar cents; the business sets its own exchange rate and Paystack charges naira (kobo).
   const usdMinor = price > 0 ? Math.min(Number(st.depositMinor), price) : Number(st.depositMinor);
-  const rate = Number(st.exchangeRate);
-  if (!Number.isFinite(rate) || rate < 100 || rate > 100_000) throw new HttpError(409, 'This business has not set its exchange rate yet.', 'rate_missing');
+  let rate = Number(st.exchangeRate);
+  if (!Number.isFinite(rate) || rate < 100 || rate === 1500 || st.exchangeRateMode === 'auto') {
+    rate = await getLiveNgnRate(c.env, c.d);
+  }
   const amountMinor = Math.round(usdMinor * rate);
   const email = String(emailIn || booking.data.customerEmail || `pay+${bookingId.replace('_', '')}@zexcore.com.ng`).trim();
   if (!EMAIL_RE.test(email)) throw new HttpError(400, 'Enter a valid email address for your receipt.');

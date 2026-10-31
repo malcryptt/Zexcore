@@ -11,6 +11,7 @@ import * as pub from './public';
 import * as crm from './crm';
 import * as bill from './billing';
 import * as payout from './payout';
+import { getLiveNgnRate } from '../fx';
 
 type Params = string[];
 interface Req { method: string; params: Params; query: URLSearchParams; body: Record<string, any> }
@@ -82,6 +83,7 @@ on('POST', '/api/cms/pages', ({ body }) => crm.createPage(body));
 on('POST', '/api/cms/pages/:id/publish', ({ params }) => crm.publishPage(params[0]!));
 
 // ── billing + audit ──
+on('GET', '/api/rates', async () => ({ base: 'USD', target: 'NGN', rate: await getLiveNgnRate(), updatedAt: new Date().toISOString() }));
 on('GET', '/api/billing/plans', () => bill.plans());
 on('GET', '/api/billing/usage', () => bill.usage());
 on('POST', '/api/billing/checkout', ({ body }) => bill.checkout(body));

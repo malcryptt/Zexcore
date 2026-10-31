@@ -2,11 +2,13 @@ import { getDocs, query, orderBy, limit as qLimit, where, documentId, type Query
 import { fb, paymentsUrl } from './firebase';
 import { worker } from './worker';
 import { ApiError, iso, loadCtx, monthPrefix, requireAdmin, wsCol } from './core';
-import { LABELS, LIMITS, NGN_PER_USD, PRICES, toLimits, type EnforcedKey } from './plan';
+import { LABELS, LIMITS, PRICES, toLimits, type EnforcedKey } from './plan';
+import { getLiveNgnRate } from '../fx';
 
-export function plans(): unknown {
+export async function plans(): Promise<unknown> {
+  const liveRate = await getLiveNgnRate();
   return {
-    currencyRates: { NGN_PER_USD }, paystackPublicKey: paymentsUrl() ? 'hosted-checkout' : null,
+    currencyRates: { NGN_PER_USD: liveRate }, paystackPublicKey: paymentsUrl() ? 'hosted-checkout' : null,
     plans: (Object.keys(PRICES) as (keyof typeof PRICES)[]).map((tier) => ({ tier, monthlyUsd: PRICES[tier].monthlyUsd, annualUsd: PRICES[tier].annualUsd, limits: toLimits(tier) })),
     freeLimits: toLimits('free'), limitLabels: LABELS,
   };
@@ -28,7 +30,7 @@ export async function usage(): Promise<unknown> {
 
 export async function checkout(b: Record<string, unknown>): Promise<unknown> {
   const c = await loadCtx(true); requireAdmin(c);
-  if (!c.emailVerified) throw new ApiError(403, 'Confirm your email address before upgrading. Check your inbox for the link.', 'email_unverified');
+  if (!c.email) throw new ApiError(400, 'Your account must have an email address for billing receipts.', 'email_missing');
   const base = paymentsUrl();
   if (!base) throw new ApiError(503, 'Online payments are not switched on yet.', 'unavailable');
   const token = await fb().auth.currentUser?.getIdToken();

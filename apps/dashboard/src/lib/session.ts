@@ -7,19 +7,42 @@ export interface Me {
   isPlatformAdmin: boolean;
 }
 
-let me: Me | null = null;
+const SS_ME = 'zx.me_v1';
+const ssRead = (): Me | null => { try { const s = sessionStorage.getItem(SS_ME); return s ? (JSON.parse(s) as Me) : null; } catch { return null; } };
+const ssWrite = (v: Me | null): void => { try { v ? sessionStorage.setItem(SS_ME, JSON.stringify(v)) : sessionStorage.removeItem(SS_ME); } catch { /* ignore */ } };
+
+// Hydrate from sessionStorage immediately — no async, no Firebase, no network.
+// This means navigating back to /app after a refresh paints the shell in <50 ms instead of 1-2 s.
+let me: Me | null = getToken() ? ssRead() : null;
+
 export const current = (): Me | null => me;
 export const isSignedIn = (): boolean => !!getToken();
 export const canManage = (): boolean => !!me && (me.role === 'owner' || me.role === 'admin' || me.role === 'member' || me.isPlatformAdmin);
 export const canAdmin = (): boolean => !!me && (me.role === 'owner' || me.role === 'admin' || me.isPlatformAdmin);
 
+// Tracks whether we've revalidated against Firebase in this page session.
+let _validated = false;
+
 export async function loadMe(force = false): Promise<Me | null> {
-  if (!getToken()) { me = null; return null; }
-  if (me && !force) return me;
+  if (!getToken()) { me = null; ssWrite(null); return null; }
+  // Return the cached/hydrated value immediately if we have one and aren't forced.
+  // We still revalidate once per page session in the background to keep data fresh.
+  if (me && !force) {
+    if (!_validated) {
+      _validated = true;
+      // Revalidate in background — updates the cache but doesn't block rendering.
+      void api<Me>('/api/auth/me').then((fresh) => { me = fresh; ssWrite(fresh); }).catch(() => undefined);
+    }
+    return me;
+  }
   try {
     me = await api<Me>('/api/auth/me');
+    _validated = true;
+    ssWrite(me);
   } catch (e) {
-    if (e instanceof ApiError && (e.status === 401 || e.status === 400 || e.status === 403)) { setToken(null); me = null; return null; }
+    if (e instanceof ApiError && (e.status === 401 || e.status === 400 || e.status === 403)) {
+      setToken(null); me = null; ssWrite(null); return null;
+    }
     throw e;
   }
   return me;
@@ -32,19 +55,19 @@ export async function login(email: string, password: string, tenantSlug?: string
     method: 'POST', auth: false, body: { email, password, ...(tenantSlug ? { tenantSlug } : {}) },
   });
   if (!r.token) return { ok: false, workspaces: r.workspaces ?? [] };
-  setToken(r.token); me = null;
+  setToken(r.token); me = null; _validated = false; ssWrite(null);
   await loadMe(true);
   return { ok: true };
 }
 
 export async function register(input: { tenantName: string; name: string; email: string; password: string; tenantSlug?: string }): Promise<void> {
   const r = await api<{ token: string }>('/api/auth/register', { method: 'POST', auth: false, body: input });
-  setToken(r.token); me = null;
+  setToken(r.token); me = null; _validated = false; ssWrite(null);
   await loadMe(true);
 }
 
 export function logout(): void {
   // Revoke the session on the server first (best effort), so a copied token stops working immediately.
   if (getToken()) void api('/api/auth/logout', { method: 'POST' }).catch(() => undefined);
-  setToken(null); me = null;
+  setToken(null); me = null; _validated = false; ssWrite(null);
 }

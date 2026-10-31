@@ -4,6 +4,7 @@ import { fb } from './firebase';
 import { ApiError, DEFAULT_SETTINGS, toApiError } from './core';
 import { availability, createBooking, refOf } from './bookings';
 import type { SlotSettings } from './slots';
+import { getCachedNgnRate } from '../fx';
 
 interface PublicPage {
   wid: string; name: string; phone: string | null; address: string | null; openMinutes: number; closeMinutes: number; slotMinutes: number;
@@ -24,7 +25,7 @@ async function page(slug: string): Promise<PublicPage> {
     openMinutes: d.openMinutes ?? DEFAULT_SETTINGS.openMinutes, closeMinutes: d.closeMinutes ?? DEFAULT_SETTINGS.closeMinutes, slotMinutes: d.slotMinutes ?? 30,
     daysOpen: [0, 1, 2, 3, 4, 5, 6].filter((x) => !closed.includes(x)), leadMinutes: d.leadMinutes ?? 60, maxDaysAhead: Math.min(d.maxDaysAhead ?? 60, 120),
     bookingCap: Math.max(1, Math.min(Number(d.bookingCap) || 30, 999_999)), bookingEnabled: true,
-    exchangeRate: Number(d.exchangeRate) > 0 ? Number(d.exchangeRate) : 1500,
+    exchangeRate: Number(d.exchangeRate) > 0 && Number(d.exchangeRate) !== 1500 ? Number(d.exchangeRate) : getCachedNgnRate(),
     depositEnabled: d.depositEnabled === true && Number(d.depositMinor) > 0, depositMinor: d.depositEnabled === true ? Math.max(0, Number(d.depositMinor) || 0) : 0,
   };
   cache.set(slug, { at: Date.now(), page: p });

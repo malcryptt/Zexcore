@@ -4,6 +4,8 @@ import { fsCommit, fsGet } from '../fs';
 import { ID_RE, json, paystackSignature, randomRef, timingSafeEqual } from '../util';
 import { settleDeposit } from './deposits';
 
+import { getLiveNgnRate, DEFAULT_FALLBACK_RATE } from '../rates';
+
 // ───────────── pricing (mirrors apps/api/src/billing/plans.ts) ─────────────
 export type Tier = 'starter' | 'growth' | 'agency' | 'enterprise' | 'dedicated';
 export type Cycle = 'monthly' | 'annual';
@@ -16,19 +18,17 @@ export const PLANS: Record<Tier, { monthlyUsd: number; annualUsd: number }> = {
   dedicated: { monthlyUsd: 1500, annualUsd: 15000 },
 };
 export const isTier = (v: unknown): v is Tier => typeof v === 'string' && Object.prototype.hasOwnProperty.call(PLANS, v);
-export function amountMinor(tier: Tier, cycle: Cycle, currency: Currency, ngnPerUsd = 1500): number {
+export function amountMinor(tier: Tier, cycle: Cycle, currency: Currency, ngnPerUsd = DEFAULT_FALLBACK_RATE): number {
   const usd = cycle === 'annual' ? PLANS[tier].annualUsd : PLANS[tier].monthlyUsd;
   return Math.round((currency === 'NGN' ? usd * ngnPerUsd : usd) * 100);
 }
-
-const rate = (env: Env) => { const n = Number(env.NGN_PER_USD); return Number.isFinite(n) && n > 0 ? n : 1500; };
 
 // ───────────── POST /api/checkout ─────────────
 export async function checkout(req: Request, env: Env, d: Deps, headers: Record<string, string>): Promise<Response> {
   const bearer = /^Bearer (.+)$/.exec(req.headers.get('authorization') ?? '')?.[1];
   const caller = bearer ? await verifyFirebaseIdToken(env, d, bearer) : null;
   if (!caller) return json({ error: 'Sign in again to continue.' }, 401, headers);
-  if (!caller.emailVerified || !caller.email) return json({ error: 'Confirm your email address before upgrading.', code: 'email_unverified' }, 403, headers);
+  if (!caller.email) return json({ error: 'Your account must have an email address for payment invoices.', code: 'email_missing' }, 400, headers);
 
   let body: any; try { body = await req.json(); } catch { return json({ error: 'Invalid request' }, 400, headers); }
   const { workspaceId, tier, cycle = 'monthly', currency = 'NGN' } = body ?? {};
@@ -40,11 +40,12 @@ export async function checkout(req: Request, env: Env, d: Deps, headers: Record<
   const member = await fsGet(env, d, `workspaces/${workspaceId}/members/${caller.uid}`);
   if (!member || !['owner', 'admin'].includes(String(member.data.role))) return json({ error: 'Only a workspace owner or admin can change the plan.' }, 403, headers);
 
-  const amount = amountMinor(tier, cycle, currency, rate(env));
+  const liveRate = await getLiveNgnRate(env, d);
+  const amount = amountMinor(tier, cycle, currency, liveRate);
   const reference = randomRef(workspaceId);
   await fsCommit(env, d, [{
     path: `workspaces/${workspaceId}/payments/${reference}`,
-    fields: { reference, tier, cycle, currency, amountMinor: amount, status: 'pending', createdBy: caller.uid, createdAt: d.now() },
+    fields: { reference, tier, cycle, currency, amountMinor: amount, rate: liveRate, status: 'pending', createdBy: caller.uid, createdAt: d.now() },
     precondition: { exists: false },
   }]);
 

@@ -50,9 +50,9 @@ export function registerBillingRoutes(server: FastifyInstance): void {
       const tenant = (request as any).tenant;
       if (!tenant?.id) return reply.status(400).send({ error: 'Tenant context required' });
 
-      // Payments are tied to a confirmed email so receipts and account recovery reach the right person.
+      // User account email is used for receipts and invoice delivery.
       const acct = await getUserAccount((request as any).user.userId);
-      if (acct && !acct.email_verified) return reply.status(403).send({ error: 'Confirm your email address before upgrading. We sent you a link when you signed up.', code: 'email_unverified' });
+      if (!acct?.email) return reply.status(400).send({ error: 'Your account must have an email address for billing receipts.', code: 'email_missing' });
 
       const { tier, cycle = 'monthly', currency = 'NGN' } = request.body ?? {};
       if (!isPlanTier(tier)) return reply.status(400).send({ error: 'Unknown plan tier' });

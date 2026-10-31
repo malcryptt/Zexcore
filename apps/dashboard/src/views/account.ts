@@ -26,7 +26,7 @@ export async function renderBilling(view: HTMLElement): Promise<void> {
     <div class="chips"><button class="chip-btn" data-c="monthly" aria-pressed="true">Monthly</button><button class="chip-btn" data-c="annual" aria-pressed="false">Annual · 2 months free</button></div></div>
     <div id="usage"></div>
     <div id="plans" class="stack" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr))"></div>
-    <p class="muted small" style="margin-top:12px">Prices are in US dollars. Your card payment is processed securely by Paystack at the current platform exchange rate.</p>
+    <p class="muted small" style="margin-top:12px">Prices are in US dollars. Payments are processed securely via Paystack.</p>
     <h3 style="margin:28px 0 12px">Payment history</h3><div class="card" id="pay"></div>`);
   let plans: PlanList;
   try { plans = await api<PlanList>('/api/billing/plans', { auth: false }); }

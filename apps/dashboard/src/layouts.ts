@@ -66,13 +66,14 @@ export async function appLayout(path: string, onNew: () => void): Promise<HTMLEl
   let view = $('#view');
   const me = current()!;
   if (!view || !$('.app')) {
-    const s = await loadSettings();
-    const bizName = s.publicName || me.tenant.name;
+    // Render the shell immediately with the tenant name from cached session data —
+    // no Firestore round-trip before first paint. Settings are patched in the background.
+    const bizName = me.tenant.name;
     const isDismissed = Boolean(sessionStorage.getItem('zx.verify_dismissed'));
     mount(root(), html`
       <div class="app">
         <aside class="sidebar" aria-label="Main">
-          <a href="/app" data-link>${brand('', s.logoUrl)}</a>
+          <a href="/app" data-link>${brand()}</a>
           ${NAV.map((g) => html`
             ${g.label ? html`<div class="nav-label">${g.label}</div>` : ''}
             ${g.items.map((i) => {
@@ -87,7 +88,7 @@ export async function appLayout(path: string, onNew: () => void): Promise<HTMLEl
         </aside>
         <div class="content-col">
           <header class="topbar">
-            <a href="/app" data-link class="brand-link">${brand('', s.logoUrl)}</a>
+            <a href="/app" data-link class="brand-link">${brand()}</a>
             <span class="biz-chip"><span class="dot dot-success pulse"></span><span class="t">${bizName}</span></span>
             <span class="spacer"></span>
             <a href="/" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:6px" title="Back to website (opens in new page)">
@@ -147,6 +148,14 @@ export async function appLayout(path: string, onNew: () => void): Promise<HTMLEl
     document.addEventListener('click', () => panel.classList.add('hidden'));
     $('[data-logout]')!.addEventListener('click', () => { logout(); clearStore(); navigate('/signin'); });
     void refreshUnread();
+    // Patch logo and business name from settings without blocking first paint.
+    void loadSettings().then((s) => {
+      const name = s.publicName || me.tenant.name;
+      $$('.biz-chip .t').forEach((el) => { el.textContent = name; });
+      if (s.logoUrl) {
+        $$('.brand-lockup').forEach((el) => { if (el instanceof HTMLImageElement) el.src = s.logoUrl!; });
+      }
+    }).catch(() => undefined);
   }
   $$('[data-nav]').forEach((a) => { isActive(a.dataset.nav!, path) ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'); });
   const moreActive = !['/app', '/app/bookings', '/app/calendar', '/app/messages'].some((h) => isActive(h, path));

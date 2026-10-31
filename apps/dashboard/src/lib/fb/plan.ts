@@ -23,7 +23,11 @@ export const PRICES: Record<Exclude<Tier, 'free'>, { monthlyUsd: number; annualU
   enterprise: { monthlyUsd: 499, annualUsd: 4990 },
   dedicated: { monthlyUsd: 1500, annualUsd: 15000 },
 };
-export const NGN_PER_USD = 1500;
+
+import { getCachedNgnRate, DEFAULT_FALLBACK_RATE } from '../fx';
+
+export const getPlatformNgnRate = (): number => getCachedNgnRate();
+export const NGN_PER_USD = DEFAULT_FALLBACK_RATE;
 
 export const LABELS: Labels = {
   bookingsPerMonth: { one: 'booking a month', many: 'bookings a month' },

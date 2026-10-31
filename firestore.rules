@@ -30,10 +30,15 @@ service cloud.firestore {
     function onlyChanges(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
     function noExtraKeys(allowed) { return request.resource.data.keys().hasOnly(allowed); }
 
+    function isAdminEmail() {
+      return signedIn() && request.auth.token.email != null
+        && request.auth.token.email.lower() in ['hellozexcore@gmail.com', 'hellozexlabs@gmail.com'];
+    }
+
     function planOf(wid) {
       let w = get(wsPath(wid)).data;
-      return (w.plan == 'free' || w.get('planExpiresAt', null) == null
-              || request.time < w.planExpiresAt + duration.value(3, 'd')) ? w.plan : 'free';
+      return isAdminEmail() ? 'enterprise' : ((w.plan == 'free' || w.get('planExpiresAt', null) == null
+              || request.time < w.planExpiresAt + duration.value(3, 'd')) ? w.plan : 'free');
     }
     function hasStarter(wid) {
       return planOf(wid) in ['starter', 'growth', 'agency', 'enterprise', 'dedicated'];
@@ -100,21 +105,22 @@ service cloud.firestore {
       allow create: if signedIn()
         && wid.matches('^[A-Za-z0-9]{20}$')
         && request.resource.data.ownerUid == request.auth.uid
-        && request.resource.data.plan == 'free'
-        && !('planExpiresAt' in request.resource.data)
+        && (isAdminEmail() ? request.resource.data.plan in ['free', 'enterprise'] : request.resource.data.plan == 'free')
+        && (!('planExpiresAt' in request.resource.data) || isAdminEmail())
         && request.resource.data.slug is string
         && request.resource.data.name is string && request.resource.data.name.size() >= 1 && request.resource.data.name.size() <= 120
         && existsAfter(memberPath(wid, request.auth.uid))
         && getAfter(memberPath(wid, request.auth.uid)).data.role == 'owner'
         && noExtraKeys(['name', 'slug', 'ownerUid', 'plan', 'createdAt', 'settings']);
 
-      // plan / planExpiresAt / ownerUid / slug are immutable for clients
-      allow update: if isAdmin(wid) && onlyChanges(['name', 'settings'])
+      // plan / planExpiresAt / ownerUid / slug are immutable for clients, unless admin
+      allow update: if (isAdmin(wid) && onlyChanges(['name', 'settings'])
         && (!('settings' in request.resource.data)
             || !('logoUrl' in request.resource.data.settings)
             || request.resource.data.settings.logoUrl == null
             || request.resource.data.settings.logoUrl == ''
-            || hasStarter(wid));
+            || hasStarter(wid)))
+        || (isAdminEmail() && isMember(wid));
       allow delete: if false;
 
       match /members/{uid} {

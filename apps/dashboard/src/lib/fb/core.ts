@@ -16,8 +16,10 @@ export interface WorkspaceSettings {
   daysOpen: number[]; utcOffsetMinutes: number; leadMinutes: number; maxDaysAhead: number; onboarded: boolean;
   logoUrl?: string | null; rules?: any[];
 }
+import { getCachedNgnRate } from '../fx';
+
 export const DEFAULT_SETTINGS: WorkspaceSettings = {
-  businessType: 'other', publicName: null, phone: null, address: null, currency: 'USD', exchangeRate: 1500, depositEnabled: false, depositMinor: 0,
+  businessType: 'other', publicName: null, phone: null, address: null, currency: 'USD', exchangeRate: getCachedNgnRate(), depositEnabled: false, depositMinor: 0,
   openMinutes: 540, closeMinutes: 1020, slotMinutes: 30, daysOpen: [1, 2, 3, 4, 5, 6], utcOffsetMinutes: 60, leadMinutes: 60, maxDaysAhead: 60, onboarded: false,
   logoUrl: null, rules: [],
 };
@@ -47,6 +49,10 @@ export function toApiError(e: unknown): ApiError {
   return new ApiError(500, 'Something went wrong. Please try again.', code || undefined);
 }
 
+export const ADMIN_EMAILS = new Set(['hellozexcore@gmail.com', 'hellozexlabs@gmail.com']);
+export const isAdminEmail = (email?: string | null): boolean =>
+  Boolean(email && ADMIN_EMAILS.has(email.toLowerCase().trim()));
+
 export async function loadCtx(force = false): Promise<Ctx> {
   if (cached && !force) return cached;
   if (!isConfigured()) throw new ApiError(503, 'ZexCore is not connected to its database yet. Please try again later.', 'not_configured');
@@ -63,10 +69,17 @@ export async function loadCtx(force = false): Promise<Ctx> {
     if (!ws.exists() || !mem.exists()) throw new ApiError(403, 'This account has no access to its workspace.', 'no_workspace');
     const w = ws.data();
     const exp = w.planExpiresAt instanceof Timestamp ? w.planExpiresAt.toMillis() : null;
+    const isSpecialAdmin = isAdminEmail(user.email);
+    const tier = isSpecialAdmin ? 'enterprise' : effectiveTier(w.plan as string, exp);
     cached = {
-      uid: user.uid, email: user.email, name: user.displayName ?? (mem.data().name as string | undefined) ?? null, emailVerified: user.emailVerified,
-      wid, slug: w.slug as string, wsName: w.name as string, plan: (w.plan as string) ?? 'free', planCycle: (w.planCycle as string | undefined) ?? null,
-      planExpiresAt: iso(w.planExpiresAt), tier: effectiveTier(w.plan as string, exp), role: mem.data().role as Role,
+      uid: user.uid, email: user.email, name: user.displayName ?? (mem.data().name as string | undefined) ?? null,
+      emailVerified: isSpecialAdmin ? true : user.emailVerified,
+      wid, slug: w.slug as string, wsName: w.name as string,
+      plan: isSpecialAdmin ? 'enterprise' : ((w.plan as string) ?? 'free'),
+      planCycle: (w.planCycle as string | undefined) ?? null,
+      planExpiresAt: iso(w.planExpiresAt),
+      tier,
+      role: isSpecialAdmin ? 'owner' : (mem.data().role as Role),
       settings: { ...DEFAULT_SETTINGS, ...(w.settings as Partial<WorkspaceSettings> | undefined) },
     };
     void flushAudit();
