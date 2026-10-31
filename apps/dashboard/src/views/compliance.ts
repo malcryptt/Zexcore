@@ -3,7 +3,8 @@ import { html, mount, $, type Raw } from '../lib/html';
 import { ic } from '../lib/icons';
 import { ago } from '../lib/format';
 import { emptyState, skeletonRows, confirmDialog } from '../lib/ui';
-import { canAdmin, canManage } from '../lib/session';
+import { canAdmin, canManage, current } from '../lib/session';
+import { hasFeatureAccess } from '../lib/fb/plan';
 import { api, toast, badge, pageHead, formModal, inp, fail, errMsg } from './shared';
 
 type Tab = 'retention' | 'erasure' | 'consent' | 'access';
@@ -16,6 +17,22 @@ const ENTITIES: Record<string, string> = { messages: 'Messages', bookings: 'Past
 const BASIS: [string, string][] = [['consent', 'Consent'], ['contract', 'Contract'], ['legal_obligation', 'Legal obligation'], ['vital_interests', 'Vital interests'], ['legitimate_interests', 'Legitimate interests']];
 
 export async function renderCompliance(view: HTMLElement): Promise<void> {
+  const me = current()!;
+  if (!hasFeatureAccess(me.tenant.tier, 'compliance')) {
+    mount(view, html`<div class="page-head"><div><h1>Data protection</h1><p>Retention, erasure requests, consent and access records for personal data.</p></div></div>
+      <div class="card card-pad stack" style="text-align:center;padding:48px 24px;max-width:640px;margin:32px auto">
+        <div style="width:56px;height:56px;border-radius:50%;background:var(--primary-tint,#fff1f2);color:var(--primary,#e50920);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">${ic('lock', 'ico-md')}</div>
+        <h2>Data Protection is available on the Starter plan</h2>
+        <p class="muted" style="max-width:480px;margin:0 auto 20px">Meet NDPA and GDPR regulatory requirements with automated data retention policies, right-to-be-forgotten requests, and consent logging.</p>
+        <div class="stack-sm" style="background:var(--bg-subtle,#f8f9fa);border-radius:12px;padding:16px;text-align:left;max-width:420px;margin:0 auto 24px">
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px">${ic('check', 'ico-sm')} Automated retention schedules & data purging</div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px">${ic('check', 'ico-sm')} Subject erasure (right to be forgotten) workflows</div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px">${ic('check', 'ico-sm')} Tamper-evident consent & access audit trail</div>
+        </div>
+        <div><a href="/app/billing" data-link class="btn btn-primary btn-lg" style="display:inline-flex;align-items:center;gap:8px">${ic('arrow-right', 'ico-sm')} Upgrade to Starter</a></div>
+      </div>`);
+    return;
+  }
   let tab: Tab = 'retention';
   mount(view, html`${pageHead('Data protection', 'Retention, erasure requests, consent and access records for the personal data you hold (NDPA and GDPR style duties).')}
     <div class="chips" role="tablist" style="margin-bottom:16px">${(['retention', 'erasure', 'consent', 'access'] as Tab[]).map((t) => html`<button class="chip-btn" role="tab" data-tab="${t}" aria-pressed="${t === tab}">${{ retention: 'Retention', erasure: 'Erasure', consent: 'Consent', access: 'Access logs' }[t]}</button>`)}</div>
