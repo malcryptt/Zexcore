@@ -44,6 +44,15 @@ const ROUTES: Record<string, Handler> = {
   'POST /api/rules/ai-draft': aiDraft,
 };
 
+/** Routes that take or confirm money. They stay off unless a live Paystack key is set (or the Worker is explicitly marked staging). */
+const MONEY_ROUTES = new Set(['POST /api/checkout', 'POST /api/paystack-webhook', 'GET /api/banks', 'POST /api/payout/setup', 'POST /api/public/deposit', 'POST /api/deposit/link', 'GET /api/public/deposit-status']);
+export function paymentsEnabled(env: Env): boolean {
+  const k = (env.PAYSTACK_SECRET_KEY ?? '').trim();
+  if (!k) return false;
+  if (k.startsWith('sk_live_')) return true;
+  return k.startsWith('sk_test_') && env.ALLOW_TEST_PAYMENTS === 'true';
+}
+
 export async function handle(req: Request, env: Env, d: Deps = realDeps()): Promise<Response> {
   const url = new URL(req.url);
   const headers = cors(env, req);
@@ -51,6 +60,11 @@ export async function handle(req: Request, env: Env, d: Deps = realDeps()): Prom
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers });
     const h = ROUTES[`${req.method} ${url.pathname}`];
     if (!h) return json({ error: 'Not found' }, 404, headers);
+    if (MONEY_ROUTES.has(`${req.method} ${url.pathname}`) && !paymentsEnabled(env)) {
+      // A webhook must not be retried forever; everything else tells the user plainly.
+      if (url.pathname === '/api/paystack-webhook') return json({ ok: true, ignored: true }, 200, headers);
+      return json({ error: 'Online payments are not switched on yet.', code: 'unavailable' }, 503, headers);
+    }
     return await h({ req, env, d, url, headers });
   } catch (e) {
     if (e instanceof HttpError) return json({ error: e.message, ...(e.code ? { code: e.code } : {}) }, e.status, headers);
