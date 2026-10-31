@@ -1,3 +1,5 @@
+> **Legacy design notes.** This document describes the earlier self-hosted PostgreSQL/Fastify design (`apps/api`, `packages/*`), which is not what production runs. The live product is the Firebase + Cloudflare Worker build described in the [README](../README.md) and [launch runbook](launch-runbook.md). Nothing here (including encryption, RLS or queue claims) should be read as a description of the live service.
+
 # ZexCore Deployment Guide
 
 This guide covers deploying the **ZexCore Platform** — the Firebase Hosting frontend dashboard and the Node.js Fastify API server with PostgreSQL 17.
