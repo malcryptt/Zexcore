@@ -159,7 +159,9 @@ export async function forgot(email: string): Promise<void> {
   const clean = String(email ?? '').trim();
   if (!clean) throw new ApiError(400, 'Enter your email address.');
   try {
-    const origin = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'https://zexcore-5d6c0.web.app';
+    const host = typeof window !== 'undefined' ? window.location?.hostname : '';
+    // Hosting addresses and the real domain all send people to the real domain; local development stays local.
+    const origin = host === 'localhost' || host === '127.0.0.1' ? window.location.origin : 'https://zexcore.com.ng';
     try {
       await sendPasswordResetEmail(fb().auth, clean, {
         url: `${origin}/reset-password`,

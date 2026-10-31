@@ -27,4 +27,6 @@ export const tenantSlug = (): string => slug;
 export const offset = (): number => settings?.utcOffsetMinutes ?? 60;
 export const clearStore = (): void => { settings = null; slug = ''; };
 
-export const bookingUrl = (): string => `${location.origin}/${slug}`;
+/** The public address of the site. Every link we show or send uses this, never the *.web.app hosting address. */
+export const SITE_URL: string = (import.meta.env?.VITE_SITE_URL || 'https://zexcore.com.ng').replace(/\/$/, '');
+export const bookingUrl = (): string => `${SITE_URL}/${slug}`;
