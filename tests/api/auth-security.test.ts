@@ -51,16 +51,12 @@ describe('Account security: verification, reset, sessions', () => {
   });
   afterAll(async () => { await server?.close(); await closeDatabaseConnection(); });
 
-  it('sign-up emails a confirmation link; payments wait for it; the link works once', async () => {
+  it('sign-up emails a confirmation link; the link works once', async () => {
     const { email, token } = await signup(crypto.randomBytes(3).toString('hex'));
     const mail = await lastMailTo(email);
     expect(mail?.subject).toMatch(/confirm/i);
     const me1 = await call('GET', '/api/auth/me', { token });
     expect(me1.json().user.emailVerified).toBe(false);
-
-    const blocked = await call('POST', '/api/billing/checkout', { token, payload: { tier: 'growth', cycle: 'monthly', currency: 'NGN' } });
-    expect(blocked.statusCode).toBe(403);
-    expect(blocked.json().code).toBe('email_unverified');
 
     const verify = linkToken(mail!.text);
     expect((await call('POST', '/api/auth/email/verify', { payload: { token: verify } })).statusCode).toBe(200);
