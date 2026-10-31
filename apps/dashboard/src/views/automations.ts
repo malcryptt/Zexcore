@@ -26,24 +26,23 @@ const summary = (r: Rule): string => {
 
 async function callAiProvider(provider: 'gemini' | 'openai', apiKey: string, intent: string): Promise<Record<string, unknown>> {
   if (provider === 'gemini') {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
     const systemPrompt = `You are an automation rule generator for ZexCore business platform. Convert this intent into a valid rule JSON.
 Intent: "${intent}"
 
 Available triggers (trigger.source):
-- "event:crm.lead.created"
-- "event:crm.lead.won"
 - "event:bookings.booking.created"
-- "event:bookings.booking.cancelled"
-- "event:devices.reading.alert"
+- "event:crm.lead.created"
+- "event:iot.reading"
+- "event:iot.alert"
 
 Available condition operators (conditions.op): "eq", "neq", "gt", "gte", "lt", "lte", "contains", "exists"
-Condition fields: "lead.value", "lead.status", "booking.depositStatus", "device.severity".
+Condition field examples: "lead.value", "lead.status", "booking.depositStatus", "alert.severity".
 
 Available actions:
-- { "type": "notify", "message": "Notification text" }
+- { "type": "notify", "message": "Notification message text" }
 - { "type": "webhook", "url": "https://..." }
-- { "type": "emit", "event": "custom.event.name" }
+(Note: Only "notify" and "webhook" actions are supported. Do NOT use "emit" or any other action type.)
 
 Return ONLY valid JSON without markdown code fences:
 {
@@ -81,7 +80,7 @@ Return ONLY valid JSON without markdown code fences:
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
-          { role: 'system', content: 'You are an automation rule generator for ZexCore. Output only a JSON object with keys: name (string), description (string), trigger ({source: string}), conditions (optional {field, op, value}), actions (array of {type, message/url/event}).' },
+          { role: 'system', content: 'You are an automation rule generator for ZexCore. Output only a JSON object with keys: name (string), description (string), trigger ({source: string}), conditions (optional {field, op, value}), actions (array of 1-3 objects with type "notify" [message: string] or type "webhook" [url: string]). Valid trigger sources are event:bookings.booking.created, event:crm.lead.created, event:iot.reading, event:iot.alert. Do NOT use any other action types.' },
           { role: 'user', content: intent },
         ],
         response_format: { type: 'json_object' },
@@ -201,7 +200,7 @@ export async function renderAutomations(view: HTMLElement): Promise<void> {
         <div class="field">
           <label for="ai-p">AI Provider</label>
           <select class="input" id="ai-p">
-            <option value="gemini" ${savedProvider === 'gemini' ? 'selected' : ''}>Google Gemini (Gemini 1.5 Flash)</option>
+            <option value="gemini" ${savedProvider === 'gemini' ? 'selected' : ''}>Google Gemini (Gemini 2.0 Flash)</option>
             <option value="openai" ${savedProvider === 'openai' ? 'selected' : ''}>OpenAI (gpt-4o-mini)</option>
           </select>
         </div>
@@ -230,6 +229,16 @@ export async function renderAutomations(view: HTMLElement): Promise<void> {
         } catch { /* storage full / private mode */ }
 
         const generated = await callAiProvider(provider, key, intent);
+        // Normalize trigger source
+        if (typeof generated.trigger === 'string') {
+          generated.trigger = { source: generated.trigger.startsWith('event:') ? generated.trigger : `event:${generated.trigger}` };
+        } else if (generated.trigger && typeof (generated.trigger as any).source === 'string') {
+          const s = (generated.trigger as any).source;
+          (generated.trigger as any).source = s.startsWith('event:') ? s : `event:${s}`;
+        }
+        const genActions = Array.isArray(generated.actions) ? (generated.actions as any[]) : [];
+        const sanitizedActions = genActions.filter((a) => a && (a.type === 'notify' || a.type === 'webhook'));
+        generated.actions = sanitizedActions.length > 0 ? sanitizedActions : [{ type: 'notify', message: `Rule triggered: ${String(generated.name || intent)}` }];
         await api('/api/rules', { method: 'POST', body: generated });
         toast('Draft created with AI! Review and approve it.', 'success'); void load();
       },

@@ -119,13 +119,21 @@ export async function putSettings(b: Record<string, unknown>): Promise<{ setting
   if (s.depositEnabled && !(s.depositMinor > 0)) throw new ApiError(400, 'Set a deposit amount before turning deposits on.');
   if (s.depositEnabled && !c.settings.depositEnabled) {
     const p = await getDoc(doc(fb().db, 'workspaces', c.wid, 'payout', 'main'));
-    if (!p.exists() || !p.data()?.subaccountCode) throw new ApiError(400, 'Add the bank account where deposits should be paid before turning deposits on.', 'payout_missing');
+    if (!p.exists() || !p.data()?.subaccountCode) {
+      if (b.onboarded) {
+        // In onboarding, store the intended deposit amount but keep deposits off until a bank account is added
+        s.depositEnabled = false;
+      } else {
+        throw new ApiError(400, 'Add the bank account where deposits should be paid before turning deposits on.', 'payout_missing');
+      }
+    }
   }
   if (b.exchangeRate !== undefined) {
     const r = Number(b.exchangeRate);
     if (!Number.isFinite(r) || r < 100 || r > 100_000) throw new ApiError(400, 'Enter the naira value of $1, between 100 and 100,000.');
     s.exchangeRate = Math.round(r * 100) / 100;
   }
+  if (b.logoUrl !== undefined) s.logoUrl = b.logoUrl ? String(b.logoUrl) : null;
   if (b.onboarded !== undefined) s.onboarded = Boolean(b.onboarded);
   s.utcOffsetMinutes = 60; s.currency = 'USD';
 

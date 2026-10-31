@@ -6,8 +6,8 @@ const UNLIMITED = null;
 
 // Everything the database rules enforce per plan. Must match firestore.rules.
 export const LIMITS: Record<Tier, Record<'bookingsPerMonth' | 'staff' | 'services' | 'cmsPages' | 'crmContacts' | 'devices' | 'rules', number | null>> = {
-  free:       { bookingsPerMonth: 30,   staff: 1,   services: 3,   cmsPages: 3,   crmContacts: 50, devices: 1, rules: 2 },
-  starter:    { bookingsPerMonth: 200,  staff: 3,   services: 10,  cmsPages: 10,  crmContacts: 500, devices: 5, rules: 5 },
+  free:       { bookingsPerMonth: 30,   staff: 1,   services: 3,   cmsPages: 3,   crmContacts: 50, devices: 0, rules: 0 },
+  starter:    { bookingsPerMonth: 200,  staff: 3,   services: 10,  cmsPages: 10,  crmContacts: 500, devices: 0, rules: 0 },
   growth:     { bookingsPerMonth: 1000, staff: 10,  services: 30,  cmsPages: 50,  crmContacts: 5000, devices: 25, rules: 25 },
   agency:     { bookingsPerMonth: 5000, staff: 50,  services: 100, cmsPages: 200, crmContacts: 50000, devices: 100, rules: 100 },
   enterprise: { bookingsPerMonth: UNLIMITED, staff: UNLIMITED, services: UNLIMITED, cmsPages: UNLIMITED, crmContacts: UNLIMITED, devices: UNLIMITED, rules: UNLIMITED },

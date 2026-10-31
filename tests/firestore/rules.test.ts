@@ -114,7 +114,15 @@ describe('tenant isolation', () => {
     await assertFails(deleteDoc(doc(other(), 'workspaces', W, 'messages', 'm1')));
     await assertSucceeds(deleteDoc(doc(owner(), 'workspaces', W, 'messages', 'm1')));   // admins only: erasure and retention
   });
-  it('keeps data-protection records to the right roles and the right shape', async () => {
+  it('keeps data-protection records to the right roles and the right shape (starter plan and above)', async () => {
+    // Free plan: data protection is refused
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'retention', 'messages'), { retentionDays: 90, enabled: true, lastRunAt: null }));
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'erasures', 'e1'), { subjectId: '+2348011112222', status: 'pending', requestedAt: serverTimestamp() }));
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'consents', 'k1'), { subjectId: '+2348011112222', purpose: 'Reminders', legalBasis: 'consent', grantedAt: serverTimestamp(), revokedAt: null, by: 'owner1' }));
+
+    // Upgrade to Starter
+    await setPlan('starter');
+
     await assertSucceeds(setDoc(doc(owner(), 'workspaces', W, 'retention', 'messages'), { retentionDays: 90, enabled: true, lastRunAt: null }));
     await assertFails(setDoc(doc(owner(), 'workspaces', W, 'retention', 'passwords'), { retentionDays: 90, enabled: true, lastRunAt: null }));
     await assertFails(setDoc(doc(owner(), 'workspaces', W, 'retention', 'bookings'), { retentionDays: 0, enabled: true, lastRunAt: null }));
@@ -128,11 +136,20 @@ describe('tenant isolation', () => {
     await assertSucceeds(updateDoc(doc(owner(), 'workspaces', W, 'consents', 'k1'), { revokedAt: serverTimestamp() }));
     await assertFails(getDoc(doc(other(), 'workspaces', W, 'consents', 'k1')));
   });
-  it('limits devices by plan, keeps readings Worker-only, and makes rules wait for approval', async () => {
+  it('limits devices and rules to growth plan, keeps readings Worker-only, and makes rules wait for approval', async () => {
     const hash = 'a'.repeat(64);
     const dev = (extra = {}) => ({ name: 'Cold room', deviceKey: 'cold-1', kind: 'sensor', tokenHash: hash, createdAt: serverTimestamp(), seq: 0, ...extra });
+    const rule = (extra = {}) => ({ name: 'Big booking', trigger: { source: 'event:bookings.booking.created' }, conditions: null, actions: [{ type: 'notify', message: 'hi' }], description: '', enabled: false, approved: false, createdBy: 'owner1', createdAt: serverTimestamp(), seq: 0, ...extra });
+
+    // Free plan: devices and rules are refused
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'devices', 'd_0'), dev()));
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'rules', 'r_0'), rule()));
+
+    // Upgrade to Growth
+    await setPlan('growth');
+
     await assertSucceeds(setDoc(doc(owner(), 'workspaces', W, 'devices', 'd_0'), dev()));
-    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'devices', 'd_1'), dev({ seq: 1 })));             // free plan: 1 device
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'devices', 'd_25'), dev({ seq: 25 })));             // growth plan: 25 devices
     await assertFails(setDoc(doc(owner(), 'workspaces', W, 'devices', 'd_9'), dev({ tokenHash: 'plain-token' })));
     await assertFails(updateDoc(doc(owner(), 'workspaces', W, 'devices', 'd_0'), { latest: { temperature: 3 } }));   // no forged telemetry
     await assertFails(updateDoc(doc(owner(), 'workspaces', W, 'devices', 'd_0'), { lastSeenAt: serverTimestamp() }));
@@ -143,10 +160,9 @@ describe('tenant isolation', () => {
     await assertSucceeds(setDoc(doc(owner(), 'workspaces', W, 'alertRules', 'a1'), { deviceId: 'd_0', metric: 'temperature', op: 'gt', threshold: 8, severity: 'high', message: '', enabled: true, createdAt: serverTimestamp(), lastFiredAt: null }));
     await assertFails(setDoc(doc(owner(), 'workspaces', W, 'alertRules', 'a2'), { deviceId: 'd_0', metric: 'temperature', op: 'between', threshold: 8, severity: 'high', message: '', enabled: true, createdAt: serverTimestamp(), lastFiredAt: null }));
 
-    const rule = (extra = {}) => ({ name: 'Big booking', trigger: { source: 'event:bookings.booking.created' }, conditions: null, actions: [{ type: 'notify', message: 'hi' }], description: '', enabled: false, approved: false, createdBy: 'owner1', createdAt: serverTimestamp(), seq: 0, ...extra });
     await assertSucceeds(setDoc(doc(owner(), 'workspaces', W, 'rules', 'r_0'), rule()));
     await assertFails(setDoc(doc(owner(), 'workspaces', W, 'rules', 'r_1'), rule({ seq: 1, approved: true, enabled: true })));   // cannot self-approve on create
-    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'rules', 'r_2'), rule({ seq: 2 })).then(() => setDoc(doc(owner(), 'workspaces', W, 'rules', 'r_3'), rule({ seq: 3 }))).then(() => setDoc(doc(owner(), 'workspaces', W, 'rules', 'r_4'), rule({ seq: 4 }))));   // free plan: 2 rules
+    await assertFails(setDoc(doc(owner(), 'workspaces', W, 'rules', 'r_25'), rule({ seq: 25 })));   // growth plan: 25 rules
     await assertSucceeds(updateDoc(doc(owner(), 'workspaces', W, 'rules', 'r_0'), { approved: true, enabled: true, approvedBy: 'owner1' }));
     await assertFails(updateDoc(doc(owner(), 'workspaces', W, 'rules', 'r_0'), { actions: [] }));
     await assertFails(getDoc(doc(owner(), 'workspaces', W, 'automationMarkers', 'm')));

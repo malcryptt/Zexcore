@@ -3,9 +3,10 @@ import { ic, type IconName } from '../lib/icons';
 import { api, ApiError } from '../lib/api';
 import { money, initials, minutesToTime, timeToMinutes } from '../lib/format';
 import { toast, openModal, emptyState, errorState, skeletonRows, busy, copyText } from '../lib/ui';
-import { loadSettings, bookingUrl, type Service, type Staff } from '../lib/store';
+import { loadSettings, bookingUrl, clearStore, type Service, type Staff } from '../lib/store';
 import { canAdmin, current, logout } from '../lib/session';
 import { navigate } from '../router';
+import { hasFeatureAccess } from '../lib/fb/plan';
 
 const ro = (): Raw => canAdmin() ? html`` : html`<div class="alert alert-info" style="margin-bottom:16px">${ic('info', 'ico-sm')} Only owners and admins can change these settings.</div>`;
 
@@ -119,12 +120,45 @@ export async function renderSettings(view: HTMLElement): Promise<void> {
   const s = await loadSettings(true);
   const me = current()!;
   const dis = canAdmin() ? '' : 'disabled';
-  mount(view, html`<div class="page-head"><div><h1>Settings</h1><p>Business details, opening hours and deposit rules.</p></div></div>${ro()}
+  const canBrand = hasFeatureAccess(me.tenant.tier, 'branding');
+  let currentLogo: string | null = s.logoUrl || null;
+
+  mount(view, html`<div class="page-head"><div><h1>Settings</h1><p>Business details, branding, opening hours and deposit rules.</p></div></div>${ro()}
     <form id="st" class="stack-lg" novalidate>
       <div id="st-err" class="alert alert-error hidden" role="alert"></div>
       <section class="card card-pad form-grid"><h3>Business</h3>
         <div class="field"><label for="pn">Business name</label><input class="input" id="pn" maxlength="255" value="${s.publicName ?? me.tenant.name}" ${dis}></div>
         <div class="form-grid two"><div class="field"><label for="ph">Phone / WhatsApp</label><input class="input" id="ph" type="tel" value="${s.phone ?? ''}" ${dis}></div><div class="field"><label for="ad">Address</label><input class="input" id="ad" maxlength="500" value="${s.address ?? ''}" ${dis}></div></div></section>
+
+      <section class="card card-pad form-grid">
+        <div class="row between wrap">
+          <div>
+            <h3>Branding & Logo</h3>
+            <p class="muted small">Display your custom logo on the dashboard and booking page.</p>
+          </div>
+          ${!canBrand ? html`<a href="/app/billing" data-link class="badge badge-warning" style="text-decoration:none">${ic('lock', 'ico-xs')} Upgrade to Starter</a>` : ''}
+        </div>
+        ${canBrand ? html`
+          <div style="display:flex;align-items:center;gap:16px;margin-top:12px;flex-wrap:wrap">
+            <div id="logo-preview-box" style="width:72px;height:72px;border-radius:10px;border:1px dashed var(--border,#ddd);background:var(--bg-subtle,#f9f9f9);display:flex;align-items:center;justify-content:center;overflow:hidden">
+              ${currentLogo ? html`<img id="logo-img" src="${currentLogo}" alt="Logo" style="width:100%;height:100%;object-fit:contain;padding:4px" />` : html`<span id="logo-empty" class="muted small" style="font-size:11px;text-align:center">No logo</span>`}
+            </div>
+            <div class="stack-sm">
+              <input type="file" id="logo-file" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="display:none" ${dis} />
+              <div class="row" style="gap:8px">
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-pick-logo" ${dis}>${ic('upload', 'ico-sm')} Choose image</button>
+                <button type="button" class="btn btn-ghost btn-sm ${currentLogo ? '' : 'hidden'}" id="btn-remove-logo" ${dis}>Remove</button>
+              </div>
+              <span class="hint">PNG, JPEG, WebP, or SVG. Automatically optimized.</span>
+            </div>
+          </div>
+        ` : html`
+          <div class="alert alert-info" style="margin-top:8px">
+            <span>Custom branding is included with the <b>Starter</b> plan and higher. <a href="/app/billing" data-link style="text-decoration:underline">Upgrade your workspace</a> to upload your custom business logo.</span>
+          </div>
+        `}
+      </section>
+
       <section class="card card-pad form-grid"><h3>Opening hours</h3>
         <div class="form-grid two"><div class="field"><label for="op">Opens</label><input class="input" id="op" type="time" value="${minutesToTime(s.openMinutes)}" ${dis}></div><div class="field"><label for="cl">Closes</label><input class="input" id="cl" type="time" value="${minutesToTime(s.closeMinutes)}" ${dis}></div></div>
         <div class="field"><label>Open days</label><div class="day-pills">${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => html`<label><input type="checkbox" name="day" value="${i}" ${s.daysOpen.includes(i) ? 'checked' : ''} ${dis}><span>${d}</span></label>`)}</div></div>
@@ -133,10 +167,90 @@ export async function renderSettings(view: HTMLElement): Promise<void> {
       <section class="card card-pad form-grid" id="payout"><h3>Where deposits are paid</h3><p class="muted small">Loading…</p></section>
       <section class="card card-pad form-grid"><div class="row between"><div><h3>Upfront deposit</h3><p class="muted small">Customers pay this by card through Paystack to secure their slot. The money goes straight to your bank account below.</p></div><label class="switch"><input type="checkbox" id="dep" ${s.depositEnabled ? 'checked' : ''} ${dis} aria-label="Require deposit"><span></span></label></div>
         <div class="field"><label for="fx">Exchange rate (₦ per $1)</label><input class="input" id="fx" type="number" min="100" max="100000" step="0.01" value="${s.exchangeRate ?? 1500}" ${dis}><span class="hint">Your prices are in US dollars. Customers pay by card in naira, converted at this rate. Change it whenever the market moves; it applies to every payment for your business, not to ZexCore plan prices.</span></div>
-        <div class="field" id="depf"><label for="depn">Deposit per booking ($)</label><input class="input" id="depn" type="number" min="0" value="${s.depositMinor / 100}" ${dis}></div></section>
+        <div class="field ${s.depositEnabled ? '' : 'hidden'}" id="depf"><label for="depn">Deposit per booking ($)</label><input class="input" id="depn" type="number" min="0" value="${s.depositMinor / 100}" ${dis}></div></section>
       ${canAdmin() ? html`<div><button class="btn btn-primary btn-lg" type="submit">Save changes</button></div>` : ''}
     </form>
-    <section class="card card-pad stack-sm" style="margin-top:20px"><h3>Account</h3><div class="muted small">Signed in as <b>${me.user.email}</b> · role <b>${me.role}</b></div><div class="muted small">Workspace <span class="mono">${me.tenant.slug}</span> · plan <b style="text-transform:capitalize">${me.tenant.tier}</b></div></section>`);
+    <section class="card card-pad stack-sm" style="margin-top:20px">
+      <h3>Account</h3>
+      <div class="muted small">Signed in as <b>${me.user.email}</b> · role <b>${me.role}</b></div>
+      <div class="muted small">Workspace <span class="mono">${me.tenant.slug}</span> · plan <b style="text-transform:capitalize">${me.tenant.tier}</b></div>
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border,#e5e7eb)">
+        <button type="button" class="btn btn-secondary" data-settings-logout style="color:var(--danger,#e50920);border-color:rgba(229,9,32,0.3)">
+          ${ic('log-out', 'ico-sm')} Sign out of ZexCore
+        </button>
+      </div>
+    </section>`);
+
+  // Upfront deposit toggle visibility
+  $('#dep', view)?.addEventListener('change', (e) => {
+    const on = (e.target as HTMLInputElement).checked;
+    $('#depf', view)?.classList.toggle('hidden', !on);
+  });
+
+  // Logo file picker & preview handling
+  if (canBrand) {
+    const logoFile = $('#logo-file', view) as HTMLInputElement | null;
+    const btnPick = $('#btn-pick-logo', view);
+    const btnRemove = $('#btn-remove-logo', view);
+    const box = $('#logo-preview-box', view);
+
+    const updatePreview = (): void => {
+      if (!box) return;
+      if (currentLogo) {
+        box.innerHTML = `<img id="logo-img" src="${currentLogo}" alt="Logo" style="width:100%;height:100%;object-fit:contain;padding:4px" />`;
+        btnRemove?.classList.remove('hidden');
+      } else {
+        box.innerHTML = `<span id="logo-empty" class="muted small" style="font-size:11px;text-align:center">No logo</span>`;
+        btnRemove?.classList.add('hidden');
+      }
+    };
+
+    btnPick?.addEventListener('click', () => logoFile?.click());
+    btnRemove?.addEventListener('click', () => {
+      currentLogo = null;
+      if (logoFile) logoFile.value = '';
+      updatePreview();
+    });
+
+    logoFile?.addEventListener('change', () => {
+      const file = logoFile.files?.[0];
+      if (!file) return;
+      if (file.size > 2 * 1024 * 1024) { toast('Logo image should be under 2MB', 'error'); return; }
+
+      if (file.type === 'image/svg+xml') {
+        const reader = new FileReader();
+        reader.onload = () => { currentLogo = String(reader.result); updatePreview(); };
+        reader.readAsDataURL(file);
+      } else {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const maxDim = 256;
+            let w = img.width, h = img.height;
+            if (w > h) { if (w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; } }
+            else { if (h > maxDim) { w = Math.round((w * maxDim) / h); h = maxDim; } }
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, w, h);
+            currentLogo = canvas.toDataURL('image/png');
+            updatePreview();
+          };
+          img.src = String(reader.result);
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
+
+  // Sign out button
+  $('[data-settings-logout]', view)?.addEventListener('click', () => {
+    logout();
+    clearStore();
+    navigate('/signin');
+  });
+
   void paintPayout(view, s.depositEnabled);
   const form = $('#st', view) as HTMLFormElement;
   form.addEventListener('submit', (e) => {
@@ -144,12 +258,17 @@ export async function renderSettings(view: HTMLElement): Promise<void> {
     void busy(form.querySelector('button[type=submit]'), async () => {
       const err = $('#st-err', view)!; err.classList.add('hidden');
       const days = $$('input[name=day]:checked', view).map((i) => Number((i as HTMLInputElement).value));
+      const depChecked = ($('#dep') as HTMLInputElement).checked;
+      const depMinor = depChecked ? Math.round(Number(($('#depn') as HTMLInputElement).value) * 100) : 0;
       try {
         await api('/api/bookings/settings', { method: 'PUT', body: {
           publicName: ($('#pn') as HTMLInputElement).value.trim(), phone: ($('#ph') as HTMLInputElement).value.trim(), address: ($('#ad') as HTMLInputElement).value.trim(),
           openMinutes: timeToMinutes(($('#op') as HTMLInputElement).value), closeMinutes: timeToMinutes(($('#cl') as HTMLInputElement).value), daysOpen: days,
           slotMinutes: Number(($('#sl') as HTMLSelectElement).value), leadMinutes: Math.round(Number(($('#ld') as HTMLInputElement).value) * 60),
-          exchangeRate: Number(($('#fx') as HTMLInputElement).value), depositEnabled: ($('#dep') as HTMLInputElement).checked, depositMinor: Math.round(Number(($('#depn') as HTMLInputElement).value) * 100),
+          exchangeRate: Number(($('#fx') as HTMLInputElement).value),
+          depositEnabled: depChecked,
+          depositMinor: depMinor,
+          logoUrl: currentLogo,
         } });
         await loadSettings(true); toast('Settings saved', 'success');
       } catch (x) { err.textContent = x instanceof ApiError ? x.message : 'Could not save'; err.classList.remove('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' }); }

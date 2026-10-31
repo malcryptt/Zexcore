@@ -6,6 +6,7 @@ import { toast, emptyState, errorState, skeletonRows, confirmDialog, copyText, o
 import { formModal, inp } from './shared';
 import { current, canAdmin } from '../lib/session';
 import { ingestUrl } from '../lib/fb/iot';
+import { hasFeatureAccess } from '../lib/fb/plan';
 
 const readOnlyNotice = (allowed: boolean): Raw => allowed ? html`` : html`<div class="alert alert-info" style="margin-bottom:16px">${ic('info', 'ico-sm')} Only owners and admins can change this.</div>`;
 
@@ -18,6 +19,22 @@ const SEV: Record<string, string> = { low: '', medium: 'badge-info', high: 'badg
 const ingestEndpoint = (): string => ingestUrl();
 
 export async function renderDevices(view: HTMLElement): Promise<void> {
+  const me = current()!;
+  if (!hasFeatureAccess(me.tenant.tier, 'devices')) {
+    mount(view, html`<div class="page-head"><div><h1>Devices</h1><p>Sensors and gateways that report to your workspace, with the alerts that watch them.</p></div></div>
+      <div class="card card-pad stack" style="text-align:center;padding:48px 24px;max-width:640px;margin:32px auto">
+        <div style="width:56px;height:56px;border-radius:50%;background:var(--primary-tint,#fff1f2);color:var(--primary,#e50920);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">${ic('lock', 'ico-md')}</div>
+        <h2>Devices & Telemetry is available on the Growth plan</h2>
+        <p class="muted" style="max-width:480px;margin:0 auto 20px">Connect physical IoT sensors, gateways, and hardware controllers to track environmental metrics in real-time with automated threshold alerts.</p>
+        <div class="stack-sm" style="background:var(--bg-subtle,#f8f9fa);border-radius:12px;padding:16px;text-align:left;max-width:420px;margin:0 auto 24px">
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px">${ic('check', 'ico-sm')} Up to 25 hardware devices and sensor nodes</div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px">${ic('check', 'ico-sm')} Real-time telemetry ingestion & status monitoring</div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px">${ic('check', 'ico-sm')} Threshold alert rules with automated notifications</div>
+        </div>
+        <div><a href="/app/billing" data-link class="btn btn-primary btn-lg" style="display:inline-flex;align-items:center;gap:8px">${ic('arrow-right', 'ico-sm')} Upgrade to Growth</a></div>
+      </div>`);
+    return;
+  }
   const can = canAdmin();
   let tab: 'devices' | 'alerts' = 'devices';
   mount(view, html`<div class="page-head"><div><h1>Devices</h1><p>Sensors and gateways that report to your workspace, with the alerts that watch them.</p></div>

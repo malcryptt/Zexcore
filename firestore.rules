@@ -35,15 +35,21 @@ service cloud.firestore {
       return (w.plan == 'free' || w.get('planExpiresAt', null) == null
               || request.time < w.planExpiresAt + duration.value(3, 'd')) ? w.plan : 'free';
     }
+    function hasStarter(wid) {
+      return planOf(wid) in ['starter', 'growth', 'agency', 'enterprise', 'dedicated'];
+    }
+    function hasGrowth(wid) {
+      return planOf(wid) in ['growth', 'agency', 'enterprise', 'dedicated'];
+    }
     function limitOf(wid, key) {
       return {
-        'free':       {'bookingsPerMonth': 30,   'staff': 1,   'services': 3,   'cmsPages': 3,   'crmContacts': 50, 'devices': 1, 'rules': 2},
-        'starter':    {'bookingsPerMonth': 200,  'staff': 3,   'services': 10,  'cmsPages': 10,  'crmContacts': 500, 'devices': 5, 'rules': 5},
+        'free':       {'bookingsPerMonth': 30,   'staff': 1,   'services': 3,   'cmsPages': 3,   'crmContacts': 50, 'devices': 0, 'rules': 0},
+        'starter':    {'bookingsPerMonth': 200,  'staff': 3,   'services': 10,  'cmsPages': 10,  'crmContacts': 500, 'devices': 0, 'rules': 0},
         'growth':     {'bookingsPerMonth': 1000, 'staff': 10,  'services': 30,  'cmsPages': 50,  'crmContacts': 5000, 'devices': 25, 'rules': 25},
         'agency':     {'bookingsPerMonth': 5000, 'staff': 50,  'services': 100, 'cmsPages': 200, 'crmContacts': 50000, 'devices': 100, 'rules': 100},
         'enterprise': {'bookingsPerMonth': 999999, 'staff': 999999, 'services': 999999, 'cmsPages': 999999, 'crmContacts': 999999, 'devices': 999999, 'rules': 999999},
         'dedicated':  {'bookingsPerMonth': 999999, 'staff': 999999, 'services': 999999, 'cmsPages': 999999, 'crmContacts': 999999, 'devices': 999999, 'rules': 999999}
-      }.get(planOf(wid), {'bookingsPerMonth': 30, 'staff': 1, 'services': 3, 'cmsPages': 3, 'crmContacts': 50, 'devices': 1, 'rules': 2})[key];
+      }.get(planOf(wid), {'bookingsPerMonth': 30, 'staff': 1, 'services': 3, 'cmsPages': 3, 'crmContacts': 50, 'devices': 0, 'rules': 0})[key];
     }
     // "<prefix>_<n>" with n below the plan limit for this resource
     function slotId(wid, prefix, key, id) {
@@ -103,7 +109,12 @@ service cloud.firestore {
         && noExtraKeys(['name', 'slug', 'ownerUid', 'plan', 'createdAt', 'settings']);
 
       // plan / planExpiresAt / ownerUid / slug are immutable for clients
-      allow update: if isAdmin(wid) && onlyChanges(['name', 'settings']);
+      allow update: if isAdmin(wid) && onlyChanges(['name', 'settings'])
+        && (!('settings' in request.resource.data)
+            || !('logoUrl' in request.resource.data.settings)
+            || request.resource.data.settings.logoUrl == null
+            || request.resource.data.settings.logoUrl == ''
+            || hasStarter(wid));
       allow delete: if false;
 
       match /members/{uid} {
@@ -184,7 +195,7 @@ service cloud.firestore {
       // only its SHA-256 hash.
       match /devices/{id} {
         allow read: if isMember(wid);
-        allow create: if isAdmin(wid) && slotId(wid, 'd', 'devices', id)
+        allow create: if isAdmin(wid) && hasGrowth(wid) && slotId(wid, 'd', 'devices', id)
           && noExtraKeys(['name', 'deviceKey', 'kind', 'tokenHash', 'createdAt', 'seq'])
           && request.resource.data.tokenHash.matches('^[a-f0-9]{64}$') && request.resource.data.createdAt == request.time;
         allow update: if isAdmin(wid) && onlyChanges(['name', 'tokenHash'])
@@ -198,7 +209,7 @@ service cloud.firestore {
       }
       match /alertRules/{id} {
         allow read: if isMember(wid);
-        allow create: if isAdmin(wid) && noExtraKeys(['deviceId', 'metric', 'op', 'threshold', 'severity', 'message', 'enabled', 'createdAt', 'lastFiredAt'])
+        allow create: if isAdmin(wid) && hasGrowth(wid) && noExtraKeys(['deviceId', 'metric', 'op', 'threshold', 'severity', 'message', 'enabled', 'createdAt', 'lastFiredAt'])
           && request.resource.data.op in ['gt', 'gte', 'lt', 'lte', 'eq'] && request.resource.data.threshold is number
           && request.resource.data.severity in ['low', 'medium', 'high', 'critical'] && request.resource.data.createdAt == request.time;
         allow update: if isAdmin(wid) && onlyChanges(['enabled']);
@@ -210,7 +221,7 @@ service cloud.firestore {
       // Runs are written by the Worker.
       match /rules/{id} {
         allow read: if isMember(wid);
-        allow create: if isMember(wid) && slotId(wid, 'r', 'rules', id)
+        allow create: if isMember(wid) && hasGrowth(wid) && slotId(wid, 'r', 'rules', id)
           && noExtraKeys(['name', 'description', 'trigger', 'conditions', 'actions', 'enabled', 'approved', 'createdAt', 'createdBy', 'seq', 'lastRunAt'])
           && request.resource.data.approved == false && request.resource.data.enabled == false
           && request.resource.data.createdBy == request.auth.uid && request.resource.data.createdAt == request.time
@@ -245,21 +256,21 @@ service cloud.firestore {
 
       // Data protection (admins only except consent, which any member may record)
       match /retention/{entity} {
-        allow read, delete: if isAdmin(wid);
-        allow create, update: if isAdmin(wid) && entity in ['messages', 'bookings'] && noExtraKeys(['retentionDays', 'enabled', 'lastRunAt'])
+        allow read, delete: if isAdmin(wid) && hasStarter(wid);
+        allow create, update: if isAdmin(wid) && hasStarter(wid) && entity in ['messages', 'bookings'] && noExtraKeys(['retentionDays', 'enabled', 'lastRunAt'])
           && request.resource.data.retentionDays is int && request.resource.data.retentionDays >= 1 && request.resource.data.retentionDays <= 3650;
       }
       match /erasures/{id} {
-        allow read, create: if isAdmin(wid);
-        allow update: if isAdmin(wid) && onlyChanges(['status', 'completedAt', 'summary']);
+        allow read, create: if isAdmin(wid) && hasStarter(wid);
+        allow update: if isAdmin(wid) && hasStarter(wid) && onlyChanges(['status', 'completedAt', 'summary']);
         allow delete: if false;
       }
       match /consents/{id} {
-        allow read: if isMember(wid);
-        allow create: if isMember(wid) && noExtraKeys(['subjectId', 'purpose', 'legalBasis', 'grantedAt', 'revokedAt', 'by'])
+        allow read: if isMember(wid) && hasStarter(wid);
+        allow create: if isMember(wid) && hasStarter(wid) && noExtraKeys(['subjectId', 'purpose', 'legalBasis', 'grantedAt', 'revokedAt', 'by'])
           && request.resource.data.grantedAt == request.time && request.resource.data.by == request.auth.uid && request.resource.data.revokedAt == null;
-        allow update: if isMember(wid) && onlyChanges(['revokedAt']) && request.resource.data.revokedAt == request.time;
-        allow delete: if isAdmin(wid);
+        allow update: if isMember(wid) && hasStarter(wid) && onlyChanges(['revokedAt']) && request.resource.data.revokedAt == request.time;
+        allow delete: if isAdmin(wid) && hasStarter(wid);
       }
 
       // Tamper-evident audit trail. Written ONLY by the Worker (service account), which chains each entry to the

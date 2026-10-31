@@ -7,9 +7,11 @@ import { initials } from './lib/format';
 import { navigate } from './router';
 import { clearStore, loadSettings } from './lib/store';
 
+import { hasFeatureAccess, type FeatureKey } from './lib/fb/plan';
+
 const root = (): HTMLElement => document.getElementById('app')!;
 
-const NAV: { label?: string; items: { href: string; icon: IconName; text: string; key?: string }[] }[] = [
+const NAV: { label?: string; items: { href: string; icon: IconName; text: string; key?: string; feature?: FeatureKey }[] }[] = [
   { items: [
     { href: '/app', icon: 'house', text: 'Home' },
     { href: '/app/bookings', icon: 'calendar-check', text: 'Bookings' },
@@ -24,10 +26,10 @@ const NAV: { label?: string; items: { href: string; icon: IconName; text: string
   ] },
   { label: 'Workspace tools', items: [
     { href: '/app/crm', icon: 'handshake', text: 'CRM' },
-    { href: '/app/devices', icon: 'cpu', text: 'Devices' },
-    { href: '/app/automations', icon: 'workflow', text: 'Automations' },
+    { href: '/app/devices', icon: 'cpu', text: 'Devices', feature: 'devices' },
+    { href: '/app/automations', icon: 'workflow', text: 'Automations', feature: 'automations' },
     { href: '/app/content', icon: 'globe', text: 'Website pages' },
-    { href: '/app/compliance', icon: 'scale', text: 'Data protection' },
+    { href: '/app/compliance', icon: 'scale', text: 'Data protection', feature: 'compliance' },
   ] },
   { label: 'Account', items: [
     { href: '/app/billing', icon: 'credit-card', text: 'Plan & billing' },
@@ -37,8 +39,11 @@ const NAV: { label?: string; items: { href: string; icon: IconName; text: string
   ] },
 ];
 
-export function brand(size = ''): Raw {
+export function brand(size = '', logoUrl?: string | null): Raw {
   const h = size === 'lg' ? 44 : 32;
+  if (logoUrl) {
+    return html`<span class="brand ${size}"><img class="brand-lockup" src="${logoUrl}" alt="Logo" height="${h}" style="height:${h}px;max-width:140px;object-fit:contain;display:block"></span>`;
+  }
   return html`<span class="brand ${size}"><img class="brand-lockup" src="/zexcore-logo-light.png" alt="ZexCore" height="${h}" style="height:${h}px;width:auto;display:block"></span>`;
 }
 
@@ -63,19 +68,31 @@ export async function appLayout(path: string, onNew: () => void): Promise<HTMLEl
   if (!view || !$('.app')) {
     const s = await loadSettings();
     const bizName = s.publicName || me.tenant.name;
+    const isDismissed = Boolean(sessionStorage.getItem('zx.verify_dismissed'));
     mount(root(), html`
       <div class="app">
         <aside class="sidebar" aria-label="Main">
-          <a href="/app" data-link>${brand()}</a>
+          <a href="/app" data-link>${brand('', s.logoUrl)}</a>
           ${NAV.map((g) => html`
             ${g.label ? html`<div class="nav-label">${g.label}</div>` : ''}
-            ${g.items.map((i) => html`<a class="nav-link" href="${i.href}" data-link data-nav="${i.href}">${ic(i.icon)}<span>${i.text}</span>${i.key === 'msg' ? html`<span class="badge-n hidden" data-unread>0</span>` : ''}</a>`)}`)}
+            ${g.items.map((i) => {
+              const locked = i.feature && !hasFeatureAccess(me.tenant.tier, i.feature);
+              return html`<a class="nav-link" href="${i.href}" data-link data-nav="${i.href}">
+                ${ic(i.icon)}
+                <span>${i.text}</span>
+                ${locked ? html`<span class="nav-lock" title="Plan upgrade required" style="margin-left:auto;opacity:0.6;display:inline-flex">${ic('lock', 'ico-xs')}</span>` : ''}
+                ${i.key === 'msg' ? html`<span class="badge-n hidden" data-unread>0</span>` : ''}
+              </a>`;
+            })}`)}
         </aside>
         <div class="content-col">
           <header class="topbar">
-            <a href="/app" data-link class="brand-link">${brand()}</a>
+            <a href="/app" data-link class="brand-link">${brand('', s.logoUrl)}</a>
             <span class="biz-chip"><span class="dot dot-success pulse"></span><span class="t">${bizName}</span></span>
             <span class="spacer"></span>
+            <a href="/" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:6px" title="Back to website (opens in new page)">
+              ${ic('globe', 'ico-sm')}<span>Back to website</span>
+            </a>
             <button class="btn btn-primary btn-sm" data-new>${ic('plus', 'ico-sm')} New</button>
             <a class="icon-circle" href="/app/messages" data-link aria-label="Messages">${ic('bell')}<span class="pip hidden" data-unread-pip></span></a>
             <div class="menu-wrap">
@@ -84,11 +101,17 @@ export async function appLayout(path: string, onNew: () => void): Promise<HTMLEl
                 <div class="who"><div style="font-weight:650">${me.user.name || 'Account'}</div><div class="muted small truncate">${me.user.email ?? ''}</div><div class="small faint" style="margin-top:2px">${me.tenant.name} · ${me.role ?? ''}</div></div>
                 <a href="/app/settings" data-link role="menuitem">${ic('settings', 'ico-sm')} Settings</a>
                 <a href="/app/billing" data-link role="menuitem">${ic('credit-card', 'ico-sm')} Plan & billing</a>
+                <a href="/" target="_blank" rel="noopener" role="menuitem">${ic('globe', 'ico-sm')} Back to website</a>
                 <button data-logout role="menuitem">${ic('log-out', 'ico-sm')} Sign out</button>
               </div>
             </div>
           </header>
-          ${me.user.emailVerified === false ? html`<div class="verify-banner" data-verify-banner role="status">${ic('mail')}<span class="grow"><b>Confirm your email.</b> We sent a link to ${me.user.email ?? 'your address'}. You need it to upgrade your plan.</span><button class="btn btn-secondary btn-sm" data-resend>Resend</button></div>` : ''}
+          ${me.user.emailVerified === false && !isDismissed ? html`<div class="verify-banner" data-verify-banner role="status">
+            ${ic('mail')}
+            <span class="grow"><b>Confirm your email.</b> We sent a link to ${me.user.email ?? 'your address'}. You need it to upgrade your plan.</span>
+            <button class="btn btn-secondary btn-sm" data-resend>Resend</button>
+            <button type="button" class="btn btn-ghost btn-xs btn-icon" data-dismiss-verify aria-label="Dismiss banner" title="Dismiss banner" style="margin-left:6px;opacity:0.75;display:inline-flex;align-items:center;justify-content:center;cursor:pointer">${ic('x', 'ico-sm')}</button>
+          </div>` : ''}
           <main class="main" id="view" tabindex="-1"></main>
         </div>
         <nav class="bottom-nav" aria-label="Primary">
@@ -102,8 +125,12 @@ export async function appLayout(path: string, onNew: () => void): Promise<HTMLEl
     $('[data-new]')!.addEventListener('click', onNew);
     $('[data-resend]')?.addEventListener('click', async (ev) => {
       const b = ev.currentTarget as HTMLButtonElement; b.disabled = true;
-      try { await api('/api/auth/email/resend', { method: 'POST' }); b.textContent = 'Sent'; toast('Confirmation email sent. Check your inbox and spam folder.', 'success'); }
+      try { await api('/api/auth/email/resend', { method: 'POST' }); b.textContent = 'Sent'; toast('Confirmation email sent', 'success'); }
       catch (x) { b.disabled = false; toast(x instanceof Error ? x.message : 'Could not send the email', 'error'); }
+    });
+    $('[data-dismiss-verify]')?.addEventListener('click', () => {
+      try { sessionStorage.setItem('zx.verify_dismissed', '1'); } catch { /* ignore */ }
+      $('[data-verify-banner]')?.remove();
     });
     // The link opens in another tab; when the person comes back, re-check and drop the banner once confirmed.
     if (document.querySelector('[data-verify-banner]')) {
