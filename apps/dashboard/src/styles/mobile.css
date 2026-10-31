@@ -32,9 +32,79 @@
   .page-wrapper [style*="white-space: nowrap"] { white-space: normal !important; }
 }
 
-/* The header's backdrop blur makes it the containing block for fixed children, so the drawer's `bottom: 0` collapsed it to a
-   sliver (only "Home" showed). Give it an explicit height instead, and make every link a proper tap target. */
-.mobile-drawer { bottom: auto !important; height: calc(100vh - 64px) !important; height: calc(100dvh - 64px) !important; overscroll-behavior: contain; }
-.mobile-nav-link { display: block; padding: 12px 4px; min-height: 44px; box-sizing: border-box; }
+/* Mobile hardening. Loaded last on purpose: the legacy marketing stylesheet is large and uses !important, so this layer
+   fixes the causes of sideways scrolling (grid/flex children that refuse to shrink, long code, wide button rows) in one place. */
+
+/* Prevent horizontal overflow on mobile screens */
+html, body { max-width: 100%; overflow-x: hidden; -webkit-text-size-adjust: 100%; }
+.page-wrapper { max-width: 100vw; overflow-x: hidden; width: 100%; }
+
+/* A grid or flex child may shrink below its content width; without this a long word or code line widens the whole page. */
+.page-wrapper :where(div, section, article, aside, main, nav, ul, ol, li, form, header, footer, figure, table) { min-width: 0; }
+.page-wrapper :where(img, svg, video, canvas, iframe) { max-width: 100%; height: auto; }
+.page-wrapper :where(h1, h2, h3, h4, p, li, a, td, th, span) { overflow-wrap: anywhere; }
+.page-wrapper :where(pre, .code-block, .code-pre, .sec-sql-box) { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.page-wrapper :where(.table-wrap, .table-scroll) { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* Faster tap response without 300ms delay */
+a, button, input, select, textarea { touch-action: manipulation; }
+
+@media (max-width: 900px) {
+  .docs-layout-grid, .docs-container-layout, .hero-split-grid, .multi-tenant-split-grid, .powering-saas-grid,
+  .security-2x2-grid, .solution-h-card, .split-feature-row { grid-template-columns: minmax(0, 1fr) !important; }
+  .docs-sidebar { position: static !important; width: 100% !important; max-height: none !important; }
+  .docs-sidebar-card, .docs-main-content { width: 100%; max-width: 100%; }
+}
+
+@media (max-width: 640px) {
+  /* Button rows stack and stretch instead of pushing past the screen edge */
+  .page-wrapper :where(.btn, .btn-lg) { white-space: normal; max-width: 100%; text-align: center; justify-content: center; }
+  .page-wrapper :where(.hero-actions, .hero-cta-row, .cta-row, .cta-buttons, .btn-row, .button-row, .final-cta-buttons, .rp-hero-actions) { flex-direction: column !important; flex-wrap: wrap; align-items: stretch; width: 100% !important; gap: 10px !important; }
+  .page-wrapper :where(.hero-actions, .hero-cta-row, .cta-row, .cta-buttons, .btn-row, .button-row, .final-cta-buttons, .rp-hero-actions) > * { width: 100% !important; }
+  
+  /* Comfortable touch targets (at least 44px) */
+  .page-wrapper :where(a.btn, button.btn) { min-height: 48px !important; font-size: 1rem; }
+  .sec-card { padding: 18px !important; }
+  .sec-card-header { flex-wrap: wrap; }
+  
+  /* Stat cards */
+  .hero-metric-card { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .hero-metric-card .metric-big-val { font-size: 1rem; }
+  
+  /* Hero adjustments for small mobile viewports */
+  .rp-hero { padding: 52px 14px 40px !important; }
+  .rp-hero-title { font-size: clamp(1.85rem, 6.5vw, 2.6rem) !important; line-height: 1.14 !important; margin-bottom: 14px !important; }
+  .rp-hero-desc { font-size: 1rem !important; line-height: 1.55 !important; margin-bottom: 22px !important; }
+  .rp-hero-strip { flex-direction: column !important; align-items: center !important; gap: 8px !important; margin-top: 20px !important; }
+  .rp-hero-strip-item { padding: 4px 10px !important; font-size: .84rem !important; }
+  .rp-hero-strip-item + .rp-hero-strip-item { border-left: none !important; }
+  
+  /* Content blocks & cards */
+  .section-padded { padding: 40px 0 !important; }
+  .rp-h { font-size: 1.5rem !important; margin-bottom: 8px !important; }
+  .rp-lead { font-size: .95rem !important; margin-bottom: 20px !important; }
+  .rp-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
+  .rp-card { padding: 18px !important; }
+  .rp-split { grid-template-columns: 1fr !important; gap: 20px !important; }
+  .final-cta-section { padding: 48px 16px !important; }
+  .final-cta-headline { font-size: 1.6rem !important; }
+
+  /* Product previews wrapping */
+  .page-wrapper [style*="justify-content: space-between"] { flex-wrap: wrap; gap: 4px 14px; }
+  .page-wrapper [style*="white-space: nowrap"] { white-space: normal !important; }
+}
+
+/* Scrollable mobile drawer with momentum touch scrolling */
+.mobile-drawer {
+  bottom: auto !important;
+  height: calc(100vh - 64px) !important;
+  height: calc(100dvh - 64px) !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain;
+  padding-bottom: 48px !important;
+}
+.mobile-nav-link { display: block; padding: 12px 6px; min-height: 44px; box-sizing: border-box; }
 .mobile-drawer-links { gap: 2px !important; }
 .page-wrapper :where(a[href^="tel:"], a[href^="mailto:"]) { display: inline-block; padding: 8px 0; }
+

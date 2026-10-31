@@ -1,5 +1,3 @@
-import '@fontsource-variable/inter';
-import '@fontsource-variable/jetbrains-mono';
 import './styles/tokens.css';
 import './styles/base.css';
 import './styles/components.css';
@@ -14,24 +12,10 @@ import { loadMe, isSignedIn, current } from './lib/session';
 import { appLayout, leaveApp } from './layouts';
 import { html, mount } from './lib/html';
 import { errorState } from './lib/ui';
-import { renderSignIn, renderSignUp, renderForgot, renderReset, renderVerify } from './views/auth';
-import { renderSecurity as renderAccountSecurity } from './views/security';
-import { renderHome as renderAppHome } from './views/home';
-import { renderBookings, openNewBooking } from './views/bookings';
-import { renderCalendar } from './views/calendar';
-import { renderMessages } from './views/messages';
-import { renderCustomers } from './views/customers';
-import { renderMore, renderServices, renderTeam, renderBookingPage, renderSettings } from './views/manage';
-import { renderBilling, renderAudit } from './views/account';
-import { renderCrm } from './views/crm';
-import { renderDevices } from './views/devices';
-import { renderAutomations } from './views/automations';
-import { renderContent } from './views/content';
-import { renderCompliance } from './views/compliance';
-import { renderOnboarding } from './views/onboarding';
-import { renderPublicBooking } from './views/publicBooking';
-import { renderPrivacy, renderTerms, renderNotFound } from './views/site';
-import { renderLegacySite, clearLegacySiteStyles } from './legacySite';
+
+const clearLegacySiteStyles = () => {
+  document.getElementById('legacy-site-style')?.remove();
+};
 
 setUnauthorizedHandler(() => navigate('/signin', true));
 
@@ -72,44 +56,46 @@ function setMeta(path: string): void {
 }
 setAfter((ctx) => { if (TITLES[ctx.path]) document.title = `${TITLES[ctx.path]} — ZexCore`; setMeta(ctx.path); });
 
-const appRoute = (path: string, render: (view: HTMLElement, ctx: { query: URLSearchParams }) => Promise<void> | void) =>
-  route(path, async (ctx) => {
-    clearLegacySiteStyles();
-    const view = await appLayout(ctx.path, () => void openNewBooking(() => navigate(location.pathname + location.search)));
-    view.focus({ preventScroll: true });
-    window.scrollTo(0, 0);
-    await render(view, ctx);
+const loadLegacy = () => import('./legacySite').then((m) => m.renderLegacySite);
+const legacyRoute = (path: string, page: string) =>
+  route(path, async () => {
+    if (path === '/home') history.replaceState(null, '', '/');
+    const render = await loadLegacy();
+    render(page as any);
   });
 
-route('/', () => renderLegacySite('home'));
-route('/home', () => { history.replaceState(null, '', '/'); renderLegacySite('home'); });
-route('/product', () => renderLegacySite('platform'));
-route('/platform', () => renderLegacySite('platform'));
-route('/architecture', () => renderLegacySite('architecture'));
-route('/multi-tenancy', () => renderLegacySite('tenancy'));
-route('/automation', () => renderLegacySite('automation'));
-route('/modules', () => renderLegacySite('modules'));
-route('/solutions', () => renderLegacySite('solutions'));
-route('/security', () => renderLegacySite('security'));
-route('/docs', () => renderLegacySite('docs'));
-route('/documentation', () => renderLegacySite('docs'));
-route('/resources', () => renderLegacySite('resources'));
-route('/pricing', () => renderLegacySite('pricing'));
-route('/about', () => renderLegacySite('about'));
-route('/contact', () => renderLegacySite('contact'));
+legacyRoute('/', 'home');
+legacyRoute('/home', 'home');
+legacyRoute('/product', 'platform');
+legacyRoute('/platform', 'platform');
+legacyRoute('/architecture', 'architecture');
+legacyRoute('/multi-tenancy', 'tenancy');
+legacyRoute('/automation', 'automation');
+legacyRoute('/modules', 'modules');
+legacyRoute('/solutions', 'solutions');
+legacyRoute('/security', 'security');
+legacyRoute('/docs', 'docs');
+legacyRoute('/documentation', 'docs');
+legacyRoute('/resources', 'resources');
+legacyRoute('/pricing', 'pricing');
+legacyRoute('/about', 'about');
+legacyRoute('/contact', 'contact');
+
 route('/console', () => navigate('/app', true));
 route('/dashboard', () => navigate('/app', true));
 route('/console/:tab', (ctx) => {
   const aliases: Record<string, string> = { overview: '/app', iot: '/app/devices', crm: '/app/crm', rules: '/app/automations', compliance: '/app/compliance', audit: '/app/audit', whitelabel: '/app/settings', license: '/app/billing', billing: '/app/billing' };
   navigate(aliases[ctx.params.tab] || '/app', true);
 });
-route('/privacy', () => { clearLegacySiteStyles(); renderPrivacy(); });
-route('/terms', () => { clearLegacySiteStyles(); renderTerms(); });
-route('/signin', () => { clearLegacySiteStyles(); leaveApp(); renderSignIn(); });
-route('/signup', () => { clearLegacySiteStyles(); leaveApp(); renderSignUp(); });
-route('/forgot-password', () => { clearLegacySiteStyles(); leaveApp(); renderForgot(); });
-route('/reset-password', () => { clearLegacySiteStyles(); leaveApp(); renderReset(); });
-route('/verify-email', () => { clearLegacySiteStyles(); leaveApp(); void renderVerify(); });
+
+route('/privacy', async () => { clearLegacySiteStyles(); const { renderPrivacy } = await import('./views/site'); renderPrivacy(); });
+route('/terms', async () => { clearLegacySiteStyles(); const { renderTerms } = await import('./views/site'); renderTerms(); });
+route('/signin', async () => { clearLegacySiteStyles(); leaveApp(); const { renderSignIn } = await import('./views/auth'); renderSignIn(); });
+route('/signup', async () => { clearLegacySiteStyles(); leaveApp(); const { renderSignUp } = await import('./views/auth'); renderSignUp(); });
+route('/forgot-password', async () => { clearLegacySiteStyles(); leaveApp(); const { renderForgot } = await import('./views/auth'); renderForgot(); });
+route('/reset-password', async () => { clearLegacySiteStyles(); leaveApp(); const { renderReset } = await import('./views/auth'); renderReset(); });
+route('/verify-email', async () => { clearLegacySiteStyles(); leaveApp(); const { renderVerify } = await import('./views/auth'); void renderVerify(); });
+
 const handleAuthAction = (ctx: { query: URLSearchParams }) => {
   clearLegacySiteStyles();
   leaveApp();
@@ -126,31 +112,49 @@ const handleAuthAction = (ctx: { query: URLSearchParams }) => {
 route('/auth/action', handleAuthAction);
 route('/__/auth/action', handleAuthAction);
 
-route('/app/onboarding', async () => { await renderOnboarding(); });
-appRoute('/app', (v) => renderAppHome(v));
-appRoute('/app/bookings', (v) => renderBookings(v));
-appRoute('/app/calendar', (v) => renderCalendar(v));
-appRoute('/app/messages', (v, c) => renderMessages(v, c.query.get('phone')));
-appRoute('/app/more', (v) => renderMore(v));
-appRoute('/app/customers', (v) => renderCustomers(v));
-appRoute('/app/services', (v) => renderServices(v));
-appRoute('/app/team', (v) => renderTeam(v));
-appRoute('/app/booking-page', (v) => renderBookingPage(v));
-appRoute('/app/billing', (v) => renderBilling(v));
-appRoute('/app/audit', (v) => renderAudit(v));
-appRoute('/app/settings', (v) => renderSettings(v));
-appRoute('/app/security', (v) => renderAccountSecurity(v));
-appRoute('/app/crm', (v) => renderCrm(v));
-appRoute('/app/devices', (v) => renderDevices(v));
-appRoute('/app/automations', (v) => renderAutomations(v));
-appRoute('/app/content', (v) => renderContent(v));
-appRoute('/app/compliance', (v) => renderCompliance(v));
+const appRoute = (path: string, loader: () => Promise<(view: HTMLElement, ctx: { query: URLSearchParams }) => Promise<void> | void>) =>
+  route(path, async (ctx) => {
+    clearLegacySiteStyles();
+    const [view, render] = await Promise.all([
+      appLayout(ctx.path, async () => {
+        const { openNewBooking } = await import('./views/bookings');
+        openNewBooking(() => navigate(location.pathname + location.search));
+      }),
+      loader(),
+    ]);
+    view.focus({ preventScroll: true });
+    window.scrollTo(0, 0);
+    await render(view, ctx);
+  });
 
-// A single path segment that is not a site page is a business's public booking page: /<slug>
-setNotFound((ctx) => {
+route('/app/onboarding', async () => { const { renderOnboarding } = await import('./views/onboarding'); await renderOnboarding(); });
+appRoute('/app', () => import('./views/home').then((m) => m.renderHome));
+appRoute('/app/bookings', () => import('./views/bookings').then((m) => m.renderBookings));
+appRoute('/app/calendar', () => import('./views/calendar').then((m) => m.renderCalendar));
+appRoute('/app/messages', () => import('./views/messages').then((m) => (v, c) => m.renderMessages(v, c.query.get('phone'))));
+appRoute('/app/more', () => import('./views/manage').then((m) => m.renderMore));
+appRoute('/app/customers', () => import('./views/customers').then((m) => m.renderCustomers));
+appRoute('/app/services', () => import('./views/manage').then((m) => m.renderServices));
+appRoute('/app/team', () => import('./views/manage').then((m) => m.renderTeam));
+appRoute('/app/booking-page', () => import('./views/manage').then((m) => m.renderBookingPage));
+appRoute('/app/billing', () => import('./views/account').then((m) => m.renderBilling));
+appRoute('/app/audit', () => import('./views/account').then((m) => m.renderAudit));
+appRoute('/app/settings', () => import('./views/manage').then((m) => m.renderSettings));
+appRoute('/app/security', () => import('./views/security').then((m) => m.renderSecurity));
+appRoute('/app/crm', () => import('./views/crm').then((m) => m.renderCrm));
+appRoute('/app/devices', () => import('./views/devices').then((m) => m.renderDevices));
+appRoute('/app/automations', () => import('./views/automations').then((m) => m.renderAutomations));
+appRoute('/app/content', () => import('./views/content').then((m) => m.renderContent));
+appRoute('/app/compliance', () => import('./views/compliance').then((m) => m.renderCompliance));
+
+setNotFound(async (ctx) => {
   clearLegacySiteStyles();
   const m = /^\/([a-z0-9][a-z0-9-]{1,62})$/.exec(ctx.path);
-  if (m) return renderPublicBooking(m[1]!, ctx.query.get('pay'));
+  if (m) {
+    const { renderPublicBooking } = await import('./views/publicBooking');
+    return renderPublicBooking(m[1]!, ctx.query.get('pay'));
+  }
+  const { renderNotFound } = await import('./views/site');
   renderNotFound();
 });
 
