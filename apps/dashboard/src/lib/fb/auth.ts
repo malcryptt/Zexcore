@@ -144,6 +144,7 @@ export async function logout(): Promise<void> {
 }
 
 export const me = async (): Promise<unknown> => {
+  await emailStatus();
   const c: Ctx = await loadCtx(true);
   void syncBookingCap(c);
   return {
@@ -181,6 +182,15 @@ export async function reset(token: string, password: string): Promise<void> {
   try { await confirmPasswordReset(fb().auth, token, password); } catch (e) { throw authMessage(e); }
 }
 export async function verifyEmail(token: string): Promise<void> { try { await applyActionCode(fb().auth, token); clearCtx(); } catch (e) { throw authMessage(e); } }
+/** Re-reads the account from Firebase (the verification link is opened elsewhere) and refreshes the sign-in token so the Worker sees it. */
+export async function emailStatus(): Promise<{ verified: boolean }> {
+  const u = fb().auth.currentUser;
+  if (!u) return { verified: false };
+  if (!u.emailVerified) {
+    try { await u.reload(); if (u.emailVerified) { await u.getIdToken(true); clearCtx(); } } catch { /* offline: try again later */ }
+  }
+  return { verified: u.emailVerified };
+}
 export async function resendVerification(): Promise<void> {
   const u = fb().auth.currentUser;
   if (!u) throw new ApiError(401, 'Please sign in again.');
