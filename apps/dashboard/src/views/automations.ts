@@ -127,7 +127,7 @@ export async function renderAutomations(view: HTMLElement): Promise<void> {
     try {
       rules = (await api<{ rules: Rule[] }>('/api/rules?limit=200')).rules;
       if (!rules.length) {
-        mount(host, emptyState({ icon: 'workflow', title: 'No rules yet', text: 'For example: when a lead worth more than ₦500,000 is created, notify the team.' }));
+        mount(host, emptyState({ icon: 'workflow', title: 'No rules yet', text: 'For example: when a lead worth more than $500 is created, notify the team.' }));
         return;
       }
       mount(host, html`<div class="list">${rules.map((r) => { const s = status(r); return html`<div class="list-item" style="align-items:flex-start;flex-wrap:wrap">
@@ -215,7 +215,7 @@ export async function renderAutomations(view: HTMLElement): Promise<void> {
         </div>
         <div class="field">
           <label for="ai">What should happen?</label>
-          <textarea class="textarea" id="ai" rows="3" minlength="10" maxlength="1000" placeholder="When a lead worth more than 500,000 naira is created, notify the team" required></textarea>
+          <textarea class="textarea" id="ai" rows="3" minlength="10" maxlength="1000" placeholder="When a lead worth more than $500 is created, notify the team" required></textarea>
         </div>`,
       submit: async (el) => {
         const intent = inp(el, '#ai');

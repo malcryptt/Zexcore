@@ -26,6 +26,7 @@ export async function renderBilling(view: HTMLElement): Promise<void> {
     <div class="chips"><button class="chip-btn" data-c="monthly" aria-pressed="true">Monthly</button><button class="chip-btn" data-c="annual" aria-pressed="false">Annual · 2 months free</button></div></div>
     <div id="usage"></div>
     <div id="plans" class="stack" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr))"></div>
+    <p class="muted small" style="margin-top:12px">Prices are in US dollars. Your card payment is processed securely by Paystack at the current platform exchange rate.</p>
     <h3 style="margin:28px 0 12px">Payment history</h3><div class="card" id="pay"></div>`);
   let plans: PlanList;
   try { plans = await api<PlanList>('/api/billing/plans', { auth: false }); }
@@ -35,12 +36,11 @@ export async function renderBilling(view: HTMLElement): Promise<void> {
     $$('[data-c]', view).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.c === cycle)));
     mount($('#plans', view)!, html`${plans.plans.map((p) => {
       const usd = cycle === 'annual' ? p.annualUsd : p.monthlyUsd;
-      const ngn = Math.round(usd * plans.currencyRates.NGN_PER_USD * 100);
       const cur = me.tenant.tier === p.tier;
       const extras = EXTRA_FEATURES[p.tier] || [];
       return html`<section class="card card-pad stack-sm" style="${cur ? 'border:2px solid var(--primary);padding:19px' : ''}">
         <div class="row between"><h3 style="text-transform:capitalize">${p.tier}</h3>${cur ? html`<span class="badge badge-primary">Current</span>` : ''}</div>
-        <div><span style="font-size:1.75rem;font-weight:700;letter-spacing:-.02em" class="num">${money(ngn, 'NGN')}</span><span class="muted small"> / ${cycle === 'annual' ? 'year' : 'month'}</span></div>
+        <div><span style="font-size:1.75rem;font-weight:700;letter-spacing:-.02em" class="num">${money(usd * 100, 'USD')}</span><span class="muted small"> / ${cycle === 'annual' ? 'year' : 'month'}</span></div>
         <p class="muted small">${BLURB[p.tier]}</p>
         <ul class="plan-list">
           ${limitLines(p.limits, plans.limitLabels).map((l) => html`<li>${ic('check', 'ico-sm')} ${l}</li>`)}

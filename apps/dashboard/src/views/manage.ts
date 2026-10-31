@@ -40,7 +40,7 @@ export async function renderServices(view: HTMLElement): Promise<void> {
     mount(host, skeletonRows(3));
     try {
       const { services } = await api<{ services: Service[] }>('/api/bookings/services');
-      if (!services.length) { mount(host, emptyState({ icon: 'list-checks', title: 'No services yet', text: 'Add what you offer, for example “Consultation, 30 min, ₦15,000”.', action: canAdmin() ? html`<button class="btn btn-primary btn-sm" data-add2>${ic('plus', 'ico-sm')} Add service</button>` : undefined })); $('[data-add2]', host)?.addEventListener('click', () => edit()); return; }
+      if (!services.length) { mount(host, emptyState({ icon: 'list-checks', title: 'No services yet', text: 'Add what you offer, for example “Consultation, 30 min, $10”.', action: canAdmin() ? html`<button class="btn btn-primary btn-sm" data-add2>${ic('plus', 'ico-sm')} Add service</button>` : undefined })); $('[data-add2]', host)?.addEventListener('click', () => edit()); return; }
       mount(host, html`<div class="list">${services.map((s) => html`<div class="list-item"><span class="icon-tile">${ic('list-checks')}</span><div class="grow"><b>${s.name}</b> ${s.active ? '' : html`<span class="badge">Hidden</span>`}<div class="muted small">${s.durationMin} min · ${money(s.priceMinor)}${s.description ? ` · ${s.description}` : ''}</div></div>${canAdmin() ? html`<button class="btn btn-secondary btn-sm" data-edit="${s.id}">Edit</button>` : ''}</div>`)}</div>`);
       host.querySelectorAll<HTMLElement>('[data-edit]').forEach((b) => b.addEventListener('click', () => edit(services.find((s) => s.id === b.dataset.edit))));
     } catch (e) { mount(host, errorState(e instanceof ApiError ? e.message : 'Could not load services')); $('[data-retry]', host)?.addEventListener('click', () => void load()); }
@@ -51,7 +51,7 @@ export async function renderServices(view: HTMLElement): Promise<void> {
       body: html`<form class="form-grid"><div id="se" class="alert alert-error hidden"></div>
         <div class="field"><label for="sn">Name</label><input class="input" id="sn" required maxlength="120" value="${s?.name ?? ''}"></div>
         <div class="form-grid two"><div class="field"><label for="sd">Duration (minutes)</label><input class="input" id="sd" type="number" min="5" max="480" value="${s?.durationMin ?? 30}"></div>
-        <div class="field"><label for="sp">Price (₦)</label><input class="input" id="sp" type="number" min="0" value="${s ? s.priceMinor / 100 : 0}"></div></div>
+        <div class="field"><label for="sp">Price ($)</label><input class="input" id="sp" type="number" min="0" value="${s ? s.priceMinor / 100 : 0}"></div></div>
         <div class="field"><label for="sx">Description <span class="faint">(optional)</span></label><input class="input" id="sx" maxlength="500" value="${s?.description ?? ''}"></div>
         ${s ? html`<label class="check"><input type="checkbox" id="sa" ${s.active ? 'checked' : ''}> Show on my booking page</label>` : ''}</form>`,
       footer: html`<button class="btn btn-secondary" data-close>Cancel</button><button class="btn btn-primary" data-save>Save</button>`,
@@ -132,7 +132,8 @@ export async function renderSettings(view: HTMLElement): Promise<void> {
         <div class="field"><label for="ld">Minimum notice (hours)</label><input class="input" id="ld" type="number" min="0" max="168" value="${s.leadMinutes / 60}" ${dis}></div></div></section>
       <section class="card card-pad form-grid" id="payout"><h3>Where deposits are paid</h3><p class="muted small">Loading…</p></section>
       <section class="card card-pad form-grid"><div class="row between"><div><h3>Upfront deposit</h3><p class="muted small">Customers pay this by card through Paystack to secure their slot. The money goes straight to your bank account below.</p></div><label class="switch"><input type="checkbox" id="dep" ${s.depositEnabled ? 'checked' : ''} ${dis} aria-label="Require deposit"><span></span></label></div>
-        <div class="field" id="depf"><label for="depn">Deposit per booking (₦)</label><input class="input" id="depn" type="number" min="0" value="${s.depositMinor / 100}" ${dis}></div></section>
+        <div class="field"><label for="fx">Exchange rate (₦ per $1)</label><input class="input" id="fx" type="number" min="100" max="100000" step="0.01" value="${s.exchangeRate ?? 1500}" ${dis}><span class="hint">Your prices are in US dollars. Customers pay by card in naira, converted at this rate. Change it whenever the market moves; it applies to every payment for your business, not to ZexCore plan prices.</span></div>
+        <div class="field" id="depf"><label for="depn">Deposit per booking ($)</label><input class="input" id="depn" type="number" min="0" value="${s.depositMinor / 100}" ${dis}></div></section>
       ${canAdmin() ? html`<div><button class="btn btn-primary btn-lg" type="submit">Save changes</button></div>` : ''}
     </form>
     <section class="card card-pad stack-sm" style="margin-top:20px"><h3>Account</h3><div class="muted small">Signed in as <b>${me.user.email}</b> · role <b>${me.role}</b></div><div class="muted small">Workspace <span class="mono">${me.tenant.slug}</span> · plan <b style="text-transform:capitalize">${me.tenant.tier}</b></div></section>`);
@@ -148,7 +149,7 @@ export async function renderSettings(view: HTMLElement): Promise<void> {
           publicName: ($('#pn') as HTMLInputElement).value.trim(), phone: ($('#ph') as HTMLInputElement).value.trim(), address: ($('#ad') as HTMLInputElement).value.trim(),
           openMinutes: timeToMinutes(($('#op') as HTMLInputElement).value), closeMinutes: timeToMinutes(($('#cl') as HTMLInputElement).value), daysOpen: days,
           slotMinutes: Number(($('#sl') as HTMLSelectElement).value), leadMinutes: Math.round(Number(($('#ld') as HTMLInputElement).value) * 60),
-          depositEnabled: ($('#dep') as HTMLInputElement).checked, depositMinor: Math.round(Number(($('#depn') as HTMLInputElement).value) * 100),
+          exchangeRate: Number(($('#fx') as HTMLInputElement).value), depositEnabled: ($('#dep') as HTMLInputElement).checked, depositMinor: Math.round(Number(($('#depn') as HTMLInputElement).value) * 100),
         } });
         await loadSettings(true); toast('Settings saved', 'success');
       } catch (x) { err.textContent = x instanceof ApiError ? x.message : 'Could not save'; err.classList.remove('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' }); }

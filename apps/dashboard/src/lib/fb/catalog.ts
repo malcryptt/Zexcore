@@ -111,8 +111,8 @@ export async function putSettings(b: Record<string, unknown>): Promise<{ setting
   if (b.maxDaysAhead !== undefined) s.maxDaysAhead = int(b.maxDaysAhead, 1, 120, 'Booking horizon');
   if (b.depositMinor !== undefined) {
     const m = Math.round(Number(b.depositMinor));
-    if (!Number.isFinite(m) || m < 0 || m > 5_000_000_00) throw new ApiError(400, 'Enter a deposit between ₦0 and ₦5,000,000.');
-    if (m > 0 && m < 100_00) throw new ApiError(400, 'The smallest deposit is ₦100.');
+    if (!Number.isFinite(m) || m < 0 || m > 5_000_00) throw new ApiError(400, 'Enter a deposit between $0 and $5,000.');
+    if (m > 0 && m < 1_00) throw new ApiError(400, 'The smallest deposit is $1.');
     s.depositMinor = m;
   }
   if (b.depositEnabled !== undefined) s.depositEnabled = b.depositEnabled === true;
@@ -121,15 +121,20 @@ export async function putSettings(b: Record<string, unknown>): Promise<{ setting
     const p = await getDoc(doc(fb().db, 'workspaces', c.wid, 'payout', 'main'));
     if (!p.exists() || !p.data()?.subaccountCode) throw new ApiError(400, 'Add the bank account where deposits should be paid before turning deposits on.', 'payout_missing');
   }
+  if (b.exchangeRate !== undefined) {
+    const r = Number(b.exchangeRate);
+    if (!Number.isFinite(r) || r < 100 || r > 100_000) throw new ApiError(400, 'Enter the naira value of $1, between 100 and 100,000.');
+    s.exchangeRate = Math.round(r * 100) / 100;
+  }
   if (b.onboarded !== undefined) s.onboarded = Boolean(b.onboarded);
-  s.utcOffsetMinutes = 60; s.currency = 'NGN';
+  s.utcOffsetMinutes = 60; s.currency = 'USD';
 
   await updateDoc(wsDoc(c), { settings: s });
   await updateDoc(doc(fb().db, 'slugs', c.slug), {
     name: s.publicName || c.wsName, openMinutes: s.openMinutes, closeMinutes: s.closeMinutes, slotMinutes: s.slotMinutes,
     closedWeekdays: [0, 1, 2, 3, 4, 5, 6].filter((d) => !s.daysOpen.includes(d)), phone: s.phone, address: s.address,
     leadMinutes: s.leadMinutes, maxDaysAhead: s.maxDaysAhead, bookingCap: slotLimit(c.tier, 'bookingsPerMonth'),
-    depositEnabled: s.depositEnabled, depositMinor: s.depositMinor,
+    depositEnabled: s.depositEnabled, depositMinor: s.depositMinor, exchangeRate: s.exchangeRate, currency: 'USD',
   });
   void audit(c, 'settings.update', 'workspace', c.wid);
   await loadCtx(true);

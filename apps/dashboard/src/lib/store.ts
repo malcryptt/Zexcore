@@ -2,7 +2,7 @@ import { api } from './api';
 
 export interface Settings {
   businessType: string; publicName: string | null; phone: string | null; address: string | null; currency: string;
-  depositEnabled: boolean; depositMinor: number; openMinutes: number; closeMinutes: number; slotMinutes: number;
+  exchangeRate?: number; depositEnabled: boolean; depositMinor: number; openMinutes: number; closeMinutes: number; slotMinutes: number;
   daysOpen: number[]; utcOffsetMinutes: number; leadMinutes: number; maxDaysAhead: number; onboarded: boolean;
   logoUrl?: string | null;
 }
