@@ -1,4 +1,4 @@
-import { ApiError } from './api';
+import { ApiError, setToken } from './api';
 import { googleCreateWorkspace, googleSignIn } from './fb/auth';
 import { isConfigured } from './fb/firebase';
 import { loadMe } from './session';
@@ -19,6 +19,7 @@ export async function mountGoogleButton(host: HTMLElement, onResult: (o: GoogleO
     btn.disabled = true;
     try {
       const r = await googleSignIn();
+      setToken('1');
       if (r.hasWorkspace) { await loadMe(true); onResult({ kind: 'signed-in' }); }
       else onResult({ kind: 'needs-signup', email: r.email, name: r.name, credential: '' });
     } catch (e) {
@@ -29,6 +30,7 @@ export async function mountGoogleButton(host: HTMLElement, onResult: (o: GoogleO
 
 export async function googleExchange(_credential: string, extra: { tenantName?: string; workspace?: string } = {}): Promise<GoogleOutcome> {
   if (extra.tenantName) await googleCreateWorkspace(extra.tenantName);
+  setToken('1');
   await loadMe(true);
   return { kind: 'signed-in' };
 }

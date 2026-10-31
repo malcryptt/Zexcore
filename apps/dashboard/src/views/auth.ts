@@ -144,7 +144,7 @@ export function renderSignUp(): void {
   });
   wireGoogle(async (o) => {
     if (o.kind === 'signed-in') return navigate('/app', true);
-    if (o.kind === 'choose') return navigate('/signin');
+    if (o.kind === 'choose') return workspacePicker(o.workspaces, async (s) => { await googleExchange(o.credential, { workspace: s }); navigate('/app', true); });
     googleSignupStep(o);
   }, showErr);
 }

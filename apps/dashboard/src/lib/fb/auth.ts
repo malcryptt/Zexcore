@@ -22,14 +22,14 @@ const appOrigin = (): string => {
 export const slugify = (s: string): string => s.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 34).replace(/-+$/g, '');
 const rand = (n: number): string => Array.from(crypto.getRandomValues(new Uint8Array(n)), (b) => 'abcdefghjkmnpqrstuvwxyz23456789'[b % 31]).join('');
 
-async function freeSlug(wanted: string): Promise<string> {
+async function freeSlug(wanted: string, allowSuffix = false): Promise<string> {
   const { db } = fb();
   const base = slugify(wanted);
   for (let i = 0; i < 6; i++) {
-    const s = i === 0 && base.length >= 3 && !RESERVED.has(base) ? base : `${base.length >= 2 ? base : 'biz'}-${rand(4)}`;
+    const s = (i === 0 && !allowSuffix && base.length >= 3 && !RESERVED.has(base)) ? base : `${base.length >= 2 ? base : 'biz'}-${rand(4)}`;
     if (!SLUG_RE.test(s) || RESERVED.has(s)) continue;
     if (!(await getDoc(doc(db, 'slugs', s))).exists()) return s;
-    if (i === 0 && wanted && wanted === base) throw new ApiError(409, 'That web address is already taken. Choose another.', 'slug_taken');
+    if (i === 0 && wanted && wanted === base && !allowSuffix) throw new ApiError(409, 'That web address is already taken. Choose another.', 'slug_taken');
   }
   throw new ApiError(409, 'Could not find a free web address. Try a different business name.', 'slug_taken');
 }
@@ -56,9 +56,9 @@ export async function ensureUserWorkspace(user: { uid: string; displayName?: str
   const wid = (u.data()?.workspaceIds as string[] | undefined)?.[0];
   if (wid) return wid;
 
-  const baseName = user.displayName || user.email?.split('@')[0] || 'My Business';
-  const tenantName = (baseName.charAt(0).toUpperCase() + baseName.slice(1)).slice(0, 100);
-  const slug = await freeSlug(tenantName);
+  const baseName = (user.displayName || user.email?.split('@')[0] || 'My Business').trim();
+  const tenantName = (baseName.charAt(0).toUpperCase() + baseName.slice(1)).slice(0, 100) || 'My Business';
+  const slug = await freeSlug(tenantName, true);
   const newWid = doc(collection(db, 'workspaces')).id;
   const batch = writeBatch(db);
   batch.set(doc(db, 'workspaces', newWid), { name: tenantName, slug, ownerUid: user.uid, plan: 'free', createdAt: serverTimestamp(), settings: { ...DEFAULT_SETTINGS, publicName: tenantName } });
@@ -70,6 +70,11 @@ export async function ensureUserWorkspace(user: { uid: string; displayName?: str
   });
   batch.set(doc(db, 'users', user.uid), { name: user.displayName || tenantName, email: user.email || '', workspaceIds: [newWid], createdAt: serverTimestamp() }, { merge: true });
   await batch.commit();
+  clearCtx();
+  const ctx = await loadCtx(true).catch(() => null);
+  if (ctx) {
+    await claimSlot(ctx, 'staff', 'p', 'staff', { name: user.displayName || tenantName, title: 'Owner', active: true, auto: true }).catch(() => undefined);
+  }
   return newWid;
 }
 
@@ -127,6 +132,7 @@ export async function googleSignIn(): Promise<{ hasWorkspace: boolean; email: st
     throw authMessage(e);
   }
   clearCtx();
+  await ensureUserWorkspace(user).catch(() => undefined);
   const u = await getDoc(doc(db, 'users', user.uid));
   const has = Array.isArray(u.data()?.workspaceIds) && (u.data()!.workspaceIds as unknown[]).length > 0;
   return { hasWorkspace: has, email: user.email ?? '', name: user.displayName ?? (user.email ?? '').split('@')[0] ?? 'there' };
