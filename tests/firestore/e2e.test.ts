@@ -220,7 +220,7 @@ describe('dashboard on Firebase, end to end', () => {
     const u: any = await bill.usage();
     expect(u.effectiveTier).toBe('free');
     expect(u.usage.services).toEqual({ used: 3, limit: 3 });
-    expect((bill.plans() as any).plans.map((p: any) => p.tier)).toContain('growth');
+    expect(((await bill.plans()) as any).plans.map((p: any) => p.tier)).toContain('growth');
     await core.flushAudit();
     const a = await bill.auditLog();
     expect(a.entries.length).toBeGreaterThan(5);
@@ -268,6 +268,8 @@ describe('dashboard on Firebase, end to end', () => {
 describe('data protection, end to end', () => {
   it('records and revokes consent, sets retention, and erases a customer', async () => {
     const comp = await import('../../apps/dashboard/src/lib/fb/compliance');
+    // Data protection is Starter-and-above.
+    await setPlan('starter');
     await comp.recordConsent({ subjectId: '0803 123 4567', purpose: 'Appointment reminders', legalBasis: 'consent' });
     expect(await code(comp.recordConsent({ subjectId: 'nonsense', purpose: 'x1' }))).toBe(400);
     let c: any = await comp.listConsent('08031234567');
@@ -296,14 +298,25 @@ describe('data protection, end to end', () => {
   });
 });
 
+/** Changes the plan the way only the Worker can: through the emulator's admin access. */
+async function setPlan(plan: string): Promise<void> {
+  const ctx = await core.loadCtx();
+  const r = await fetch(`${emulatorBase}/workspaces/${ctx.wid}?updateMask.fieldPaths=plan`, { method: 'PATCH', headers: { authorization: 'Bearer owner', 'content-type': 'application/json' }, body: JSON.stringify({ fields: { plan: { stringValue: plan } } }) });
+  expect(r.ok).toBe(true);
+  await core.loadCtx(true);
+}
+
 describe('devices and automations, end to end', () => {
   it('registers a device, ingests readings through the Worker, raises an alert and runs an approved rule', async () => {
     const iot = await import('../../apps/dashboard/src/lib/fb/iot');
     const rl = await import('../../apps/dashboard/src/lib/fb/rules');
+    // Devices and automations are Growth-and-above: refused on the free plan, by the database rules.
+    expect(await code(iot.createDevice({ name: 'Blocked', deviceKey: 'blocked-1', kind: 'x' }))).toBe('plan_limit');
+    expect(await code(rl.createRule({ name: 'Blocked', trigger: { source: 'event:iot.reading' }, actions: [{ type: 'notify', message: 'x' }] }))).toBe('plan_limit');
+    await setPlan('growth');
     const ctx = await core.loadCtx(true);
     const made: any = await iot.createDevice({ name: 'Cold room', deviceKey: 'cold-room-1', kind: 'temperature_sensor' });
     expect(made.token).toMatch(/^[0-9a-f]{64}$/);
-    expect(await code(iot.createDevice({ name: 'Second', deviceKey: 'second-1', kind: 'x' }))).toBe('plan_limit');   // free plan: 1 device
     expect(await code(iot.createDevice({ name: 'Dup', deviceKey: 'cold-room-1', kind: 'x' }))).toBe('conflict');
     const devId = made.device.id;
     await iot.createAlertRule({ deviceId: devId, metric: 'temperature', op: 'gt', threshold: 8, severity: 'high', message: 'Cold room too warm' });

@@ -37,9 +37,6 @@ export async function requireMember(c: Ctx, wid: unknown, roles?: Role[]): Promi
   const caller = bearer ? await verifyFirebaseIdToken(c.env, c.d, bearer) : null;
   if (!caller) throw new HttpError(401, 'Sign in again to continue.', 'unauthenticated');
   if (typeof wid !== 'string' || !WID_RE.test(wid)) throw new HttpError(400, 'Invalid workspace');
-  if (caller.email && ['hellozexcore@gmail.com', 'hellozexlabs@gmail.com'].includes(caller.email.toLowerCase())) {
-    return { caller, role: 'owner', wid };
-  }
   const m = await fsGet(c.env, c.d, `workspaces/${wid}/members/${caller.uid}`);
   const role = m?.data.role as Role | undefined;
   if (!role) throw new HttpError(403, 'You do not have access to that workspace.', 'forbidden');
