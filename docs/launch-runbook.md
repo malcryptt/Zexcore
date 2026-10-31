@@ -38,7 +38,7 @@ gcloud firestore fields ttls update expireAt --collection-group=automationRuns -
 4. Settings: add a bank account (name must resolve), set a deposit, turn deposits on. Book on the public page, pay with a Paystack test card, confirm the booking turns confirmed and shows "paid".
 5. Upgrade a plan with a Paystack test payment; the plan changes within seconds.
 6. Devices: register a device, post a reading with the shown token, trigger an alert.
-7. Audit log: Settings → Audit → Verify chain reports intact.
+7. Audit log page: "Verify integrity" reports the chain intact.
 8. Rotate any token that was ever pasted into chat or logs.
 
 ## Known limits
