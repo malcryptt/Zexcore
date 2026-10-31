@@ -4,7 +4,7 @@ import { api, ApiError } from '../lib/api';
 import { current } from '../lib/session';
 import { navigate } from '../router';
 import { busy, toast } from '../lib/ui';
-import { loadSettings, tenantSlug } from '../lib/store';
+import { loadSettings, tenantSlug, SITE_URL } from '../lib/store';
 import { minutesToTime, timeToMinutes } from '../lib/format';
 
 type BizType = 'clinic' | 'real_estate' | 'salon' | 'delivery' | 'retail' | 'other';
@@ -50,7 +50,7 @@ export async function renderOnboarding(): Promise<void> {
           <div id="ob-err" class="alert alert-error hidden" role="alert"></div>
           <div class="card card-pad form-grid">
             <div class="field"><label for="pn">Business name</label><input class="input" id="pn" required maxlength="255" value="${s.publicName || me.tenant.name}"></div>
-            <div class="field"><label>Your booking link</label><div class="copy-box"><code>${location.host}/${tenantSlug()}</code></div><span class="hint">Customers use this address to book.</span></div>
+            <div class="field"><label>Your booking link</label><div class="copy-box"><code>${SITE_URL.replace(/^https?:\/\//, '')}/${tenantSlug()}</code></div><span class="hint">Customers use this address to book.</span></div>
             <div class="field"><label for="ph">Business phone / WhatsApp</label><input class="input" id="ph" type="tel" placeholder="0803 123 4567" value="${s.phone ?? ''}"></div>
             <div class="form-grid two"><div class="field"><label for="op">Opens</label><input class="input" id="op" type="time" value="${minutesToTime(s.openMinutes)}"></div><div class="field"><label for="cl">Closes</label><input class="input" id="cl" type="time" value="${minutesToTime(s.closeMinutes)}"></div></div>
             <div class="field"><label>Open days</label><div class="day-pills">${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => html`<label><input type="checkbox" name="day" value="${i}" ${s.daysOpen.includes(i) ? 'checked' : ''}><span>${d}</span></label>`)}</div></div>
