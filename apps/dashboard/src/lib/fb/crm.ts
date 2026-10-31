@@ -56,7 +56,7 @@ export async function listLeads(params: URLSearchParams): Promise<{ leads: unkno
   return {
     leads: leads.docs.filter((d) => !onlyOpen || !d.data().closedAt).map((d) => {
       const x = d.data(), k = cm.get(x.contactId);
-      return { id: d.id, title: x.title, value: x.value ?? null, currency: x.currency ?? 'NGN', stage_id: x.stageId, first_name: k?.firstName ?? null, last_name: k?.lastName ?? null, company: k?.company ?? null, closed_at: iso(x.closedAt), close_reason: x.closeReason ?? null };
+      return { id: d.id, title: x.title, value: x.value ?? null, currency: x.currency ?? 'USD', stage_id: x.stageId, first_name: k?.firstName ?? null, last_name: k?.lastName ?? null, company: k?.company ?? null, closed_at: iso(x.closedAt), close_reason: x.closeReason ?? null };
     }),
   };
 }
@@ -66,7 +66,7 @@ export async function createLead(b: Record<string, unknown>): Promise<{ id: stri
   if (!title) throw new ApiError(400, 'Give the lead a title.');
   const value = b.value === undefined || b.value === null ? null : Number(b.value);
   if (value !== null && (!Number.isInteger(value) || value < 0)) throw new ApiError(400, 'Enter a valid value.');
-  const ref = await addDoc(wsCol(c, 'leads'), { title, contactId: String(b.contactId ?? ''), stageId: String(b.stageId ?? ''), value, currency: 'NGN', closedAt: null, closeReason: null, createdAt: serverTimestamp() });
+  const ref = await addDoc(wsCol(c, 'leads'), { title, contactId: String(b.contactId ?? ''), stageId: String(b.stageId ?? ''), value, currency: 'USD', closedAt: null, closeReason: null, createdAt: serverTimestamp() });
   void audit(c, 'lead.create', 'lead', ref.id);
   emit('crm.lead.created', c.wid, ref.id);
   return { id: ref.id };

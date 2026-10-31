@@ -75,9 +75,10 @@ describe('dashboard on Firebase, end to end', () => {
     await expect(cat.createService({ name: 'Bad length', durationMin: 25, priceMinor: 0 })).rejects.toMatchObject({ status: 400 });
     // Deposits need an amount and a verified payout account first.
     await expect(cat.putSettings({ depositEnabled: true })).rejects.toMatchObject({ status: 400 });
-    await expect(cat.putSettings({ depositEnabled: true, depositMinor: 500_000 })).rejects.toMatchObject({ code: 'payout_missing' });
-    await expect(cat.putSettings({ depositMinor: 5_000 })).rejects.toMatchObject({ status: 400 });
-    expect((await cat.putSettings({ depositMinor: 500_000 })).settings).toMatchObject({ depositEnabled: false, depositMinor: 500_000 });
+    await expect(cat.putSettings({ depositEnabled: true, depositMinor: 500 })).rejects.toMatchObject({ code: 'payout_missing' });
+    await expect(cat.putSettings({ depositMinor: 50 })).rejects.toMatchObject({ status: 400 });
+    expect((await cat.putSettings({ depositMinor: 500, exchangeRate: 1650 })).settings).toMatchObject({ depositEnabled: false, depositMinor: 500, exchangeRate: 1650, currency: 'USD' });
+    await expect(cat.putSettings({ exchangeRate: 5 })).rejects.toMatchObject({ status: 400 });
   });
 
   it('hands the starter calendar to the first real team member on the free plan', async () => {

@@ -18,9 +18,9 @@ const TYPES: { key: BizType; icon: IconName; title: string; text: string; popula
 ];
 // Starting points only. The owner edits or removes them before anything is saved.
 const SUGGEST: Record<BizType, { name: string; min: number; ngn: number }[]> = {
-  clinic: [{ name: 'General consultation', min: 30, ngn: 15000 }, { name: 'Follow-up visit', min: 20, ngn: 8000 }, { name: 'Lab test', min: 45, ngn: 10000 }],
+  clinic: [{ name: 'General consultation', min: 30, ngn: 10 }, { name: 'Follow-up visit', min: 20, ngn: 5 }, { name: 'Lab test', min: 45, ngn: 7 }],
   real_estate: [{ name: 'Property viewing', min: 45, ngn: 0 }, { name: 'Tenant inspection', min: 60, ngn: 0 }],
-  salon: [{ name: 'Haircut & styling', min: 60, ngn: 8000 }, { name: 'Manicure', min: 45, ngn: 5000 }],
+  salon: [{ name: 'Haircut & styling', min: 60, ngn: 5 }, { name: 'Manicure', min: 45, ngn: 3 }],
   delivery: [{ name: 'Parcel pickup', min: 30, ngn: 0 }],
   retail: [{ name: 'Store appointment', min: 30, ngn: 0 }],
   other: [{ name: 'Consultation', min: 30, ngn: 0 }],
@@ -56,13 +56,13 @@ export async function renderOnboarding(): Promise<void> {
             <div class="field"><label>Open days</label><div class="day-pills">${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => html`<label><input type="checkbox" name="day" value="${i}" ${s.daysOpen.includes(i) ? 'checked' : ''}><span>${d}</span></label>`)}</div></div>
           </div>
           <div class="card card-pad stack">
-            <div class="row between"><div><h3>Services</h3><p class="muted small">Prices are in naira. Edit or remove the suggestions.</p></div><button type="button" class="btn btn-secondary btn-sm" data-add>${ic('plus', 'ico-sm')} Add</button></div>
-            <div id="svc-rows" class="stack-sm">${rows.map((r, i) => html`<div class="form-grid" style="grid-template-columns:1fr 80px 110px 36px;gap:8px;align-items:center" data-row="${i}"><input class="input" aria-label="Service name" data-f="name" value="${r.name}" maxlength="120"><input class="input" aria-label="Minutes" data-f="min" type="number" min="5" max="480" value="${r.min}"><input class="input" aria-label="Price in naira" data-f="ngn" type="number" min="0" value="${r.ngn}"><button type="button" class="btn btn-ghost btn-sm btn-icon" data-rm="${i}" aria-label="Remove service">${ic('x', 'ico-sm')}</button></div>`)}</div>
-            <p class="hint">Name · minutes · price (₦)</p>
+            <div class="row between"><div><h3>Services</h3><p class="muted small">Prices are in US dollars. Edit or remove the suggestions.</p></div><button type="button" class="btn btn-secondary btn-sm" data-add>${ic('plus', 'ico-sm')} Add</button></div>
+            <div id="svc-rows" class="stack-sm">${rows.map((r, i) => html`<div class="form-grid" style="grid-template-columns:1fr 80px 110px 36px;gap:8px;align-items:center" data-row="${i}"><input class="input" aria-label="Service name" data-f="name" value="${r.name}" maxlength="120"><input class="input" aria-label="Minutes" data-f="min" type="number" min="5" max="480" value="${r.min}"><input class="input" aria-label="Price in US dollars" data-f="ngn" type="number" min="0" value="${r.ngn}"><button type="button" class="btn btn-ghost btn-sm btn-icon" data-rm="${i}" aria-label="Remove service">${ic('x', 'ico-sm')}</button></div>`)}</div>
+            <p class="hint">Name · minutes · price ($)</p>
           </div>
           <div class="card card-pad stack">
             <div class="row between"><div class="row"><span class="icon-tile">${ic('banknote')}</span><div><h3>Require an upfront deposit</h3><p class="muted small">Reduces no-shows. Collected by Paystack before the slot is confirmed.</p></div></div><label class="switch"><input type="checkbox" id="dep" ${s.depositEnabled ? 'checked' : ''} aria-label="Require deposit"><span></span></label></div>
-            <div class="field ${s.depositEnabled ? '' : 'hidden'}" id="dep-amt"><label for="depn">Deposit per booking (₦)</label><input class="input" id="depn" type="number" min="0" value="${s.depositMinor ? s.depositMinor / 100 : 5000}"></div>
+            <div class="field ${s.depositEnabled ? '' : 'hidden'}" id="dep-amt"><label for="depn">Deposit per booking ($)</label><input class="input" id="depn" type="number" min="0" value="${s.depositMinor ? s.depositMinor / 100 : 5}"></div>
           </div>
           <div class="card card-pad stack">
             <div><h3>Team <span class="faint" style="font-weight:500">(optional)</span></h3><p class="muted small">Add the people customers can book. You can skip this.</p></div>

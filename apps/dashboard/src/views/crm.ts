@@ -1,7 +1,7 @@
 import { ApiError } from '../lib/api';
 import { html, mount, $ } from '../lib/html';
 import { ic } from '../lib/icons';
-import { ago } from '../lib/format';
+import { ago, money } from '../lib/format';
 import { emptyState, skeletonRows, confirmDialog } from '../lib/ui';
 import { canManage, canAdmin } from '../lib/session';
 import { api, toast, badge, pageHead, formModal, inp, fail, errMsg } from './shared';
@@ -11,7 +11,7 @@ interface Lead { id: string; title: string; value: number | null; currency: stri
 interface Contact { id: string; type: 'person' | 'company'; first_name: string | null; last_name: string | null; company: string | null; email: string | null; phone: string | null; created_at: string }
 
 const cname = (c: { first_name: string | null; last_name: string | null; company: string | null }): string => [c.first_name, c.last_name].filter(Boolean).join(' ') || c.company || 'Unnamed';
-const amount = (minor: number | null, cur: string): string => (minor == null ? '' : `${cur.trim() === 'NGN' ? '₦' : cur.trim() + ' '}${(minor / 100).toLocaleString('en-NG', { maximumFractionDigits: 2 })}`);
+const amount = (minor: number | null, cur: string): string => (minor == null ? '' : money(minor, cur.trim() || 'USD'));
 
 export async function renderCrm(view: HTMLElement): Promise<void> {
   let tab: 'pipeline' | 'contacts' = 'pipeline';
@@ -97,10 +97,10 @@ export async function renderCrm(view: HTMLElement): Promise<void> {
         body: html`<div class="field"><label for="lt">Title</label><input class="input" id="lt" maxlength="255" required placeholder="Website redesign"></div>
           <div class="field"><label for="lc">Contact</label><select class="input" id="lc">${c.contacts.map((x) => html`<option value="${x.id}">${cname(x)}</option>`)}</select></div>
           <div class="form-grid two"><div class="field"><label for="ls">Stage</label><select class="input" id="ls">${s.stages.map((x) => html`<option value="${x.id}">${x.name}</option>`)}</select></div>
-          <div class="field"><label for="lv">Value (₦)</label><input class="input" id="lv" type="number" min="0" step="1"></div></div>`,
+          <div class="field"><label for="lv">Value ($)</label><input class="input" id="lv" type="number" min="0" step="1"></div></div>`,
         submit: async (el) => {
           if (!inp(el, '#lt')) throw new ApiError(0, 'Give the lead a title');
-          const body: Record<string, unknown> = { title: inp(el, '#lt'), contactId: inp(el, '#lc'), stageId: inp(el, '#ls'), currency: 'NGN' };
+          const body: Record<string, unknown> = { title: inp(el, '#lt'), contactId: inp(el, '#lc'), stageId: inp(el, '#ls'), currency: 'USD' };
           if (inp(el, '#lv')) body.value = Math.round(Number(inp(el, '#lv')) * 100);
           await api('/api/crm/leads', { method: 'POST', body }); toast('Lead added', 'success'); tab = 'pipeline'; show();
         },

@@ -54,7 +54,7 @@ export async function ensureUserWorkspace(user: { uid: string; displayName?: str
   batch.set(doc(db, 'workspaces', newWid), { name: tenantName, slug, ownerUid: user.uid, plan: 'free', createdAt: serverTimestamp(), settings: { ...DEFAULT_SETTINGS, publicName: tenantName } });
   batch.set(doc(db, 'workspaces', newWid, 'members', user.uid), { role: 'owner', name: user.displayName || tenantName, email: user.email || '', createdAt: serverTimestamp() });
   batch.set(doc(db, 'slugs', slug), {
-    wid: newWid, ownerUid: user.uid, name: tenantName, timezone: 'Africa/Lagos', currency: 'NGN', bookingEnabled: true, slotMinutes: DEFAULT_SETTINGS.slotMinutes,
+    wid: newWid, ownerUid: user.uid, name: tenantName, timezone: 'Africa/Lagos', currency: 'USD', bookingEnabled: true, slotMinutes: DEFAULT_SETTINGS.slotMinutes,
     openMinutes: DEFAULT_SETTINGS.openMinutes, closeMinutes: DEFAULT_SETTINGS.closeMinutes, closedWeekdays: [0], bookingCap: 30,
     leadMinutes: DEFAULT_SETTINGS.leadMinutes, maxDaysAhead: DEFAULT_SETTINGS.maxDaysAhead,
   });
@@ -85,7 +85,7 @@ async function createWorkspaceFor(user: User, tenantName: string, name: string, 
     batch.set(doc(db, 'workspaces', wid), { name: tenantName, slug, ownerUid: user.uid, plan: 'free', createdAt: serverTimestamp(), settings: { ...DEFAULT_SETTINGS, publicName: tenantName } });
     batch.set(doc(db, 'workspaces', wid, 'members', user.uid), { role: 'owner', name, email: user.email ?? '', createdAt: serverTimestamp() });
     batch.set(doc(db, 'slugs', slug), {
-      wid, ownerUid: user.uid, name: tenantName, timezone: 'Africa/Lagos', currency: 'NGN', bookingEnabled: true, slotMinutes: DEFAULT_SETTINGS.slotMinutes,
+      wid, ownerUid: user.uid, name: tenantName, timezone: 'Africa/Lagos', currency: 'USD', bookingEnabled: true, slotMinutes: DEFAULT_SETTINGS.slotMinutes,
       openMinutes: DEFAULT_SETTINGS.openMinutes, closeMinutes: DEFAULT_SETTINGS.closeMinutes, closedWeekdays: [0], bookingCap: 30,
       leadMinutes: DEFAULT_SETTINGS.leadMinutes, maxDaysAhead: DEFAULT_SETTINGS.maxDaysAhead,
     });

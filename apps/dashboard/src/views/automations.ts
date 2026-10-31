@@ -35,7 +35,7 @@ export async function renderAutomations(view: HTMLElement): Promise<void> {
     try {
       rules = (await api<{ rules: Rule[] }>('/api/rules?limit=200')).rules;
       if (!rules.length) {
-        mount(host, emptyState({ icon: 'workflow', title: 'No rules yet', text: 'For example: when a lead worth more than ₦500,000 is created, notify the team.' }));
+        mount(host, emptyState({ icon: 'workflow', title: 'No rules yet', text: 'For example: when a lead worth more than $500 is created, notify the team.' }));
         return;
       }
       mount(host, html`<div class="list">${rules.map((r) => { const s = status(r); return html`<div class="list-item" style="align-items:flex-start;flex-wrap:wrap">
@@ -103,7 +103,7 @@ export async function renderAutomations(view: HTMLElement): Promise<void> {
   function ai(): void {
     formModal({
       title: 'Draft a rule with AI', subtitle: 'Describe what should happen. You review it before it can run.', submitLabel: 'Draft rule',
-      body: html`<div class="field"><label for="ai">What should happen?</label><textarea class="textarea" id="ai" rows="4" minlength="10" maxlength="1000" placeholder="When a lead worth more than 500,000 naira is created, notify the team"></textarea></div>`,
+      body: html`<div class="field"><label for="ai">What should happen?</label><textarea class="textarea" id="ai" rows="4" minlength="10" maxlength="1000" placeholder="when a lead worth more than $500 is created, notify the team"></textarea></div>`,
       submit: async (el) => {
         if (inp(el, '#ai').length < 10) throw new ApiError(0, 'Describe the rule in at least 10 characters');
         await api('/api/rules/ai-draft', { method: 'POST', body: { intent: inp(el, '#ai') } });

@@ -41,10 +41,16 @@ export async function checkout(b: Record<string, unknown>): Promise<unknown> {
   return j;
 }
 
+/** Receipts are shown in US dollars (the plan's list price); Paystack settles the card payment in naira. */
+const usdAmount = (x: Record<string, any>): { currency: string; amount_minor: number } => {
+  const t = PRICES[x.tier as keyof typeof PRICES];
+  const usd = t ? (x.cycle === 'annual' ? t.annualUsd : t.monthlyUsd) : null;
+  return usd == null ? { currency: x.currency, amount_minor: x.amountMinor ?? 0 } : { currency: 'USD', amount_minor: Math.round(usd * 100) };
+};
 const pay = (d: QueryDocumentSnapshot) => {
   const x = d.data();
   return {
-    reference: d.id, tier: x.tier, cycle: x.cycle, currency: x.currency, amount_minor: x.amountMinor ?? 0, paid_minor: x.paidMinor ?? null, status: x.status ?? 'pending',
+    reference: d.id, tier: x.tier, cycle: x.cycle, ...usdAmount(x), paid_minor: x.paidMinor ?? null, status: x.status ?? 'pending',
     gateway: 'paystack', created_at: iso(x.createdAt) ?? new Date().toISOString(), paid_at: iso(x.paidAt),
   };
 };

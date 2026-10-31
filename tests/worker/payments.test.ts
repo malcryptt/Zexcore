@@ -197,10 +197,10 @@ describe('deposits', () => {
   beforeEach(() => { seedDoc(`workspaces/${DW}`, { name: 'Sade Salon', plan: 'free', ownerUid: 'owner1', slug: 'sade-salon' }); seedDoc(`workspaces/${DW}/members/owner1`, { role: 'owner' }); seedDoc(`workspaces/${DW}/members/staff1`, { role: 'staff' }); });
   const BOOKING = '202611_7';
   const seedDeposit = (over: Record<string, unknown> = {}) => {
-    seedDoc(`workspaces/${DW}`, { name: 'Sade Salon', plan: 'growth', ownerUid: 'owner1', slug: 'sade-salon', settings: { depositEnabled: true, depositMinor: 500_000 } });
+    seedDoc(`workspaces/${DW}`, { name: 'Sade Salon', plan: 'growth', ownerUid: 'owner1', slug: 'sade-salon', settings: { depositEnabled: true, depositMinor: 500, exchangeRate: 1500 } });
     seedDoc('slugs/sade-salon', { wid: DW, ownerUid: 'owner1' });
     seedDoc(`workspaces/${DW}/payout/main`, { subaccountCode: 'ACCT_test123', bankName: 'Test Bank', accountName: 'SADE SALON LTD', last4: '1234' });
-    seedDoc(`workspaces/${DW}/services/s_0`, { name: 'Braids', priceMinor: 2_000_000 });
+    seedDoc(`workspaces/${DW}/services/s_0`, { name: 'Braids', priceMinor: 2000 });
     seedDoc(`workspaces/${DW}/bookings/${BOOKING}`, { status: 'pending', source: 'public', serviceId: 's_0', customerName: 'Ada', createdAt: new Date(NOW.getTime() - 60_000), startsAt: new Date(NOW.getTime() + 86_400_000), ...over });
   };
   const start = (over: Record<string, unknown> = {}) => call('/api/public/deposit', { headers: { 'content-type': 'application/json' }, body: JSON.stringify({ slug: 'sade-salon', bookingId: BOOKING, email: 'ada@example.com', ...over }) });
@@ -219,12 +219,12 @@ describe('deposits', () => {
     expect(JSON.stringify(store.get(`workspaces/${DW}/payout/main`))).not.toContain('0123456789');
   });
 
-  it('prices the deposit from the business settings and pays it out to their account, ignoring the browser', async () => {
+  it('converts the dollar deposit at the business own exchange rate and pays it out to their account, ignoring the browser', async () => {
     seedDeposit();
     const r = await start({ amount: 1 });
     expect(r.status).toBe(201);
-    expect(await r.json()).toMatchObject({ authorizationUrl: 'https://checkout.paystack.com/abc', amountMinor: 500_000 });
-    expect(paystackInit[0]).toMatchObject({ amount: 500_000, subaccount: 'ACCT_test123', bearer: 'subaccount', currency: 'NGN', metadata: { kind: 'deposit', bookingId: BOOKING } });
+    expect(await r.json()).toMatchObject({ authorizationUrl: 'https://checkout.paystack.com/abc', amountMinor: 750_000 });
+    expect(paystackInit[0]).toMatchObject({ amount: 750_000, subaccount: 'ACCT_test123', bearer: 'subaccount', currency: 'NGN', metadata: { kind: 'deposit', bookingId: BOOKING } });
     expect(paystackInit[0].callback_url).toMatch(/^https:\/\/zexcore\.com\.ng\/sade-salon\?pay=zx_/);
   });
 
@@ -245,19 +245,19 @@ describe('deposits', () => {
     paystackVerify[reference] = { status: true, data: { status: 'success', amount: 100, currency: 'NGN', reference } };
     expect(((await (await status()).json()) as any).depositStatus).toBe('mismatch');
     expect(fromFs(store.get(`workspaces/${DW}/bookings/${BOOKING}`)!.fields.status)).toBe('pending');
-    seedDoc(`workspaces/${DW}/depositPayments/${reference}`, { reference, bookingId: BOOKING, amountMinor: 500_000, currency: 'NGN', status: 'pending' });
-    paystackVerify[reference] = { status: true, data: { status: 'success', amount: 500_000, currency: 'NGN', reference } };
+    seedDoc(`workspaces/${DW}/depositPayments/${reference}`, { reference, bookingId: BOOKING, amountMinor: 750_000, usdMinor: 500, rate: 1500, currency: 'NGN', status: 'pending' });
+    paystackVerify[reference] = { status: true, data: { status: 'success', amount: 750_000, currency: 'NGN', reference } };
     const j = (await (await status()).json()) as any;
-    expect(j).toMatchObject({ depositStatus: 'paid', status: 'confirmed', amountMinor: 500_000, serviceName: 'Braids' });
+    expect(j).toMatchObject({ depositStatus: 'paid', status: 'confirmed', amountMinor: 500, currency: 'USD', chargedNgnMinor: 750_000, serviceName: 'Braids' });
     const b = store.get(`workspaces/${DW}/bookings/${BOOKING}`)!.fields;
-    expect(fromFs(b.depositStatus)).toBe('paid'); expect(fromFs(b.status)).toBe('confirmed'); expect(fromFs(b.paymentReference)).toBe(reference);
+    expect(fromFs(b.depositStatus)).toBe('paid'); expect(fromFs(b.depositMinor)).toBe(500); expect(fromFs(b.status)).toBe('confirmed'); expect(fromFs(b.paymentReference)).toBe(reference);
     expect(((await (await status()).json()) as any).depositStatus).toBe('paid');
   });
 
   it('settles a deposit from the webhook too, so closing the tab never loses a payment', async () => {
     seedDeposit();
     const { reference } = (await (await start()).json()) as { reference: string };
-    paystackVerify[reference] = { status: true, data: { status: 'success', amount: 500_000, currency: 'NGN', reference } };
+    paystackVerify[reference] = { status: true, data: { status: 'success', amount: 750_000, currency: 'NGN', reference } };
     const body = JSON.stringify({ event: 'charge.success', data: { reference, metadata: { kind: 'deposit', workspaceId: DW, bookingId: BOOKING } } });
     expect((await call('/api/paystack-webhook', { body, headers: { 'x-paystack-signature': await paystackSignature(body, SECRET) } })).status).toBe(200);
     expect(fromFs(store.get(`workspaces/${DW}/bookings/${BOOKING}`)!.fields.depositStatus)).toBe('paid');

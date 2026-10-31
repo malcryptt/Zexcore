@@ -55,7 +55,7 @@ export async function payoutSetup(c: Ctx): Promise<Response> {
   return json({ ok: true, accountName, last4: accountNumber.slice(-4) }, 200, c.headers);
 }
 
-interface Plan { wid: string; slug: string; bookingId: string; amountMinor: number; subaccount: string; email: string }
+interface Plan { wid: string; slug: string; bookingId: string; amountMinor: number; usdMinor: number; rate: number; subaccount: string; email: string }
 
 async function planDeposit(c: Ctx, wid: string, slug: string, bookingId: string, emailIn: unknown, opts: { requireFresh: boolean }): Promise<Plan> {
   if (!BOOKING_RE.test(bookingId)) throw new HttpError(400, 'Invalid booking');
@@ -72,15 +72,19 @@ async function planDeposit(c: Ctx, wid: string, slug: string, bookingId: string,
   }
   const svc = await fsGet(c.env, c.d, `workspaces/${wid}/services/${String(booking.data.serviceId)}`);
   const price = Number(svc?.data.priceMinor ?? 0);
-  const amountMinor = price > 0 ? Math.min(Number(st.depositMinor), price) : Number(st.depositMinor);
+  // Prices and deposits are US-dollar cents; the business sets its own exchange rate and Paystack charges naira (kobo).
+  const usdMinor = price > 0 ? Math.min(Number(st.depositMinor), price) : Number(st.depositMinor);
+  const rate = Number(st.exchangeRate);
+  if (!Number.isFinite(rate) || rate < 100 || rate > 100_000) throw new HttpError(409, 'This business has not set its exchange rate yet.', 'rate_missing');
+  const amountMinor = Math.round(usdMinor * rate);
   const email = String(emailIn || booking.data.customerEmail || `pay+${bookingId.replace('_', '')}@zexcore.com.ng`).trim();
   if (!EMAIL_RE.test(email)) throw new HttpError(400, 'Enter a valid email address for your receipt.');
-  return { wid, slug, bookingId, amountMinor, subaccount: String(payout.data.subaccountCode), email };
+  return { wid, slug, bookingId, amountMinor, usdMinor, rate, subaccount: String(payout.data.subaccountCode), email };
 }
 
 async function startPayment(c: Ctx, p: Plan, by: string): Promise<{ reference: string; authorizationUrl: string; amountMinor: number }> {
   const reference = randomRef(p.wid);
-  await fsCommit(c.env, c.d, [{ path: `workspaces/${p.wid}/depositPayments/${reference}`, fields: { reference, bookingId: p.bookingId, amountMinor: p.amountMinor, currency: 'NGN', status: 'pending', createdAt: c.d.now(), createdBy: by }, precondition: { exists: false } }]);
+  await fsCommit(c.env, c.d, [{ path: `workspaces/${p.wid}/depositPayments/${reference}`, fields: { reference, bookingId: p.bookingId, amountMinor: p.amountMinor, usdMinor: p.usdMinor, rate: p.rate, currency: 'NGN', status: 'pending', createdAt: c.d.now(), createdBy: by }, precondition: { exists: false } }]);
   const fee = Math.max(0, Math.min(Number(c.env.DEPOSIT_FEE_MINOR ?? 0) || 0, Math.floor(p.amountMinor / 2)));
   const r = await ps(c.env, c.d, '/transaction/initialize', { method: 'POST', body: JSON.stringify({
     email: p.email, amount: p.amountMinor, currency: 'NGN', reference, subaccount: p.subaccount, bearer: 'subaccount', ...(fee ? { transaction_charge: fee } : {}),
@@ -126,7 +130,7 @@ export async function settleDeposit(env: Env, d: Deps, wid: string, reference: s
   try {
     await fsCommit(env, d, [
       { path, fields: { status: 'paid', paidMinor: vj.data.amount, paidAt: now }, mask: ['status', 'paidMinor', 'paidAt'], precondition: { updateTime: pay.updateTime } },
-      { path: `workspaces/${wid}/bookings/${String(pay.data.bookingId)}`, fields: { depositStatus: 'paid', depositMinor: vj.data.amount, paymentReference: reference, status: 'confirmed' }, mask: ['depositStatus', 'depositMinor', 'paymentReference', 'status'], precondition: { exists: true } },
+      { path: `workspaces/${wid}/bookings/${String(pay.data.bookingId)}`, fields: { depositStatus: 'paid', depositMinor: Number(pay.data.usdMinor) || 0, paymentReference: reference, status: 'confirmed' }, mask: ['depositStatus', 'depositMinor', 'paymentReference', 'status'], precondition: { exists: true } },
     ]);
   } catch (e) { if (!(e instanceof FsConflict)) throw e; return (await fsGet(env, d, path))?.data.status === 'paid' ? 'paid' : 'pending'; }
   return 'paid';
@@ -143,6 +147,6 @@ export async function depositStatus(c: Ctx): Promise<Response> {
   const booking = pay ? await fsGet(c.env, c.d, `workspaces/${wid}/bookings/${String(pay.data.bookingId)}`) : null;
   const svc = booking ? await fsGet(c.env, c.d, `workspaces/${wid}/services/${String(booking.data.serviceId)}`) : null;
   const id = String(pay?.data.bookingId ?? '');
-  return json({ ref: `ZX-${id.replace('_', '-')}`, status: booking?.data.status ?? 'pending', depositStatus: state === 'paid' ? 'paid' : state === 'mismatch' ? 'mismatch' : 'unpaid', amountMinor: pay?.data.amountMinor ?? 0, currency: 'NGN',
+  return json({ ref: `ZX-${id.replace('_', '-')}`, status: booking?.data.status ?? 'pending', depositStatus: state === 'paid' ? 'paid' : state === 'mismatch' ? 'mismatch' : 'unpaid', amountMinor: Number(pay?.data.usdMinor ?? 0), currency: 'USD', chargedNgnMinor: Number(pay?.data.amountMinor ?? 0), rate: Number(pay?.data.rate ?? 0),
     serviceName: svc?.data.name ?? '', startsAt: booking?.data.startsAt instanceof Date ? booking.data.startsAt.toISOString() : null }, 200, c.headers);
 }

@@ -1,9 +1,9 @@
 const CUR: Record<string, string> = { NGN: '₦', USD: '$', GBP: '£', EUR: '€' };
 
-export function money(minor: number, currency = 'NGN'): string {
+export function money(minor: number, currency = 'USD'): string {
   const major = minor / 100;
   const frac = Number.isInteger(major) ? 0 : 2;
-  return `${CUR[currency] ?? currency + ' '}${major.toLocaleString('en-NG', { minimumFractionDigits: frac, maximumFractionDigits: 2 })}`;
+  return `${CUR[currency] ?? currency + ' '}${major.toLocaleString('en-US', { minimumFractionDigits: frac, maximumFractionDigits: 2 })}`;
 }
 
 /** Business-local calendar helpers use a fixed UTC offset (minutes) so rendering never depends on the viewer's device zone. */

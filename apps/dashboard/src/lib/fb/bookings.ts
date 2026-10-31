@@ -29,7 +29,7 @@ function toDto(d: QueryDocumentSnapshot, svcs: Map<string, ServiceDto>, staff: M
   return {
     id: d.id, ref: refOf(d.id), status: x.status, serviceId: x.serviceId, serviceName: s?.name ?? 'Service', durationMin: s?.durationMin ?? Math.round((x.endsAt.toMillis() - x.startsAt.toMillis()) / 60000),
     staffId: x.staffId ?? null, staffName: p?.name ?? null, customerName: x.customerName, customerPhone: x.customerPhone, customerEmail: x.customerEmail ?? null,
-    startsAt: iso(x.startsAt)!, endsAt: iso(x.endsAt)!, currency: 'NGN', priceMinor: s?.priceMinor ?? 0, ...deposit(x, s?.priceMinor ?? 0, dep),
+    startsAt: iso(x.startsAt)!, endsAt: iso(x.endsAt)!, currency: 'USD', priceMinor: s?.priceMinor ?? 0, ...deposit(x, s?.priceMinor ?? 0, dep),
     notes: x.notes ?? null, source: x.source ?? 'staff', createdAt: iso(x.createdAt),
   };
 }
@@ -258,7 +258,7 @@ export async function summary(): Promise<unknown> {
     names.set(b.serviceName, (names.get(b.serviceName) ?? 0) + 1);
   }
   return {
-    businessName: s.publicName ?? c.wsName, currency: 'NGN', today, utcOffsetMinutes: off,
+    businessName: s.publicName ?? c.wsName, currency: 'USD', today, utcOffsetMinutes: off,
     setup: { onboarded: s.onboarded, services: svcs.length, staff: staff.length, depositEnabled: s.depositEnabled },
     todayBookings: rows.filter((b) => { const t = new Date(b.startsAt).getTime(); return t >= dayStart && t < dayStart + 86_400_000; }),
     week: { total: rows.length, depositsMinor: rows.reduce((n, b) => n + (b.depositStatus === 'paid' ? b.depositMinor : 0), 0), noShows: rows.filter((b) => b.status === 'no_show').length, perDay },
