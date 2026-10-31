@@ -4,7 +4,7 @@ import { block, cards, cta, intro, shell, table } from './ref';
 // Flip an entry to 'LIVE' only when it passes its end-to-end tests in production.
 const STATUS: Record<string, string> = {
   booking: 'LIVE', crm: 'LIVE', pages: 'LIVE', billing: 'LIVE',
-  inbox: 'LAUNCHING', devices: 'LAUNCHING', automations: 'LAUNCHING', privacy: 'LAUNCHING', audit: 'LAUNCHING',
+  inbox: 'LIVE', devices: 'LIVE', automations: 'LIVE', privacy: 'LIVE', audit: 'LIVE',
 };
 
 export function renderModulesPage(): string {
@@ -17,7 +17,7 @@ export function renderModulesPage(): string {
       { tag: STATUS.booking, title: 'Bookings', text: 'Public booking page, services, staff and live availability. Double booking is impossible: every slot is locked atomically at the data layer.' },
       { tag: STATUS.crm, title: 'Customers & Leads', text: 'Contacts, pipeline stages and leads in one list, created automatically from every booking.' },
       { tag: STATUS.pages, title: 'Booking Pages', text: 'Your public page at zexcore.com.ng/your-name with your services, hours and contact details.' },
-      { tag: STATUS.billing, title: 'Plans & Payments', text: 'Paystack checkout in naira, instant plan activation and a payment history you can export.' },
+      { tag: STATUS.billing, title: 'Plans & Payments', text: 'Paystack checkout in naira, instant plan activation, and customer deposits paid straight to your bank account.' },
     ])),
 
     block('Talk to Customers', 'Stay on the channels your customers already use.', cards([
