@@ -3,7 +3,8 @@ import { ago } from '../lib/format';
 import { html, mount, $ } from '../lib/html';
 import { ic } from '../lib/icons';
 import { emptyState, skeletonRows, confirmDialog, openModal } from '../lib/ui';
-import { canAdmin, canManage } from '../lib/session';
+import { canAdmin, canManage, current } from '../lib/session';
+import { hasFeatureAccess } from '../lib/fb/plan';
 import { api, toast, badge, pageHead, formModal, inp, fail, errMsg } from './shared';
 
 interface Rule {
@@ -23,7 +24,98 @@ const summary = (r: Rule): string => {
   return `When ${t.source.replace(/^event:/, '')} → ${what}${a.length > 1 ? ` (+${a.length - 1} more)` : ''}`;
 };
 
+async function callAiProvider(provider: 'gemini' | 'openai', apiKey: string, intent: string): Promise<Record<string, unknown>> {
+  if (provider === 'gemini') {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
+    const systemPrompt = `You are an automation rule generator for ZexCore business platform. Convert this intent into a valid rule JSON.
+Intent: "${intent}"
+
+Available triggers (trigger.source):
+- "event:crm.lead.created"
+- "event:crm.lead.won"
+- "event:bookings.booking.created"
+- "event:bookings.booking.cancelled"
+- "event:devices.reading.alert"
+
+Available condition operators (conditions.op): "eq", "neq", "gt", "gte", "lt", "lte", "contains", "exists"
+Condition fields: "lead.value", "lead.status", "booking.depositStatus", "device.severity".
+
+Available actions:
+- { "type": "notify", "message": "Notification text" }
+- { "type": "webhook", "url": "https://..." }
+- { "type": "emit", "event": "custom.event.name" }
+
+Return ONLY valid JSON without markdown code fences:
+{
+  "name": "Short descriptive rule name",
+  "description": "Short explanation",
+  "trigger": { "source": "event:crm.lead.created" },
+  "conditions": { "field": "lead.value", "op": "gte", "value": 500000 },
+  "actions": [{ "type": "notify", "message": "High value lead received" }]
+}`;
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: systemPrompt }] }],
+        generationConfig: { responseMimeType: 'application/json' },
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new ApiError(res.status, err.error?.message || 'Gemini API call failed. Verify your API key.');
+    }
+    const data = await res.json();
+    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!rawText) throw new ApiError(502, 'Gemini returned an empty response.');
+    return JSON.parse(rawText.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim());
+  } else {
+    const url = 'https://api.openai.com/v1/chat/completions';
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${apiKey.trim()}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'You are an automation rule generator for ZexCore. Output only a JSON object with keys: name (string), description (string), trigger ({source: string}), conditions (optional {field, op, value}), actions (array of {type, message/url/event}).' },
+          { role: 'user', content: intent },
+        ],
+        response_format: { type: 'json_object' },
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new ApiError(res.status, err.error?.message || 'OpenAI API call failed. Verify your API key.');
+    }
+    const data = await res.json();
+    const rawText = data.choices?.[0]?.message?.content;
+    if (!rawText) throw new ApiError(502, 'OpenAI returned an empty response.');
+    return JSON.parse(rawText.trim());
+  }
+}
+
 export async function renderAutomations(view: HTMLElement): Promise<void> {
+  const me = current()!;
+  if (!hasFeatureAccess(me.tenant.tier, 'automations')) {
+    mount(view, html`<div class="page-head"><div><h1>Automations</h1><p>Rules that react to events across your workspace.</p></div></div>
+      <div class="card card-pad stack" style="text-align:center;padding:48px 24px;max-width:640px;margin:32px auto">
+        <div style="width:56px;height:56px;border-radius:50%;background:var(--primary-tint,#fff1f2);color:var(--primary,#e50920);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">${ic('lock', 'ico-md')}</div>
+        <h2>Automations is available on the Growth plan</h2>
+        <p class="muted" style="max-width:480px;margin:0 auto 20px">React to new bookings, large CRM leads, and sensor alerts automatically. Includes AI workflow drafting with your own Gemini or OpenAI API keys.</p>
+        <div class="stack-sm" style="background:var(--bg-subtle,#f8f9fa);border-radius:12px;padding:16px;text-align:left;max-width:420px;margin:0 auto 24px">
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px">${ic('check', 'ico-sm')} AI rule generator (Gemini & OpenAI)</div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px">${ic('check', 'ico-sm')} Event triggers for CRM, Bookings & Telemetry</div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px">${ic('check', 'ico-sm')} Dry-run rule testing before going live</div>
+        </div>
+        <div><a href="/app/billing" data-link class="btn btn-primary btn-lg" style="display:inline-flex;align-items:center;gap:8px">${ic('arrow-right', 'ico-sm')} Upgrade to Growth</a></div>
+      </div>`);
+    return;
+  }
+
   mount(view, html`${pageHead('Automations', 'Rules that react to things happening in your workspace. Every rule must be approved by an admin before it can run.',
     canManage() ? html`<div class="row"><button class="btn btn-secondary" data-ai>${ic('sparkles', 'ico-sm')} Draft with AI</button><button class="btn btn-primary" data-add>${ic('plus', 'ico-sm')} New rule</button></div>` : '')}
     <div class="card" id="rl"></div>`);
@@ -101,13 +193,45 @@ export async function renderAutomations(view: HTMLElement): Promise<void> {
     });
   }
   function ai(): void {
+    const savedKey = localStorage.getItem('zx.ai_key') || '';
+    const savedProvider = (localStorage.getItem('zx.ai_provider') as 'gemini' | 'openai') || 'gemini';
     formModal({
-      title: 'Draft a rule with AI', subtitle: 'Describe what should happen. You review it before it can run.', submitLabel: 'Draft rule',
-      body: html`<div class="field"><label for="ai">What should happen?</label><textarea class="textarea" id="ai" rows="4" minlength="10" maxlength="1000" placeholder="when a lead worth more than $500 is created, notify the team"></textarea></div>`,
+      title: 'Draft a rule with AI', subtitle: 'Use your own Gemini or OpenAI API key to generate rules from plain English.', submitLabel: 'Draft rule',
+      body: html`
+        <div class="field">
+          <label for="ai-p">AI Provider</label>
+          <select class="input" id="ai-p">
+            <option value="gemini" ${savedProvider === 'gemini' ? 'selected' : ''}>Google Gemini (Gemini 1.5 Flash)</option>
+            <option value="openai" ${savedProvider === 'openai' ? 'selected' : ''}>OpenAI (gpt-4o-mini)</option>
+          </select>
+        </div>
+        <div class="field">
+          <div class="row between">
+            <label for="ai-k">Your API Key</label>
+            <span class="muted small" style="font-size:11px">Saved locally in browser</span>
+          </div>
+          <input class="input mono" id="ai-k" type="password" value="${savedKey}" placeholder="AIzaSy... or sk-..." required>
+          <span class="hint">Enter your own API key. It stays in your browser and is never stored on our servers.</span>
+        </div>
+        <div class="field">
+          <label for="ai">What should happen?</label>
+          <textarea class="textarea" id="ai" rows="3" minlength="10" maxlength="1000" placeholder="When a lead worth more than $500 is created, notify the team" required></textarea>
+        </div>`,
       submit: async (el) => {
-        if (inp(el, '#ai').length < 10) throw new ApiError(0, 'Describe the rule in at least 10 characters');
-        await api('/api/rules/ai-draft', { method: 'POST', body: { intent: inp(el, '#ai') } });
-        toast('Draft created. Review and approve it.', 'success'); void load();
+        const intent = inp(el, '#ai');
+        const key = inp(el, '#ai-k');
+        const provider = (inp(el, '#ai-p') as 'gemini' | 'openai') || 'gemini';
+        if (!key) throw new ApiError(0, 'Please enter your API key to draft automations with AI');
+        if (intent.length < 10) throw new ApiError(0, 'Describe the rule in at least 10 characters');
+
+        try {
+          localStorage.setItem('zx.ai_key', key);
+          localStorage.setItem('zx.ai_provider', provider);
+        } catch { /* storage full / private mode */ }
+
+        const generated = await callAiProvider(provider, key, intent);
+        await api('/api/rules', { method: 'POST', body: generated });
+        toast('Draft created with AI! Review and approve it.', 'success'); void load();
       },
     });
   }
@@ -123,3 +247,4 @@ export async function renderAutomations(view: HTMLElement): Promise<void> {
   }
   await load();
 }
+

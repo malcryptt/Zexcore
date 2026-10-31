@@ -11,6 +11,14 @@ interface Usage { tier: string; effectiveTier: string; usage: Record<LimitKey, {
 interface Payment { reference: string; tier: string; cycle: string; currency: string; amount_minor: string | number; paid_minor: string | number | null; status: string; gateway: string | null; created_at: string; paid_at: string | null }
 const BLURB: Record<string, string> = { starter: 'For a single location getting started.', growth: 'For growing businesses with a busy calendar.', agency: 'For operators running several locations.', enterprise: 'For large organisations with advanced needs.', dedicated: 'Dedicated infrastructure and a named support contact.' };
 
+const EXTRA_FEATURES: Record<string, string[]> = {
+  starter: ['Custom logo branding', 'Data protection & compliance'],
+  growth: ['Automations & AI rule drafting', 'IoT device monitoring', 'Custom logo branding', 'Data protection'],
+  agency: ['All Growth features', 'Priority processing', 'Extended audit log'],
+  enterprise: ['All features unlocked', 'Dedicated account manager'],
+  dedicated: ['Dedicated infrastructure', 'Named support engineer'],
+};
+
 export async function renderBilling(view: HTMLElement): Promise<void> {
   const me = current()!;
   let cycle: 'monthly' | 'annual' = 'monthly';
@@ -29,11 +37,15 @@ export async function renderBilling(view: HTMLElement): Promise<void> {
     mount($('#plans', view)!, html`${plans.plans.map((p) => {
       const usd = cycle === 'annual' ? p.annualUsd : p.monthlyUsd;
       const cur = me.tenant.tier === p.tier;
+      const extras = EXTRA_FEATURES[p.tier] || [];
       return html`<section class="card card-pad stack-sm" style="${cur ? 'border:2px solid var(--primary);padding:19px' : ''}">
         <div class="row between"><h3 style="text-transform:capitalize">${p.tier}</h3>${cur ? html`<span class="badge badge-primary">Current</span>` : ''}</div>
         <div><span style="font-size:1.75rem;font-weight:700;letter-spacing:-.02em" class="num">${money(usd * 100, 'USD')}</span><span class="muted small"> / ${cycle === 'annual' ? 'year' : 'month'}</span></div>
         <p class="muted small">${BLURB[p.tier]}</p>
-        <ul class="plan-list">${limitLines(p.limits, plans.limitLabels).map((l) => html`<li>${ic('check', 'ico-sm')} ${l}</li>`)}</ul>
+        <ul class="plan-list">
+          ${limitLines(p.limits, plans.limitLabels).map((l) => html`<li>${ic('check', 'ico-sm')} ${l}</li>`)}
+          ${extras.map((ex) => html`<li>${ic('check', 'ico-sm')} <b>${ex}</b></li>`)}
+        </ul>
         ${canAdmin() ? html`<button class="btn ${cur ? 'btn-secondary' : 'btn-primary'} btn-block" data-buy="${p.tier}" ${cur ? 'disabled' : ''}>${cur ? 'Your plan' : 'Choose plan'}</button>` : ''}</section>`;
     })}`);
     $$('[data-buy]', view).forEach((b) => b.addEventListener('click', () => void checkout(b.dataset.buy!, b as HTMLButtonElement)));

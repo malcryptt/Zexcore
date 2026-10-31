@@ -4,6 +4,7 @@ export interface Settings {
   businessType: string; publicName: string | null; phone: string | null; address: string | null; currency: string;
   exchangeRate?: number; depositEnabled: boolean; depositMinor: number; openMinutes: number; closeMinutes: number; slotMinutes: number;
   daysOpen: number[]; utcOffsetMinutes: number; leadMinutes: number; maxDaysAhead: number; onboarded: boolean;
+  logoUrl?: string | null;
 }
 export interface Service { id: string; name: string; description: string | null; durationMin: number; priceMinor: number; active: boolean }
 export interface Staff { id: string; name: string; title: string | null; active: boolean }

@@ -46,7 +46,36 @@ export function effectiveTier(plan: string | undefined, expiresAtMs: number | nu
 export type EnforcedKey = keyof (typeof LIMITS)['free'];
 export const slotLimit = (tier: Tier, key: EnforcedKey): number => LIMITS[tier][key] ?? UNLIMITED_SLOTS;
 
+export type FeatureKey = 'branding' | 'compliance' | 'automations' | 'devices';
+
+export const FEATURE_TIERS: Record<FeatureKey, Tier> = {
+  branding: 'starter',
+  compliance: 'starter',
+  automations: 'growth',
+  devices: 'growth',
+};
+
+const TIER_ORDER: Record<Tier, number> = {
+  free: 0,
+  starter: 1,
+  growth: 2,
+  agency: 3,
+  enterprise: 4,
+  dedicated: 5,
+};
+
+export function hasFeatureAccess(tier: string | undefined, feature: FeatureKey): boolean {
+  const t = (tier && tier in TIER_ORDER ? tier : 'free') as Tier;
+  const req = FEATURE_TIERS[feature];
+  return (TIER_ORDER[t] ?? 0) >= (TIER_ORDER[req] ?? 0);
+}
+
+export function featureRequiredTier(feature: FeatureKey): Tier {
+  return FEATURE_TIERS[feature];
+}
+
 export function toLimits(tier: Tier): Limits {
   const l = LIMITS[tier];
   return { ...l } as Record<LimitKey, number | null>;
 }
+

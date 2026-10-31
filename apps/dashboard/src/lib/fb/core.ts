@@ -14,10 +14,12 @@ export interface WorkspaceSettings {
   businessType: string; publicName: string | null; phone: string | null; address: string | null; currency: string; exchangeRate: number;
   depositEnabled: boolean; depositMinor: number; openMinutes: number; closeMinutes: number; slotMinutes: number;
   daysOpen: number[]; utcOffsetMinutes: number; leadMinutes: number; maxDaysAhead: number; onboarded: boolean;
+  logoUrl?: string | null; rules?: any[];
 }
 export const DEFAULT_SETTINGS: WorkspaceSettings = {
   businessType: 'other', publicName: null, phone: null, address: null, currency: 'USD', exchangeRate: 1500, depositEnabled: false, depositMinor: 0,
   openMinutes: 540, closeMinutes: 1020, slotMinutes: 30, daysOpen: [1, 2, 3, 4, 5, 6], utcOffsetMinutes: 60, leadMinutes: 60, maxDaysAhead: 60, onboarded: false,
+  logoUrl: null, rules: [],
 };
 
 export type Role = 'owner' | 'admin' | 'staff';
