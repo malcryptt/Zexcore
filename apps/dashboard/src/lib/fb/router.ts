@@ -30,6 +30,7 @@ on('POST', '/api/auth/password/forgot', async ({ body }) => { await authApi.forg
 on('POST', '/api/auth/password/reset', async ({ body }) => { await authApi.reset(body.token, body.password); return { ok: true }; });
 on('POST', '/api/auth/password/change', async ({ body }) => { await authApi.changePassword(body.currentPassword, body.newPassword); return { token: 'firebase' }; });
 on('POST', '/api/auth/email/verify', async ({ body }) => { await authApi.verifyEmail(body.token); return { ok: true }; });
+on('GET', '/api/auth/email/status', () => authApi.emailStatus());
 on('POST', '/api/auth/email/resend', async () => { await authApi.resendVerification(); return { ok: true }; });
 // Firebase signs a device out from the Firebase console / by password change; per-device session lists are not exposed.
 on('GET', '/api/auth/sessions', () => ({ sessions: [] }));

@@ -102,9 +102,19 @@ export async function appLayout(path: string, onNew: () => void): Promise<HTMLEl
     $('[data-new]')!.addEventListener('click', onNew);
     $('[data-resend]')?.addEventListener('click', async (ev) => {
       const b = ev.currentTarget as HTMLButtonElement; b.disabled = true;
-      try { await api('/api/auth/email/resend', { method: 'POST' }); b.textContent = 'Sent'; toast('Confirmation email sent', 'success'); }
+      try { await api('/api/auth/email/resend', { method: 'POST' }); b.textContent = 'Sent'; toast('Confirmation email sent. Check your inbox and spam folder.', 'success'); }
       catch (x) { b.disabled = false; toast(x instanceof Error ? x.message : 'Could not send the email', 'error'); }
     });
+    // The link opens in another tab; when the person comes back, re-check and drop the banner once confirmed.
+    if (document.querySelector('[data-verify-banner]')) {
+      const recheck = async (): Promise<void> => {
+        try {
+          const r = await api<{ verified: boolean }>('/api/auth/email/status');
+          if (r.verified) { document.querySelector('[data-verify-banner]')?.remove(); toast('Email confirmed. Thank you.', 'success'); window.removeEventListener('focus', recheck); }
+        } catch { /* ignore */ }
+      };
+      window.addEventListener('focus', recheck);
+    }
     const menu = $('[data-menu]')!, panel = $('[data-menu-panel]')!;
     menu.addEventListener('click', (e) => { e.stopPropagation(); panel.classList.toggle('hidden'); });
     document.addEventListener('click', () => panel.classList.add('hidden'));
