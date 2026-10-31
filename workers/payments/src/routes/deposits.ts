@@ -76,7 +76,7 @@ async function planDeposit(c: Ctx, wid: string, slug: string, bookingId: string,
   // Prices and deposits are US-dollar cents; the business sets its own exchange rate and Paystack charges naira (kobo).
   const usdMinor = price > 0 ? Math.min(Number(st.depositMinor), price) : Number(st.depositMinor);
   let rate = Number(st.exchangeRate);
-  if (!Number.isFinite(rate) || rate < 100 || rate === 1500 || st.exchangeRateMode === 'auto') {
+  if (!Number.isFinite(rate) || rate < 100 || st.exchangeRateMode === 'auto') {
     rate = await getLiveNgnRate(c.env, c.d);
   }
   const amountMinor = Math.round(usdMinor * rate);

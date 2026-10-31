@@ -43,6 +43,13 @@ describe('workspace creation and plan fields', () => {
     await assertFails(createWorkspace(owner(), W, SLUG, { planExpiresAt: Timestamp.fromDate(new Date('2099-01-01')) }));
     await assertFails(createWorkspace(owner(), W, SLUG, { ownerUid: 'stranger' }));
   });
+  it('gives no special powers to any email address (no hard-coded admin accounts)', async () => {
+    const adm = (uid = 'admin1') => env.authenticatedContext(uid, { email: 'hellozexcore@gmail.com', email_verified: true }).firestore();
+    await assertFails(createWorkspace(adm(), W, SLUG, { ownerUid: 'admin1', plan: 'enterprise' }));
+    await assertSucceeds(createWorkspace(owner()));
+    await assertFails(updateDoc(doc(adm(), 'workspaces', W), { plan: 'enterprise' }));   // not even a member
+    await assertFails(updateDoc(doc(owner(), 'workspaces', W), { plan: 'enterprise' }));
+  });
   it('refuses reserved and already-taken slugs', async () => {
     await assertFails(createWorkspace(owner(), W, 'admin'));
     await assertSucceeds(createWorkspace(owner()));

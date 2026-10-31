@@ -49,10 +49,6 @@ export function toApiError(e: unknown): ApiError {
   return new ApiError(500, 'Something went wrong. Please try again.', code || undefined);
 }
 
-export const ADMIN_EMAILS = new Set(['hellozexcore@gmail.com', 'hellozexlabs@gmail.com']);
-export const isAdminEmail = (email?: string | null): boolean =>
-  Boolean(email && ADMIN_EMAILS.has(email.toLowerCase().trim()));
-
 export async function loadCtx(force = false): Promise<Ctx> {
   if (cached && !force) return cached;
   if (!isConfigured()) throw new ApiError(503, 'ZexCore is not connected to its database yet. Please try again later.', 'not_configured');
@@ -69,17 +65,16 @@ export async function loadCtx(force = false): Promise<Ctx> {
     if (!ws.exists() || !mem.exists()) throw new ApiError(403, 'This account has no access to its workspace.', 'no_workspace');
     const w = ws.data();
     const exp = w.planExpiresAt instanceof Timestamp ? w.planExpiresAt.toMillis() : null;
-    const isSpecialAdmin = isAdminEmail(user.email);
-    const tier = isSpecialAdmin ? 'enterprise' : effectiveTier(w.plan as string, exp);
+    const tier = effectiveTier(w.plan as string, exp);
     cached = {
       uid: user.uid, email: user.email, name: user.displayName ?? (mem.data().name as string | undefined) ?? null,
-      emailVerified: isSpecialAdmin ? true : user.emailVerified,
+      emailVerified: user.emailVerified,
       wid, slug: w.slug as string, wsName: w.name as string,
-      plan: isSpecialAdmin ? 'enterprise' : ((w.plan as string) ?? 'free'),
+      plan: (w.plan as string) ?? 'free',
       planCycle: (w.planCycle as string | undefined) ?? null,
       planExpiresAt: iso(w.planExpiresAt),
       tier,
-      role: isSpecialAdmin ? 'owner' : (mem.data().role as Role),
+      role: mem.data().role as Role,
       settings: { ...DEFAULT_SETTINGS, ...(w.settings as Partial<WorkspaceSettings> | undefined) },
     };
     void flushAudit();
