@@ -1,5 +1,7 @@
 export interface Env {
   PAYSTACK_SECRET_KEY: string;
+  /** Set to 'true' only on a staging Worker. Otherwise a Paystack TEST key (sk_test_…) switches money routes off so test cards can never unlock plans or deposits. */
+  ALLOW_TEST_PAYMENTS?: string;
   FIREBASE_SERVICE_ACCOUNT: string;
   FIREBASE_PROJECT_ID: string;
   APP_URL: string;

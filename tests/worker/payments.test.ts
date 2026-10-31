@@ -74,11 +74,32 @@ beforeAll(async () => {
 beforeEach(() => {
   resetTokenCache(); resetJwksCache();
   store = new Map(); commits = []; paystackInit = []; paystackVerify = {}; paystackSub = [];
-  env = { PAYSTACK_SECRET_KEY: SECRET, FIREBASE_PROJECT_ID: PROJECT, APP_URL: 'https://zexcore.com.ng', ALLOWED_ORIGINS: 'https://zexcore.com.ng,https://zexcore-5d6c0.web.app', NGN_PER_USD: '1500',
+  env = { PAYSTACK_SECRET_KEY: SECRET, ALLOW_TEST_PAYMENTS: 'true', FIREBASE_PROJECT_ID: PROJECT, APP_URL: 'https://zexcore.com.ng', ALLOWED_ORIGINS: 'https://zexcore.com.ng,https://zexcore-5d6c0.web.app', NGN_PER_USD: '1500',
     FIREBASE_SERVICE_ACCOUNT: JSON.stringify({ client_email: 'w@x.iam.gserviceaccount.com', private_key: saPem }) };
   seedDoc(`workspaces/${WID}`, { name: 'Sade Salon', plan: 'free', ownerUid: 'owner1', slug: 'sade-salon' });
   seedDoc(`workspaces/${WID}/members/owner1`, { role: 'owner' });
   seedDoc(`workspaces/${WID}/members/staff1`, { role: 'staff' });
+});
+
+describe('test-key guard', () => {
+  it('switches money routes off for a Paystack test key unless staging, and for a missing key', async () => {
+    for (const e of [{ ...env, ALLOW_TEST_PAYMENTS: undefined }, { ...env, PAYSTACK_SECRET_KEY: '' }, { ...env, PAYSTACK_SECRET_KEY: 'pk_live_x' }]) {
+      const r = await handle(new Request('https://pay.example.workers.dev/api/checkout', { method: 'POST', body: '{}' }), e as Env, { fetch: mockFetch(), now: () => NOW });
+      expect(r.status).toBe(503);
+      expect((await r.json() as any).code).toBe('unavailable');
+    }
+    const w = await handle(new Request('https://pay.example.workers.dev/api/paystack-webhook', { method: 'POST', body: '{}' }), { ...env, ALLOW_TEST_PAYMENTS: undefined } as Env, { fetch: mockFetch(), now: () => NOW });
+    expect(w.status).toBe(200);
+    expect((await w.json() as any).ignored).toBe(true);
+  });
+  it('lets a live key through to normal handling', async () => {
+    const r = await handle(new Request('https://pay.example.workers.dev/api/checkout', { method: 'POST', body: '{}' }), { ...env, PAYSTACK_SECRET_KEY: 'sk_live_abc', ALLOW_TEST_PAYMENTS: undefined } as Env, { fetch: mockFetch(), now: () => NOW });
+    expect(r.status).toBe(401);   // reaches the handler, which wants a signed-in user
+  });
+  it('health and rates keep working with a test key', async () => {
+    const r = await handle(new Request('https://pay.example.workers.dev/api/health'), { ...env, ALLOW_TEST_PAYMENTS: undefined } as Env, { fetch: mockFetch(), now: () => NOW });
+    expect(r.status).toBe(200);
+  });
 });
 
 describe('pricing', () => {

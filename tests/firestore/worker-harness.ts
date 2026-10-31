@@ -6,7 +6,7 @@ import type { Env } from '../../workers/payments/src/env';
 
 export const WORKER_URL = 'http://worker.test';
 export const workerEnv: Env = {
-  PAYSTACK_SECRET_KEY: 'sk_test_e2e', FIREBASE_SERVICE_ACCOUNT: '{}', FIREBASE_PROJECT_ID: 'demo-zexcore', APP_URL: 'http://localhost',
+  PAYSTACK_SECRET_KEY: 'sk_test_e2e', ALLOW_TEST_PAYMENTS: 'true', FIREBASE_SERVICE_ACCOUNT: '{}', FIREBASE_PROJECT_ID: 'demo-zexcore', APP_URL: 'http://localhost',
   ALLOWED_ORIGINS: '*', FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080',
 };
 export const emulatorBase = 'http://127.0.0.1:8080/v1/projects/demo-zexcore/databases/(default)/documents';
