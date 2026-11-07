@@ -35,5 +35,5 @@ export function platformFeeFor(amountMinor: number, plan: string): { feeMinor: n
 /** Fee terms shown to workspace owners. Bump this version whenever rates or charging rules change. */
 export const PAYMENT_FEE_POLICY_VERSION = '2026-11-v1';
 export function hasAcceptedPaymentFeePolicy(ws: Record<string, any> | undefined): boolean {
-  return ws?.paymentFeeConsent?.version === PAYMENT_FEE_POLICY_VERSION && typeof ws.paymentFeeConsent.acceptedAt === 'object';
+  return ws?.paymentFeeConsent?.version === PAYMENT_FEE_POLICY_VERSION && ws.paymentFeeConsent.acceptedAt instanceof Date;
 }
