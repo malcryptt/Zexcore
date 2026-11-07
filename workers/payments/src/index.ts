@@ -32,6 +32,7 @@ import { scheduledDepositExpiry } from './routes/expiry';
 import { drainOutbox } from './outbox';
 import { scheduledCustomerEmails } from './routes/reminders';
 import { listDevices, recordSignIn, revokeAll } from './routes/security';
+import { paymentFeePolicy, acceptPaymentFeePolicy } from './routes/payment-fees';
 
 export type { Env, Deps } from './env';
 export { scheduledBackups } from './routes/backups';
@@ -56,6 +57,8 @@ const ROUTES: Record<string, Handler> = {
     return json({ base: 'USD', target: 'NGN', rate: t.rates.NGN, rates: t.rates, live: t.live, updatedAt: t.updatedAt }, 200, c.headers);
   },
   'POST /api/checkout': (c) => checkout(c.req, c.env, c.d, c.headers),
+  'GET /api/payment-fees': paymentFeePolicy,
+  'POST /api/payment-fees/accept': acceptPaymentFeePolicy,
   'POST /api/paystack-webhook': (c) => webhook(c.req, c.env, c.d),
   'POST /api/audit': audit,
   'GET /api/audit/verify': verifyAudit,

@@ -1,4 +1,4 @@
-import { paymentsUrl } from '../lib/fb/firebase';
+import { fb, paymentsUrl } from '../lib/fb/firebase';
 import { html, mount, $, $$, type Raw } from '../lib/html';
 import { ic, type IconName } from '../lib/icons';
 import { api, ApiError } from '../lib/api';
@@ -162,6 +162,15 @@ export async function renderSettings(view: HTMLElement): Promise<void> {
   const dis = canAdmin() ? '' : 'disabled';
   const canBrand = hasFeatureAccess(me.tenant.tier, 'branding');
   let currentLogo: string | null = s.logoUrl || null;
+  const feePolicyVersion = '2026-11-v1';
+  let feePolicyAccepted = false;
+  try {
+    const token = await fb().auth.currentUser?.getIdToken();
+    if (token) {
+      const response = await fetch(`${paymentsUrl()}/api/payment-fees?workspaceId=${encodeURIComponent(me.tenant.id)}`, { headers: { authorization: `Bearer ${token}` } });
+      if (response.ok) feePolicyAccepted = (await response.json() as { accepted?: boolean }).accepted === true;
+    }
+  } catch { /* The policy card remains visible and acceptance can be retried. */ }
 
   mount(view, html`<div class="page-head"><div><h1>Settings</h1><p>Business details, branding, opening hours and deposit rules.</p></div></div>${ro()}
     <form id="st" class="stack-lg" novalidate>
@@ -215,6 +224,19 @@ export async function renderSettings(view: HTMLElement): Promise<void> {
         <div class="row between"><div><b>Email alerts</b><div class="muted small">Get an email for every new booking request</div></div><label class="switch"><input type="checkbox" id="ne" ${s.notifyOwnerEmail !== false ? 'checked' : ''} ${dis}><span></span></label></div>
         <div class="row between"><div><b>WhatsApp alerts</b><div class="muted small">A WhatsApp message to you for every new booking request</div></div><label class="switch"><input type="checkbox" id="nw" ${s.notifyOwnerWhatsApp ? 'checked' : ''} ${dis}><span></span></label></div>
         <div class="field ${s.notifyOwnerWhatsApp ? '' : 'hidden'}" id="nwf"><label for="nwp">Your WhatsApp number</label><input class="input" id="nwp" type="tel" placeholder="e.g. 08012345678" value="${s.notifyWhatsAppPhone ?? ''}" ${dis}><span class="hint" id="nwh">Include your country code if it is not Nigeria, for example +44 7700 900123. Booking emails also carry a link to reply to the customer on WhatsApp.</span></div>
+      </section>
+      <section class="card card-pad form-grid" id="payment-fee-policy">
+        <div><h3>Online payment fees</h3><p class="muted small">ZexCore's platform fee applies to successful online booking deposits and shop orders. It is deducted from your business settlement, not added to the customer's checkout total. Paystack processing fees are separate and are also borne by the business.</p></div>
+        <div class="list">
+          <div class="list-item"><span class="grow">Free</span><b>2%</b></div>
+          <div class="list-item"><span class="grow">Starter</span><b>1.5%</b></div>
+          <div class="list-item"><span class="grow">Growth</span><b>1%</b></div>
+          <div class="list-item"><span class="grow">Agency, Enterprise and Dedicated</span><b>0.5%</b></div>
+        </div>
+        <p class="muted small">The rate is based on your effective plan when a payment is started. Payments already created keep the fee recorded against them; this acceptance is not applied retroactively.</p>
+        <div id="fee-policy-status" class="alert ${feePolicyAccepted ? 'alert-success' : 'alert-info'}">${feePolicyAccepted ? 'Your workspace has accepted these terms.' : 'Review and accept these terms to enable online deposits and shop checkout for this workspace.'}</div>
+        ${feePolicyAccepted ? '' : me.role === 'owner' ? html`<label class="check"><input type="checkbox" id="fee-policy-check"> I have read and agree to the ZexCore online payment fee schedule and charging rules above.</label><button type="button" class="btn btn-primary" id="fee-policy-accept" disabled>Accept payment fee terms</button>` : html`<p class="muted small">Only the workspace owner can accept these payment terms. Ask the owner to review this section.</p>`}
+        <span class="muted small">Policy version: ${feePolicyVersion}</span>
       </section>
       <section class="card card-pad form-grid" id="payout"><h3>Where deposits are paid</h3><p class="muted small">Loading…</p></section>
       <section class="card card-pad form-grid">
@@ -275,6 +297,24 @@ export async function renderSettings(view: HTMLElement): Promise<void> {
         </button>
       </div>
     </section>`);
+
+  const feeCheck = $('#fee-policy-check', view) as HTMLInputElement | null;
+  const feeAccept = $('#fee-policy-accept', view) as HTMLButtonElement | null;
+  feeCheck?.addEventListener('change', () => { if (feeAccept) feeAccept.disabled = !feeCheck.checked; });
+  feeAccept?.addEventListener('click', () => void busy(feeAccept, async () => {
+    const status = $('#fee-policy-status', view)!;
+    try {
+      const token = await fb().auth.currentUser?.getIdToken();
+      if (!token) throw new Error('Please sign in again.');
+      const response = await fetch(`${paymentsUrl()}/api/payment-fees/accept`, { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify({ workspaceId: me.tenant.id, version: feePolicyVersion }) });
+      const result = await response.json() as { error?: string; accepted?: boolean };
+      if (!response.ok || !result.accepted) throw new Error(result.error || 'Could not record acceptance. Please try again.');
+      feePolicyAccepted = true;
+      status.className = 'alert alert-success'; status.textContent = 'Accepted. Online deposits and shop checkout can now be used for this workspace.';
+      feeCheck?.closest('label')?.remove(); feeAccept.remove();
+      toast('Payment fee terms accepted', 'success');
+    } catch (e) { status.className = 'alert alert-error'; status.textContent = e instanceof Error ? e.message : 'Could not record acceptance.'; }
+  }));
 
   // Upfront deposit toggle visibility
   $('#dep', view)?.addEventListener('change', (e) => {

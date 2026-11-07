@@ -20,7 +20,7 @@ import { queueFormal } from '../outbox';
 import { HttpError, ID_RE, firstName, json, localWhen, randomRef, readJson } from '../util';
 import { getLiveNgnRate } from '../rates';
 import { assessBooking } from './risk';
-import { effectivePlan, platformFeeFor } from '../plan';
+import { effectivePlan, platformFeeFor, hasAcceptedPaymentFeePolicy } from '../plan';
 
 const PAYSTACK = 'https://api.paystack.co';
 const BOOKING_RE = /^\d{6}_\d{1,6}$/;
@@ -87,6 +87,7 @@ async function planDeposit(c: Ctx, wid: string, slug: string, bookingId: string,
   const [ws, booking, payout] = await Promise.all([fsGet(c.env, c.d, `workspaces/${wid}`), fsGet(c.env, c.d, `workspaces/${wid}/bookings/${bookingId}`), fsGet(c.env, c.d, `workspaces/${wid}/payout/main`)]);
   const st = (ws?.data.settings ?? {}) as Record<string, any>;
   if (!ws || !booking) throw new HttpError(404, 'Booking not found');
+  if (!hasAcceptedPaymentFeePolicy(ws.data)) throw new HttpError(409, 'This business owner must review and accept ZexCore payment fees before online deposits can be used. Please contact the business to arrange another payment method.', 'fee_terms_required');
   // A deposit is due when the business takes deposits from everyone, or (Enterprise) when this booking's no-show risk is high enough.
   const everyone = st.depositEnabled === true && Number(st.depositMinor) > 0;
   let baseUsd = Number(st.depositMinor); let risk = false;
