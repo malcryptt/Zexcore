@@ -33,7 +33,7 @@ import { drainOutbox } from './outbox';
 import { scheduledCustomerEmails } from './routes/reminders';
 import { listDevices, recordSignIn, revokeAll } from './routes/security';
 import { paymentFeePolicy, acceptPaymentFeePolicy } from './routes/payment-fees';
-import { sendPaymentFeeNoticeBatch } from './routes/payment-fee-notices';
+import { sendPaymentFeeNoticeBatch, scheduledPaymentFeeNotices } from './routes/payment-fee-notices';
 
 export type { Env, Deps } from './env';
 export { scheduledBackups } from './routes/backups';
@@ -166,6 +166,7 @@ export default {
   fetch: (req: Request, env: Env) => handle(req, env),
   /** Cron Trigger: hourly tick. Backs up the Enterprise/Dedicated workspaces that are due (see routes/backups.ts). */
   scheduled: (_event: unknown, env: Env, ctx: { waitUntil(p: Promise<unknown>): void }) => {
+    ctx.waitUntil(scheduledPaymentFeeNotices(env, realDeps()).catch((e) => console.error('payment fee notices', e instanceof Error ? e.message : e)));
     ctx.waitUntil(recordHeartbeat(env, realDeps()).catch((e) => console.error('heartbeat', e instanceof Error ? e.message : e)));
     ctx.waitUntil(scheduledBackups(env, realDeps()).catch((e) => console.error('scheduled backups', e instanceof Error ? e.message : e)));
     ctx.waitUntil(scheduledDigests(env, realDeps()).catch((e) => console.error('scheduled digests', e instanceof Error ? e.message : e)));
