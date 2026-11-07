@@ -7,7 +7,7 @@ import { PAYMENT_FEE_POLICY_VERSION } from '../plan';
 /** Owner-only acknowledgement of the published ZexCore payment fee terms. */
 export async function paymentFeePolicy(c: Ctx): Promise<Response> {
   const wid = c.url.searchParams.get('workspaceId');
-  const { role } = await requireMember(c, wid, ['owner', 'admin']);
+  await requireMember(c, wid, ['owner', 'admin']);
   const ws = await fsGet(c.env, c.d, `workspaces/${wid}`);
   const consent = ws?.data.paymentFeeConsent ?? null;
   return json({ version: PAYMENT_FEE_POLICY_VERSION, accepted: consent?.version === PAYMENT_FEE_POLICY_VERSION, consent }, 200, { ...c.headers, 'cache-control': 'no-store' });
