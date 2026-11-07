@@ -33,4 +33,9 @@ Online payments for shop orders and booking deposits are available on every plan
 
 The current owner-facing fee policy is version `2026-11-v1`. Workspace owners see the full rate schedule and charging explanation under **Settings → Online payment fees**. Only the workspace owner can accept it; the Worker records the version, timestamp, owner UID and email on the workspace. The Worker refuses to start new shop checkouts or booking deposits until the current policy version is accepted. This is enforced server-side, not by hiding a dashboard control. The shop's public payment-availability check also stays off until acceptance. Existing payment records retain their originally recorded fee terms. Bump the policy version whenever rates or charging rules change.
 
-The dashboard notice is not an email broadcast. No owner email campaign is sent automatically by this feature; send the separately approved notice to owners before asking them to accept the terms.
+The Worker sends the owner notice through the durable email outbox in resumable batches. The hourly campaign targets active workspaces with a configured Paystack payout account, records a per-workspace delivery marker, and uses an idempotency key so retries do not duplicate the message. The notice states that the policy is effective immediately on 8 November 2026. Delivery remains subject to the configured Resend provider; queued, failed and dead-letter states are visible through the existing outbox monitoring.
+
+
+## Payment fee reconciliation fields
+
+After server-side Paystack verification, each booking-deposit and shop-order payment record stores the verified customer amount and Paystack transaction ID, the Paystack processing fee returned by the Verify Transaction API, the ZexCore `transaction_charge` requested at initialization, and an estimated merchant net (customer amount less both fee components). Records explicitly identify when Paystack's fee is not present in the verification response. The dashboard labels merchant net as an estimate; it must not be presented as a final bank settlement until matched against Paystack's settlement report. Existing payment records are not rewritten.
