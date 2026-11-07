@@ -165,11 +165,11 @@ export async function signUpload(c: Ctx): Promise<Response> {
 
 async function startOrderPayment(c: Ctx, wid: string, slug: string, orderId: string, ref: string, email: string, usdMinor: number, p: { subaccount: string; rate: number; amountMinor: number; plan: string }): Promise<Record<string, unknown>> {
   const reference = randomRef(wid);
+  const { feeMinor, feeBps } = platformFeeFor(p.amountMinor, p.plan);
   await fsCommit(c.env, c.d, [
     { path: `workspaces/${wid}/orderPayments/${reference}`, precondition: { exists: false }, fields: { reference, orderId, amountMinor: p.amountMinor, usdMinor, rate: p.rate, currency: 'NGN', status: 'pending', platformFeeMinor: feeMinor, platformFeeBps: feeBps, platformFeePlan: p.plan, createdAt: c.d.now() } },
     { path: `workspaces/${wid}/orders/${orderId}`, fields: { paymentReference: reference }, mask: ['paymentReference'], precondition: { exists: true } },
   ]);
-  const { feeMinor, feeBps } = platformFeeFor(p.amountMinor, p.plan);
   const r = await ps(c.env, c.d, '/transaction/initialize', { method: 'POST', body: JSON.stringify({
     email, amount: p.amountMinor, currency: 'NGN', reference, subaccount: p.subaccount, bearer: 'subaccount', ...(feeMinor ? { transaction_charge: feeMinor } : {}),
     callback_url: `${c.env.APP_URL}/${slug}?order=${reference}`, metadata: { kind: 'order', workspaceId: wid, orderId },
