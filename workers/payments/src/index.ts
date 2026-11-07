@@ -33,6 +33,7 @@ import { drainOutbox } from './outbox';
 import { scheduledCustomerEmails } from './routes/reminders';
 import { listDevices, recordSignIn, revokeAll } from './routes/security';
 import { paymentFeePolicy, acceptPaymentFeePolicy } from './routes/payment-fees';
+import { sendPaymentFeeNoticeBatch } from './routes/payment-fee-notices';
 
 export type { Env, Deps } from './env';
 export { scheduledBackups } from './routes/backups';
@@ -73,6 +74,7 @@ const ROUTES: Record<string, Handler> = {
   'POST /api/order/refund': refundOrder,
   'GET /api/admin/me': adminMe,
   'POST /api/admin/grant-plan': grantPlan,
+  'POST /api/admin/payment-fees/notice': sendPaymentFeeNoticeBatch,
   'GET /api/admin/selfcheck': selfCheck,
   'POST /api/admin/selfcheck/email': selfCheckEmail,
   'POST /api/license': issueLicense,
