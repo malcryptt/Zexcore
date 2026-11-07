@@ -5,7 +5,7 @@ import { getLiveRates, FALLBACK_RATES } from '../../workers/payments/src/rates.j
 import { SEATS } from '../../workers/payments/src/routes/team.js';
 import { KEEP, backupId, gunzip, open as openBackup, scheduledBackups } from '../../workers/payments/src/routes/backups.js';
 import { LIMITS } from '../../apps/dashboard/src/lib/fb/plan';
-import { platformFeeFor } from '../../workers/payments/src/plan.js';
+import { platformFeeFor, PAYMENT_FEE_POLICY_VERSION, hasAcceptedPaymentFeePolicy } from '../../workers/payments/src/plan.js';
 import { queueEmail, drainOutbox, outboxId, MAX_ATTEMPTS } from '../../workers/payments/src/outbox.js';
 import { sendCustomerEmails, scheduledCustomerEmails } from '../../workers/payments/src/routes/reminders.js';
 import { scheduledDepositExpiry } from '../../workers/payments/src/index.js';
@@ -103,7 +103,11 @@ function mockFetch(): typeof fetch {
     throw new Error(`unexpected fetch ${url}`);
   }) as typeof fetch;
 }
-const seedDoc = (path: string, data: Record<string, unknown>) => store.set(path, { fields: Object.fromEntries(Object.entries(data).map(([k, v]) => [k, toFs(v)])), v: 1 });
+const seedDoc = (path: string, data: Record<string, unknown>) => {
+  const workspaceRoot = /^workspaces\/[^/]+$/.test(path);
+  const defaults = workspaceRoot ? { paymentFeeConsent: { version: PAYMENT_FEE_POLICY_VERSION, acceptedAt: NOW, acceptedBy: 'owner1', acceptedEmail: 'sade@example.com' } } : {};
+  store.set(path, { fields: Object.fromEntries(Object.entries({ ...defaults, ...data }).map(([k, v]) => [k, toFs(v)])), v: 1 });
+};
 const call = (path: string, init: RequestInit & { headers?: Record<string, string> } = {}) =>
   handle(new Request(`https://pay.example.workers.dev${path}`, { method: 'POST', ...init }), env, { fetch: mockFetch(), now: () => NOW });
 const checkoutBody = (o: object = {}) => JSON.stringify({ workspaceId: WID, tier: 'growth', cycle: 'monthly', currency: 'NGN', ...o });
@@ -1522,6 +1526,15 @@ describe('email outbox', () => {
     const r = await drainOutbox(env, at(8 * 86_400_000));
     expect(r.purged).toBe(1);
     expect(store.has(`emailOutbox/${await outboxId(mail.key)}`)).toBe(false);
+  });
+});
+
+describe('payment fee policy acceptance', () => {
+  it('requires the current version and a real acceptance timestamp', () => {
+    expect(hasAcceptedPaymentFeePolicy({ paymentFeeConsent: { version: PAYMENT_FEE_POLICY_VERSION, acceptedAt: NOW } })).toBe(true);
+    expect(hasAcceptedPaymentFeePolicy({ paymentFeeConsent: { version: 'old-version', acceptedAt: NOW } })).toBe(false);
+    expect(hasAcceptedPaymentFeePolicy({ paymentFeeConsent: { version: PAYMENT_FEE_POLICY_VERSION, acceptedAt: null } })).toBe(false);
+    expect(hasAcceptedPaymentFeePolicy({})).toBe(false);
   });
 });
 
