@@ -30,7 +30,7 @@ export async function sendPaymentFeeNoticeBatch(c: Ctx): Promise<Response> {
     if (existing) { skipped++; continue; }
     try {
       const owner = await ownerContact(c, ws.id);
-      if (!owner.email || !/^[^\\s@<>]+@[^\\s@<>]+\\.[^\\s@<>]+$/.test(owner.email)) { skipped++; continue; }
+      if (!owner.email || !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(owner.email)) { skipped++; continue; }
       const result = await queueFormal(c.env, c.d, `payment-fee-notice:${ws.id}:${PAYMENT_FEE_POLICY_VERSION}`, owner.email,
         'Important update: ZexCore online payment fees now apply', {
           heading: 'Update to online payment fees',
@@ -45,7 +45,7 @@ export async function sendPaymentFeeNoticeBatch(c: Ctx): Promise<Response> {
             ['Agency, Enterprise and Dedicated', '0.5%'],
             ['Effective date', '8 November 2026 (immediate)'],
           ],
-          button: { text: 'Review payment fees', url: `${c.env.APP_URL.replace(/\\/$/, '')}/app/settings#payment-fee-policy` },
+          button: { text: 'Review payment fees', url: `${c.env.APP_URL.replace(/\/+$/, '')}/app/settings#payment-fee-policy` },
           note: 'If you do not accept these terms, you may continue arranging payment directly with customers instead of using ZexCore online checkout.',
         }, ws.id);
       await fsCommit(c.env, c.d, [{ path: markerPath, precondition: { exists: false }, fields: {
@@ -78,7 +78,7 @@ export async function scheduledPaymentFeeNotices(env: Env, d: Deps): Promise<{ p
     const payout = await fsGet(env, d, `workspaces/${ws.id}/payout/main`);
     if (!payout?.data.subaccountCode) { skipped++; continue; }
     const owner = await ownerContact(ctx, ws.id);
-    if (!owner.email || !/^[^\\s@<>]+@[^\\s@<>]+\\.[^\\s@<>]+$/.test(owner.email)) { skipped++; continue; }
+    if (!owner.email || !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(owner.email)) { skipped++; continue; }
     const result = await queueFormal(env, d, `payment-fee-notice:${ws.id}:${PAYMENT_FEE_POLICY_VERSION}`, owner.email,
       'Important update: ZexCore online payment fees now apply', {
         heading: 'Update to online payment fees', greeting: `Hello ${owner.name},`,
@@ -88,7 +88,7 @@ export async function scheduledPaymentFeeNotices(env: Env, d: Deps): Promise<{ p
           'Review the fee schedule and accept the current terms in Settings → Online payment fees. Online checkout requires the workspace owner to accept the policy.',
         ],
         details: [['Free', '2%'], ['Starter', '1.5%'], ['Growth', '1%'], ['Agency, Enterprise and Dedicated', '0.5%'], ['Effective date', '8 November 2026 (immediate)']],
-        button: { text: 'Review payment fees', url: `${env.APP_URL.replace(/\\/$/, '')}/app/settings#payment-fee-policy` },
+        button: { text: 'Review payment fees', url: `${env.APP_URL.replace(/\/+$/, '')}/app/settings#payment-fee-policy` },
         note: 'If you do not accept these terms, you may continue arranging payment directly with customers instead of using ZexCore online checkout.',
       }, ws.id);
     await fsCommit(env, d, [{ path: markerPath, precondition: { exists: false }, fields: { version: PAYMENT_FEE_POLICY_VERSION, to: owner.email, queuedAt: d.now(), deliveryStatus: result } }]);
