@@ -68,6 +68,18 @@ describe('workspace creation and plan fields', () => {
     await assertFails(updateDoc(doc(owner(), 'workspaces', W), { settings: { logoUrl: 'data:image/png;base64,' + 'A'.repeat(160000) } }));
     await assertSucceeds(updateDoc(doc(owner(), 'workspaces', W), { settings: { logoUrl: null } }));
   });
+  it('lets the public booking page carry the logo under the same rules (Starter and above, small image data URL)', async () => {
+    await assertSucceeds(createWorkspace(owner()));
+    const png = 'data:image/png;base64,iVBORw0KGgo=';
+    const slug = doc(owner(), 'slugs', SLUG);
+    await assertFails(updateDoc(slug, { logoUrl: png }));                      // free plan
+    await assertSucceeds(updateDoc(slug, { logoUrl: null }));                  // dropping it is always allowed
+    await setPlan('starter');
+    await assertSucceeds(updateDoc(slug, { logoUrl: png }));
+    await assertFails(updateDoc(slug, { logoUrl: 'https://evil.example/x.png' }));
+    await assertFails(updateDoc(slug, { logoUrl: 'data:image/png;base64,' + 'A'.repeat(160000) }));
+    await assertFails(updateDoc(doc(other(), 'slugs', SLUG), { logoUrl: png }));
+  });
   it('refuses reserved and already-taken slugs', async () => {
     await assertFails(createWorkspace(owner(), W, 'admin'));
     await assertFails(createWorkspace(owner(), W, 'demo'));   // reserved for the sample booking page

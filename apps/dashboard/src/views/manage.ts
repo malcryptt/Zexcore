@@ -326,42 +326,54 @@ export async function renderSettings(view: HTMLElement): Promise<void> {
     };
 
     btnPick?.addEventListener('click', () => logoFile?.click());
-    btnRemove?.addEventListener('click', () => {
-      currentLogo = null;
-      if (logoFile) logoFile.value = '';
-      updatePreview();
-    });
+    // The logo is saved the moment it is chosen: no separate Save press, so what you see is what is stored.
+    const saveLogo = async (logo: string | null): Promise<void> => {
+      const before = currentLogo;
+      try {
+        await api('/api/bookings/settings', { method: 'PUT', body: { logoUrl: logo } });
+        currentLogo = logo; updatePreview(); await loadSettings(true);
+        $$('.brand-lockup').forEach((el) => { if (el instanceof HTMLImageElement && logo) el.src = logo; });
+        toast(logo ? 'Logo saved. It now shows on your booking page.' : 'Logo removed', 'success');
+      } catch (x) { currentLogo = before; updatePreview(); toast(x instanceof ApiError ? x.message : 'Could not save the logo', 'error'); }
+    };
+    btnRemove?.addEventListener('click', () => { if (logoFile) logoFile.value = ''; void saveLogo(null); });
+
+    /** Shrinks any picture until its data URL is safely under the database limit (150,000 characters), keeping transparency. */
+    const fit = (img: HTMLImageElement): string | null => {
+      let max = 256;
+      for (let i = 0; i < 8; i++) {
+        let w = img.width, h = img.height;
+        if (w > h) { if (w > max) { h = Math.round((h * max) / w); w = max; } } else if (h > max) { w = Math.round((w * max) / h); h = max; }
+        const canvas = document.createElement('canvas'); canvas.width = Math.max(1, w); canvas.height = Math.max(1, h);
+        canvas.getContext('2d')?.drawImage(img, 0, 0, canvas.width, canvas.height);
+        for (const q of [0.9, 0.75, 0.6]) {
+          const url = canvas.toDataURL('image/webp', q);   // browsers without WebP hand back a PNG, which the check below still covers
+          if (url.length < 100_000) return url;
+        }
+        const png = canvas.toDataURL('image/png');
+        if (png.length < 100_000) return png;
+        max = Math.round(max * 0.75);
+      }
+      return null;
+    };
 
     logoFile?.addEventListener('change', () => {
       const file = logoFile.files?.[0];
       if (!file) return;
-      if (file.size > 2 * 1024 * 1024) { toast('Logo image should be under 2MB', 'error'); return; }
-      if (file.type === 'image/svg+xml' && file.size > 100 * 1024) { toast('SVG logos should be under 100KB. Use a PNG or a smaller SVG.', 'error'); return; }
-
-      if (file.type === 'image/svg+xml') {
-        const reader = new FileReader();
-        reader.onload = () => { currentLogo = String(reader.result); updatePreview(); };
-        reader.readAsDataURL(file);
-      } else {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const maxDim = 256;
-            let w = img.width, h = img.height;
-            if (w > h) { if (w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; } }
-            else { if (h > maxDim) { w = Math.round((w * maxDim) / h); h = maxDim; } }
-            canvas.width = w; canvas.height = h;
-            const ctx = canvas.getContext('2d');
-            ctx?.drawImage(img, 0, 0, w, h);
-            currentLogo = canvas.toDataURL('image/png');
-            updatePreview();
-          };
-          img.src = String(reader.result);
-        };
-        reader.readAsDataURL(file);
-      }
+      logoFile.value = '';
+      if (!/^image\/(png|jpeg|webp|svg\+xml)$/.test(file.type)) { toast('Choose a PNG, JPG, WebP or SVG image.', 'error'); return; }
+      if (file.size > 8 * 1024 * 1024) { toast('That image is too large. Choose one under 8 MB.', 'error'); return; }
+      if (file.type === 'image/svg+xml' && file.size > 100 * 1024) { toast('SVG logos should be under 100 KB. Use a PNG or a smaller SVG.', 'error'); return; }
+      const reader = new FileReader();
+      reader.onerror = () => toast('Could not read that file.', 'error');
+      reader.onload = () => {
+        if (file.type === 'image/svg+xml') { void saveLogo(String(reader.result)); return; }
+        const img = new Image();
+        img.onerror = () => toast('That file could not be read as a picture. Try a PNG or JPG.', 'error');
+        img.onload = () => { const url = fit(img); if (!url) toast('That picture is too detailed to use as a logo. Try a simpler or smaller one.', 'error'); else void saveLogo(url); };
+        img.src = String(reader.result);
+      };
+      reader.readAsDataURL(file);
     });
   }
 

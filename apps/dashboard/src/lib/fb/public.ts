@@ -10,7 +10,7 @@ import { DEMO_SLUG, demoBook, demoProfile, demoSlots } from './demo';
 interface PublicPage {
   wid: string; name: string; phone: string | null; address: string | null; openMinutes: number; closeMinutes: number; slotMinutes: number;
   daysOpen: number[]; leadMinutes: number; maxDaysAhead: number; bookingCap: number; bookingEnabled: boolean; depositEnabled: boolean; depositMinor: number; exchangeRate: number; rateAuto: boolean; riskDeposit: boolean; waitlist: boolean;
-  currency?: string;
+  currency?: string; logoUrl?: string | null;
 }
 const cache = new Map<string, { at: number; page: PublicPage }>();
 
@@ -31,6 +31,7 @@ async function page(slug: string): Promise<PublicPage> {
     riskDeposit: d.riskDeposit === true, waitlist: d.waitlist === true,
     depositEnabled: d.depositEnabled === true && Number(d.depositMinor) > 0, depositMinor: d.depositEnabled === true ? Math.max(0, Number(d.depositMinor) || 0) : 0,
     currency: (d.currency as string) || 'USD',
+    logoUrl: typeof d.logoUrl === 'string' && /^data:image\/(png|jpeg|svg\+xml|webp);base64,/.test(d.logoUrl) && d.logoUrl.length < 150_000 ? d.logoUrl : null,
   };
   cache.set(slug, { at: Date.now(), page: p });
   return p;
@@ -55,7 +56,7 @@ export async function profile(slug: string): Promise<unknown> {
   const p = await page(slug);
   let cat; try { cat = await catalog(p.wid); } catch (e) { throw toApiError(e); }
   return {
-    business: { slug, name: p.name, type: 'business', phone: p.phone, address: p.address, currency: p.currency || 'USD' }, currency: p.currency || 'USD', rateAuto: p.rateAuto, exchangeRate: p.exchangeRate, deposit: { enabled: p.depositEnabled, amountMinor: p.depositMinor }, waitlist: p.waitlist,
+    business: { slug, name: p.name, logoUrl: p.logoUrl ?? null, type: 'business', phone: p.phone, address: p.address, currency: p.currency || 'USD' }, currency: p.currency || 'USD', rateAuto: p.rateAuto, exchangeRate: p.exchangeRate, deposit: { enabled: p.depositEnabled, amountMinor: p.depositMinor }, waitlist: p.waitlist,
     hours: { openMinutes: p.openMinutes, closeMinutes: p.closeMinutes, daysOpen: p.daysOpen, utcOffsetMinutes: 60, maxDaysAhead: p.maxDaysAhead },
     paystackPublicKey: null, services: cat.services, staff: cat.staff, products: cat.products,
   };

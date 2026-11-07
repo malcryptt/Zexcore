@@ -1,7 +1,7 @@
 import { deleteDoc, doc, getDoc, getDocs, updateDoc, query, orderBy, type QueryDocumentSnapshot } from 'firebase/firestore';
 import { ApiError, DEFAULT_SETTINGS, audit, claimSlot, loadCtx, requireAdmin, requireEditor, requireFeature, wsCol, wsDoc, type Ctx, type WorkspaceSettings } from './core';
 import { fb } from './firebase';
-import { slotLimit } from './plan';
+import { hasFeatureAccess, slotLimit } from './plan';
 import { normalizePhone } from './slots';
 
 export interface IntakeField { key: string; label: string; type: 'text' | 'textarea' | 'select' | 'number' | 'url'; required: boolean; options?: string[]; placeholder?: string }
@@ -190,6 +190,8 @@ export async function putSettings(b: Record<string, unknown>): Promise<{ setting
     }
   }
   if (b.logoUrl !== undefined) s.logoUrl = b.logoUrl ? String(b.logoUrl) : null;
+  // A logo belongs to Starter and above. After a downgrade it is dropped here, otherwise the database would refuse every settings save.
+  if (!hasFeatureAccess(c.tier, 'branding')) s.logoUrl = null;
   if (b.onboarded !== undefined) s.onboarded = Boolean(b.onboarded);
   if (b.notifyOwnerEmail !== undefined) s.notifyOwnerEmail = b.notifyOwnerEmail !== false;
   if (b.notifyOwnerWhatsApp !== undefined) s.notifyOwnerWhatsApp = Boolean(b.notifyOwnerWhatsApp);
@@ -203,7 +205,7 @@ export async function putSettings(b: Record<string, unknown>): Promise<{ setting
     name: s.publicName || c.wsName, openMinutes: s.openMinutes, closeMinutes: s.closeMinutes, slotMinutes: s.slotMinutes,
     closedWeekdays: [0, 1, 2, 3, 4, 5, 6].filter((d) => !s.daysOpen.includes(d)), phone: s.phone, address: s.address,
     leadMinutes: s.leadMinutes, maxDaysAhead: s.maxDaysAhead, bookingCap: slotLimit(c.tier, 'bookingsPerMonth'),
-    depositEnabled: s.depositEnabled, depositMinor: s.depositMinor, exchangeRate: s.exchangeRateMode === 'auto' ? null : s.exchangeRate, currency: s.currency || 'USD', riskDeposit: s.riskDepositEnabled === true, waitlist: s.waitlistEnabled === true,
+    depositEnabled: s.depositEnabled, depositMinor: s.depositMinor, exchangeRate: s.exchangeRateMode === 'auto' ? null : s.exchangeRate, currency: s.currency || 'USD', logoUrl: s.logoUrl ?? null, riskDeposit: s.riskDepositEnabled === true, waitlist: s.waitlistEnabled === true,
   });
   void audit(c, 'settings.update', 'workspace', c.wid);
   await loadCtx(true);

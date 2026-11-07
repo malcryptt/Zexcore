@@ -8,7 +8,7 @@ import { createShop, type ShopProduct } from './publicShop';
 import { formatInCurrency, fetchLiveRates, getCachedRates, type SupportedCurrency } from '../lib/fx';
 
 interface Profile {
-  business: { slug: string; name: string; type: string; phone: string | null; address: string | null };
+  business: { slug: string; name: string; logoUrl?: string | null; type: string; phone: string | null; address: string | null };
   currency: string; exchangeRate?: number; rateAuto?: boolean; deposit: { enabled: boolean; amountMinor: number }; waitlist?: boolean;
   hours: { openMinutes: number; closeMinutes: number; daysOpen: number[]; utcOffsetMinutes: number; maxDaysAhead: number };
   paystackPublicKey: string | null;
@@ -18,8 +18,9 @@ interface Profile {
 interface PayInfo { ref: string; status: string; depositStatus: string; amountMinor: number; currency: string; startsAt: string; serviceName: string }
 
 
+let pageLogo: string | null = null;   // set when a page loads; the business's own logo, if it has one
 function head(name: string, sub: string): Raw {
-  return html`<header class="public-head"><div class="row between"><div class="row"><span class="avatar red" style="border-radius:12px">${initials(name)}</span><div><b style="font-size:1.0625rem">${name}</b><div class="muted small">${sub}</div></div></div><span class="badge" title="Powered by ZexCore">${brand()}</span></div></header>`;
+  return html`<header class="public-head"><div class="row between"><div class="row">${pageLogo ? html`<img src="${pageLogo}" alt="" style="width:44px;height:44px;border-radius:12px;object-fit:contain;background:#fff;border:1px solid var(--border,#e5e5e5)">` : html`<span class="avatar red" style="border-radius:12px">${initials(name)}</span>`}<div><b style="font-size:1.0625rem">${name}</b><div class="muted small">${sub}</div></div></div><span class="badge" title="Powered by ZexCore">${brand()}</span></div></header>`;
 }
 
 export async function renderPublicBooking(slug: string, payRef: string | null, orderRef: string | null = null): Promise<void> {
@@ -31,6 +32,7 @@ export async function renderPublicBooking(slug: string, payRef: string | null, o
     mount(root, html`<div class="auth-wrap"><div class="auth-card" style="text-align:center"><div class="auth-logo">${brand('lg')}</div><h2>${e instanceof ApiError && e.status === 404 ? 'We couldn\'t find that business' : 'Something went wrong'}</h2><p class="muted" style="margin:8px 0 20px">${e instanceof ApiError && e.status === 404 ? 'Check the link you were given, or ask the business to resend it.' : 'Please try again in a moment.'}</p><a class="btn btn-primary" href="/" data-link>Go to ZexCore</a></div></div>`);
     return;
   }
+  pageLogo = p.business.logoUrl ?? null;
   document.title = `Book with ${p.business.name}`;
   const off = p.hours.utcOffsetMinutes;
   const sub = [p.business.address, p.business.phone].filter(Boolean).join(' · ') || 'Online booking';
