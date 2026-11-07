@@ -63,8 +63,8 @@ export const FEATURE_TIERS: Record<FeatureKey, Tier> = {
   api: 'enterprise',
   waitlist: 'enterprise',
   insights: 'enterprise',
-  /** Customers paying for shop orders online. Keep in step with SHOP_PAY_MIN in workers/payments/src/plan.ts. */
-  shopPay: 'starter',
+  /** Online payments are available on every plan; ZexCore earns a tiered fee per successful transaction. */
+  shopPay: 'free',
 };
 
 const TIER_ORDER: Record<Tier, number> = {
