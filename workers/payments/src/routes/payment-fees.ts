@@ -19,8 +19,8 @@ export async function paymentFeePolicy(c: Ctx): Promise<Response> {
     reference: String(x.data.reference ?? x.id), kind: x.path.includes('/depositPayments/') ? 'booking deposit' : 'shop order',
     status: x.data.status, currency: x.data.currency ?? 'NGN', amountMinor: Number(x.data.paidMinor ?? x.data.amountMinor) || 0,
     platformFeeMinor: Number(x.data.platformFeeRequestedMinor ?? x.data.platformFeeMinor) || 0,
-    paystackFeeMinor: Number.isFinite(Number(x.data.paystackFeeMinor)) ? Number(x.data.paystackFeeMinor) : null,
-    estimatedBusinessNetMinor: Number.isFinite(Number(x.data.estimatedBusinessNetMinor)) ? Number(x.data.estimatedBusinessNetMinor) : null,
+    paystackFeeMinor: typeof x.data.paystackFeeMinor === 'number' ? x.data.paystackFeeMinor : null,
+    estimatedBusinessNetMinor: typeof x.data.estimatedBusinessNetMinor === 'number' ? x.data.estimatedBusinessNetMinor : null,
     feeReconciliationStatus: x.data.feeReconciliationStatus ?? 'not_yet_verified', createdAt: x.data.createdAt ?? null,
   })).sort((a, b) => (b.createdAt instanceof Date ? b.createdAt.getTime() : 0) - (a.createdAt instanceof Date ? a.createdAt.getTime() : 0)).slice(0, 20);
   return json({ version: PAYMENT_FEE_POLICY_VERSION, accepted: hasAcceptedPaymentFeePolicy(ws?.data), consent,
