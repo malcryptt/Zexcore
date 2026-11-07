@@ -15,7 +15,7 @@ export async function paymentFeePolicy(c: Ctx): Promise<Response> {
 
 export async function acceptPaymentFeePolicy(c: Ctx): Promise<Response> {
   const b = await readJson(c.req, 1024);
-  const { wid, caller, role } = await requireMember(c, b.workspaceId, ['owner']);
+  const { wid, caller } = await requireMember(c, b.workspaceId, ['owner']);
   if (b.version !== PAYMENT_FEE_POLICY_VERSION) throw new HttpError(409, 'These payment terms have changed. Reload Settings and review the current version.', 'policy_version');
   if (!caller.emailVerified) throw new HttpError(403, 'Verify your account email before accepting payment terms.', 'unverified');
   const ws = await fsGet(c.env, c.d, `workspaces/${wid}`);
