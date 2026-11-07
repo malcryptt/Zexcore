@@ -82,6 +82,10 @@ export async function listOrders(): Promise<{ orders: OrderDto[] }> {
 export async function setOrderStatus(id: string, status: string, hasEmail: boolean): Promise<{ ok: true; customerEmailed: boolean | null }> {
   const c = await loadCtx(); requireWorker(c);
   if (!(ORDER_STATUSES as readonly string[]).includes(status)) throw new ApiError(400, 'Unknown order status.');
+  const cur = await getDoc(wsDoc(c, 'orders', id)).catch((e) => { throw toApiError(e); });
+  const pay = String(cur.data()?.paymentStatus ?? 'none');
+  if (pay === 'refunded') throw new ApiError(409, 'This order was refunded, so its status cannot change.', 'order_refunded');
+  if (pay === 'paid' && status === 'cancelled') throw new ApiError(409, 'This order was paid online. Use "Refund and cancel" to cancel it and return the money.', 'order_paid');
   await updateDoc(wsDoc(c, 'orders', id), { status, updatedAt: serverTimestamp() }).catch((e) => { throw toApiError(e); });
   void audit(c, `order.${status}`, 'order', id);
   if (!hasEmail) return { ok: true, customerEmailed: null };

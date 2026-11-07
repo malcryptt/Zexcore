@@ -173,8 +173,11 @@ service cloud.firestore {
       }
       match /orders/{id} {
         allow read: if isWorker(wid);
+        // A refunded order is final, and a paid one can only be cancelled by refunding it (the Worker does that).
         allow update: if isWorker(wid) && onlyChanges(['status', 'updatedAt'])
-          && request.resource.data.status in ['new', 'confirmed', 'shipped', 'delivered', 'cancelled'];
+          && request.resource.data.status in ['new', 'confirmed', 'shipped', 'delivered', 'cancelled']
+          && resource.data.get('paymentStatus', 'none') != 'refunded'
+          && !(resource.data.get('paymentStatus', 'none') == 'paid' && request.resource.data.status == 'cancelled');
         allow create: if false;
         // Deleting an order is for owners and admins; the audit log keeps who did it and what the order was.
         allow delete: if isAdmin(wid);
