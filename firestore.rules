@@ -95,7 +95,14 @@ service cloud.firestore {
         && request.resource.data.ownerUid == resource.data.ownerUid
         && noExtraKeys(['wid', 'ownerUid', 'name', 'timezone', 'currency', 'bookingEnabled', 'slotMinutes',
                         'openMinutes', 'closeMinutes', 'closedWeekdays', 'depositNote', 'phone', 'address',
-                        'bookingCap', 'leadMinutes', 'maxDaysAhead', 'depositEnabled', 'depositMinor', 'exchangeRate', 'riskDeposit', 'waitlist']);
+                        'bookingCap', 'leadMinutes', 'maxDaysAhead', 'depositEnabled', 'depositMinor', 'exchangeRate', 'riskDeposit', 'waitlist', 'logoUrl'])
+        // the logo shown on the public booking page: Starter and above, a small image data URL, or empty
+        && (!('logoUrl' in request.resource.data)
+            || request.resource.data.logoUrl == null
+            || request.resource.data.logoUrl == ''
+            || (hasStarter(resource.data.wid) && request.resource.data.logoUrl is string
+                && request.resource.data.logoUrl.matches('^data:image/(png|jpeg|svg\\+xml|webp);base64,.*')
+                && request.resource.data.logoUrl.size() < 150000));
       allow delete: if false;
     }
 

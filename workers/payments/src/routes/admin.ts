@@ -29,6 +29,13 @@ const listed = (c: Ctx, caller: Caller): boolean => Boolean(caller.email && admi
 const isAdmin = (c: Ctx, caller: Caller): boolean => listed(c, caller) && caller.emailVerified;
 
 /** `unverified` is only ever said to someone whose own address is on the list, so it tells a stranger nothing. */
+/** Throws unless the caller is a platform admin. */
+export async function requirePlatformAdmin(c: Ctx): Promise<Caller> {
+  const caller = await who(c);
+  if (!isAdmin(c, caller)) throw new HttpError(403, 'Only a platform admin can do that.', 'forbidden');
+  return caller;
+}
+
 export async function adminMe(c: Ctx): Promise<Response> {
   const caller = await who(c);
   if (isAdmin(c, caller)) return json({ admin: true }, 200, c.headers);

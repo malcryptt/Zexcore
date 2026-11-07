@@ -10,6 +10,10 @@ export async function adminMe(): Promise<{ admin: boolean; reason?: string }> {
     return await worker<{ admin: boolean; reason?: string }>('/api/admin/me');
   } catch (e) { console.warn('platform admin check failed', e); return { admin: false }; }
 }
+export interface SystemCheck { id: string; label: string; status: 'ok' | 'warn' | 'fail' | 'off' | 'info'; detail: string; fix?: string }
+export const runSystemCheck = (): Promise<{ at: string; summary: Record<string, number>; checks: SystemCheck[] }> => worker('/api/admin/selfcheck');
+export const sendTestEmail = (): Promise<{ ok: boolean; sent: boolean; to?: string }> => worker('/api/admin/selfcheck/email', { body: {} });
+
 export async function grantPlan(b: { workspaceId: string; plan: string; days: number | null }): Promise<{ ok: true; plan: string; expiresAt: string | null }> {
   return worker('/api/admin/grant-plan', { body: { workspaceId: b.workspaceId, plan: b.plan, ...(b.days === null ? {} : { days: b.days }) } });
 }

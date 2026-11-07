@@ -83,7 +83,23 @@ export async function renderBilling(view: HTMLElement): Promise<void> {
       <div class="field"><label for="pw">Workspace ID</label><input class="input" id="pw" value="${me.tenant.id}"></div>
       <div class="field"><label for="pp2">Plan</label><select class="input" id="pp2">${['starter', 'growth', 'agency', 'enterprise', 'dedicated'].map((t) => html`<option value="${t}" ${t === 'dedicated' ? 'selected' : ''}>${t[0]!.toUpperCase() + t.slice(1)}</option>`)}</select></div>
       <div class="field"><label for="pd2">Days <span class="faint">(empty for no expiry)</span></label><input class="input" id="pd2" type="number" min="1" max="3650" step="1"></div>
-      <div><button class="btn btn-primary" id="pg">Grant plan</button></div></section>`);
+      <div><button class="btn btn-primary" id="pg">Grant plan</button></div></section>
+      <h3 style="margin:28px 0 12px">System check</h3><section class="card card-pad stack">
+        <p class="muted small">Tests each connection live (database, schedule, Paystack, email, photos, WhatsApp, backups, licence key) and says what is missing. Secrets are never shown.</p>
+        <div class="row wrap" style="gap:8px"><button class="btn btn-primary" id="sc-run">Run system check</button><button class="btn btn-secondary" id="sc-mail">Send me a test email</button></div><div id="sc-out"></div></section>`);
+    $('#sc-run', view)!.addEventListener('click', (e) => void busy(e.currentTarget as HTMLButtonElement, async () => {
+      try {
+        const r = await a.runSystemCheck();
+        const tag: Record<string, [string, string]> = { ok: ['badge-success', 'Working'], warn: ['badge-warning', 'Check'], fail: ['badge-danger', 'Broken'], off: ['badge', 'Off'], info: ['badge', 'Manual'] };
+        mount($('#sc-out', view)!, html`<p class="small" style="margin:8px 0"><b>${r.summary.ok}</b> working · <b>${r.summary.warn}</b> to check · <b>${r.summary.fail}</b> broken · <b>${r.summary.off}</b> switched off</p>
+          <div class="list">${r.checks.map((x) => html`<div class="list-item" style="align-items:flex-start"><span class="badge ${tag[x.status]![0]}" style="min-width:64px;text-align:center">${tag[x.status]![1]}</span>
+            <div class="grow"><b>${x.label}</b><div class="muted small">${x.detail}</div>${x.fix ? html`<div class="small" style="margin-top:4px"><b>Fix:</b> ${x.fix}</div>` : ''}</div></div>`)}</div>`);
+      } catch (x) { toast(x instanceof ApiError ? x.message : 'Could not run the check', 'error'); }
+    }));
+    $('#sc-mail', view)!.addEventListener('click', (e) => void busy(e.currentTarget as HTMLButtonElement, async () => {
+      try { const r = await a.sendTestEmail(); toast(r.sent ? `Test email sent to ${r.to}. Check your inbox and spam.` : 'The email could not be sent. See the Email sending line in the system check.', r.sent ? 'success' : 'error'); }
+      catch (x) { toast(x instanceof ApiError ? x.message : 'Could not send the test email', 'error'); }
+    }));
     $('#pg', view)!.addEventListener('click', (e) => void busy(e.currentTarget as HTMLButtonElement, async () => {
       const days = ($('#pd2', view) as HTMLInputElement).value.trim();
       try {

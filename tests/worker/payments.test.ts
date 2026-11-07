@@ -37,6 +37,7 @@ type Doc = { fields: Record<string, any>; v: number };
 let emails: any[] = [];
 let paystackRefunds: any[] = [];
 let resendMode: 'ok' | 'down' | 'reject' | 'throw' = 'ok';
+let sc = { paystack: 200, resend: 'ok' as 'ok' | 'restricted' | 'bad' | 'unverified', cloudinary: 200, whatsapp: 200 };
 let resendKeys: (string | undefined)[] = [];
 let revokedLogins: any[] = [];
 let waSent: any[] = [];
@@ -67,6 +68,14 @@ function mockFetch(): typeof fetch {
     }
     if (url.includes('identitytoolkit.googleapis.com') && url.endsWith('/accounts:update')) { revokedLogins.push(JSON.parse(init.body)); return Response.json({}); }
     if (url.includes('identitytoolkit.googleapis.com') && url.endsWith('/accounts:delete')) { deletedLogins.push(JSON.parse(init.body).localId); return Response.json({}); }
+    if (url === 'https://api.resend.com/domains') {
+      if (sc.resend === 'restricted') return Response.json({ name: 'restricted_api_key' }, { status: 401 });
+      if (sc.resend === 'bad') return Response.json({ name: 'validation_error' }, { status: 401 });
+      return Response.json({ data: [{ name: 'zexcore.com.ng', status: sc.resend === 'unverified' ? 'pending' : 'verified' }] });
+    }
+    if (url.startsWith('https://api.paystack.co/bank?country=nigeria&perPage=1')) return Response.json({ data: [] }, { status: sc.paystack });
+    if (url.startsWith('https://api.cloudinary.com/v1_1/')) return Response.json({ resources: [] }, { status: sc.cloudinary });
+    if (url.startsWith('https://graph.facebook.com/') && !init.body) return Response.json({ display_phone_number: '+234' }, { status: sc.whatsapp });
     if (url.startsWith('https://graph.facebook.com/')) { waSent.push({ url, auth: init.headers.authorization, body: JSON.parse(init.body) }); return Response.json({ messages: [{ id: 'wamid.1' }] }); }
     if (url === 'https://api.resend.com/emails') {
       if (resendMode === 'throw') throw new TypeError('network down');
@@ -107,6 +116,7 @@ beforeAll(async () => {
 });
 beforeEach(() => {
   resetTokenCache(); resetJwksCache();
+  sc = { paystack: 200, resend: 'ok', cloudinary: 200, whatsapp: 200 };
   emails = []; paystackRefunds = []; resendMode = 'ok'; resendKeys = []; revokedLogins = []; waSent = []; store = new Map(); commits = []; paystackInit = []; paystackVerify = {}; paystackSub = [];
   env = { PAYSTACK_SECRET_KEY: SECRET, ALLOW_TEST_PAYMENTS: 'true', FIREBASE_PROJECT_ID: PROJECT, APP_URL: 'https://zexcore.com.ng', ALLOWED_ORIGINS: 'https://zexcore.com.ng,https://zexcore-5d6c0.web.app', NGN_PER_USD: '1500',
     FIREBASE_SERVICE_ACCOUNT: JSON.stringify({ client_email: 'w@x.iam.gserviceaccount.com', private_key: saPem }) };
@@ -1667,5 +1677,73 @@ describe('platform admins', () => {
     expect((await call('/api/admin/grant-plan', { headers: await authed(), body: JSON.stringify({ workspaceId: T, plan: 'dedicated' }) })).status).toBe(403);
     env = { ...env, PLATFORM_ADMIN_EMAILS: '' };
     expect((await grant({ plan: 'dedicated' })).status).toBe(403);   // an empty list means nobody
+  });
+});
+
+describe('system check', () => {
+  const ADMIN = 'founder@zexlabs.example';
+  const SECRETS = { PAYSTACK_SECRET_KEY: 'sk_live_SECRETVALUE123', RESEND_API_KEY: 're_SECRETVALUE456', CLOUDINARY_CLOUD_NAME: 'democloud', CLOUDINARY_API_KEY: 'cldkey789', CLOUDINARY_API_SECRET: 'cldsecretABC' };
+  beforeEach(() => { env = { ...env, ...SECRETS, PLATFORM_ADMIN_EMAILS: ADMIN, MAIL_FROM: 'ZexCore <hello@zexcore.com.ng>', APP_URL: 'https://zexcore.com.ng', ALLOWED_ORIGINS: 'https://zexcore.com.ng,https://www.zexcore.com.ng' }; });
+  const hdr = async (email = ADMIN) => await authed({ sub: 'founder1', user_id: 'founder1', email, email_verified: true });
+  const run = async (email?: string) => call('/api/admin/selfcheck', { method: 'GET', headers: await hdr(email) });
+  type Row = { id: string; status: string; detail: string; fix?: string };
+  const rows = async (): Promise<Record<string, Row>> => Object.fromEntries(((await (await run()).json()) as { checks: Row[] }).checks.map((x) => [x.id, x]));
+
+  it('is for platform admins only', async () => {
+    expect((await run('stranger@example.com')).status).toBe(403);
+    expect((await call('/api/admin/selfcheck', { method: 'GET' })).status).toBe(401);
+  });
+
+  it('reports each integration, and never returns a secret', async () => {
+    seedDoc('system/cron', { at: new Date(NOW.getTime() - 20 * 60_000) });
+    const r = await run(); expect(r.status).toBe(200);
+    const text = JSON.stringify(await r.clone().json());
+    for (const v of Object.values(SECRETS)) expect(text).not.toContain(v);
+    const by = Object.fromEntries(((await r.json()) as { checks: Row[] }).checks.map((x) => [x.id, x]));
+    expect(by.firestore!.status).toBe('ok');
+    expect(by.cron).toMatchObject({ status: 'ok' }); expect(by.cron!.detail).toMatch(/20 minutes ago/);
+    expect(by.paystack!.status).toBe('ok'); expect(by.email!.status).toBe('ok'); expect(by.cloudinary!.status).toBe('ok');
+    expect(by.whatsapp!.status).toBe('off'); expect(by.license!.status).toBe('off'); expect(by.backups!.status).toBe('off');
+    expect(by.origins!.status).toBe('ok'); expect(by.admins!.status).toBe('warn');   // no SALES_EMAIL
+  });
+
+  it('explains each failure in words with a fix', async () => {
+    sc.paystack = 401; sc.cloudinary = 404;
+    let by = await rows();
+    expect(by.paystack).toMatchObject({ status: 'fail' }); expect(by.paystack!.fix).toMatch(/PAYSTACK_SECRET_KEY/);
+    expect(by.cloudinary).toMatchObject({ status: 'fail' }); expect(by.cloudinary!.detail).toMatch(/cloud name/);
+    sc.cloudinary = 401; sc.resend = 'bad'; by = await rows();
+    expect(by.cloudinary!.detail).toMatch(/rejected/); expect(by.email!.status).toBe('fail');
+    sc.resend = 'unverified'; by = await rows(); expect(by.email!.status).toBe('warn'); expect(by.email!.detail).toMatch(/not verified/);
+    sc.resend = 'restricted'; by = await rows(); expect(by.email!.status).toBe('ok');
+    env = { ...env, PAYSTACK_SECRET_KEY: '', CLOUDINARY_API_SECRET: '', ALLOWED_ORIGINS: 'https://other.example', WHATSAPP_TOKEN: 'x' };
+    by = await rows();
+    expect(by.paystack!.status).toBe('off'); expect(by.cloudinary!.detail).toMatch(/CLOUDINARY_API_SECRET/);
+    expect(by.origins!.status).toBe('fail'); expect(by.whatsapp!.status).toBe('fail');
+  });
+
+  it('knows whether the hourly schedule is alive', async () => {
+    expect((await rows()).cron!.status).toBe('warn');                                     // never run yet
+    seedDoc('system/cron', { at: new Date(NOW.getTime() - 5 * 3_600_000) });
+    expect((await rows()).cron!.status).toBe('fail');                                     // stopped
+  });
+
+  it('warns about e-mails that failed for good', async () => {
+    seedDoc('emailOutbox/a', { status: 'dead', to: 'x@example.com' });
+    expect((await rows()).outbox!.status).toBe('warn');
+  });
+
+  it('sends a real test e-mail to the signed-in admin only', async () => {
+    const r = await call('/api/admin/selfcheck/email', { headers: await hdr(), body: '{}' });
+    expect(await r.json()).toMatchObject({ ok: true, sent: true, to: ADMIN });
+    expect(emails.at(-1)!.to).toEqual([ADMIN]);
+    expect((await call('/api/admin/selfcheck/email', { headers: await hdr('stranger@example.com'), body: '{}' })).status).toBe(403);
+  });
+
+  it('the hourly run leaves a heartbeat the check can read', async () => {
+    const { recordHeartbeat } = await import('../../workers/payments/src/routes/selfcheck');
+    await recordHeartbeat(env, { fetch: mockFetch(), now: () => NOW });
+    expect(fromFs(store.get('system/cron')!.fields.at)).toEqual(NOW);
+    expect((await rows()).cron!.status).toBe('ok');
   });
 });

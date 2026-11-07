@@ -9,6 +9,7 @@ import { deleteAccount } from './routes/account';
 import { assess } from './routes/risk';
 import { joinWaitlist } from './routes/waitlist';
 import { adminMe, grantPlan } from './routes/admin';
+import { recordHeartbeat, selfCheck, selfCheckEmail } from './routes/selfcheck';
 import { clusterRequest, getClusterRequest, issueLicense, licenseKey, verifyLicenseRoute } from './routes/license';
 import { orderStatus, placeOrder, refundOrder, shopPay, signUpload } from './routes/shop';
 import { whatsappConfigured } from './whatsapp';
@@ -69,6 +70,8 @@ const ROUTES: Record<string, Handler> = {
   'POST /api/order/refund': refundOrder,
   'GET /api/admin/me': adminMe,
   'POST /api/admin/grant-plan': grantPlan,
+  'GET /api/admin/selfcheck': selfCheck,
+  'POST /api/admin/selfcheck/email': selfCheckEmail,
   'POST /api/license': issueLicense,
   'GET /api/public/license-key': licenseKey,
   'POST /api/public/license-verify': verifyLicenseRoute,
@@ -158,6 +161,7 @@ export default {
   fetch: (req: Request, env: Env) => handle(req, env),
   /** Cron Trigger: hourly tick. Backs up the Enterprise/Dedicated workspaces that are due (see routes/backups.ts). */
   scheduled: (_event: unknown, env: Env, ctx: { waitUntil(p: Promise<unknown>): void }) => {
+    ctx.waitUntil(recordHeartbeat(env, realDeps()).catch((e) => console.error('heartbeat', e instanceof Error ? e.message : e)));
     ctx.waitUntil(scheduledBackups(env, realDeps()).catch((e) => console.error('scheduled backups', e instanceof Error ? e.message : e)));
     ctx.waitUntil(scheduledDigests(env, realDeps()).catch((e) => console.error('scheduled digests', e instanceof Error ? e.message : e)));
     ctx.waitUntil(scheduledDepositExpiry(env, realDeps()).catch((e) => console.error('scheduled deposit expiry', e instanceof Error ? e.message : e)));
