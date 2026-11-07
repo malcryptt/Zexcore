@@ -27,7 +27,7 @@ import { HttpError, ID_RE, firstName, json, randomHex, randomRef, readJson, sha2
 import { normalizePhone } from './waitlist';
 import { ngnRateFor, ps } from './deposits';
 import { maxCheckoutNgn } from './billing';
-import { effectivePlan, platformFeeFor } from '../plan';
+import { effectivePlan, platformFeeFor, hasAcceptedPaymentFeePolicy } from '../plan';
 
 const SLUG_RE = /^[a-z0-9-]{3,40}$/;
 const EMAIL_RE = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
@@ -79,6 +79,7 @@ export async function placeOrder(c: Ctx): Promise<Response> {
   const totalMinor = items.reduce((n, i) => n + i.unitMinor * i.qty, 0);
   let pay: { subaccount: string; rate: number; amountMinor: number; plan: string } | null = null;
   if (payOnline) {
+    if (!hasAcceptedPaymentFeePolicy(ws.data)) throw new HttpError(409, 'This business owner must review and accept ZexCore payment fees before online checkout can be used. Please contact the business to arrange another payment method.', 'fee_terms_required');
     if (!paymentsEnabled(c.env)) throw new HttpError(503, 'Online payment is not available right now. Send the order as a request instead.', 'unavailable');
     const payout = await fsGet(c.env, c.d, `workspaces/${wid}/payout/main`);
     if (!payout?.data.subaccountCode) throw new HttpError(409, 'This business has not finished setting up online payments. Send the order as a request instead.', 'payout_missing');
@@ -186,7 +187,7 @@ export async function shopPay(c: Ctx): Promise<Response> {
   const wid = String((await fsGet(c.env, c.d, `slugs/${slug}`))?.data.wid ?? '');
   const ws = wid && paymentsEnabled(c.env) ? await fsGet(c.env, c.d, `workspaces/${wid}`) : null;
   const payout = ws ? await fsGet(c.env, c.d, `workspaces/${wid}/payout/main`) : null;
-  return json({ online: Boolean(payout?.data.subaccountCode) }, 200, { ...c.headers, 'cache-control': 'public, max-age=60' });
+  return json({ online: Boolean(payout?.data.subaccountCode && ws && hasAcceptedPaymentFeePolicy(ws.data)) }, 200, { ...c.headers, 'cache-control': 'public, max-age=60' });
 }
 
 /** Verifies an order payment with Paystack and, if it is genuinely paid in full, turns the order into a paid `new` order. Safe to call repeatedly. */
