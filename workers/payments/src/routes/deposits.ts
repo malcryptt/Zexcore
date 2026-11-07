@@ -20,7 +20,7 @@ import { queueFormal } from '../outbox';
 import { HttpError, ID_RE, firstName, json, localWhen, randomRef, readJson } from '../util';
 import { getLiveNgnRate } from '../rates';
 import { assessBooking } from './risk';
-import { effectivePlan, platformFeeFor } from '../plan';
+import { effectivePlan, platformFeeFor, hasAcceptedPaymentFeePolicy } from '../plan';
 
 const PAYSTACK = 'https://api.paystack.co';
 const BOOKING_RE = /^\d{6}_\d{1,6}$/;
