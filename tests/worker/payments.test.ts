@@ -1780,3 +1780,39 @@ describe('system check', () => {
     expect((await rows()).cron!.status).toBe('ok');
   });
 });
+
+describe('booking cancellation email', () => {
+  const W = 'wscancel000000000001';
+  const B = '202611_21';
+  beforeEach(() => { env = { ...env, RESEND_API_KEY: 're_test' }; seedDoc(`workspaces/${W}`, { name: 'Sade Salon', plan: 'free', ownerUid: 'owner1', slug: 'sade-salon', settings: { publicName: 'Sade Salon', utcOffsetMinutes: 60 } }); seedDoc(`workspaces/${W}/members/owner1`, { role: 'owner' }); });
+  const seedCancelled = (over: Record<string, unknown> = {}) => {
+    seedDoc(`workspaces/${W}/services/svc1`, { name: 'Haircut', durationMin: 60 });
+    seedDoc(`workspaces/${W}/bookings/${B}`, { serviceId: 'svc1', staffId: 'p', customerName: 'Ada Obi', customerPhone: '+2348031112222', customerEmail: 'ada@example.com', status: 'cancelled', startsAt: new Date('2026-11-10T09:00:00Z'), endsAt: new Date('2026-11-10T10:00:00Z'), depositStatus: 'none', ...over });
+  };
+  const cancel = async () => (await (await call('/api/events', { headers: await authed(), body: JSON.stringify({ workspaceId: W, event: 'bookings.booking.cancelled', id: B }) })).json()) as { emailed?: boolean; reason?: string };
+
+  it('tells the customer once, with the time that was cancelled', async () => {
+    seedCancelled();
+    expect(await cancel()).toMatchObject({ emailed: true });
+    expect(emails).toHaveLength(1);
+    expect(emails[0].to).toEqual(['ada@example.com']);
+    expect(emails[0].subject).toMatch(/cancelled/);
+    expect(emails[0].text).toMatch(/do not come at this time/); expect(emails[0].text).toMatch(/Haircut/);
+    expect(emails[0].text).not.toMatch(/deposit/);
+    expect(await cancel()).toMatchObject({ emailed: false, reason: 'duplicate' });
+    expect(emails).toHaveLength(1);
+  });
+
+  it('mentions the refund when a deposit was paid', async () => {
+    seedCancelled({ depositStatus: 'paid', depositMinor: 500, refundDue: true });
+    await cancel();
+    expect(emails[0].text).toMatch(/paid a deposit/); expect(emails[0].text).toMatch(/arrange your refund/);
+  });
+
+  it('stays quiet when there is no address, the booking is not cancelled, or it is already in the past', async () => {
+    seedCancelled({ customerEmail: null }); expect(await cancel()).toMatchObject({ emailed: false, reason: 'no_email' });
+    seedCancelled({ status: 'confirmed' }); expect(await cancel()).toMatchObject({ emailed: false, reason: 'not_cancelled' });
+    seedCancelled({ startsAt: new Date('2026-10-01T09:00:00Z'), endsAt: new Date('2026-10-01T10:00:00Z') }); expect(await cancel()).toMatchObject({ emailed: false, reason: 'past' });
+    expect(emails).toHaveLength(0);
+  });
+});

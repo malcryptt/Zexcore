@@ -80,7 +80,12 @@ async function sendPaymentLink(b: Booking, btn: HTMLButtonElement | null, reload
 }
 
 async function patch(id: string, body: object, ok: string): Promise<boolean> {
-  try { await api(`/api/bookings/${id}`, { method: 'PATCH', body }); toast(ok, 'success'); return true; }
+  try {
+    const r = await api<{ customerEmailed?: boolean | null }>(`/api/bookings/${id}`, { method: 'PATCH', body });
+    // Cancelling reports whether the customer was told; other actions say nothing about email.
+    const note = r.customerEmailed === true ? ' The customer has been emailed.' : r.customerEmailed === null ? ' They have no email on file, so let them know yourself.' : r.customerEmailed === false ? ' The email to the customer could not be sent, so please tell them yourself.' : '';
+    toast(ok + note, r.customerEmailed === false ? 'error' : 'success'); return true;
+  }
   catch (e) { toast(e instanceof ApiError ? e.message : 'Update failed', 'error'); return false; }
 }
 

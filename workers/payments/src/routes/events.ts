@@ -37,7 +37,8 @@ export async function memberEvent(c: Ctx): Promise<Response> {
     return json({ ok: true, ran: await fireEvent(c, wid, event, r.payload), whatsappQueued: queued }, 200, c.headers);
   }
   if (event === 'bookings.booking.cancelled') {
-    return json({ ok: true, told: await backfillSlot(c, wid, id) }, 200, c.headers);
+    const told = await backfillSlot(c, wid, id);
+    return json({ ok: true, told, ...(await cancelledEmail(c, wid, id)) }, 200, c.headers);
   }
   if (event === 'orders.order.status') return json(await orderStatusEmail(c, wid, id), 200, c.headers);
   if (event === 'bookings.booking.rescheduled') return json(await rescheduledEmail(c, wid, id, String(b.previousStartsAt ?? '')), 200, c.headers);
@@ -73,6 +74,36 @@ async function rescheduledEmail(c: Ctx, wid: string, id: string, previous: strin
     ...(slug ? { button: { text: 'View booking page', url: `${c.env.APP_URL.replace(/\/$/, '')}/${slug}` } } : {}),
   });
   return { ok: true, emailed: sent !== 'dead', ...(sent !== 'dead' ? {} : { reason: 'send_failed' }) };
+}
+
+/** Tells the customer their appointment was cancelled, so nobody turns up to a cancelled slot. Once per booking, and only for a future one. */
+async function cancelledEmail(c: Ctx, wid: string, id: string): Promise<{ emailed: boolean; reason?: string }> {
+  const bk = await fsGet(c.env, c.d, `workspaces/${wid}/bookings/${id}`);
+  if (!bk) throw new HttpError(404, 'Booking not found');
+  if (bk.data.status !== 'cancelled' || !(bk.data.startsAt instanceof Date)) return { emailed: false, reason: 'not_cancelled' };
+  const email = String(bk.data.customerEmail ?? '').trim();
+  if (!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email)) return { emailed: false, reason: 'no_email' };
+  if (bk.data.startsAt.getTime() < c.d.now().getTime()) return { emailed: false, reason: 'past' };
+  try { await fsCommit(c.env, c.d, [{ path: `workspaces/${wid}/automationMarkers/cancel_${id}`, fields: { at: c.d.now() }, precondition: { exists: false } }]); }
+  catch (e) { if (e instanceof FsConflict) return { emailed: false, reason: 'duplicate' }; throw e; }
+  const ws = await fsGet(c.env, c.d, `workspaces/${wid}`);
+  const st = ws?.data.settings as Record<string, unknown> | undefined;
+  const off = Number(st?.utcOffsetMinutes ?? 60);
+  const biz = String(st?.publicName ?? ws?.data.name ?? 'the business');
+  const svc = await fsGet(c.env, c.d, `workspaces/${wid}/services/${String(bk.data.serviceId)}`);
+  const slug = String(ws?.data.slug ?? '');
+  const paid = bk.data.depositStatus === 'paid';
+  const sent = await queueFormal(c.env, c.d, `bookcancel:${wid}:${id}`, email, `Your appointment with ${biz} was cancelled`, {
+    heading: 'Your appointment was cancelled', greeting: `Hello ${firstName(String(bk.data.customerName ?? ''), email)},`,
+    paragraphs: [
+      `${biz} has cancelled your appointment, so please do not come at this time.`,
+      ...(paid ? ['You paid a deposit online. The business will arrange your refund. If you do not hear from them, please contact them and quote your booking.'] : []),
+      'You are welcome to book another time.',
+    ],
+    details: [['Business', biz], ['Service', String(svc?.data.name ?? 'Service')], ['Was booked for', localWhen(bk.data.startsAt.toISOString(), off)]],
+    ...(slug ? { button: { text: 'Book another time', url: `${c.env.APP_URL.replace(/\/$/, '')}/${slug}` } } : {}),
+  }, wid);
+  return { emailed: sent !== 'dead', ...(sent !== 'dead' ? {} : { reason: 'send_failed' }) };
 }
 
 /** POST /api/public/booked { slug, bookingId } — the booking page tells us a visitor just booked. Once per booking, ever. */

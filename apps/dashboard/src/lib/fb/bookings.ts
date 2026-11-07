@@ -5,7 +5,7 @@ import { listServices, listStaff, type ServiceDto, type StaffDto } from './catal
 import { CELL_MS, cellsFor, generateSlotStarts, localDateOf, localMidnightUtc, normalizePhone, weekdayOf, type SlotSettings } from './slots';
 import { hasFeatureAccess, slotLimit } from './plan';
 import { worker } from './worker';
-import { emit, emitRescheduled } from './rules';
+import { emit, emitCancelled, emitRescheduled } from './rules';
 
 export interface BookingDto {
   id: string; ref: string; status: string; serviceId: string; serviceName: string; durationMin: number; staffId: string | null; staffName: string | null;
@@ -222,7 +222,11 @@ export async function patchBooking(id: string, b: Record<string, unknown>): Prom
     if (status === 'cancelled') for (const n of (cur.cells ?? []) as number[]) batch.delete(doc(db, 'workspaces', c.wid, 'locks', `${cur.staffId}_${n}`)); // frees the time
     await batch.commit().catch((e) => { throw toApiError(e); });
     void audit(c, `booking.${status}`, 'booking', id);
-    if (status === 'cancelled' && cur.status !== 'cancelled') emit('bookings.booking.cancelled', c.wid, id);   // Enterprise waitlist: offer the freed time
+    if (status === 'cancelled' && cur.status !== 'cancelled') {
+      // The Worker emails the customer and (Enterprise waitlist) offers the freed time.
+      if (!cur.customerEmail) { emit('bookings.booking.cancelled', c.wid, id); return { ok: true, id, customerEmailed: null }; }
+      return { ok: true, id, customerEmailed: await emitCancelled(c.wid, id) };
+    }
   }
   return { ok: true, id };
 }

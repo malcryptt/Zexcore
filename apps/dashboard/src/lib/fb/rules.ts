@@ -63,6 +63,12 @@ export function emit(event: 'bookings.booking.created' | 'bookings.booking.cance
   void worker('/api/events', { body: { workspaceId: wid, event, id } }).catch(() => undefined);
 }
 
+/** The Worker emails the customer that their appointment was cancelled (and offers the freed time to the waitlist). Resolves to whether an email went out. */
+export async function emitCancelled(wid: string, id: string): Promise<boolean> {
+  try { return (await worker<{ emailed?: boolean }>('/api/events', { body: { workspaceId: wid, event: 'bookings.booking.cancelled', id } })).emailed === true; }
+  catch { return false; }
+}
+
 /** The customer is emailed that their appointment moved. Resolves to whether an email went out (false when there is no address or sending failed). */
 export async function emitRescheduled(wid: string, id: string, previousStartsAt: string): Promise<boolean> {
   try { return (await worker<{ emailed?: boolean }>('/api/events', { body: { workspaceId: wid, event: 'bookings.booking.rescheduled', id, previousStartsAt } })).emailed === true; }
