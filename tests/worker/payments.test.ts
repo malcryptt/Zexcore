@@ -5,6 +5,7 @@ import { getLiveRates, FALLBACK_RATES } from '../../workers/payments/src/rates.j
 import { SEATS } from '../../workers/payments/src/routes/team.js';
 import { KEEP, backupId, gunzip, open as openBackup, scheduledBackups } from '../../workers/payments/src/routes/backups.js';
 import { LIMITS } from '../../apps/dashboard/src/lib/fb/plan';
+import { platformFeeFor } from '../../workers/payments/src/plan.js';
 import { queueEmail, drainOutbox, outboxId, MAX_ATTEMPTS } from '../../workers/payments/src/outbox.js';
 import { sendCustomerEmails, scheduledCustomerEmails } from '../../workers/payments/src/routes/reminders.js';
 import { scheduledDepositExpiry } from '../../workers/payments/src/index.js';
@@ -291,6 +292,18 @@ describe('POST /api/paystack-webhook', () => {
   });
 });
 
+describe('platform transaction fees', () => {
+  it('uses the published tiered fee schedule and rounds to the nearest kobo', () => {
+    expect(platformFeeFor(10_000, 'free')).toEqual({ feeMinor: 200, feeBps: 200 });
+    expect(platformFeeFor(10_000, 'starter')).toEqual({ feeMinor: 150, feeBps: 150 });
+    expect(platformFeeFor(10_000, 'growth')).toEqual({ feeMinor: 100, feeBps: 100 });
+    expect(platformFeeFor(10_000, 'agency')).toEqual({ feeMinor: 50, feeBps: 50 });
+    expect(platformFeeFor(10_000, 'enterprise')).toEqual({ feeMinor: 50, feeBps: 50 });
+    expect(platformFeeFor(10_000, 'dedicated')).toEqual({ feeMinor: 50, feeBps: 50 });
+    expect(platformFeeFor(0, 'free')).toEqual({ feeMinor: 0, feeBps: 200 });
+  });
+});
+
 describe('plan changes while a plan is running', () => {
   it('refuses a cheaper plan while a dearer one is still paid for', async () => {
     seedDoc(`workspaces/${WID}`, { plan: 'growth', ownerUid: 'owner1', planExpiresAt: new Date(NOW.getTime() + 10 * 86400000) });
@@ -342,7 +355,7 @@ describe('deposits', () => {
     const r = await start({ amount: 1 });
     expect(r.status).toBe(201);
     expect(await r.json()).toMatchObject({ authorizationUrl: 'https://checkout.paystack.com/abc', amountMinor: 750_000 });
-    expect(paystackInit[0]).toMatchObject({ amount: 750_000, subaccount: 'ACCT_test123', bearer: 'subaccount', currency: 'NGN', metadata: { kind: 'deposit', bookingId: BOOKING } });
+    expect(paystackInit[0]).toMatchObject({ amount: 750_000, subaccount: 'ACCT_test123', bearer: 'subaccount', transaction_charge: 7_500, currency: 'NGN', metadata: { kind: 'deposit', bookingId: BOOKING } });
     expect(paystackInit[0].callback_url).toMatch(/^https:\/\/zexcore\.com\.ng\/sade-salon\?pay=zx_/);
   });
 
@@ -1264,7 +1277,7 @@ describe('shop orders', () => {
     const SECRET_KEY = 'sk_test_x';
     beforeEach(() => {
       env = { ...env, PAYSTACK_SECRET_KEY: SECRET_KEY, ALLOW_TEST_PAYMENTS: 'true', NGN_PER_USD: '1500' };
-      seedDoc(`workspaces/${X}`, { name: 'Shop Biz', plan: 'starter', planExpiresAt: new Date('2027-01-01T00:00:00Z'), ownerUid: 'owner1', slug: 'shop-biz', settings: { publicName: 'Shop Biz', exchangeRate: 1500, exchangeRateMode: 'manual' } });
+      seedDoc(`workspaces/${X}`, { name: 'Shop Biz', plan: 'free', ownerUid: 'owner1', slug: 'shop-biz', settings: { publicName: 'Shop Biz', exchangeRate: 1500, exchangeRateMode: 'manual' } });
       seedDoc(`workspaces/${X}/payout/main`, { subaccountCode: 'ACCT_shop1', accountName: 'SHOP BIZ', last4: '1234' });
     });
     const pay = (over: Record<string, unknown> = {}) => order({ payOnline: true, ...over });
@@ -1277,16 +1290,16 @@ describe('shop orders', () => {
       expect(emails).toHaveLength(0);
     });
 
-    it('is a Starter-and-above feature: Free workspaces, and expired plans, can only take order requests', async () => {
+    it('allows Free and expired-plan businesses to accept online shop payments', async () => {
       const ask = () => call('/api/public/shop-pay?slug=shop-biz', { method: 'GET' });
       seedDoc(`workspaces/${X}`, { name: 'Shop Biz', plan: 'free', ownerUid: 'owner1', slug: 'shop-biz', settings: {} });
-      expect(await (await ask()).json()).toEqual({ online: false });
+      expect(await (await ask()).json()).toEqual({ online: true });
       const r = await pay({ items: [{ id: 'g_0', qty: 1 }] });
-      expect(r.status).toBe(402); expect(await r.json()).toMatchObject({ code: 'plan_required' });
-      expect(orders()).toHaveLength(0);
-      expect((await order({ items: [{ id: 'g_0', qty: 1 }] })).status).toBe(201);   // the plain request still works
-      seedDoc(`workspaces/${X}`, { name: 'Shop Biz', plan: 'starter', planExpiresAt: new Date('2026-10-01T00:00:00Z'), ownerUid: 'owner1', slug: 'shop-biz', settings: {} });   // expired more than 3 days ago
-      expect(await (await ask()).json()).toEqual({ online: false });
+      expect(r.status).toBe(201);
+      expect(paystackInit.at(-1)).toMatchObject({ transaction_charge: 75_000, bearer: 'subaccount' });
+      expect(orders()).toHaveLength(1);
+      seedDoc(`workspaces/${X}`, { name: 'Shop Biz', plan: 'starter', planExpiresAt: new Date('2026-10-01T00:00:00Z'), ownerUid: 'owner1', slug: 'shop-biz', settings: {} });
+      expect(await (await ask()).json()).toEqual({ online: true });
     });
 
     it('is offered only when the business has a payout account', async () => {
@@ -1301,7 +1314,7 @@ describe('shop orders', () => {
       expect(r.status).toBe(201);
       const j = (await r.json()) as any;
       expect(j).toMatchObject({ ok: true, authorizationUrl: 'https://checkout.paystack.com/abc', totalMinor: 5000, amountMinor: 7_500_000 });
-      expect(paystackInit.at(-1)).toMatchObject({ amount: 7_500_000, currency: 'NGN', subaccount: 'ACCT_shop1', bearer: 'subaccount', email: 'ada@example.com', metadata: { kind: 'order', workspaceId: X } });
+      expect(paystackInit.at(-1)).toMatchObject({ amount: 7_500_000, currency: 'NGN', subaccount: 'ACCT_shop1', bearer: 'subaccount', transaction_charge: 150_000, email: 'ada@example.com', metadata: { kind: 'order', workspaceId: X } });
       const [path] = orders();
       expect(fromFs(row(path!).status)).toBe('awaiting_payment');
       expect(emails).toHaveLength(0);                                                   // nobody is told about an unpaid order

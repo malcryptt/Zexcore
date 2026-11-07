@@ -27,7 +27,7 @@ import { HttpError, ID_RE, firstName, json, randomHex, randomRef, readJson, sha2
 import { normalizePhone } from './waitlist';
 import { ngnRateFor, ps } from './deposits';
 import { maxCheckoutNgn } from './billing';
-import { SHOP_PAY_MIN, atLeast, effectivePlan } from '../plan';
+import { effectivePlan, platformFeeFor } from '../plan';
 
 const SLUG_RE = /^[a-z0-9-]{3,40}$/;
 const EMAIL_RE = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
@@ -77,17 +77,16 @@ export async function placeOrder(c: Ctx): Promise<Response> {
   const open = await fsQuery(c.env, c.d, { parent: `workspaces/${wid}`, collection: 'orders', where: [{ field: 'status', op: 'EQUAL', value: 'new' }], limit: MAX_OPEN_ORDERS + 1 });
   if (open.filter((o) => o.data.status === 'new').length >= MAX_OPEN_ORDERS) throw new HttpError(429, 'This shop has a lot of waiting orders right now. Please try again later.', 'busy');
   const totalMinor = items.reduce((n, i) => n + i.unitMinor * i.qty, 0);
-  let pay: { subaccount: string; rate: number; amountMinor: number } | null = null;
+  let pay: { subaccount: string; rate: number; amountMinor: number; plan: string } | null = null;
   if (payOnline) {
     if (!paymentsEnabled(c.env)) throw new HttpError(503, 'Online payment is not available right now. Send the order as a request instead.', 'unavailable');
-    if (!atLeast(effectivePlan(ws.data, c.d.now()).plan, SHOP_PAY_MIN)) throw new HttpError(402, 'This business does not take online payment for shop orders. Send the order as a request instead.', 'plan_required');
     const payout = await fsGet(c.env, c.d, `workspaces/${wid}/payout/main`);
     if (!payout?.data.subaccountCode) throw new HttpError(409, 'This business has not finished setting up online payments. Send the order as a request instead.', 'payout_missing');
     if (totalMinor <= 0) throw new HttpError(400, 'This order has no price to pay online. Send it as a request instead.');
     const rate = await ngnRateFor(c, (ws.data.settings ?? {}) as Record<string, any>);
     const amountMinor = Math.round(totalMinor * rate);
     if (amountMinor > maxCheckoutNgn(c.env) * 100) throw new HttpError(409, 'This order is too large to pay online. Send it as a request and the business will arrange payment with you.', 'contact_us');
-    pay = { subaccount: String(payout.data.subaccountCode), rate, amountMinor };
+    pay = { subaccount: String(payout.data.subaccountCode), rate, amountMinor, plan: effectivePlan(ws.data, c.d.now()).plan };
   }
   const ref = `ZO-${(await sha256Hex(id)).slice(0, 6).toUpperCase()}`;
   try {
@@ -164,15 +163,15 @@ export async function signUpload(c: Ctx): Promise<Response> {
 }
 
 
-async function startOrderPayment(c: Ctx, wid: string, slug: string, orderId: string, ref: string, email: string, usdMinor: number, p: { subaccount: string; rate: number; amountMinor: number }): Promise<Record<string, unknown>> {
+async function startOrderPayment(c: Ctx, wid: string, slug: string, orderId: string, ref: string, email: string, usdMinor: number, p: { subaccount: string; rate: number; amountMinor: number; plan: string }): Promise<Record<string, unknown>> {
   const reference = randomRef(wid);
+  const { feeMinor, feeBps } = platformFeeFor(p.amountMinor, p.plan);
   await fsCommit(c.env, c.d, [
-    { path: `workspaces/${wid}/orderPayments/${reference}`, precondition: { exists: false }, fields: { reference, orderId, amountMinor: p.amountMinor, usdMinor, rate: p.rate, currency: 'NGN', status: 'pending', createdAt: c.d.now() } },
+    { path: `workspaces/${wid}/orderPayments/${reference}`, precondition: { exists: false }, fields: { reference, orderId, amountMinor: p.amountMinor, usdMinor, rate: p.rate, currency: 'NGN', status: 'pending', platformFeeMinor: feeMinor, platformFeeBps: feeBps, platformFeePlan: p.plan, createdAt: c.d.now() } },
     { path: `workspaces/${wid}/orders/${orderId}`, fields: { paymentReference: reference }, mask: ['paymentReference'], precondition: { exists: true } },
   ]);
-  const fee = Math.max(0, Math.min(Number(c.env.DEPOSIT_FEE_MINOR ?? 0) || 0, Math.floor(p.amountMinor / 2)));
   const r = await ps(c.env, c.d, '/transaction/initialize', { method: 'POST', body: JSON.stringify({
-    email, amount: p.amountMinor, currency: 'NGN', reference, subaccount: p.subaccount, bearer: 'subaccount', ...(fee ? { transaction_charge: fee } : {}),
+    email, amount: p.amountMinor, currency: 'NGN', reference, subaccount: p.subaccount, bearer: 'subaccount', ...(feeMinor ? { transaction_charge: feeMinor } : {}),
     callback_url: `${c.env.APP_URL}/${slug}?order=${reference}`, metadata: { kind: 'order', workspaceId: wid, orderId },
   }) });
   const j = (await r.json().catch(() => ({}))) as { status?: boolean; data?: { authorization_url?: string } };
@@ -186,8 +185,7 @@ export async function shopPay(c: Ctx): Promise<Response> {
   if (!SLUG_RE.test(slug)) throw new HttpError(400, 'Invalid request');
   const wid = String((await fsGet(c.env, c.d, `slugs/${slug}`))?.data.wid ?? '');
   const ws = wid && paymentsEnabled(c.env) ? await fsGet(c.env, c.d, `workspaces/${wid}`) : null;
-  const allowed = ws ? atLeast(effectivePlan(ws.data, c.d.now()).plan, SHOP_PAY_MIN) : false;
-  const payout = allowed ? await fsGet(c.env, c.d, `workspaces/${wid}/payout/main`) : null;
+  const payout = ws ? await fsGet(c.env, c.d, `workspaces/${wid}/payout/main`) : null;
   return json({ online: Boolean(payout?.data.subaccountCode) }, 200, { ...c.headers, 'cache-control': 'public, max-age=60' });
 }
 

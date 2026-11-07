@@ -17,7 +17,7 @@ Workers & Pages → `zexcore-payments` → Settings → Variables and Secrets:
 - `PAYSTACK_SECRET_KEY` (live key)
 - `FIREBASE_SERVICE_ACCOUNT`: a **new** service account JSON with only *Cloud Datastore User*
 - optional `RESEND_API_KEY` and `MAIL_FROM` (an address on a Resend-verified domain) for e-mail alerts
-- optional `DEPOSIT_FEE_MINOR`: flat fee in kobo kept per deposit
+- ZexCore's payment commission is calculated automatically from the workspace plan (2% Free, 1.5% Starter, 1% Growth, 0.5% Agency and above); no fee secret or manual configuration is needed
 Optional: automation "draft with AI" uses the customer's own Gemini or OpenAI key, entered in the browser. No Worker setup is needed.
 
 ## 4. Paystack (you)

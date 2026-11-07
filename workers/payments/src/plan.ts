@@ -10,5 +10,24 @@ export function effectivePlan(ws: Record<string, any> | undefined, now: Date): {
 }
 /** True when the plan is `min` or above. */
 export const atLeast = (plan: string, min: string): boolean => ORDER.indexOf(plan) >= ORDER.indexOf(min);
-/** The plan from which customers can pay for shop orders online. Keep in step with FEATURE_TIERS.shopPay in the dashboard. */
-export const SHOP_PAY_MIN = 'starter';
+
+/**
+ * ZexCore's share of successful customer payments, in basis points.
+ * Free 2%, Starter 1.5%, Growth 1%, Agency and above 0.5%.
+ * Paystack processing fees remain separate and are borne by the business.
+ */
+export const PLATFORM_FEE_BPS: Record<string, number> = {
+  free: 200,
+  starter: 150,
+  growth: 100,
+  agency: 50,
+  enterprise: 50,
+  dedicated: 50,
+};
+
+/** Calculate the platform commission in the currency's minor unit (kobo for NGN). */
+export function platformFeeFor(amountMinor: number, plan: string): { feeMinor: number; feeBps: number } {
+  const amount = Number.isFinite(amountMinor) ? Math.max(0, Math.floor(amountMinor)) : 0;
+  const feeBps = PLATFORM_FEE_BPS[plan] ?? PLATFORM_FEE_BPS.free!;
+  return { feeMinor: Math.min(Math.round(amount * feeBps / 10_000), Math.floor(amount / 2)), feeBps };
+}

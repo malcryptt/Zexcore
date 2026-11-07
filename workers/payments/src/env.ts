@@ -40,8 +40,6 @@ export interface Env {
   PLATFORM_ADMIN_EMAILS?: string;
   /** Where dedicated-cluster requests are emailed (our sales inbox). Without it requests are still stored. */
   SALES_EMAIL?: string;
-  /** Flat platform fee, in kobo, kept by ZexCore on each booking deposit. Defaults to 0. */
-  DEPOSIT_FEE_MINOR?: string;
 }
 export interface Deps { fetch: typeof fetch; now: () => Date }
 export const realDeps = (): Deps => ({ fetch: (...a) => fetch(...a), now: () => new Date() });
