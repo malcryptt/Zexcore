@@ -1630,12 +1630,13 @@ describe('platform admins', () => {
   });
   const as = async (email: string, verified = true) => ({ ...(await authed({ sub: 'founder1', user_id: 'founder1', email, email_verified: verified })) });
   const grant = async (body: object, email = 'founder@zexlabs.example', verified = true) => call('/api/admin/grant-plan', { headers: await as(email, verified), body: JSON.stringify({ workspaceId: T, ...body }) });
-  const me = async (email: string, verified = true) => (await (await call('/api/admin/me', { method: 'GET', headers: await as(email, verified) })).json()) as { admin: boolean };
+  const me = async (email: string, verified = true) => (await (await call('/api/admin/me', { method: 'GET', headers: await as(email, verified) })).json()) as { admin: boolean; reason?: string };
 
   it('knows who is a platform admin: listed and verified only', async () => {
     expect(await me('FOUNDER@zexlabs.example')).toEqual({ admin: true });
     expect(await me('stranger@example.com')).toEqual({ admin: false });
-    expect(await me('founder@zexlabs.example', false)).toEqual({ admin: false });   // an unverified e-mail proves nothing
+    expect(await me('founder@zexlabs.example', false)).toEqual({ admin: false, reason: 'unverified' });   // listed but not confirmed: say why, only to that person
+    expect(await me('stranger@example.com', false)).toEqual({ admin: false });
   });
 
   it('grants a plan with no expiry, clears the old expiry, stamps who did it and audits it', async () => {

@@ -25,10 +25,14 @@ async function who(c: Ctx): Promise<Caller> {
   if (!caller) throw new HttpError(401, 'Sign in again to continue.', 'unauthenticated');
   return caller;
 }
-const isAdmin = (c: Ctx, caller: Caller): boolean => Boolean(caller.email && caller.emailVerified && adminEmails(c.env).has(caller.email.toLowerCase()));
+const listed = (c: Ctx, caller: Caller): boolean => Boolean(caller.email && adminEmails(c.env).has(caller.email.toLowerCase()));
+const isAdmin = (c: Ctx, caller: Caller): boolean => listed(c, caller) && caller.emailVerified;
 
+/** `unverified` is only ever said to someone whose own address is on the list, so it tells a stranger nothing. */
 export async function adminMe(c: Ctx): Promise<Response> {
-  return json({ admin: isAdmin(c, await who(c)) }, 200, c.headers);
+  const caller = await who(c);
+  if (isAdmin(c, caller)) return json({ admin: true }, 200, c.headers);
+  return json({ admin: false, ...(listed(c, caller) ? { reason: 'unverified' } : {}) }, 200, c.headers);
 }
 
 export async function grantPlan(c: Ctx): Promise<Response> {

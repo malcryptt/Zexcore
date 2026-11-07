@@ -73,7 +73,11 @@ export async function renderBilling(view: HTMLElement): Promise<void> {
 
   // Platform admins (an allow-list kept on the server) can give a workspace a plan without payment.
   void import('../lib/fb/admin').then(async (a) => {
-    if (!(await a.adminMe()).admin) return;
+    const who = await a.adminMe();
+    if (!who.admin) {
+      if (who.reason === 'unverified') mount($('#padmin', view)!, html`<h3 style="margin:28px 0 12px">Platform admin</h3><div class="alert alert-info">Your email is on the admin list, but it is not confirmed yet. Confirm it from the link we emailed you (or from Security, Resend link), then reload this page.</div>`);
+      return;
+    }
     mount($('#padmin', view)!, html`<h3 style="margin:28px 0 12px">Platform admin</h3><section class="card card-pad form-grid">
       <p class="muted small">Give a workspace a plan without payment. It is recorded in that workspace's audit log. This does not give you access to its data.</p>
       <div class="field"><label for="pw">Workspace ID</label><input class="input" id="pw" value="${me.tenant.id}"></div>
