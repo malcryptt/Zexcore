@@ -10,8 +10,22 @@ export async function paymentFeePolicy(c: Ctx): Promise<Response> {
   await requireMember(c, wid, ['owner', 'admin']);
   const ws = await fsGet(c.env, c.d, `workspaces/${wid}`);
   const consent = ws?.data.paymentFeeConsent ?? null;
-  const history = await fsQuery(c.env, c.d, { parent: `workspaces/${wid}`, collection: 'paymentFeePolicies', orderBy: [{ field: 'effectiveAt', desc: true }], limit: 20 });
-  return json({ version: PAYMENT_FEE_POLICY_VERSION, accepted: hasAcceptedPaymentFeePolicy(ws?.data), consent, history: history.map((x) => ({ version: x.data.version, effectiveAt: x.data.effectiveAt, acceptedAt: x.data.acceptedAt ?? null, acceptedBy: x.data.acceptedEmail ?? null, feeSchedule: x.data.feeSchedule })) }, 200, { ...c.headers, 'cache-control': 'no-store' });
+  const [history, deposits, orders] = await Promise.all([
+    fsQuery(c.env, c.d, { parent: `workspaces/${wid}`, collection: 'paymentFeePolicies', orderBy: [{ field: 'effectiveAt', desc: true }], limit: 20 }),
+    fsQuery(c.env, c.d, { parent: `workspaces/${wid}`, collection: 'depositPayments', orderBy: [{ field: 'createdAt', desc: true }], limit: 10 }),
+    fsQuery(c.env, c.d, { parent: `workspaces/${wid}`, collection: 'orderPayments', orderBy: [{ field: 'createdAt', desc: true }], limit: 10 }),
+  ]);
+  const transactions = [...deposits, ...orders].map((x) => ({
+    reference: String(x.data.reference ?? x.id), kind: x.path.includes('/depositPayments/') ? 'booking deposit' : 'shop order',
+    status: x.data.status, currency: x.data.currency ?? 'NGN', amountMinor: Number(x.data.paidMinor ?? x.data.amountMinor) || 0,
+    platformFeeMinor: Number(x.data.platformFeeRequestedMinor ?? x.data.platformFeeMinor) || 0,
+    paystackFeeMinor: Number.isFinite(Number(x.data.paystackFeeMinor)) ? Number(x.data.paystackFeeMinor) : null,
+    estimatedBusinessNetMinor: Number.isFinite(Number(x.data.estimatedBusinessNetMinor)) ? Number(x.data.estimatedBusinessNetMinor) : null,
+    feeReconciliationStatus: x.data.feeReconciliationStatus ?? 'not_yet_verified', createdAt: x.data.createdAt ?? null,
+  })).sort((a, b) => (b.createdAt instanceof Date ? b.createdAt.getTime() : 0) - (a.createdAt instanceof Date ? a.createdAt.getTime() : 0)).slice(0, 20);
+  return json({ version: PAYMENT_FEE_POLICY_VERSION, accepted: hasAcceptedPaymentFeePolicy(ws?.data), consent,
+    history: history.map((x) => ({ version: x.data.version, effectiveAt: x.data.effectiveAt, acceptedAt: x.data.acceptedAt ?? null, acceptedBy: x.data.acceptedEmail ?? null, feeSchedule: x.data.feeSchedule })),
+    transactions }, 200, { ...c.headers, 'cache-control': 'no-store' });
 }
 
 export async function acceptPaymentFeePolicy(c: Ctx): Promise<Response> {
