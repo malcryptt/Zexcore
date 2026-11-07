@@ -1270,6 +1270,13 @@ describe('shop orders', () => {
     const pay = (over: Record<string, unknown> = {}) => order({ payOnline: true, ...over });
     const row = (id: string) => store.get(id)!.fields;
 
+    it('never emails a status change for a refunded order', async () => {
+      seedDoc(`workspaces/${X}/orders/oref`, { ref: 'ZO-REF', status: 'confirmed', paymentStatus: 'refunded', customerEmail: 'buyer@example.com', customerName: 'Buyer', items: [], totalMinor: 100 });
+      const r = await call('/api/events', { headers: await authed(), body: JSON.stringify({ workspaceId: X, event: 'orders.order.status', id: 'oref' }) });
+      expect(await r.json()).toMatchObject({ emailed: false, reason: 'refunded' });
+      expect(emails).toHaveLength(0);
+    });
+
     it('is a Starter-and-above feature: Free workspaces, and expired plans, can only take order requests', async () => {
       const ask = () => call('/api/public/shop-pay?slug=shop-biz', { method: 'GET' });
       seedDoc(`workspaces/${X}`, { name: 'Shop Biz', plan: 'free', ownerUid: 'owner1', slug: 'shop-biz', settings: {} });

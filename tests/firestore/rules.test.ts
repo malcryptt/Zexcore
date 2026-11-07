@@ -275,6 +275,13 @@ describe('team roles', () => {
     await assertSucceeds(updateDoc(doc(ed, 'workspaces', W, 'orders', 'o1'), { status: 'confirmed', updatedAt: serverTimestamp() }));
     await assertFails(updateDoc(doc(ed, 'workspaces', W, 'orders', 'o1'), { status: 'paid' }));
     await assertFails(updateDoc(doc(ed, 'workspaces', W, 'orders', 'o1'), { totalMinor: 1 }));
+    await seed(async (db) => {
+      await setDoc(doc(db, 'workspaces', W, 'orders', 'o4'), { ref: 'ZO-REF', status: 'cancelled', paymentStatus: 'refunded', items: [], totalMinor: 0 });
+      await setDoc(doc(db, 'workspaces', W, 'orders', 'o5'), { ref: 'ZO-PAID', status: 'new', paymentStatus: 'paid', items: [], totalMinor: 0 });
+    });
+    await assertFails(updateDoc(doc(ed, 'workspaces', W, 'orders', 'o4'), { status: 'confirmed', updatedAt: serverTimestamp() }));    // refunded orders are final
+    await assertFails(updateDoc(doc(ed, 'workspaces', W, 'orders', 'o5'), { status: 'cancelled', updatedAt: serverTimestamp() }));    // paid: refund it instead
+    await assertSucceeds(updateDoc(doc(ed, 'workspaces', W, 'orders', 'o5'), { status: 'shipped', updatedAt: serverTimestamp() }));
     await assertFails(deleteDoc(doc(ed, 'workspaces', W, 'orders', 'o1')));       // only owners and admins delete orders
     await assertSucceeds(deleteDoc(doc(owner(), 'workspaces', W, 'orders', 'o1')));
   });

@@ -132,6 +132,7 @@ export async function orderStatusEmail(c: Ctx, wid: string, id: string): Promise
   const o = await fsGet(c.env, c.d, `workspaces/${wid}/orders/${id}`);
   if (!o) throw new HttpError(404, 'Order not found');
   const status = String(o.data.status ?? '');
+  if (o.data.paymentStatus === 'refunded') return { ok: true, emailed: false, reason: 'refunded' };   // a refunded order is final: never tell the customer it was confirmed or shipped
   const text = STATUS_TEXT[status];
   if (!text) return { ok: true, emailed: false, reason: 'no_message' };
   const email = String(o.data.customerEmail ?? '');
