@@ -116,12 +116,12 @@ async function planDeposit(c: Ctx, wid: string, slug: string, bookingId: string,
 
 async function startPayment(c: Ctx, p: Plan, by: string): Promise<{ reference: string; authorizationUrl: string; amountMinor: number }> {
   const reference = randomRef(p.wid);
+  const { feeMinor, feeBps } = platformFeeFor(p.amountMinor, p.plan);
   await fsCommit(c.env, c.d, [
     { path: `workspaces/${p.wid}/depositPayments/${reference}`, fields: { reference, bookingId: p.bookingId, amountMinor: p.amountMinor, usdMinor: p.usdMinor, rate: p.rate, currency: 'NGN', status: 'pending', platformFeeMinor: feeMinor, platformFeeBps: feeBps, platformFeePlan: p.plan, createdAt: c.d.now(), createdBy: by }, precondition: { exists: false } },
     // A risk-based deposit is not in the business's settings, so the booking itself records that one is owed.
     ...(p.risk ? [{ path: `workspaces/${p.wid}/bookings/${p.bookingId}`, fields: { depositStatus: 'unpaid', depositMinor: p.usdMinor, riskDeposit: true }, mask: ['depositStatus', 'depositMinor', 'riskDeposit'], precondition: { exists: true } }] : []),
   ]);
-  const { feeMinor, feeBps } = platformFeeFor(p.amountMinor, p.plan);
   const r = await ps(c.env, c.d, '/transaction/initialize', { method: 'POST', body: JSON.stringify({
     email: p.email, amount: p.amountMinor, currency: 'NGN', reference, subaccount: p.subaccount, bearer: 'subaccount', ...(feeMinor ? { transaction_charge: feeMinor } : {}),
     callback_url: `${c.env.APP_URL}/${p.slug}?pay=${reference}`, metadata: { kind: 'deposit', workspaceId: p.wid, bookingId: p.bookingId },
