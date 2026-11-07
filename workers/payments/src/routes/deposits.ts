@@ -157,16 +157,19 @@ export async function settleDeposit(env: Env, d: Deps, wid: string, reference: s
   if (!pay) return 'unknown';
   if (pay.data.status === 'paid') return 'paid';
   const v = await ps(env, d, `/transaction/verify/${encodeURIComponent(reference)}`);
-  const vj = (await v.json().catch(() => ({}))) as { status?: boolean; data?: { status?: string; amount?: number; currency?: string; reference?: string } };
+  const vj = (await v.json().catch(() => ({}))) as { status?: boolean; data?: { id?: number; status?: string; amount?: number; fees?: number | null; currency?: string; reference?: string; paidAt?: string } };
   if (!v.ok || !vj.status || vj.data?.status !== 'success' || vj.data.reference !== reference) return 'pending';
   if (vj.data.currency !== pay.data.currency || (vj.data.amount ?? 0) < Number(pay.data.amountMinor)) {
     await fsCommit(env, d, [{ path, fields: { status: 'mismatch', paidMinor: vj.data.amount ?? 0, updatedAt: d.now() }, mask: ['status', 'paidMinor', 'updatedAt'], precondition: { updateTime: pay.updateTime } }]).catch(() => undefined);
     return 'mismatch';
   }
   const now = d.now();
+  const paystackFeeMinor = Number.isInteger(vj.data.fees) && Number(vj.data.fees) >= 0 ? Number(vj.data.fees) : null;
+  const platformFeeMinor = Number(pay.data.platformFeeMinor) || 0;
+  const estimatedBusinessNetMinor = paystackFeeMinor === null ? null : Math.max(0, Number(vj.data.amount) - platformFeeMinor - paystackFeeMinor);
   try {
     await fsCommit(env, d, [
-      { path, fields: { status: 'paid', paidMinor: vj.data.amount, paidAt: now }, mask: ['status', 'paidMinor', 'paidAt'], precondition: { updateTime: pay.updateTime } },
+      { path, fields: { status: 'paid', paidMinor: vj.data.amount, paidAt: now, paystackTransactionId: vj.data.id ?? null, paystackFeeMinor, platformFeeRequestedMinor: platformFeeMinor, estimatedBusinessNetMinor, feeReconciledAt: now, feeReconciliationStatus: paystackFeeMinor === null ? 'awaiting_provider_fee' : 'provider_fee_recorded' }, mask: ['status', 'paidMinor', 'paidAt', 'paystackTransactionId', 'paystackFeeMinor', 'platformFeeRequestedMinor', 'estimatedBusinessNetMinor', 'feeReconciledAt', 'feeReconciliationStatus'], precondition: { updateTime: pay.updateTime } },
       { path: `workspaces/${wid}/bookings/${String(pay.data.bookingId)}`, fields: { depositStatus: 'paid', depositMinor: Number(pay.data.usdMinor) || 0, paymentReference: reference, status: 'confirmed' }, mask: ['depositStatus', 'depositMinor', 'paymentReference', 'status'], precondition: { exists: true } },
     ]);
   } catch (e) { if (!(e instanceof FsConflict)) throw e; return (await fsGet(env, d, path))?.data.status === 'paid' ? 'paid' : 'pending'; }
