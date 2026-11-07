@@ -164,11 +164,18 @@ export async function renderSettings(view: HTMLElement): Promise<void> {
   let currentLogo: string | null = s.logoUrl || null;
   const feePolicyVersion = '2026-11-v1';
   let feePolicyAccepted = false;
+  let feeTransactions: { reference: string; kind: string; status: string; amountMinor: number; platformFeeMinor: number; paystackFeeMinor: number | null; estimatedBusinessNetMinor: number | null; feeReconciliationStatus: string }[] = [];
+  let feeHistory: { version: string; effectiveAt?: string | Date; acceptedAt?: string | Date | null; feeSchedule?: Record<string, number> }[] = [];
   try {
     const token = await fb().auth.currentUser?.getIdToken();
     if (token) {
       const response = await fetch(`${paymentsUrl()}/api/payment-fees?workspaceId=${encodeURIComponent(me.tenant.id)}`, { headers: { authorization: `Bearer ${token}` } });
-      if (response.ok) feePolicyAccepted = (await response.json() as { accepted?: boolean }).accepted === true;
+      if (response.ok) {
+        const policy = await response.json() as { accepted?: boolean; transactions?: typeof feeTransactions; history?: typeof feeHistory };
+        feePolicyAccepted = policy.accepted === true;
+        feeTransactions = policy.transactions ?? [];
+        feeHistory = policy.history ?? [];
+      }
     }
   } catch { /* The policy card remains visible and acceptance can be retried. */ }
 
@@ -236,7 +243,11 @@ export async function renderSettings(view: HTMLElement): Promise<void> {
         <p class="muted small">The rate is based on your effective plan when a payment is started. Payments already created keep the fee recorded against them; this acceptance is not applied retroactively.</p>
         <div id="fee-policy-status" class="alert ${feePolicyAccepted ? 'alert-success' : 'alert-info'}">${feePolicyAccepted ? 'Your workspace has accepted these terms.' : 'Review and accept these terms to enable online deposits and shop checkout for this workspace.'}</div>
         ${feePolicyAccepted ? '' : me.role === 'owner' ? html`<label class="check"><input type="checkbox" id="fee-policy-check"> I have read and agree to the ZexCore online payment fee schedule and charging rules above.</label><button type="button" class="btn btn-primary" id="fee-policy-accept" disabled>Accept payment fee terms</button>` : html`<p class="muted small">Only the workspace owner can accept these payment terms. Ask the owner to review this section.</p>`}
-        <span class="muted small">Policy version: ${feePolicyVersion}</span>
+        <span class="muted small">Policy version: ${feePolicyVersion} · Effective immediately from 8 November 2026.</span>
+        ${feeHistory.length ? html`<div class="stack-sm"><b>Policy history</b>${feeHistory.map((h) => html`<div class="list-item"><span class="grow">${h.version}</span><span class="muted small">${h.acceptedAt instanceof Date ? h.acceptedAt.toLocaleString() : h.acceptedAt ? String(h.acceptedAt) : 'Published'}</span></div>`)}</div>` : ''}
+        <div class="stack-sm"><b>Recent online payments</b><p class="muted small">The Paystack processing fee is the fee returned by Paystack's verification API. Net settlement below is an estimate until matched against Paystack's settlement report.</p>
+          ${feeTransactions.length ? feeTransactions.map((t) => html`<div class="list-item" style="align-items:flex-start"><div class="grow"><b>${t.kind} · ${t.reference}</b><div class="muted small">${t.status} · ${t.feeReconciliationStatus}</div><div class="muted small">Customer paid: ₦${(t.amountMinor / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })} · ZexCore: ₦${(t.platformFeeMinor / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}</div><div class="muted small">Paystack: ${t.paystackFeeMinor === null ? 'Awaiting verification fee' : '₦' + (t.paystackFeeMinor / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })} · Estimated net: ${t.estimatedBusinessNetMinor === null ? 'Not available' : '₦' + (t.estimatedBusinessNetMinor / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}</div></div></div>`) : html`<p class="muted small">No online payment fee records yet.</p>`}
+        </div>
       </section>
       <section class="card card-pad form-grid" id="payout"><h3>Where deposits are paid</h3><p class="muted small">Loading…</p></section>
       <section class="card card-pad form-grid">
