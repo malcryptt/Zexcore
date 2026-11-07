@@ -17,7 +17,8 @@ Use a very small price (for example ₦100 or $0.10) for payment tests, and refu
 - [ ] Book a service. You get a confirmation email, and so does the owner.
 - [ ] Book with a deposit. Pay with a real card. "Payment received" appears; the booking shows as paid; the receipt email arrives.
 - [ ] Shop: add a product, "Send order request". The owner sees a badge on Shop and the order in Orders.
-- [ ] Shop: "Pay now" (Starter or above). Pay. "Payment received" appears; the order shows "Paid online".
+- [ ] Settings: accept the online payment fee terms (owner only). Without it, Pay now and deposits are switched off.
+- [ ] Shop: "Pay now". Pay. "Payment received" appears; the order shows "Paid online".
 - [ ] Service enquiry form: submit. It shows under Service enquiries and in Customers.
 
 ## Back as the owner

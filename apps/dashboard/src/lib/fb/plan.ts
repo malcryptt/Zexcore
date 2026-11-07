@@ -67,6 +67,9 @@ export const FEATURE_TIERS: Record<FeatureKey, Tier> = {
   shopPay: 'free',
 };
 
+/** ZexCore's fee on successful online payments, in percent. Keep in step with PLATFORM_FEE_BPS in workers/payments/src/plan.ts. */
+export const PLATFORM_FEE_PERCENT: Record<Tier, number> = { free: 2, starter: 1.5, growth: 1, agency: 0.5, enterprise: 0.5, dedicated: 0.5 };
+
 const TIER_ORDER: Record<Tier, number> = {
   free: 0,
   starter: 1,

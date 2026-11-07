@@ -1780,3 +1780,69 @@ describe('system check', () => {
     expect((await rows()).cron!.status).toBe('ok');
   });
 });
+
+describe('booking cancellation email', () => {
+  const W = 'wscancel000000000001';
+  const B = '202611_21';
+  beforeEach(() => { env = { ...env, RESEND_API_KEY: 're_test' }; seedDoc(`workspaces/${W}`, { name: 'Sade Salon', plan: 'free', ownerUid: 'owner1', slug: 'sade-salon', settings: { publicName: 'Sade Salon', utcOffsetMinutes: 60 } }); seedDoc(`workspaces/${W}/members/owner1`, { role: 'owner' }); });
+  const seedCancelled = (over: Record<string, unknown> = {}) => {
+    seedDoc(`workspaces/${W}/services/svc1`, { name: 'Haircut', durationMin: 60 });
+    seedDoc(`workspaces/${W}/bookings/${B}`, { serviceId: 'svc1', staffId: 'p', customerName: 'Ada Obi', customerPhone: '+2348031112222', customerEmail: 'ada@example.com', status: 'cancelled', startsAt: new Date('2026-11-10T09:00:00Z'), endsAt: new Date('2026-11-10T10:00:00Z'), depositStatus: 'none', ...over });
+  };
+  const cancel = async () => (await (await call('/api/events', { headers: await authed(), body: JSON.stringify({ workspaceId: W, event: 'bookings.booking.cancelled', id: B }) })).json()) as { emailed?: boolean; reason?: string };
+
+  it('tells the customer once, with the time that was cancelled', async () => {
+    seedCancelled();
+    expect(await cancel()).toMatchObject({ emailed: true });
+    expect(emails).toHaveLength(1);
+    expect(emails[0].to).toEqual(['ada@example.com']);
+    expect(emails[0].subject).toMatch(/cancelled/);
+    expect(emails[0].text).toMatch(/do not come at this time/); expect(emails[0].text).toMatch(/Haircut/);
+    expect(emails[0].text).not.toMatch(/deposit/);
+    expect(await cancel()).toMatchObject({ emailed: false, reason: 'duplicate' });
+    expect(emails).toHaveLength(1);
+  });
+
+  it('mentions the refund when a deposit was paid', async () => {
+    seedCancelled({ depositStatus: 'paid', depositMinor: 500, refundDue: true });
+    await cancel();
+    expect(emails[0].text).toMatch(/paid a deposit/); expect(emails[0].text).toMatch(/arrange your refund/);
+  });
+
+  it('stays quiet when there is no address, the booking is not cancelled, or it is already in the past', async () => {
+    seedCancelled({ customerEmail: null }); expect(await cancel()).toMatchObject({ emailed: false, reason: 'no_email' });
+    seedCancelled({ status: 'confirmed' }); expect(await cancel()).toMatchObject({ emailed: false, reason: 'not_cancelled' });
+    seedCancelled({ startsAt: new Date('2026-10-01T09:00:00Z'), endsAt: new Date('2026-10-01T10:00:00Z') }); expect(await cancel()).toMatchObject({ emailed: false, reason: 'past' });
+    expect(emails).toHaveLength(0);
+  });
+});
+
+describe('payment fee notice campaign', () => {
+  const A = 'wsfeea0000000000000a', Bw = 'wsfeeb0000000000000b', C = 'wsfeec0000000000000c';
+  const mk = (wid: string, email: string | null, payout: boolean) => {
+    seedDoc(`workspaces/${wid}`, { name: `Biz ${wid.slice(5, 6)}`, plan: 'free', ownerUid: `o${wid}`, slug: `biz-${wid.slice(5, 6)}`, settings: { publicName: `Biz ${wid.slice(5, 6)}` } });
+    seedDoc(`workspaces/${wid}/members/o${wid}`, { role: 'owner', ...(email ? { email } : {}) });
+    if (payout) seedDoc(`workspaces/${wid}/payout/main`, { subaccountCode: 'ACCT_x' });
+  };
+  const run = async () => { const { scheduledPaymentFeeNotices } = await import('../../workers/payments/src/routes/payment-fee-notices'); return scheduledPaymentFeeNotices(env, { fetch: mockFetch(), now: () => NOW }); };
+  beforeEach(() => { env = { ...env, RESEND_API_KEY: 're_test', APP_URL: 'https://zexcore.com.ng' }; mk(A, 'a@example.com', true); mk(Bw, 'b@example.com', false); mk(C, 'c@example.com', true); });
+
+  it('emails each owner who has a payout account once, skips the rest, and never repeats', async () => {
+    const r = await run();
+    expect(r).toMatchObject({ queued: 2, complete: true });
+    expect(emails.map((m) => m.to[0]).sort()).toEqual(['a@example.com', 'c@example.com']);
+    expect(emails[0].subject).toMatch(/payment fees/);
+    expect(emails[0].text).toMatch(/Free[^\n]*2%/); expect(emails[0].text).toMatch(/deducted from your business settlement/);
+    emails.length = 0;
+    expect(await run()).toMatchObject({ queued: 0, complete: true });
+    expect(emails).toHaveLength(0);
+    expect(store.has(`workspaces/${A}/paymentFeeNotices/2026-11-v1`)).toBe(true);
+  });
+
+  it('skips owners with no usable address instead of failing', async () => {
+    mk(A, 'not-an-email', true);
+    const r = await run();
+    expect(r.queued).toBe(1);
+    expect(emails.map((m) => m.to[0])).toEqual(['c@example.com']);
+  });
+});
