@@ -31,3 +31,9 @@ export function platformFeeFor(amountMinor: number, plan: string): { feeMinor: n
   const feeBps = PLATFORM_FEE_BPS[plan] ?? PLATFORM_FEE_BPS.free!;
   return { feeMinor: Math.min(Math.round(amount * feeBps / 10_000), Math.floor(amount / 2)), feeBps };
 }
+
+/** Fee terms shown to workspace owners. Bump this version whenever rates or charging rules change. */
+export const PAYMENT_FEE_POLICY_VERSION = '2026-11-v1';
+export function hasAcceptedPaymentFeePolicy(ws: Record<string, any> | undefined): boolean {
+  return ws?.paymentFeeConsent?.version === PAYMENT_FEE_POLICY_VERSION && typeof ws.paymentFeeConsent.acceptedAt === 'object';
+}
