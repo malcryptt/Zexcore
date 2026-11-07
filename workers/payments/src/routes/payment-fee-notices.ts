@@ -75,6 +75,7 @@ export async function scheduledPaymentFeeNotices(env: Env, d: Deps): Promise<{ p
     if (ws.data.status === 'closing' || ws.data.status === 'deleted') { skipped++; continue; }
     const markerPath = `workspaces/${ws.id}/paymentFeeNotices/${PAYMENT_FEE_POLICY_VERSION}`;
     if (await fsGet(env, d, markerPath)) { skipped++; continue; }
+    try {
     const payout = await fsGet(env, d, `workspaces/${ws.id}/payout/main`);
     if (!payout?.data.subaccountCode) { skipped++; continue; }
     const owner = await ownerContact(ctx, ws.id);
@@ -93,6 +94,11 @@ export async function scheduledPaymentFeeNotices(env: Env, d: Deps): Promise<{ p
       }, ws.id);
     await fsCommit(env, d, [{ path: markerPath, precondition: { exists: false }, fields: { version: PAYMENT_FEE_POLICY_VERSION, to: owner.email, queuedAt: d.now(), deliveryStatus: result } }]);
     queued++;
+    } catch (e) {
+      // One workspace that cannot be processed must not stall the campaign for everyone behind it; it is retried by the manual route.
+      skipped++;
+      console.error('payment fee notice skipped', ws.id, e instanceof Error ? e.message : e);
+    }
   }
   const complete = rows.length <= 25;
   await fsCommit(env, d, [{ path: 'system/paymentFeeNoticeCampaign', fields: { version: PAYMENT_FEE_POLICY_VERSION, cursor: batch.at(-1)?.id ?? cursor ?? null, complete, updatedAt: d.now() } }]);

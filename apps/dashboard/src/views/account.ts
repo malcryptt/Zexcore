@@ -5,7 +5,7 @@ import { api, ApiError } from '../lib/api';
 import { money, ago } from '../lib/format';
 import { toast, emptyState, errorState, skeletonRows, busy } from '../lib/ui';
 import { current, loadMe, canAdmin } from '../lib/session';
-import { LIMITS, hasFeatureAccess, type Tier } from '../lib/fb/plan';
+import { LIMITS, PLATFORM_FEE_PERCENT, hasFeatureAccess, type Tier } from '../lib/fb/plan';
 
 interface PlanList { currencyRates: { NGN_PER_USD: number }; paystackPublicKey: string | null; plans: { tier: string; monthlyUsd: number | null; annualUsd: number | null; limits: Limits | null }[]; freeLimits: Limits; limitLabels: Labels }
 interface Usage { tier: string; effectiveTier: string; usage: Record<LimitKey, { used: number; limit: number | null }>; labels: Labels }
@@ -19,7 +19,7 @@ const cap = (t: Tier, k: 'devices' | 'rules'): string => (LIMITS[t][k] === null 
 function extrasFor(t: string): string[] {
   const tier = t as Tier;
   const out: string[] = [];
-  if (hasFeatureAccess(tier, 'shopPay')) out.push('Customers pay online for shop orders');
+  out.push(`Online payments, ${PLATFORM_FEE_PERCENT[tier]}% ZexCore fee`);
   if (hasFeatureAccess(tier, 'branding')) out.push('Your own logo');
   if (hasFeatureAccess(tier, 'compliance')) out.push('Data protection tools');
   if (hasFeatureAccess(tier, 'automations')) out.push(`Automations (${cap(tier, 'rules')})`);
@@ -39,7 +39,7 @@ export async function renderBilling(view: HTMLElement): Promise<void> {
     <div class="chips"><button class="chip-btn" data-c="monthly" aria-pressed="true">Monthly</button><button class="chip-btn" data-c="annual" aria-pressed="false">Annual · 2 months free</button></div></div>
     <div id="usage"></div>
     <div id="plans" class="stack" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr))"></div>
-    <p class="muted small" style="margin-top:12px">Every plan includes online booking, booking deposits, reminder and thank-you emails, and Security Watch. Prices are in US dollars; card payments are charged in naira at the day's rate. Payments are processed securely via Paystack. Enterprise and Dedicated are set up with our team: press Contact us and we will arrange it with you.</p>
+    <p class="muted small" style="margin-top:12px">Every plan includes online booking, online payments for deposits and shop orders (ZexCore keeps a small fee on each, shown on every plan; Paystack's own fee is separate), reminder and thank-you emails, and Security Watch. Prices are in US dollars; card payments are charged in naira at the day's rate. Payments are processed securely via Paystack. Enterprise and Dedicated are set up with our team: press Contact us and we will arrange it with you.</p>
     <h3 style="margin:28px 0 12px">Payment history</h3><div class="card" id="pay"></div>
     <div id="padmin"></div>`);
   let plans: PlanList;

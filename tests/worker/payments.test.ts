@@ -1816,3 +1816,33 @@ describe('booking cancellation email', () => {
     expect(emails).toHaveLength(0);
   });
 });
+
+describe('payment fee notice campaign', () => {
+  const A = 'wsfeea0000000000000a', Bw = 'wsfeeb0000000000000b', C = 'wsfeec0000000000000c';
+  const mk = (wid: string, email: string | null, payout: boolean) => {
+    seedDoc(`workspaces/${wid}`, { name: `Biz ${wid.slice(5, 6)}`, plan: 'free', ownerUid: `o${wid}`, slug: `biz-${wid.slice(5, 6)}`, settings: { publicName: `Biz ${wid.slice(5, 6)}` } });
+    seedDoc(`workspaces/${wid}/members/o${wid}`, { role: 'owner', ...(email ? { email } : {}) });
+    if (payout) seedDoc(`workspaces/${wid}/payout/main`, { subaccountCode: 'ACCT_x' });
+  };
+  const run = async () => { const { scheduledPaymentFeeNotices } = await import('../../workers/payments/src/routes/payment-fee-notices'); return scheduledPaymentFeeNotices(env, { fetch: mockFetch(), now: () => NOW }); };
+  beforeEach(() => { env = { ...env, RESEND_API_KEY: 're_test', APP_URL: 'https://zexcore.com.ng' }; mk(A, 'a@example.com', true); mk(Bw, 'b@example.com', false); mk(C, 'c@example.com', true); });
+
+  it('emails each owner who has a payout account once, skips the rest, and never repeats', async () => {
+    const r = await run();
+    expect(r).toMatchObject({ queued: 2, complete: true });
+    expect(emails.map((m) => m.to[0]).sort()).toEqual(['a@example.com', 'c@example.com']);
+    expect(emails[0].subject).toMatch(/payment fees/);
+    expect(emails[0].text).toMatch(/Free[^\n]*2%/); expect(emails[0].text).toMatch(/deducted from your business settlement/);
+    emails.length = 0;
+    expect(await run()).toMatchObject({ queued: 0, complete: true });
+    expect(emails).toHaveLength(0);
+    expect(store.has(`workspaces/${A}/paymentFeeNotices/2026-11-v1`)).toBe(true);
+  });
+
+  it('skips owners with no usable address instead of failing', async () => {
+    mk(A, 'not-an-email', true);
+    const r = await run();
+    expect(r.queued).toBe(1);
+    expect(emails.map((m) => m.to[0])).toEqual(['c@example.com']);
+  });
+});
