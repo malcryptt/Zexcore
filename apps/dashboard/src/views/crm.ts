@@ -4,6 +4,7 @@ import { ic } from '../lib/icons';
 import { ago, money } from '../lib/format';
 import { emptyState, skeletonRows, confirmDialog } from '../lib/ui';
 import { canManage, canAdmin } from '../lib/session';
+import { moneyField, moneyMinor, bindMoney, primeMoney } from '../lib/moneyField';
 import { api, toast, badge, pageHead, formModal, inp, fail, errMsg } from './shared';
 
 interface Stage { id: string; name: string; position: number }
@@ -14,6 +15,7 @@ const cname = (c: { first_name: string | null; last_name: string | null; company
 const amount = (minor: number | null, cur: string): string => (minor == null ? '' : money(minor, cur.trim() || 'USD'));
 
 export async function renderCrm(view: HTMLElement): Promise<void> {
+  void primeMoney();
   let tab: 'pipeline' | 'contacts' = 'pipeline';
   mount(view, html`${pageHead('CRM', 'Track leads through your pipeline and keep your contacts in one place.',
     canManage() ? html`<div class="row"><button class="btn btn-secondary" data-contact>${ic('plus', 'ico-sm')} Contact</button><button class="btn btn-primary" data-lead>${ic('plus', 'ico-sm')} Lead</button></div>` : '')}
@@ -97,11 +99,12 @@ export async function renderCrm(view: HTMLElement): Promise<void> {
         body: html`<div class="field"><label for="lt">Title</label><input class="input" id="lt" maxlength="255" required placeholder="Website redesign"></div>
           <div class="field"><label for="lc">Contact</label><select class="input" id="lc">${c.contacts.map((x) => html`<option value="${x.id}">${cname(x)}</option>`)}</select></div>
           <div class="form-grid two"><div class="field"><label for="ls">Stage</label><select class="input" id="ls">${s.stages.map((x) => html`<option value="${x.id}">${x.name}</option>`)}</select></div>
-          <div class="field"><label for="lv">Value ($)</label><input class="input" id="lv" type="number" min="0" step="1"></div></div>`,
+          ${moneyField({ id: 'lv', label: 'Value (optional)' })}</div>`,
+        onMount: (el) => bindMoney(el, 'lv'),
         submit: async (el) => {
           if (!inp(el, '#lt')) throw new ApiError(0, 'Give the lead a title');
           const body: Record<string, unknown> = { title: inp(el, '#lt'), contactId: inp(el, '#lc'), stageId: inp(el, '#ls'), currency: 'USD' };
-          if (inp(el, '#lv')) body.value = Math.round(Number(inp(el, '#lv')) * 100);
+          if (inp(el, '#lv')) { const v = moneyMinor(el, 'lv'); if (!Number.isFinite(v)) throw new ApiError(0, 'Enter a valid value'); body.value = v; }
           await api('/api/crm/leads', { method: 'POST', body }); toast('Lead added', 'success'); tab = 'pipeline'; show();
         },
       });

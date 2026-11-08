@@ -24,6 +24,7 @@ export function fail(host: HTMLElement, e: unknown, retry: () => void, fallback:
 export function formModal(opts: {
   title: string; subtitle?: string; body: Raw; submitLabel: string;
   submit: (el: HTMLElement) => Promise<void>;
+  onMount?: (el: HTMLElement) => void;
 }): void {
   openModal({
     title: opts.title, subtitle: opts.subtitle,
@@ -37,6 +38,7 @@ export function formModal(opts: {
         try { await opts.submit(el); close(); }
         catch (x) { box.textContent = errMsg(x, 'Could not save'); box.classList.remove('hidden'); }
       });
+      opts.onMount?.(el);
       go.addEventListener('click', run);
       $('form', el)!.addEventListener('submit', (ev) => { ev.preventDefault(); run(); });
     },

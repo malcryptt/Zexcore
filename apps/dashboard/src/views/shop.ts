@@ -5,6 +5,7 @@ import { money, ago } from '../lib/format';
 import { emptyState, skeletonRows, confirmDialog } from '../lib/ui';
 import { canEdit, canAdmin } from '../lib/session';
 import { api, toast, badge, pageHead, formModal, inp, fail, errMsg } from './shared';
+import { moneyField, moneyMinor, bindMoney, primeMoney } from '../lib/moneyField';
 import { uploadPhoto, thumb, ORDER_STATUSES, type ProductDto, type OrderDto } from '../lib/fb/shop';
 
 type Tab = 'products' | 'orders';
@@ -12,6 +13,7 @@ const STATUS_LABEL: Record<string, string> = { new: 'New', confirmed: 'Confirmed
 const KIND: Record<string, 'success' | 'warning' | 'primary' | 'info' | ''> = { new: 'warning', confirmed: 'primary', shipped: 'info', delivered: 'success', cancelled: '' };
 
 export function renderShop(view: HTMLElement): void {
+  void primeMoney();
   let tab: Tab = location.hash === '#orders' ? 'orders' : 'products';
   mount(view, html`${pageHead('Shop', 'Goods you sell on your booking page, and the orders customers send.')}
     <div class="chips" role="tablist" id="st" style="margin-bottom:4px">${(['products', 'orders'] as Tab[]).map((t) => html`<button class="chip-btn" role="tab" data-tab="${t}">${t === 'products' ? 'Products' : 'Orders'}</button>`)}</div>
@@ -29,16 +31,17 @@ export function renderShop(view: HTMLElement): void {
       title: p ? 'Edit product' : 'Add a product', submitLabel: p ? 'Save' : 'Add product',
       body: html`<div class="field"><label for="pn">Name</label><input class="input" id="pn" maxlength="120" required value="${p?.name ?? ''}"></div>
         <div class="field"><label for="pd">Description <span class="faint">(optional)</span></label><textarea class="input" id="pd" rows="3" maxlength="500">${p?.description ?? ''}</textarea></div>
-        <div class="field"><label for="pp">Price (US dollars)</label><input class="input" id="pp" type="number" min="0" step="0.01" required value="${p ? (p.priceMinor / 100).toFixed(2) : ''}"></div>
+        ${moneyField({ id: 'pp', label: 'Price', usdMinor: p ? p.priceMinor : null, required: true })}
         <div class="field"><label>Photo <span class="faint">(JPG, PNG or WebP, up to 5 MB)</span></label>
           <div class="row" style="gap:12px;align-items:center"><img id="pv" alt="" style="width:64px;height:64px;border-radius:10px;object-fit:cover;background:var(--surface-2);${image ? '' : 'display:none'}" src="${thumb(image, 128) ?? ''}">
           <input id="pf" type="file" accept="image/jpeg,image/png,image/webp"><span id="pm" class="muted small" role="status"></span></div></div>
         <label class="check"><input type="checkbox" id="pa" ${p?.active === false ? '' : 'checked'}> Show on my booking page</label>
         <label class="check"><input type="checkbox" id="pi" ${p?.inStock === false ? '' : 'checked'}> In stock</label>`,
+      onMount: (el) => bindMoney(el, 'pp'),
       submit: async (el) => {
         const file = ($('#pf', el) as HTMLInputElement).files?.[0];
         if (file) { $('#pm', el)!.textContent = 'Uploading…'; image = await uploadPhoto(file); }
-        const body = { name: inp(el, '#pn'), description: inp(el, '#pd'), priceMinor: Math.round(Number(inp(el, '#pp')) * 100), imageUrl: image, active: ($('#pa', el) as HTMLInputElement).checked, inStock: ($('#pi', el) as HTMLInputElement).checked };
+        const body = { name: inp(el, '#pn'), description: inp(el, '#pd'), priceMinor: moneyMinor(el, 'pp'), imageUrl: image, active: ($('#pa', el) as HTMLInputElement).checked, inStock: ($('#pi', el) as HTMLInputElement).checked };
         if (!Number.isFinite(body.priceMinor)) throw new Error('Enter a valid price.');
         await api(p ? `/api/shop/products/${p.id}` : '/api/shop/products', { method: p ? 'PATCH' : 'POST', body });
         toast(p ? 'Product saved' : 'Product added', 'success'); void products();
