@@ -2,20 +2,578 @@
   "site": "https://zexcore.com.ng",
   "name": "ZexCore",
   "pages": [
-    { "path": "/", "title": "ZexCore — Online booking, deposits and payments for service businesses", "description": "One booking link for your customers, deposits and shop payments through Paystack, and every customer in one inbox. Built for clinics, salons, studios, workshops and agencies.", "h1": "Take bookings. Collect deposits. Get paid before they arrive.", "priority": "1.0", "freq": "weekly" },
-    { "path": "/product", "title": "Product — booking, CRM, payments and messaging in one console | ZexCore", "description": "Client scheduling, customer records, verified Paystack payments and messaging in one dashboard that works on mobile and desktop.", "h1": "Unified operational infrastructure for scaled service delivery", "priority": "0.9", "freq": "monthly" },
-    { "path": "/pricing", "title": "Pricing — start free, upgrade when you grow | ZexCore", "description": "Compare ZexCore plans for bookings, staff, shop products and online payments. Prices in USD, charged in naira through Paystack; the ZexCore fee is shown for every plan.", "h1": "Simple plans. No surprises.", "priority": "0.9", "freq": "monthly" },
-    { "path": "/solutions", "title": "Solutions for salons, clinics, studios and workshops | ZexCore", "description": "Booking, reminders and customer records set up for salons and barbers, clinics, studios and trainers, repair workshops, agencies and larger organisations.", "h1": "Purpose-built solutions for high-trust service businesses", "priority": "0.8", "freq": "monthly" },
-    { "path": "/modules", "title": "Modules — bookings, shop, CRM, devices and automations | ZexCore", "description": "Everything a service business runs on in one workspace: bookings, a shop, CRM, WhatsApp, devices, automations and website pages.", "h1": "Everything your business runs on, in one workspace", "priority": "0.8", "freq": "monthly" },
-    { "path": "/security", "title": "Security — how ZexCore protects your business and customers | ZexCore", "description": "Access rules, payment verification, audit logs and encrypted backups, described in plain language. Built by Zexlabs, a cybersecurity agency.", "h1": "Security you can read, not just trust", "priority": "0.8", "freq": "monthly" },
-    { "path": "/automation", "title": "Automation — rules, alerts and webhooks | ZexCore", "description": "Set rules that react to bookings and device readings, then email your team or call a webhook. Every run is recorded.", "h1": "Let the platform do the repetitive work", "priority": "0.7", "freq": "monthly" },
-    { "path": "/architecture", "title": "Architecture — a backend with no server to babysit | ZexCore", "description": "How ZexCore is built: Firebase for sign-in, data and hosting, with a small isolated worker for payments.", "h1": "A backend with no server to babysit", "priority": "0.6", "freq": "monthly" },
-    { "path": "/multi-tenancy", "title": "Multi-tenancy — a private workspace for every business | ZexCore", "description": "Each business gets an isolated workspace. Its data, team and customers are separate from every other business on the platform.", "h1": "One platform. A private workspace for every business.", "priority": "0.6", "freq": "monthly" },
-    { "path": "/docs", "title": "Documentation — guides for running your business on ZexCore", "description": "Guides for running your business on ZexCore and for deploying the platform yourself.", "h1": "Platform documentation", "priority": "0.6", "freq": "monthly" },
-    { "path": "/about", "title": "About ZexCore — built by Zexlabs", "description": "ZexCore is made by Zexlabs, a cybersecurity and application-development agency serving clients across Nigeria, the United Kingdom and the United States.", "h1": "Enterprise-grade software for the people who run real businesses", "priority": "0.6", "freq": "monthly" },
-    { "path": "/contact", "title": "Contact ZexCore — talk to the team", "description": "Questions, ideas or a custom plan? Contact the ZexCore team. We reply within one working day.", "h1": "Talk to the team", "priority": "0.6", "freq": "yearly" },
-    { "path": "/privacy", "title": "Privacy Policy | ZexCore", "description": "How ZexCore collects, uses and protects personal data.", "h1": "Privacy policy", "priority": "0.3", "freq": "yearly" },
-    { "path": "/terms", "title": "Terms of Service | ZexCore", "description": "The terms for using ZexCore.", "h1": "Terms of service", "priority": "0.3", "freq": "yearly" }
+    {
+      "path": "/",
+      "title": "ZexCore — Online booking, deposits and payments for service businesses",
+      "description": "One booking link for your customers, deposits and shop payments through Paystack, and every customer in one inbox. Built for clinics, salons, studios, workshops and agencies.",
+      "h1": "Take bookings. Collect deposits. Get paid before they arrive.",
+      "priority": "1.0",
+      "freq": "weekly"
+    },
+    {
+      "path": "/product",
+      "title": "Product — booking, CRM, payments and messaging in one console | ZexCore",
+      "description": "Client scheduling, customer records, verified Paystack payments and messaging in one dashboard that works on mobile and desktop.",
+      "h1": "Unified operational infrastructure for scaled service delivery",
+      "priority": "0.9",
+      "freq": "monthly"
+    },
+    {
+      "path": "/pricing",
+      "title": "Pricing — start free, upgrade when you grow | ZexCore",
+      "description": "Compare ZexCore plans for bookings, staff, shop products and online payments. Prices in USD, charged in naira through Paystack; the ZexCore fee is shown for every plan.",
+      "h1": "Simple plans. No surprises.",
+      "priority": "0.9",
+      "freq": "monthly"
+    },
+    {
+      "path": "/solutions",
+      "title": "Solutions for salons, clinics, studios and workshops | ZexCore",
+      "description": "Booking, reminders and customer records set up for salons and barbers, clinics, studios and trainers, repair workshops, agencies and larger organisations.",
+      "h1": "Purpose-built solutions for high-trust service businesses",
+      "priority": "0.8",
+      "freq": "monthly"
+    },
+    {
+      "path": "/solutions/salons",
+      "kind": "industry",
+      "name": "Salon and barber",
+      "title": "Salon and barber booking software with online deposits | ZexCore",
+      "description": "Give clients one link to book a service, pick a stylist and pay a deposit through Paystack. Reminders go out by email and every client has a record.",
+      "h1": "Online booking for salons and barbers",
+      "lead": "Clients book a haircut, braids or a manicure from a link in your Instagram or WhatsApp bio, and the time lands in your calendar. A deposit holds the slot, so fewer people fail to show up.",
+      "points": [
+        [
+          "A booking page you can share",
+          "Clients choose a service, a stylist and a time that is actually free. No back-and-forth messages."
+        ],
+        [
+          "A calendar for each stylist",
+          "Add your staff as bookable people, each with their own calendar, so two clients are never booked for the same chair."
+        ],
+        [
+          "Deposits that hold the slot",
+          "Ask for a deposit when a client books. Card payments go through Paystack to your payout account."
+        ],
+        [
+          "Reminders and follow-ups by email",
+          "Clients get a reminder before the appointment. You can also send a thank-you afterwards."
+        ],
+        [
+          "A record for every client",
+          "See each client's past visits and notes, and message them from one inbox."
+        ]
+      ],
+      "steps": [
+        [
+          "Add your services",
+          "Name each service with its length and price, for example Braids, 4 hours."
+        ],
+        [
+          "Share your booking link",
+          "Put it in your Instagram bio, WhatsApp status or on a card at the till."
+        ],
+        [
+          "Get paid and get reminded",
+          "Deposits are collected online and your day appears on the calendar."
+        ]
+      ],
+      "faq": [
+        [
+          "Can clients pick their stylist?",
+          "Yes. Add each stylist as bookable staff and clients can choose who they want to book with."
+        ],
+        [
+          "Does ZexCore take a fee on payments?",
+          "Yes. Online deposits and shop payments carry a small ZexCore fee, and Paystack's own processing fee is separate. The fee depends on your plan and is shown on the pricing page and in your settings before you turn payments on."
+        ],
+        [
+          "Can I start without paying?",
+          "Yes. You can start on the free plan, set up your services and share your booking link. You only upgrade if you outgrow the free limits."
+        ]
+      ],
+      "priority": "0.7",
+      "freq": "monthly"
+    },
+    {
+      "path": "/solutions/clinics",
+      "kind": "industry",
+      "name": "Clinic",
+      "title": "Clinic booking software with online deposits | ZexCore",
+      "description": "Patients book a consultation, follow-up or test online, answer your intake questions first, and pay a deposit through Paystack. Reminders cut missed visits.",
+      "h1": "Appointment booking for clinics and wellness centres",
+      "lead": "Patients pick a time from your booking page and tell you why they are coming before they arrive. You see a clear calendar for the day and a record of each visit.",
+      "points": [
+        [
+          "Online appointments",
+          "Patients choose a service, a practitioner and a time from a page you share by link."
+        ],
+        [
+          "Questions before the visit",
+          "Ask what you need to know up front, such as the reason for the visit or whether this is a first visit."
+        ],
+        [
+          "Calendars per practitioner",
+          "Each doctor, dentist or nurse has their own calendar, so the day is never double booked."
+        ],
+        [
+          "Deposits and reminders",
+          "Reduce no-shows with a deposit through Paystack and an email reminder before the appointment."
+        ],
+        [
+          "Patient records and messages",
+          "Keep each patient's visits together and reply to their messages from one inbox. Data protection tools for consent, erasure and retention are on higher plans."
+        ]
+      ],
+      "steps": [
+        [
+          "Set up your services",
+          "Add consultations, follow-ups and tests with their length and price."
+        ],
+        [
+          "Add your practitioners",
+          "Give each one a calendar and working hours."
+        ],
+        [
+          "Share the link",
+          "Patients book themselves and you see the day ahead."
+        ]
+      ],
+      "faq": [
+        [
+          "Does ZexCore store medical records?",
+          "ZexCore keeps appointment details, intake answers and messages. It is a booking and customer tool, not a medical records system."
+        ],
+        [
+          "Does ZexCore take a fee on payments?",
+          "Yes. Online deposits and shop payments carry a small ZexCore fee, and Paystack's own processing fee is separate. The fee depends on your plan and is shown on the pricing page and in your settings before you turn payments on."
+        ],
+        [
+          "Can I start without paying?",
+          "Yes. You can start on the free plan, set up your services and share your booking link. You only upgrade if you outgrow the free limits."
+        ]
+      ],
+      "priority": "0.7",
+      "freq": "monthly"
+    },
+    {
+      "path": "/solutions/studios",
+      "kind": "industry",
+      "name": "Studio and trainer",
+      "title": "Studio and trainer booking software with online deposits | ZexCore",
+      "description": "Let clients book sessions by time slot, set how many you take each day, and collect a deposit through Paystack before the session.",
+      "h1": "Session booking for studios, trainers and coaches",
+      "lead": "Whether you run classes, one-to-one sessions or shoots, clients choose a slot from your link and you control how much of your day is open.",
+      "points": [
+        [
+          "Time slots you control",
+          "Set your opening hours, slot length and how far ahead people can book."
+        ],
+        [
+          "Deposits that protect your time",
+          "Collect a deposit through Paystack so a booked slot is a committed slot."
+        ],
+        [
+          "Intake questions",
+          "Ask for goals, fitness level, shoot type or anything else you need to prepare."
+        ],
+        [
+          "Sell products too",
+          "Add a shop for merchandise, packages or gift items and take payments online."
+        ],
+        [
+          "Clients in one place",
+          "Keep a record of each client and reply to messages from a single inbox."
+        ]
+      ],
+      "steps": [
+        [
+          "List your sessions",
+          "Add each type of session with its length and price."
+        ],
+        [
+          "Set your hours",
+          "Choose the days and times you take bookings."
+        ],
+        [
+          "Share your link",
+          "Clients book and pay a deposit without messaging you."
+        ]
+      ],
+      "faq": [
+        [
+          "Can I limit bookings per day?",
+          "You control opening hours, slot length and notice time. Your plan also sets a monthly booking limit."
+        ],
+        [
+          "Does ZexCore take a fee on payments?",
+          "Yes. Online deposits and shop payments carry a small ZexCore fee, and Paystack's own processing fee is separate. The fee depends on your plan and is shown on the pricing page and in your settings before you turn payments on."
+        ],
+        [
+          "Can I start without paying?",
+          "Yes. You can start on the free plan, set up your services and share your booking link. You only upgrade if you outgrow the free limits."
+        ]
+      ],
+      "priority": "0.7",
+      "freq": "monthly"
+    },
+    {
+      "path": "/solutions/workshops",
+      "kind": "industry",
+      "name": "Repair shop and workshop",
+      "title": "Repair shop and workshop booking software with online deposits | ZexCore",
+      "description": "Customers book a drop-off or pickup time, describe the job, and pay a deposit. You keep notes on every customer and job.",
+      "h1": "Booking for repair shops and workshops",
+      "lead": "Cut the phone calls. Customers pick a drop-off time, say what needs fixing, and you see it all in one list.",
+      "points": [
+        [
+          "Drop-off and pickup bookings",
+          "Customers choose a time to bring the item in or collect it."
+        ],
+        [
+          "Job details up front",
+          "Ask what is wrong, the device or vehicle, and anything else you need before they arrive."
+        ],
+        [
+          "Deposits for parts and time",
+          "Collect a deposit through Paystack when the job needs parts or reserves your bench."
+        ],
+        [
+          "Customer notes",
+          "Keep notes against each customer so repeat jobs start with the history."
+        ],
+        [
+          "A shop for accessories",
+          "Sell cases, chargers or parts online and take payment through Paystack."
+        ]
+      ],
+      "steps": [
+        [
+          "Add your services",
+          "For example screen repair, battery change or full service."
+        ],
+        [
+          "Share your link",
+          "Put it on your door, Google profile and social pages."
+        ],
+        [
+          "Prepare before they arrive",
+          "You know the job and the time, and the deposit is already paid."
+        ]
+      ],
+      "faq": [
+        [
+          "Can customers describe the problem when they book?",
+          "Yes. Each service can ask its own questions, such as the fault, the model or how urgent it is."
+        ],
+        [
+          "Does ZexCore take a fee on payments?",
+          "Yes. Online deposits and shop payments carry a small ZexCore fee, and Paystack's own processing fee is separate. The fee depends on your plan and is shown on the pricing page and in your settings before you turn payments on."
+        ],
+        [
+          "Can I start without paying?",
+          "Yes. You can start on the free plan, set up your services and share your booking link. You only upgrade if you outgrow the free limits."
+        ]
+      ],
+      "priority": "0.7",
+      "freq": "monthly"
+    },
+    {
+      "path": "/solutions/property",
+      "kind": "industry",
+      "name": "Property and real estate",
+      "title": "Property and real estate booking software with online deposits | ZexCore",
+      "description": "Let prospects book a property viewing or inspection from a link, and keep every lead and enquiry in one pipeline.",
+      "h1": "Viewing bookings for property agents",
+      "lead": "Put a booking link on each listing. Prospects choose a viewing time, tell you which property, and you see every lead in one place.",
+      "points": [
+        [
+          "Viewing and inspection slots",
+          "Prospects and tenants book a time to see a property, and you control when you are free."
+        ],
+        [
+          "Which property, asked up front",
+          "Each booking asks which listing or address it is for."
+        ],
+        [
+          "Leads and pipeline",
+          "Track enquiries through stages from first contact to closed, with notes and values."
+        ],
+        [
+          "Messages in one inbox",
+          "Reply to enquiries without switching between apps."
+        ],
+        [
+          "Listings page",
+          "Publish simple website pages for your listings or offers."
+        ]
+      ],
+      "steps": [
+        [
+          "Create a viewing service",
+          "Set the length and whether it needs a deposit."
+        ],
+        [
+          "Add the link to each listing",
+          "Prospects pick a slot that suits both of you."
+        ],
+        [
+          "Follow up from your pipeline",
+          "Move each lead forward and keep the history."
+        ]
+      ],
+      "faq": [
+        [
+          "Do I have to take a deposit for viewings?",
+          "No. Deposits are optional per workspace. Many agents leave viewings free."
+        ],
+        [
+          "Can I start without paying?",
+          "Yes. You can start on the free plan, set up your services and share your booking link. You only upgrade if you outgrow the free limits."
+        ]
+      ],
+      "priority": "0.7",
+      "freq": "monthly"
+    },
+    {
+      "path": "/solutions/education",
+      "kind": "industry",
+      "name": "Tutor and school",
+      "title": "Tutor and school booking software with online deposits | ZexCore",
+      "description": "Students and parents book lessons or admissions visits online, share the subject and level, and pay a deposit if you ask for one.",
+      "h1": "Booking for tutors, academies and training centres",
+      "lead": "Parents pick a tutoring slot or an admissions visit and tell you what the student needs. You see the timetable and keep a record of each student.",
+      "points": [
+        [
+          "Lesson and visit booking",
+          "Students book a tutoring session or a visit to your school from a link."
+        ],
+        [
+          "Subject and level collected",
+          "Ask the subject, class and goal so the teacher is ready."
+        ],
+        [
+          "Teacher calendars",
+          "Add tutors or teachers as bookable staff with their own calendars."
+        ],
+        [
+          "Reminders by email",
+          "Students and parents get a reminder before each session."
+        ],
+        [
+          "Student records and messages",
+          "Keep each student's sessions together and answer parent messages from one inbox."
+        ]
+      ],
+      "steps": [
+        [
+          "Add your sessions",
+          "For example Maths tutoring, 1 hour."
+        ],
+        [
+          "Add your teachers",
+          "Each gets a calendar and working hours."
+        ],
+        [
+          "Share the link",
+          "Parents book and pay online."
+        ]
+      ],
+      "faq": [
+        [
+          "Can several teachers take bookings?",
+          "Yes. Your plan sets how many bookable staff you can add."
+        ],
+        [
+          "Does ZexCore take a fee on payments?",
+          "Yes. Online deposits and shop payments carry a small ZexCore fee, and Paystack's own processing fee is separate. The fee depends on your plan and is shown on the pricing page and in your settings before you turn payments on."
+        ],
+        [
+          "Can I start without paying?",
+          "Yes. You can start on the free plan, set up your services and share your booking link. You only upgrade if you outgrow the free limits."
+        ]
+      ],
+      "priority": "0.7",
+      "freq": "monthly"
+    },
+    {
+      "path": "/solutions/agencies",
+      "kind": "industry",
+      "name": "Agency and IT service",
+      "title": "Agency and IT service booking software with online deposits | ZexCore",
+      "description": "Take discovery-call bookings and project enquiries with your own intake questions, and keep leads and client messages in one workspace.",
+      "h1": "Discovery calls and project enquiries for agencies",
+      "lead": "Instead of a long email chain, clients book a discovery call or send a project enquiry with the details you need: scope, type of project and budget range.",
+      "points": [
+        [
+          "Discovery-call booking",
+          "Clients pick a time for a first call from your link."
+        ],
+        [
+          "Project enquiries with intake questions",
+          "Ask about scope, project type, budget range and urgency before you reply."
+        ],
+        [
+          "Leads and pipeline",
+          "Move each enquiry through your stages, with values and notes."
+        ],
+        [
+          "Automations",
+          "Set rules to email your team or call a webhook when a booking arrives. Available on the Growth plan and above."
+        ],
+        [
+          "Portfolio page",
+          "Publish simple pages to show your work."
+        ]
+      ],
+      "steps": [
+        [
+          "Add a discovery call and an enquiry form",
+          "Each has its own questions."
+        ],
+        [
+          "Share the link on your site and proposals",
+          "Clients book or send details."
+        ],
+        [
+          "Work the pipeline",
+          "Follow up leads from one board."
+        ]
+      ],
+      "faq": [
+        [
+          "Can I take project enquiries without a time slot?",
+          "Yes. A service can be set as an enquiry, which collects details without asking for a time."
+        ],
+        [
+          "Can I start without paying?",
+          "Yes. You can start on the free plan, set up your services and share your booking link. You only upgrade if you outgrow the free limits."
+        ]
+      ],
+      "priority": "0.7",
+      "freq": "monthly"
+    },
+    {
+      "path": "/modules",
+      "title": "Modules — bookings, shop, CRM, devices and automations | ZexCore",
+      "description": "Everything a service business runs on in one workspace: bookings, a shop, CRM, WhatsApp, devices, automations and website pages.",
+      "h1": "Everything your business runs on, in one workspace",
+      "priority": "0.8",
+      "freq": "monthly"
+    },
+    {
+      "path": "/security",
+      "title": "Security — how ZexCore protects your business and customers | ZexCore",
+      "description": "Access rules, payment verification, audit logs and encrypted backups, described in plain language. Built by Zexlabs, a cybersecurity agency.",
+      "h1": "Security you can read, not just trust",
+      "priority": "0.8",
+      "freq": "monthly"
+    },
+    {
+      "path": "/automation",
+      "title": "Automation — rules, alerts and webhooks | ZexCore",
+      "description": "Set rules that react to bookings and device readings, then email your team or call a webhook. Every run is recorded.",
+      "h1": "Let the platform do the repetitive work",
+      "priority": "0.7",
+      "freq": "monthly"
+    },
+    {
+      "path": "/architecture",
+      "title": "Architecture — a backend with no server to babysit | ZexCore",
+      "description": "How ZexCore is built: Firebase for sign-in, data and hosting, with a small isolated worker for payments.",
+      "h1": "A backend with no server to babysit",
+      "priority": "0.6",
+      "freq": "monthly"
+    },
+    {
+      "path": "/multi-tenancy",
+      "title": "Multi-tenancy — a private workspace for every business | ZexCore",
+      "description": "Each business gets an isolated workspace. Its data, team and customers are separate from every other business on the platform.",
+      "h1": "One platform. A private workspace for every business.",
+      "priority": "0.6",
+      "freq": "monthly"
+    },
+    {
+      "path": "/docs",
+      "title": "Documentation — guides for running your business on ZexCore",
+      "description": "Guides for running your business on ZexCore and for deploying the platform yourself.",
+      "h1": "Platform documentation",
+      "priority": "0.6",
+      "freq": "monthly"
+    },
+    {
+      "path": "/about",
+      "title": "About ZexCore — built by Zexlabs",
+      "description": "ZexCore is made by Zexlabs, a cybersecurity and application-development agency serving clients across Nigeria, the United Kingdom and the United States.",
+      "h1": "Enterprise-grade software for the people who run real businesses",
+      "priority": "0.6",
+      "freq": "monthly"
+    },
+    {
+      "path": "/contact",
+      "title": "Contact ZexCore — talk to the team",
+      "description": "Questions, ideas or a custom plan? Contact the ZexCore team. We reply within one working day.",
+      "h1": "Talk to the team",
+      "priority": "0.6",
+      "freq": "yearly"
+    },
+    {
+      "path": "/privacy",
+      "title": "Privacy Policy | ZexCore",
+      "description": "How ZexCore collects, uses and protects personal data.",
+      "h1": "Privacy policy",
+      "priority": "0.3",
+      "freq": "yearly"
+    },
+    {
+      "path": "/terms",
+      "title": "Terms of Service | ZexCore",
+      "description": "The terms for using ZexCore.",
+      "h1": "Terms of service",
+      "priority": "0.3",
+      "freq": "yearly"
+    }
   ],
-  "nav": [["/product", "Product"], ["/solutions", "Solutions"], ["/modules", "Modules"], ["/pricing", "Pricing"], ["/security", "Security"], ["/docs", "Docs"], ["/about", "About"], ["/contact", "Contact"], ["/signin", "Sign in"], ["/signup", "Start free"]]
+  "nav": [
+    [
+      "/product",
+      "Product"
+    ],
+    [
+      "/solutions",
+      "Solutions"
+    ],
+    [
+      "/modules",
+      "Modules"
+    ],
+    [
+      "/pricing",
+      "Pricing"
+    ],
+    [
+      "/security",
+      "Security"
+    ],
+    [
+      "/docs",
+      "Docs"
+    ],
+    [
+      "/about",
+      "About"
+    ],
+    [
+      "/contact",
+      "Contact"
+    ],
+    [
+      "/signin",
+      "Sign in"
+    ],
+    [
+      "/signup",
+      "Start free"
+    ]
+  ]
 }

@@ -1,4 +1,4 @@
-import { paymentsUrl } from './fb/firebase';
+import { paymentsUrl } from './paymentsUrl';
 const FX_STORAGE_KEY = 'zx.fx_ngn_v1';
 const MULTI_FX_STORAGE_KEY = 'zx.fx_multi_v1';
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour cache
