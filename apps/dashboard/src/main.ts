@@ -47,7 +47,7 @@ setGuard(async (ctx) => {
   }
 });
 const SITE = 'https://zexcore.com.ng';
-const SITE_PAGES = new Set(['/', '/product', '/pricing', '/solutions', '/modules', '/about', '/architecture', '/multi-tenancy', '/automation', '/security', '/contact', '/privacy', '/terms', '/docs', '/documentation']);
+const SITE_PAGES = new Set(['/', '/product', '/pricing', '/solutions', ...seo.pages.filter((p) => (p as { kind?: string }).kind === 'industry').map((p) => p.path), '/modules', '/about', '/architecture', '/multi-tenancy', '/automation', '/security', '/contact', '/privacy', '/terms', '/docs', '/documentation']);
 function setMeta(path: string): void {
   const head = document.head;
   let canon = head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
@@ -95,6 +95,13 @@ legacyRoute('/multi-tenancy', 'tenancy');
 legacyRoute('/automation', 'automation');
 legacyRoute('/modules', 'modules');
 legacyRoute('/solutions', 'solutions');
+route('/solutions/:industry', async (ctx) => {
+  const { renderLegacySite } = await import('./legacySite');
+  const { renderIndustryPage } = await import('./pages/industry');
+  const html = renderIndustryPage(ctx.path);
+  if (!html) { navigate('/solutions', true); return; }
+  renderLegacySite('industry', html);
+});
 legacyRoute('/security', 'security');
 legacyRoute('/docs', 'docs');
 legacyRoute('/documentation', 'docs');

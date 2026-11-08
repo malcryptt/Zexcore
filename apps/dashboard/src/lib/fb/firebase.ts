@@ -49,8 +49,7 @@ export function fb(): { app: FirebaseApp; auth: Auth; db: Firestore } {
   return { app, auth, db };
 }
 
-/** URL of the payments Worker (Cloudflare). */
-export const paymentsUrl = (): string => (env.VITE_PAYMENTS_URL || 'https://zexcore-payments.mal4crypt404.workers.dev').replace(/\/$/, '');
+export { paymentsUrl } from '../paymentsUrl';
 
 /** Test hook: points the app at the local Firebase emulators (used by tests/firestore/e2e.test.ts only). */
 export function useEmulators(host = '127.0.0.1'): void {

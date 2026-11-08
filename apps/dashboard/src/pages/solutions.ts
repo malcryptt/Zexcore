@@ -1,5 +1,6 @@
 /** Solutions by business type. */
-import { block, cards, cta, intro, shell } from './ref';
+import seo from '../seo/pages.json';
+import { block, cards, cta, intro, shell, esc } from './ref';
 
 export function renderSolutionsPage(): string {
   return shell('solutions',
@@ -12,6 +13,7 @@ export function renderSolutionsPage(): string {
       { title: 'Agencies & multi-location', text: 'Higher limits on staff and bookings, with a workspace for each client or branch.' },
       { title: 'Large organisations', text: 'Unlimited limits and a setup built with our team. Talk to us.' },
     ]), true),
+    block('Find your business type', 'A page for each, with what you can do and how it works.', `<div class="rp-grid">${seo.pages.filter((p) => (p as { kind?: string }).kind === 'industry').map((p) => `<a class="rp-card" href="${p.path}" data-link style="text-decoration:none"><h3>${esc((p as { name?: string }).name ?? p.h1)}</h3><p>${esc(p.description)}</p></a>`).join('')}</div>`),
     cta('Evaluate Fit for Your Organization', 'Speak directly with our solutions team to discuss custom multi-tenant architecture, data residency, or integration needs.', [{ text: 'Contact advisory team', href: '/contact', primary: true }, { text: 'Start free', href: '/signup' }]),
   );
 }

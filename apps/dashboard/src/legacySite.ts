@@ -15,13 +15,13 @@ import { renderAboutPage } from './pages/about';
 import { renderContactPage, setupContactPageEvents } from './pages/contact';
 import { setupNavbarEvents } from './components/navbar';
 
-type LegacyPage = 'home' | 'platform' | 'architecture' | 'tenancy' | 'automation' | 'modules' | 'solutions' | 'security' | 'docs' | 'resources' | 'pricing' | 'about' | 'contact';
+type LegacyPage = 'home' | 'platform' | 'architecture' | 'tenancy' | 'automation' | 'modules' | 'solutions' | 'security' | 'docs' | 'resources' | 'pricing' | 'about' | 'contact' | 'industry';
 
 export function clearLegacySiteStyles(): void {
   document.getElementById('legacy-site-style')?.remove();
 }
 
-export function renderLegacySite(page: LegacyPage): void {
+export function renderLegacySite(page: LegacyPage, prebuilt?: string): void {
   clearLegacySiteStyles();
   const style = document.createElement('style');
   style.id = 'legacy-site-style';
@@ -43,6 +43,7 @@ export function renderLegacySite(page: LegacyPage): void {
     pricing: renderPricingPage,
     about: renderAboutPage,
     contact: renderContactPage,
+    industry: () => prebuilt ?? '',
   };
   root.innerHTML = pages[page]();
   setupNavbarEvents();
