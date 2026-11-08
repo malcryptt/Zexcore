@@ -3,7 +3,7 @@ import { block, cards, cta, intro, shell } from './ref';
 
 export function renderAboutPage(): string {
   return shell('about',
-    intro('ABOUT', 'Enterprise-Grade Software. Built for the People Who Run Real Businesses.', 'ZexCore is made by Zexlabs — a cybersecurity and application-development agency serving clients across Nigeria, the United Kingdom and the United States.'),
+    intro('ABOUT', 'Enterprise-Grade Software. Built for the People Who Run Real Businesses.', 'ZexCore is made by Zexlabs (zexlabs.com.ng) — a cybersecurity and application-development agency serving clients across Nigeria, the United Kingdom and the United States.'),
     block('What We Believe', '', cards([
       { title: 'Software Should Be Easy to Start', text: 'You should be taking bookings the same day you sign up, not after a month of setup and configuration.' },
       { title: 'Security Is a Feature, Not a Footnote', text: 'We are a security company first. Access controls, payment verification and capacity limits are enforced where they cannot be skipped or bypassed.' },
