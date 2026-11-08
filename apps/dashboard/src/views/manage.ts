@@ -8,6 +8,7 @@ import { loadSettings, bookingUrl, clearStore, type Service, type Staff } from '
 import { canAdmin, canEdit, current, loadMe, logout } from '../lib/session';
 import { navigate } from '../router';
 import { hasFeatureAccess } from '../lib/fb/plan';
+import { moneyField, moneyMinor, bindMoney, primeMoney } from '../lib/moneyField';
 import { fetchLiveRates, formatInCurrency, ratesMeta, type SupportedCurrency } from '../lib/fx';
 
 const ro = (edit = false): Raw => (edit ? canEdit() : canAdmin()) ? html`` : html`<div class="alert alert-info" style="margin-bottom:16px">${ic('info', 'ico-sm')} ${edit ? 'Only owners, admins and editors can change this.' : 'Only owners and admins can change these settings.'}</div>`;
@@ -64,6 +65,7 @@ export function renderMore(view: HTMLElement): void {
 
 // ── Services ─────────────────────────────────────────────────────────────────
 export async function renderServices(view: HTMLElement): Promise<void> {
+  void primeMoney();
   mount(view, html`<div class="page-head"><div><h1>Services</h1><p>What customers can book.</p></div>${canEdit() ? html`<button class="btn btn-primary" data-add>${ic('plus', 'ico-sm')} Add service</button>` : ''}</div>${ro(true)}<div class="card" id="l"></div>`);
   const host = $('#l', view)!;
   const load = async () => {
@@ -81,20 +83,21 @@ export async function renderServices(view: HTMLElement): Promise<void> {
       body: html`<form class="form-grid"><div id="se" class="alert alert-error hidden"></div>
         <div class="field"><label for="sn">Name</label><input class="input" id="sn" required maxlength="120" value="${s?.name ?? ''}"></div>
         <div class="form-grid two"><div class="field"><label for="sd">Duration (minutes)</label><input class="input" id="sd" type="number" min="5" max="480" value="${s?.durationMin ?? 30}"></div>
-        <div class="field"><label for="sp">Price ($)</label><input class="input" id="sp" type="number" min="0" value="${s ? s.priceMinor / 100 : 0}"></div></div>
+        ${moneyField({ id: 'sp', label: 'Price', usdMinor: s ? s.priceMinor : 0 })}</div>
         <div class="field"><label for="sx">Description <span class="faint">(optional)</span></label><input class="input" id="sx" maxlength="500" value="${s?.description ?? ''}"></div>
         <div class="form-grid two"><div class="field"><label for="sm">Booking type</label><select class="input" id="sm"><option value="appointment" ${s?.bookingMode !== 'enquiry' ? 'selected' : ''}>Appointment</option><option value="enquiry" ${s?.bookingMode === 'enquiry' ? 'selected' : ''}>Project / service enquiry</option></select></div><div class="field"><label for="sc">Consultation</label><label class="check"><input type="checkbox" id="sc" ${s?.consultationEnabled ? 'checked' : ''}> Offer optional consultation</label></div></div>
         <div class="field"><label for="sf">Custom intake questions (JSON)</label><textarea class="input" id="sf" rows="4" placeholder='[{"key":"project","label":"Describe your project","type":"textarea","required":true}]'>${JSON.stringify(s?.intakeFields ?? [], null, 2)}</textarea><small class="muted">Up to 12 questions. Types: text, textarea, number, url, select. Select fields need options.</small></div>
         ${s ? html`<label class="check"><input type="checkbox" id="sa" ${s.active ? 'checked' : ''}> Show on my booking page</label>` : ''}</form>`,
       footer: html`${s ? html`<button class="btn btn-soft-danger" data-del style="margin-right:auto">${ic('trash-2', 'ico-sm')} Delete</button>` : ''}<button class="btn btn-secondary" data-close>Cancel</button><button class="btn btn-primary" data-save>Save</button>`,
       onMount: (el, close) => {
+        bindMoney(el, 'sp');
         $('[data-del]', el)?.addEventListener('click', async () => {
           if (!await confirmDialog({ title: `Delete “${s!.name}”?`, message: 'Customers will no longer be able to book it. Bookings already made stay in your list and show as a removed service. To keep it but stop new bookings, untick “Show on my booking page” instead. This is recorded in your audit log.', confirmLabel: 'Delete service', danger: true })) return;
           try { await api(`/api/bookings/services/${s!.id}`, { method: 'DELETE' }); toast('Service deleted', 'success'); close(); void load(); }
           catch (x) { const e = $('#se', el)!; e.textContent = x instanceof ApiError ? x.message : 'Could not delete'; e.classList.remove('hidden'); }
         });
         $('[data-save]', el)!.addEventListener('click', () => void busy($('[data-save]', el) as HTMLButtonElement, async () => {
-        const body: Record<string, unknown> = { name: ($('#sn', el) as HTMLInputElement).value.trim(), durationMin: Number(($('#sd', el) as HTMLInputElement).value), priceMinor: Math.round(Number(($('#sp', el) as HTMLInputElement).value) * 100), description: ($('#sx', el) as HTMLInputElement).value.trim() };
+        const body: Record<string, unknown> = { name: ($('#sn', el) as HTMLInputElement).value.trim(), durationMin: Number(($('#sd', el) as HTMLInputElement).value), priceMinor: moneyMinor(el, 'sp'), description: ($('#sx', el) as HTMLInputElement).value.trim() };
         if (s) body.active = ($('#sa', el) as HTMLInputElement).checked;
         body.bookingMode = ($('#sm', el) as HTMLSelectElement).value; body.consultationEnabled = ($('#sc', el) as HTMLInputElement).checked;
         try { body.intakeFields = JSON.parse(($('#sf', el) as HTMLTextAreaElement).value || '[]'); } catch { const e = $('#se', el)!; e.textContent = 'Custom intake questions must be valid JSON.'; e.classList.remove('hidden'); return; }
@@ -157,6 +160,7 @@ export async function renderBookingPage(view: HTMLElement): Promise<void> {
 
 // ── Settings ─────────────────────────────────────────────────────────────────
 export async function renderSettings(view: HTMLElement): Promise<void> {
+  await primeMoney();
   const s = await loadSettings(true);
   const me = current()!;
   const dis = canAdmin() ? '' : 'disabled';
@@ -254,7 +258,7 @@ export async function renderSettings(view: HTMLElement): Promise<void> {
         <div class="row between">
           <div>
             <h3>Upfront deposit & currency</h3>
-            <p class="muted small">Choose the currency your booking page shows first, and set slot deposits (in US dollars). Customer card payments settle directly to your bank account below.</p>
+            <p class="muted small">Choose the currency your booking page shows first, and set slot deposits. Customer card payments settle directly to your bank account below.</p>
           </div>
           <label class="switch"><input type="checkbox" id="dep" ${s.depositEnabled ? 'checked' : ''} ${dis} aria-label="Require deposit"><span></span></label>
         </div>
@@ -270,11 +274,10 @@ export async function renderSettings(view: HTMLElement): Promise<void> {
               <option value="KES" ${s.currency === 'KES' ? 'selected' : ''}>KES (KSh) — Kenyan Shilling</option>
               <option value="ZAR" ${s.currency === 'ZAR' ? 'selected' : ''}>ZAR (R) — South African Rand</option>
             </select>
-            <p class="muted small">You set prices and deposits in US dollars. This is the currency your booking page shows first; customers can switch to another on the page.</p>
+            <p class="muted small">Type prices and deposits in any currency using the picker beside each box; they are saved in US dollars at the current rate. This is the currency your booking page shows first; customers can switch to another on the page.</p>
           </div>
-          <div class="field ${s.depositEnabled ? '' : 'hidden'}" id="depf">
-            <label for="depn">Deposit per booking</label>
-            <input class="input" id="depn" type="number" min="0" value="${s.depositMinor / 100}" ${dis}>
+          <div class="${s.depositEnabled ? '' : 'hidden'}" id="depf">
+            ${moneyField({ id: 'depn', label: 'Deposit per booking', usdMinor: s.depositMinor, disabled: !canAdmin() })}
             <p class="muted small">Upfront amount required from customers to confirm their booking slot.</p>
           </div>
         </div>
@@ -288,12 +291,12 @@ export async function renderSettings(view: HTMLElement): Promise<void> {
           <p class="muted small" id="fxlive"></p>
         </div>
       </section>
-      <section class="card card-pad form-grid" id="pricesCard"><div><h3>What you charge, in every currency</h3><p class="muted small">Your prices are in US dollars. This shows what customers see in each currency, so you never have to work it out.</p></div><div id="prices"><div class="skel" style="height:80px"></div></div></section>
+      <section class="card card-pad form-grid" id="pricesCard"><div><h3>What you charge, in every currency</h3><p class="muted small">You can type prices in any currency; they are saved in US dollars. This shows what customers see in each currency, so you never have to work it out.</p></div><div id="prices"><div class="skel" style="height:80px"></div></div></section>
       ${hasFeatureAccess(me.tenant.tier, 'insights') ? html`<section class="card card-pad form-grid"><div class="row between"><div><h3>Weekly summary email</h3><p class="muted small">Every Monday morning we email the owner last week's bookings, revenue at list price, no-show rate and busiest times. Switch it off here at any time.</p></div><label class="switch"><input type="checkbox" id="wd" ${s.weeklyDigest === false ? '' : 'checked'} ${dis} aria-label="Weekly summary email"><span></span></label></div></section>` : ''}
       ${hasFeatureAccess(me.tenant.tier, 'waitlist') ? html`<section class="card card-pad form-grid"><div class="row between"><div><h3>Revenue protection: waitlist</h3><p class="muted small">When a day is full, your booking page offers a waitlist. If a booking is cancelled, we email the people waiting for that service and day, and the first to book gets the time. See who is waiting under More, Revenue protection.</p></div><label class="switch"><input type="checkbox" id="wl" ${s.waitlistEnabled ? 'checked' : ''} ${dis} aria-label="Offer a waitlist"><span></span></label></div></section>` : ''}
       ${hasFeatureAccess(me.tenant.tier, 'risk') ? html`<section class="card card-pad form-grid"><div class="row between"><div><h3>No-show protection</h3><p class="muted small">Every booking gets a no-show risk score from that customer's history with you. When a booking scores as risky, the customer is asked for a deposit even if you do not ask everyone. Needs your payout account above.</p></div><label class="switch"><input type="checkbox" id="rd" ${s.riskDepositEnabled ? 'checked' : ''} ${dis} aria-label="Ask risky customers for a deposit"><span></span></label></div>
         <div class="form-grid two ${s.riskDepositEnabled ? '' : 'hidden'}" id="rdf"><div class="field"><label for="rl">Ask for a deposit when risk is</label><select class="select" id="rl" ${dis}><option value="high" ${s.riskDepositLevel !== 'medium' ? 'selected' : ''}>High (60 and above)</option><option value="medium" ${s.riskDepositLevel === 'medium' ? 'selected' : ''}>Medium or high (30 and above)</option></select></div>
-        <div class="field"><label for="rdn">Deposit for risky bookings ($)</label><input class="input" id="rdn" type="number" min="1" max="5000" value="${(s.riskDepositMinor ?? 500) / 100}" ${dis}></div></div>
+        <div>${moneyField({ id: 'rdn', label: 'Deposit for risky bookings', usdMinor: s.riskDepositMinor ?? 500, max: 5000, disabled: !canAdmin() })}</div></div>
         <p class="muted small">Low 0 to 29, medium 30 to 59, high 60 and above. Points come from earlier no-shows, cancellations, unpaid deposits, first-time customers and how far ahead they booked, and good history lowers the score. The reasons are shown on each booking. If you already ask everyone for a deposit, that applies instead.</p></section>`
         : html`<section class="card card-pad"><div class="row between wrap"><div><h3>No-show protection</h3><p class="muted small">Score every booking for no-show risk and ask risky customers for a deposit automatically. Part of the Enterprise and Dedicated plans.</p></div><a class="btn btn-secondary btn-sm" href="/app/billing" data-link>${ic('lock', 'ico-sm')} See plans</a></div></section>`}
       ${canAdmin() ? html`<div><button class="btn btn-primary btn-lg" type="submit">Save changes</button></div>` : ''}
@@ -326,6 +329,8 @@ export async function renderSettings(view: HTMLElement): Promise<void> {
       toast('Payment fee terms accepted', 'success');
     } catch (e) { status.className = 'alert alert-error'; status.textContent = e instanceof Error ? e.message : 'Could not record acceptance.'; }
   }));
+
+  bindMoney(view, 'depn'); if ($('#rdn', view)) bindMoney(view, 'rdn');
 
   // Upfront deposit toggle visibility
   $('#dep', view)?.addEventListener('change', (e) => {
@@ -443,7 +448,9 @@ export async function renderSettings(view: HTMLElement): Promise<void> {
       const err = $('#st-err', view)!; err.classList.add('hidden');
       const days = $$('input[name=day]:checked', view).map((i) => Number((i as HTMLInputElement).value));
       const depChecked = ($('#dep') as HTMLInputElement).checked;
-      const depMinor = depChecked ? Math.round(Number(($('#depn') as HTMLInputElement).value) * 100) : 0;
+      const depMinor = depChecked ? moneyMinor(view, 'depn') : 0;
+      const riskMinor = $('#rdn', view) ? moneyMinor(view, 'rdn') : 0;
+      if (!Number.isFinite(depMinor) || !Number.isFinite(riskMinor)) { err.textContent = 'Enter a valid amount for each price box.'; err.classList.remove('hidden'); return; }
       try {
         await api('/api/bookings/settings', { method: 'PUT', body: {
           publicName: ($('#pn') as HTMLInputElement).value.trim(), phone: ($('#ph') as HTMLInputElement).value.trim(), address: ($('#ad') as HTMLInputElement).value.trim(),
@@ -456,7 +463,7 @@ export async function renderSettings(view: HTMLElement): Promise<void> {
           depositMinor: depMinor,
           ...($('#wd') ? { weeklyDigest: ($('#wd') as HTMLInputElement).checked } : {}),
           ...($('#wl') ? { waitlistEnabled: ($('#wl') as HTMLInputElement).checked } : {}),
-          ...($('#rd') ? { riskDepositEnabled: ($('#rd') as HTMLInputElement).checked, riskDepositLevel: ($('#rl') as HTMLSelectElement).value, riskDepositMinor: Math.round(Number(($('#rdn') as HTMLInputElement).value) * 100) } : {}),
+          ...($('#rd') ? { riskDepositEnabled: ($('#rd') as HTMLInputElement).checked, riskDepositLevel: ($('#rl') as HTMLSelectElement).value, riskDepositMinor: riskMinor } : {}),
           logoUrl: currentLogo,
           reminderEmails: ($('#re') as HTMLInputElement | null)?.checked ?? false,
           followUpEmails: ($('#fu') as HTMLInputElement | null)?.checked ?? false,

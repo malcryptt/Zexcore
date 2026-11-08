@@ -7,14 +7,22 @@ import { busy, toast } from '../lib/ui';
 import { loadSettings, tenantSlug, SITE_URL } from '../lib/store';
 import { minutesToTime, timeToMinutes } from '../lib/format';
 import { INDUSTRIES, industryOf } from '../lib/industries';
+import { primeMoney, preferredCurrency, rememberCurrency, currencyChoices, currencySymbol, fromUsd, toUsdMinor } from '../lib/moneyField';
+import type { SupportedCurrency } from '../lib/fx';
+
+const tidy2 = (n: number, c: SupportedCurrency): number => (c === 'NGN' || c === 'KES' ? Math.round(n / 10) * 10 : n);
 
 export async function renderOnboarding(): Promise<void> {
   const root = document.getElementById('app')!;
   const me = current()!;
   const s = await loadSettings(true);
+  await primeMoney();
+  let cur: SupportedCurrency = preferredCurrency();
+  let depAmt: number | null = null;
   let type = s.businessType && s.businessType !== 'other' ? industryOf(s.businessType).key : 'healthcare';
   let subtype = '';
-  const starter = (k: string) => industryOf(k).services.map((x) => ({ name: x.name, min: x.min, ngn: x.usd }));
+  const tidy = (n: number): number => (cur === 'NGN' || cur === 'KES' ? Math.round(n / 100) * 100 : n);
+  const starter = (k: string) => industryOf(k).services.map((x) => ({ name: x.name, min: x.min, ngn: cur === 'USD' ? x.usd : tidy(fromUsd(x.usd, cur)) }));
   let rows = starter(type);
   let team: string[] = [];
   let step = 1;
@@ -41,13 +49,14 @@ export async function renderOnboarding(): Promise<void> {
             <div class="field"><label>Open days</label><div class="day-pills">${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => html`<label><input type="checkbox" name="day" value="${i}" ${s.daysOpen.includes(i) ? 'checked' : ''}><span>${d}</span></label>`)}</div></div>
           </div>
           <div class="card card-pad stack">
-            <div class="row between"><div><h3>Services</h3><p class="muted small">Prices are in US dollars. Edit or remove the suggestions.</p></div><button type="button" class="btn btn-secondary btn-sm" data-add>${ic('plus', 'ico-sm')} Add</button></div>
-            <div id="svc-rows" class="stack-sm">${rows.map((r, i) => html`<div class="form-grid" style="grid-template-columns:1fr 80px 110px 36px;gap:8px;align-items:center" data-row="${i}"><input class="input" aria-label="Service name" data-f="name" value="${r.name}" maxlength="120"><input class="input" aria-label="Minutes" data-f="min" type="number" min="5" max="480" value="${r.min}"><input class="input" aria-label="Price in US dollars" data-f="ngn" type="number" min="0" value="${r.ngn}"><button type="button" class="btn btn-ghost btn-sm btn-icon" data-rm="${i}" aria-label="Remove service">${ic('x', 'ico-sm')}</button></div>`)}</div>
-            <p class="hint">Name · minutes · price ($)</p>
+            <div class="row between"><div><h3>Services</h3><p class="muted small">Type prices in your own currency. Edit or remove the suggestions.</p></div><button type="button" class="btn btn-secondary btn-sm" data-add>${ic('plus', 'ico-sm')} Add</button></div>
+            <div id="svc-rows" class="stack-sm">${rows.map((r, i) => html`<div class="form-grid" style="grid-template-columns:1fr 80px 110px 36px;gap:8px;align-items:center" data-row="${i}"><input class="input" aria-label="Service name" data-f="name" value="${r.name}" maxlength="120"><input class="input" aria-label="Minutes" data-f="min" type="number" min="5" max="480" value="${r.min}"><input class="input" aria-label="Price" data-f="ngn" type="number" min="0" value="${r.ngn}"><button type="button" class="btn btn-ghost btn-sm btn-icon" data-rm="${i}" aria-label="Remove service">${ic('x', 'ico-sm')}</button></div>`)}</div>
+            <div class="row" style="gap:8px;align-items:center"><label for="obcur" class="small muted">Prices in</label><select class="select" id="obcur" style="max-width:220px">${currencyChoices().map((c) => html`<option value="${c.code}" ${c.code === cur ? 'selected' : ''}>${c.label}</option>`)}</select></div>
+            <p class="hint">Name · minutes · price (${currencySymbol(cur)})</p>
           </div>
           <div class="card card-pad stack">
             <div class="row between"><div class="row"><span class="icon-tile">${ic('banknote')}</span><div><h3>Require an upfront deposit</h3><p class="muted small">Reduces no-shows. Collected by Paystack before the slot is confirmed.</p></div></div><label class="switch"><input type="checkbox" id="dep" ${s.depositEnabled ? 'checked' : ''} aria-label="Require deposit"><span></span></label></div>
-            <div class="field ${s.depositEnabled ? '' : 'hidden'}" id="dep-amt"><label for="depn">Deposit per booking ($)</label><input class="input" id="depn" type="number" min="0" value="${s.depositMinor ? s.depositMinor / 100 : 5}"></div>
+            <div class="field ${s.depositEnabled ? '' : 'hidden'}" id="dep-amt"><label for="depn">Deposit per booking (${currencySymbol(cur)})</label><input class="input" id="depn" type="number" min="0" step="any" value="${depAmt ?? (s.depositMinor ? fromUsd(s.depositMinor / 100, cur) : fromUsd(5, cur))}"></div>
           </div>
           <div class="card card-pad stack">
             <div><h3>Team <span class="faint" style="font-weight:500">(optional)</span></h3><p class="muted small">Add the people customers can book. You can skip this.</p></div>
@@ -67,6 +76,15 @@ export async function renderOnboarding(): Promise<void> {
     const sync = () => { rows = $$('[data-row]').map((r) => ({ name: ($('[data-f=name]', r) as HTMLInputElement).value, min: Number(($('[data-f=min]', r) as HTMLInputElement).value) || 30, ngn: Number(($('[data-f=ngn]', r) as HTMLInputElement).value) || 0 })); };
     $('[data-add]')!.addEventListener('click', () => { sync(); rows.push({ name: '', min: 30, ngn: 0 }); keepScrollDraw(); });
     $$('[data-rm]').forEach((b) => b.addEventListener('click', () => { sync(); rows.splice(Number(b.dataset.rm), 1); keepScrollDraw(); }));
+    $('#obcur')!.addEventListener('change', (e) => {
+      sync();
+      const next = (e.target as HTMLSelectElement).value as SupportedCurrency;
+      const usdOf = (n: number): number => toUsdMinor(n, cur) / 100;
+      rows = rows.map((r) => ({ ...r, ngn: next === 'USD' || r.ngn === 0 ? Number((r.ngn === 0 ? 0 : usdOf(r.ngn)).toFixed(2)) : tidy2(fromUsd(usdOf(r.ngn), next), next) }));
+      const d = Number(($('#depn') as HTMLInputElement).value);
+      depAmt = d > 0 ? (next === 'USD' ? Number(usdOf(d).toFixed(2)) : fromUsd(usdOf(d), next)) : null;
+      cur = next; rememberCurrency(next); keepScrollDraw();
+    });
     $('#dep')!.addEventListener('change', (e) => $('#dep-amt')!.classList.toggle('hidden', !(e.target as HTMLInputElement).checked));
     const addTm = () => { const i = $('#tm') as HTMLInputElement; const v = i.value.trim(); if (v) { sync(); team.push(v); keepScrollDraw(); } };
     $('[data-add-tm]')!.addEventListener('click', addTm);
@@ -91,13 +109,13 @@ export async function renderOnboarding(): Promise<void> {
         const svcs = rows.filter((r) => r.name.trim());
         if (!svcs.length) return fail('Add at least one service.');
         const depOn = ($('#dep') as HTMLInputElement).checked;
-        const depMinor = Math.round((Number(($('#depn') as HTMLInputElement).value) || 0) * 100);
+        const depMinor = toUsdMinor(Number(($('#depn') as HTMLInputElement).value) || 0, cur);
         try {
           await api('/api/bookings/settings', { method: 'PUT', body: { businessType: type, businessSubtype: subtype, publicName: ($('#pn') as HTMLInputElement).value.trim(), phone: ($('#ph') as HTMLInputElement).value.trim(), openMinutes: open, closeMinutes: close, daysOpen: days, depositEnabled: depOn && depMinor > 0, depositMinor: depOn ? depMinor : 0, onboarded: true, reminderEmails: true } });
           const existing = await api<{ services: unknown[] }>('/api/bookings/services');
           if (!existing.services.length) for (const r of svcs) {
             const preset = industryOf(type).services.find((p) => p.name === r.name.trim());   // the kind of business decides what the booking page asks
-            await api('/api/bookings/services', { method: 'POST', body: { name: r.name.trim(), durationMin: Math.min(480, Math.max(5, r.min)), priceMinor: Math.round(r.ngn * 100), ...(preset?.mode ? { bookingMode: preset.mode } : {}), ...(preset?.fields?.length ? { intakeFields: preset.fields } : {}) } });
+            await api('/api/bookings/services', { method: 'POST', body: { name: r.name.trim(), durationMin: Math.min(480, Math.max(5, r.min)), priceMinor: toUsdMinor(r.ngn, cur), ...(preset?.mode ? { bookingMode: preset.mode } : {}), ...(preset?.fields?.length ? { intakeFields: preset.fields } : {}) } });
           }
           for (const n of team) await api('/api/bookings/staff', { method: 'POST', body: { name: n } });
           await loadSettings(true);
