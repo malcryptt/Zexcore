@@ -11,7 +11,7 @@ export function renderFooter(): string {
           <a href="/" data-link class="footer-logo-link">
             <img src="/zexcore-logo-dark.png" alt="ZexCore" class="footer-logo" />
           </a>
-          <p class="footer-tagline">ZexCore by Zexlabs</p>
+          <p class="footer-tagline">ZexCore by <a href="https://zexlabs.com.ng" rel="noopener">Zexlabs</a></p>
           <p class="footer-desc">
             Booking, customers, payments and automation for appointment-based businesses, built on Firebase.
           </p>
@@ -74,7 +74,7 @@ export function renderFooter(): string {
       <div class="footer-bottom">
         <div class="footer-bottom-inner">
           <p class="footer-copyright">
-            &copy; 2026 ZexCore by Zexlabs. All rights reserved.
+            &copy; 2026 ZexCore by <a href="https://zexlabs.com.ng" rel="noopener">Zexlabs</a>. All rights reserved.
           </p>
         </div>
       </div>

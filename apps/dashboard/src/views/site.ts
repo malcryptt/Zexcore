@@ -30,7 +30,7 @@ function shell(path: string, body: Raw): void {
         <div><h4>Product</h4><ul><li><a href="/product" data-link>Features</a></li><li><a href="/pricing" data-link>Pricing</a></li><li><a href="/security" data-link>Security</a></li></ul></div>
         <div><h4>Company</h4><ul><li><a href="/contact" data-link>Contact</a></li><li><a href="mailto:${EMAIL}">${EMAIL}</a></li></ul></div>
         <div><h4>Legal</h4><ul><li><a href="/privacy" data-link>Privacy</a></li><li><a href="/terms" data-link>Terms</a></li></ul></div></div>
-      <div class="foot-bottom"><span>© ${new Date().getFullYear()} Zexlabs. All rights reserved.</span><span>ZexCore, a product of Zexlabs</span></div></div></footer></div>`);
+      <div class="foot-bottom"><span>© ${new Date().getFullYear()} Zexlabs. All rights reserved.</span><span>ZexCore, a product of <a href="https://zexlabs.com.ng" rel="noopener">Zexlabs</a></span></div></div></footer></div>`);
   $('[data-burger]')?.addEventListener('click', (e) => { const mm = $('[data-mm]')!; const open = mm.classList.toggle('hidden') === false; (e.currentTarget as HTMLElement).setAttribute('aria-expanded', String(open)); });
   window.scrollTo(0, 0);
 }

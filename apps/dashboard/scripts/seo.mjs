@@ -16,7 +16,7 @@ const card = `${data.site}/og-card.png`;
 
 const ld = (page) => JSON.stringify([
   { '@context': 'https://schema.org', '@type': 'Organization', name: data.name, url: data.site, logo,
-    parentOrganization: { '@type': 'Organization', name: 'Zexlabs' } },
+    parentOrganization: { '@type': 'Organization', name: 'Zexlabs', url: 'https://zexlabs.com.ng' } },
   { '@context': 'https://schema.org', '@type': 'WebSite', name: data.name, url: data.site, inLanguage: 'en' },
   ...(page.path === '/' ? [{ '@context': 'https://schema.org', '@type': 'SoftwareApplication', name: data.name, applicationCategory: 'BusinessApplication',
     operatingSystem: 'Web', url: data.site, description: page.description }] : []),
