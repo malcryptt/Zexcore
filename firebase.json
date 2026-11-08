@@ -12,7 +12,7 @@
     "rewrites": [
       {
         "source": "**",
-        "destination": "/index.html"
+        "destination": "/shell.html"
       }
     ],
     "headers": [
@@ -77,7 +77,7 @@
         ]
       },
       {
-        "source": "/@(index.html|sitemap.xml|robots.txt)",
+        "source": "/@(index.html|shell.html|sitemap.xml|robots.txt|product|pricing|solutions|modules|security|automation|architecture|multi-tenancy|docs|about|contact|privacy|terms)",
         "headers": [
           {
             "key": "Cache-Control",

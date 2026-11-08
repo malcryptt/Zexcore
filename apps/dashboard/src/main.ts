@@ -1,3 +1,4 @@
+import seo from './seo/pages.json';
 import './styles/tokens.css';
 import './styles/base.css';
 import './styles/components.css';
@@ -63,7 +64,19 @@ function setMeta(path: string): void {
     } else robots?.remove();
   }
 }
-setAfter((ctx) => { if (TITLES[ctx.path]) { document.title = `${TITLES[ctx.path]} — ZexCore`; syncTitle(); } setMeta(ctx.path); });
+const SEO = new Map(seo.pages.map((p) => [p.path, p]));
+function setText(sel: string, attr: string, value: string): void { document.head.querySelector(sel)?.setAttribute(attr, value); }
+setAfter((ctx) => {
+  const page = SEO.get(ctx.path);
+  if (page) {
+    // Public pages carry their own title and description, the same ones the build writes into each page's HTML.
+    document.title = page.title; syncTitle();
+    setText('meta[name="description"]', 'content', page.description);
+    setText('meta[property="og:title"]', 'content', page.title); setText('meta[property="og:description"]', 'content', page.description);
+    setText('meta[property="og:url"]', 'content', SITE + (page.path === '/' ? '/' : page.path));
+  } else if (TITLES[ctx.path]) { document.title = `${TITLES[ctx.path]} — ZexCore`; syncTitle(); }
+  setMeta(ctx.path);
+});
 
 const loadLegacy = () => import('./legacySite').then((m) => m.renderLegacySite);
 const legacyRoute = (path: string, page: string) =>
