@@ -11,6 +11,7 @@
 import type { Deps, Env } from '../env';
 import { fsGet, fsQuery } from '../fs';
 import { queueFormal } from '../outbox';
+import { meetingLinkFor } from './meetings';
 import { localWhen } from '../util';
 
 const HOUR = 3_600_000;
@@ -43,11 +44,12 @@ export async function sendCustomerEmails(env: Env, d: Deps, wid: string, kind: K
     const svc = await fsGet(env, d, `workspaces/${wid}/services/${String(b.data.serviceId)}`);
     const service = String(svc?.data.name ?? 'Service');
     const when = localWhen(new Date(starts).toISOString(), off);
-    const link = slug ? { button: { text: kind === 'reminder' ? 'View booking page' : 'Book again', url: `${env.APP_URL.replace(/\/$/, '')}/${slug}` } } : {};
+    const meet = kind === 'reminder' ? await meetingLinkFor(env, wid, b.id, svc?.data, st) : null;
+    const link = meet ? { button: { text: 'Join the meeting', url: meet } } : slug ? { button: { text: kind === 'reminder' ? 'View booking page' : 'Book again', url: `${env.APP_URL.replace(/\/$/, '')}/${slug}` } } : {};
     const r = kind === 'reminder'
       ? await queueFormal(env, d, `remind:${wid}:${b.id}`, email, `Reminder: your appointment with ${biz}`, {
         heading: 'Your appointment is coming up', greeting: `Hello ${first(b.data.customerName)},`,
-        paragraphs: [`This is a reminder of your appointment with ${biz}.`, `If you need to change or cancel it, please contact the business${phone ? ` on ${phone}` : ''} as soon as you can.`],
+        paragraphs: [`This is a reminder of your appointment with ${biz}.`, ...(meet ? ['This is an online meeting. Use the button below at your appointment time.'] : []), `If you need to change or cancel it, please contact the business${phone ? ` on ${phone}` : ''} as soon as you can.`],
         details: [['Business', biz], ['Service', service], ['Time', when], ['Reference', `ZX-${b.id.replace('_', '-')}`]], ...link }, wid)
       : await queueFormal(env, d, `followup:${wid}:${b.id}`, email, `Thank you for visiting ${biz}`, {
         heading: 'Thank you for your visit', greeting: `Hello ${first(b.data.customerName)},`,

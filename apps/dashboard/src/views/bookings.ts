@@ -5,6 +5,7 @@ import { money, whenLabel, timeOf, initials, ymd } from '../lib/format';
 import { toast, openModal, confirmDialog, emptyState, errorState, skeletonRows, busy, copyText } from '../lib/ui';
 import { type Booking, type Service, type Staff, offset, loadSettings, tenantSlug, bookingUrl } from '../lib/store';
 import { canAdmin, canManage } from '../lib/session';
+import { navigate } from '../router';
 
 export const statusBadge = (s: Booking['status']): Raw => ({
   pending: html`<span class="badge badge-warning"><span class="dot dot-warning"></span>Pending</span>`,
@@ -43,6 +44,7 @@ export function bookingCard(b: Booking): Raw {
     </div>
     <div class="row wrap" style="gap:8px">${statusBadge(b.status)} ${depositBadge(b)} ${riskBadge(b)}</div>
     ${b.risk && b.risk.level !== 'low' && b.status !== 'completed' && b.status !== 'cancelled' && b.status !== 'no_show' ? html`<div class="muted small">${b.risk.reasons.join(' · ')}</div>` : ''}
+    ${b.online && (b.status === 'pending' || b.status === 'confirmed') ? html`<button class="btn btn-primary btn-block" data-act="join">${ic('video', 'ico-sm')} Join video meeting</button>` : ''}
     ${needs && canManage() ? html`<button class="btn btn-primary btn-block" data-act="link">${ic('send', 'ico-sm')} Send payment link</button>` : ''}
     <div class="row" style="gap:8px">
       <a class="btn btn-secondary btn-sm grow" href="https://wa.me/${b.customerPhone.replace('+', '')}" target="_blank" rel="noopener noreferrer">${ic('message-circle', 'ico-sm')} WhatsApp</a>
@@ -57,6 +59,7 @@ export function wireBookingCards(host: HTMLElement, list: Booking[], reload: () 
     const b = list.find((x) => x.id === card.dataset.id);
     if (!b) return;
     card.querySelector('[data-act="menu"]')?.addEventListener('click', () => openActions(b, reload));
+    card.querySelector('[data-act="join"]')?.addEventListener('click', () => navigate(`/app/meet/${b.id}`));
     card.querySelector('[data-act="link"]')?.addEventListener('click', (e) => void sendPaymentLink(b, e.currentTarget as HTMLButtonElement, reload));
   });
 }
@@ -92,6 +95,7 @@ async function patch(id: string, body: object, ok: string): Promise<boolean> {
 function openActions(b: Booking, reload: () => void): void {
   const items: { key: string; label: string; icon: Parameters<typeof ic>[0]; show: boolean; danger?: boolean }[] = [
     { key: 'confirm', label: 'Confirm booking', icon: 'circle-check', show: b.status === 'pending' },
+    { key: 'join', label: 'Join video meeting', icon: 'video', show: !!b.online && (b.status === 'pending' || b.status === 'confirmed') },
     { key: 'link', label: 'Send payment link', icon: 'send', show: b.depositStatus === 'unpaid' || (b.depositStatus === 'none' && b.status !== 'cancelled' && b.status !== 'completed') },
     { key: 'paid', label: 'Record deposit as received', icon: 'banknote', show: b.depositStatus === 'unpaid' || b.depositStatus === 'mismatch' },
     { key: 'refund', label: 'Refund deposit', icon: 'banknote', show: b.depositStatus === 'paid' && !!b.paymentReference && b.paymentReference !== 'recorded-by-staff' && canAdmin(), danger: true },
@@ -107,6 +111,7 @@ function openActions(b: Booking, reload: () => void): void {
       const k = btn.dataset.k!;
       close();
       if (k === 'confirm' && await patch(b.id, { status: 'confirmed' }, 'Booking confirmed')) reload();
+      if (k === 'join') navigate(`/app/meet/${b.id}`);
       if (k === 'complete' && await patch(b.id, { status: 'completed' }, 'Marked completed')) reload();
       if (k === 'noshow' && await patch(b.id, { status: 'no_show' }, 'Marked as no-show')) reload();
       if (k === 'paid' && await patch(b.id, { markDepositPaid: true }, 'Deposit recorded')) reload();

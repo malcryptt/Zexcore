@@ -7,6 +7,7 @@ import type { Ctx } from '../env';
 import { FsConflict, fsCommit, fsGet } from '../fs';
 import { sendFormal } from '../mail';
 import { queueFormal } from '../outbox';
+import { meetingLinkFor } from './meetings';
 import { sendBookingAlert, waNumber, whatsappConfigured } from '../whatsapp';
 import { enqueueWhatsAppEvent } from './whatsappAutomation';
 import { HttpError, ID_RE, firstName, json, localWhen, readJson } from '../util';
@@ -139,12 +140,14 @@ export async function publicBooked(c: Ctx): Promise<Response> {
   // not acceptance of the appointment; the business still confirms it from the dashboard.
   const bookingDoc = await fsGet(c.env, c.d, `workspaces/${wid}/bookings/${bookingId}`);
   const customerEmail = String(bookingDoc?.data.customerEmail ?? '').trim();
+  const bookedSvc = await fsGet(c.env, c.d, `workspaces/${wid}/services/${String(bookingDoc?.data.serviceId ?? '')}`);
+  const meetLink = await meetingLinkFor(c.env, wid, bookingId, bookedSvc?.data, wsSettings);
   if (/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(customerEmail)) {
     await queueFormal(c.env, c.d, `ack:${wid}:${bookingId}`, customerEmail, 'We received your booking request', {
       heading: 'Your booking request was received',
       preheader: `Your request to book ${String(bk.service || 'a service')} has been sent.`,
       greeting: `Hello ${firstName(String(bk.customerName ?? ''), customerEmail)},`,
-      paragraphs: ['Thank you for booking with this business. Your request has been received and is awaiting confirmation. The business will contact you if any changes are needed.'],
+      paragraphs: ['Thank you for booking with this business. Your request has been received and is awaiting confirmation. The business will contact you if any changes are needed.', ...(meetLink ? [`This is an online meeting. Use this link at your appointment time: ${meetLink}`] : [])],
       details: [['Business', String(ws?.data.name ?? 'The business')], ['Service', String(bk.service || 'Service')], ['Requested time', localWhen(String(bk.startsAt), off)], ['Reference', String(bk.ref)]],
       button: { text: 'View booking page', url: `${c.env.APP_URL.replace(/\/$/, '')}/${slug}` },
       note: 'This is an acknowledgement that your request was received, not confirmation that the appointment has been accepted.',

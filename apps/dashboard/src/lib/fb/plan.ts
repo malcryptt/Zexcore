@@ -68,6 +68,8 @@ export const FEATURE_TIERS: Record<FeatureKey, Tier> = {
 };
 
 /** ZexCore's fee on successful online payments, in percent. Keep in step with PLATFORM_FEE_BPS in workers/payments/src/plan.ts. */
+/** Video calls a workspace may start each month. Must match CALLS_PER_MONTH in workers/payments/src/plan.ts (a test checks it). */
+export const CALLS_PER_MONTH: Record<Tier, number> = { free: 10, starter: 30, growth: 100, agency: 300, enterprise: 1000, dedicated: 1000 };
 export const PLATFORM_FEE_PERCENT: Record<Tier, number> = { free: 2, starter: 1.5, growth: 1, agency: 0.5, enterprise: 0.5, dedicated: 0.5 };
 
 const TIER_ORDER: Record<Tier, number> = {

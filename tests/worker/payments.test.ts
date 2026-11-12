@@ -1,11 +1,12 @@
+import { joinKey } from '../../workers/payments/src/routes/meetings.js';
 import { scoreRisk } from '../../workers/payments/src/risk';
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { creditDays } from '../../workers/payments/src/routes/billing.js';
 import { getLiveRates, FALLBACK_RATES } from '../../workers/payments/src/rates.js';
 import { SEATS } from '../../workers/payments/src/routes/team.js';
 import { KEEP, backupId, gunzip, open as openBackup, scheduledBackups } from '../../workers/payments/src/routes/backups.js';
-import { LIMITS } from '../../apps/dashboard/src/lib/fb/plan';
-import { platformFeeFor, PAYMENT_FEE_POLICY_VERSION, hasAcceptedPaymentFeePolicy } from '../../workers/payments/src/plan.js';
+import { LIMITS, CALLS_PER_MONTH as UI_CALLS } from '../../apps/dashboard/src/lib/fb/plan';
+import { CALLS_PER_MONTH, platformFeeFor, PAYMENT_FEE_POLICY_VERSION, hasAcceptedPaymentFeePolicy } from '../../workers/payments/src/plan.js';
 import { queueEmail, drainOutbox, outboxId, MAX_ATTEMPTS } from '../../workers/payments/src/outbox.js';
 import { sendCustomerEmails, scheduledCustomerEmails } from '../../workers/payments/src/routes/reminders.js';
 import { scheduledDepositExpiry } from '../../workers/payments/src/index.js';
@@ -42,6 +43,8 @@ let sc = { paystack: 200, resend: 'ok' as 'ok' | 'restricted' | 'bad' | 'unverif
 let resendKeys: (string | undefined)[] = [];
 let revokedLogins: any[] = [];
 let waSent: any[] = [];
+let dailyCalls: { path: string; body: any }[] = [];
+let dailyStatus = 200;
 let deletedLogins: string[] = [];
 let store: Map<string, Doc>; let commits: any[]; let paystackInit: any[]; let paystackVerify: Record<string, any>; let paystackSub: any[];
 const fsPath = (u: string) => decodeURIComponent(u.split('/documents/')[1]!.split('?')[0]!);
@@ -75,6 +78,14 @@ function mockFetch(): typeof fetch {
       return Response.json({ data: [{ name: 'zexcore.com.ng', status: sc.resend === 'unverified' ? 'pending' : 'verified' }] });
     }
     if (url.startsWith('https://api.paystack.co/bank?country=nigeria&perPage=1')) return Response.json({ data: [] }, { status: sc.paystack });
+    if (url.startsWith('https://api.daily.co/v1/')) {
+      const path = url.replace('https://api.daily.co/v1', '');
+      if (init.method === 'POST') dailyCalls.push({ path, body: JSON.parse(init.body) });
+      if (dailyStatus !== 200) return Response.json({ error: 'nope' }, { status: dailyStatus });
+      if (path === '/rooms' && init.method === 'POST') { const n = JSON.parse(init.body).name; return Response.json({ name: n, url: `https://zex.daily.co/${n}` }); }
+      if (path === '/meeting-tokens') return Response.json({ token: `tok-${dailyCalls.length}` });
+      return Response.json({ data: [] });
+    }
     if (url.startsWith('https://api.cloudinary.com/v1_1/')) return Response.json({ resources: [] }, { status: sc.cloudinary });
     if (url.startsWith('https://graph.facebook.com/') && !init.body) return Response.json({ display_phone_number: '+234' }, { status: sc.whatsapp });
     if (url.startsWith('https://graph.facebook.com/')) { waSent.push({ url, auth: init.headers.authorization, body: JSON.parse(init.body) }); return Response.json({ messages: [{ id: 'wamid.1' }] }); }
@@ -1727,6 +1738,13 @@ describe('system check', () => {
     expect((await call('/api/admin/selfcheck', { method: 'GET' })).status).toBe(401);
   });
 
+  it('checks the video service: off without a key, rejected when wrong, ok when accepted', async () => {
+    env = { ...env, DAILY_API_KEY: undefined }; let by = await rows(); expect(by.daily!.status).toBe('off'); expect(by.daily!.fix).toMatch(/DAILY_API_KEY/);
+    env = { ...env, DAILY_API_KEY: 'daily_test_key' }; dailyStatus = 401; by = await rows(); expect(by.daily!.status).toBe('fail');
+    dailyStatus = 200; by = await rows(); expect(by.daily!.status).toBe('ok');
+    expect(JSON.stringify(by)).not.toContain('daily_test_key');
+  });
+
   it('reports each integration, and never returns a secret', async () => {
     seedDoc('system/cron', { at: new Date(NOW.getTime() - 20 * 60_000) });
     const r = await run(); expect(r.status).toBe(200);
@@ -1844,5 +1862,96 @@ describe('payment fee notice campaign', () => {
     const r = await run();
     expect(r.queued).toBe(1);
     expect(emails.map((m) => m.to[0])).toEqual(['c@example.com']);
+  });
+});
+
+
+describe('video meetings', () => {
+  const X = 'wsmeet00000000000001';
+  const BK = '202611_5';
+  const start = (min: number) => new Date(NOW.getTime() + min * 60_000);
+  const seed = (over: { svc?: Record<string, unknown>; settings?: Record<string, unknown>; plan?: string; bk?: Record<string, unknown> } = {}) => {
+    seedDoc(`workspaces/${X}`, { name: 'Meet Biz', plan: over.plan ?? 'free', ownerUid: 'owner1', slug: 'meet-biz', settings: over.settings ?? {} });
+    seedDoc(`workspaces/${X}/members/owner1`, { role: 'owner', name: 'Sade' });
+    seedDoc(`workspaces/${X}/services/s_0`, { name: 'Consultation', priceMinor: 0, online: true, ...over.svc });
+    seedDoc(`workspaces/${X}/bookings/${BK}`, { source: 'public', status: 'confirmed', serviceId: 's_0', customerName: 'Ada Obi', customerEmail: 'ada@example.com', startsAt: start(10), createdAt: start(-3000), ...over.bk });
+  };
+  const owner = async () => call('/api/meetings/join', { headers: await authed(), body: JSON.stringify({ workspaceId: X, bookingId: BK }) });
+  const guest = async (key?: string) => call('/api/public/meeting', { headers: { 'content-type': 'application/json', origin: 'https://zexcore.com.ng' }, body: JSON.stringify({ workspaceId: X, bookingId: BK, key: key ?? await joinKey(env, X, BK) }) });
+  const used = () => fromFs(store.get(`meetingUsage/${X}_202611`)?.fields.count) as number | null;
+  beforeEach(() => { dailyCalls = []; dailyStatus = 200; env = { ...env, DAILY_API_KEY: 'daily_test_key', RESEND_API_KEY: 're_test' }; });
+
+  it('shows the same allowance on the pricing page as the Worker enforces', () => {
+    expect(UI_CALLS).toEqual(CALLS_PER_MONTH);
+  });
+
+  it('creates one private 30-minute room for the first person and counts it once', async () => {
+    seed();
+    const a = await owner(); expect(a.status).toBe(200);
+    const j = await a.json() as any;
+    expect(j).toMatchObject({ mode: 'daily', used: 1, limit: 10 });
+    expect(j.url).toMatch(/^https:\/\/zex\.daily\.co\/zx-[0-9a-f]{24}\?t=tok-/);
+    const room = dailyCalls.find((x) => x.path === '/rooms')!.body;
+    expect(room).toMatchObject({ privacy: 'private', properties: { max_participants: 4, eject_at_room_exp: true } });
+    expect(room.properties.exp - Math.floor(NOW.getTime() / 1000)).toBeLessThanOrEqual(32 * 60);
+    expect(dailyCalls.find((x) => x.path === '/meeting-tokens')!.body.properties.is_owner).toBe(true);
+    // The customer joins the same room: no second room, no second count, and no host powers.
+    const g = await guest(); expect(g.status).toBe(200);
+    expect(dailyCalls.filter((x) => x.path === '/rooms')).toHaveLength(1);
+    expect(dailyCalls.filter((x) => x.path === '/meeting-tokens').pop()!.body.properties.is_owner).toBe(false);
+    expect(used()).toBe(1);
+  });
+
+  it('stops at the plan allowance, and a higher plan has more', async () => {
+    seed(); seedDoc(`meetingUsage/${X}_202611`, { wid: X, month: '202611', count: 10 });
+    const r = await owner(); expect(r.status).toBe(402); expect(((await r.json()) as any).error).toMatch(/all 10 video calls/);
+    expect(dailyCalls.filter((x) => x.path === '/rooms')).toHaveLength(0);
+    seed({ plan: 'growth' }); seedDoc(`workspaces/${X}`, { name: 'Meet Biz', plan: 'growth', planExpiresAt: new Date(NOW.getTime() + 30 * 86_400_000), ownerUid: 'owner1', slug: 'meet-biz', settings: {} });
+    expect((await owner()).status).toBe(200); expect(used()).toBe(11);
+  });
+
+  it('uses the business own link and counts nothing', async () => {
+    seed({ settings: { meetingUrl: 'https://meet.google.com/abc-defg-hij' } });
+    const r = await owner(); expect(await r.json()).toEqual({ mode: 'own', url: 'https://meet.google.com/abc-defg-hij' });
+    expect(dailyCalls).toHaveLength(0); expect(used()).toBeNull();
+  });
+
+  it('refuses a service that is not online, a cancelled booking and a bad or missing key', async () => {
+    seed({ svc: { online: false } }); expect((await owner()).status).toBe(400);
+    seed({ bk: { status: 'cancelled' } }); expect((await owner()).status).toBe(409);
+    seed(); expect((await guest('0'.repeat(24))).status).toBe(404);
+    expect((await guest('short')).status).toBe(404);
+    expect(dailyCalls).toHaveLength(0);
+  });
+
+  it('opens 15 minutes ahead for customers (an hour for the team) and closes after the slot', async () => {
+    seed({ bk: { startsAt: start(45) } });
+    expect((await guest()).status).toBe(409);
+    expect((await owner()).status).toBe(200);
+    seed({ bk: { startsAt: start(-300) } });
+    expect((await guest()).status).toBe(410);
+  });
+
+  it('caps how many rooms one appointment can open', async () => {
+    seed(); seedDoc(`meetings/${X}_${BK}`, { wid: X, bookingId: BK, roomName: 'old', roomUrl: 'https://zex.daily.co/old', expiresAt: new Date(NOW.getTime() - 60_000), rooms: 3 });
+    expect((await owner()).status).toBe(429); expect(used()).toBeNull();
+  });
+
+  it('does not count a call when the video service fails', async () => {
+    seed(); dailyStatus = 500;
+    expect((await owner()).status).toBe(502);
+  });
+
+  it('says so plainly when Daily is not set up', async () => {
+    seed(); env = { ...env, DAILY_API_KEY: undefined };
+    const r = await owner(); expect(r.status).toBe(503); expect(((await r.json()) as any).error).toMatch(/not switched on/);
+  });
+
+  it('puts the join link in the reminder email for an online service', async () => {
+    seed({ settings: { reminderEmails: true, utcOffsetMinutes: 60 }, bk: { startsAt: new Date(NOW.getTime() + 5 * 3_600_000) } });
+    emails = [];
+    expect(await sendCustomerEmails(env, { fetch: mockFetch(), now: () => NOW }, X, 'reminder')).toBe(1);
+    const m = emails.at(-1); const body = String(m.html ?? '') + String(m.text ?? '');
+    expect(body).toContain(`/meet/${X}/${BK}/${await joinKey(env, X, BK)}`); expect(body).toMatch(/Join the meeting/);
   });
 });

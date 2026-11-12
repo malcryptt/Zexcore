@@ -37,3 +37,6 @@ export const PAYMENT_FEE_POLICY_VERSION = '2026-11-v1';
 export function hasAcceptedPaymentFeePolicy(ws: Record<string, any> | undefined): boolean {
   return ws?.paymentFeeConsent?.version === PAYMENT_FEE_POLICY_VERSION && ws.paymentFeeConsent.acceptedAt instanceof Date;
 }
+
+/** Video calls a workspace may start each month (one call = one room of up to 30 minutes). */
+export const CALLS_PER_MONTH: Record<string, number> = { free: 10, starter: 30, growth: 100, agency: 300, enterprise: 1000, dedicated: 1000 };

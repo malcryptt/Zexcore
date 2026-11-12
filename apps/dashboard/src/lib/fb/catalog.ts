@@ -5,10 +5,10 @@ import { hasFeatureAccess, slotLimit } from './plan';
 import { normalizePhone } from './slots';
 
 export interface IntakeField { key: string; label: string; type: 'text' | 'textarea' | 'select' | 'number' | 'url'; required: boolean; options?: string[]; placeholder?: string }
-export interface ServiceDto { id: string; name: string; description: string | null; durationMin: number; priceMinor: number; active: boolean; bookingMode?: 'appointment' | 'enquiry'; intakeFields?: IntakeField[]; consultationEnabled?: boolean }
+export interface ServiceDto { id: string; name: string; description: string | null; durationMin: number; priceMinor: number; active: boolean; bookingMode?: 'appointment' | 'enquiry'; intakeFields?: IntakeField[]; consultationEnabled?: boolean; online?: boolean }
 export interface StaffDto { id: string; name: string; title: string | null; active: boolean; auto?: boolean }
 
-const svc = (d: QueryDocumentSnapshot): ServiceDto => ({ id: d.id, name: d.data().name, description: d.data().description ?? null, durationMin: d.data().durationMin, priceMinor: d.data().priceMinor ?? 0, active: d.data().active !== false, bookingMode: d.data().bookingMode === 'enquiry' ? 'enquiry' : 'appointment', intakeFields: Array.isArray(d.data().intakeFields) ? d.data().intakeFields : [], consultationEnabled: d.data().consultationEnabled === true });
+const svc = (d: QueryDocumentSnapshot): ServiceDto => ({ id: d.id, name: d.data().name, description: d.data().description ?? null, durationMin: d.data().durationMin, priceMinor: d.data().priceMinor ?? 0, active: d.data().active !== false, bookingMode: d.data().bookingMode === 'enquiry' ? 'enquiry' : 'appointment', intakeFields: Array.isArray(d.data().intakeFields) ? d.data().intakeFields : [], consultationEnabled: d.data().consultationEnabled === true, online: d.data().online === true });
 const stf = (d: QueryDocumentSnapshot): StaffDto => ({ id: d.id, name: d.data().name, title: d.data().title ?? null, active: d.data().active !== false, auto: d.data().auto === true });
 const bySeq = (name: string, c: Ctx) => query(wsCol(c, name), orderBy('seq'));
 
@@ -48,6 +48,7 @@ function checkService(b: Record<string, unknown>, partial: boolean): Record<stri
     out.intakeFields = fields;
   }
   if (b.consultationEnabled !== undefined) out.consultationEnabled = b.consultationEnabled === true;
+  if (b.online !== undefined) out.online = b.online === true;
   if (b.active !== undefined) out.active = Boolean(b.active);
   return out;
 }
@@ -172,6 +173,11 @@ export async function putSettings(b: Record<string, unknown>): Promise<{ setting
   }
   if (b.weeklyDigest !== undefined) s.weeklyDigest = b.weeklyDigest === true;
   if (b.reminderEmails !== undefined) s.reminderEmails = b.reminderEmails === true;
+  if (b.meetingUrl !== undefined) {
+    const u = String(b.meetingUrl ?? '').trim();
+    if (u && !/^https:\/\/[^\s]{4,300}$/.test(u)) throw new ApiError(400, 'Meeting links must start with https://');
+    s.meetingUrl = u || null;
+  }
   if (b.followUpEmails !== undefined) s.followUpEmails = b.followUpEmails === true;
   if (b.waitlistEnabled !== undefined) {
     s.waitlistEnabled = b.waitlistEnabled === true;

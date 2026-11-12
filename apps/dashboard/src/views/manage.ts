@@ -8,6 +8,7 @@ import { loadSettings, bookingUrl, clearStore, type Service, type Staff } from '
 import { canAdmin, canEdit, current, loadMe, logout } from '../lib/session';
 import { navigate } from '../router';
 import { hasFeatureAccess } from '../lib/fb/plan';
+import { meetingUsage } from '../lib/fb/meetings';
 import { moneyField, moneyMinor, bindMoney, primeMoney } from '../lib/moneyField';
 import { fetchLiveRates, formatInCurrency, ratesMeta, type SupportedCurrency } from '../lib/fx';
 
@@ -86,6 +87,7 @@ export async function renderServices(view: HTMLElement): Promise<void> {
         ${moneyField({ id: 'sp', label: 'Price', usdMinor: s ? s.priceMinor : 0 })}</div>
         <div class="field"><label for="sx">Description <span class="faint">(optional)</span></label><input class="input" id="sx" maxlength="500" value="${s?.description ?? ''}"></div>
         <div class="form-grid two"><div class="field"><label for="sm">Booking type</label><select class="input" id="sm"><option value="appointment" ${s?.bookingMode !== 'enquiry' ? 'selected' : ''}>Appointment</option><option value="enquiry" ${s?.bookingMode === 'enquiry' ? 'selected' : ''}>Project / service enquiry</option></select></div><div class="field"><label for="sc">Consultation</label><label class="check"><input type="checkbox" id="sc" ${s?.consultationEnabled ? 'checked' : ''}> Offer optional consultation</label></div></div>
+        <label class="check"><input type="checkbox" id="so" ${s?.online ? 'checked' : ''}> Online meeting <span class="faint">(customers get a video link; set your own link in Settings or use ZexCore's calls)</span></label>
         <div class="field"><label for="sf">Custom intake questions (JSON)</label><textarea class="input" id="sf" rows="4" placeholder='[{"key":"project","label":"Describe your project","type":"textarea","required":true}]'>${JSON.stringify(s?.intakeFields ?? [], null, 2)}</textarea><small class="muted">Up to 12 questions. Types: text, textarea, number, url, select. Select fields need options.</small></div>
         ${s ? html`<label class="check"><input type="checkbox" id="sa" ${s.active ? 'checked' : ''}> Show on my booking page</label>` : ''}</form>`,
       footer: html`${s ? html`<button class="btn btn-soft-danger" data-del style="margin-right:auto">${ic('trash-2', 'ico-sm')} Delete</button>` : ''}<button class="btn btn-secondary" data-close>Cancel</button><button class="btn btn-primary" data-save>Save</button>`,
@@ -99,7 +101,7 @@ export async function renderServices(view: HTMLElement): Promise<void> {
         $('[data-save]', el)!.addEventListener('click', () => void busy($('[data-save]', el) as HTMLButtonElement, async () => {
         const body: Record<string, unknown> = { name: ($('#sn', el) as HTMLInputElement).value.trim(), durationMin: Number(($('#sd', el) as HTMLInputElement).value), priceMinor: moneyMinor(el, 'sp'), description: ($('#sx', el) as HTMLInputElement).value.trim() };
         if (s) body.active = ($('#sa', el) as HTMLInputElement).checked;
-        body.bookingMode = ($('#sm', el) as HTMLSelectElement).value; body.consultationEnabled = ($('#sc', el) as HTMLInputElement).checked;
+        body.bookingMode = ($('#sm', el) as HTMLSelectElement).value; body.consultationEnabled = ($('#sc', el) as HTMLInputElement).checked; body.online = ($('#so', el) as HTMLInputElement).checked;
         try { body.intakeFields = JSON.parse(($('#sf', el) as HTMLTextAreaElement).value || '[]'); } catch { const e = $('#se', el)!; e.textContent = 'Custom intake questions must be valid JSON.'; e.classList.remove('hidden'); return; }
         try { await api(s ? `/api/bookings/services/${s.id}` : '/api/bookings/services', { method: s ? 'PATCH' : 'POST', body }); toast('Saved', 'success'); close(); void load(); }
         catch (x) { const e = $('#se', el)!; e.textContent = x instanceof ApiError ? x.message : 'Could not save'; e.classList.remove('hidden'); }
@@ -230,6 +232,12 @@ export async function renderSettings(view: HTMLElement): Promise<void> {
         <div class="row between"><div><b>Appointment reminder</b><div class="muted small">About a day before a confirmed appointment. Not sent for bookings made less than a day ahead.</div></div><label class="switch"><input type="checkbox" id="re" ${s.reminderEmails === true ? 'checked' : ''} ${dis}><span></span></label></div>
         <div class="row between"><div><b>Thank-you after a visit</b><div class="muted small">A day after you mark a booking completed, with a link to book again.</div></div><label class="switch"><input type="checkbox" id="fu" ${s.followUpEmails === true ? 'checked' : ''} ${dis}><span></span></label></div></section>
 
+      <section class="card card-pad form-grid" id="meetings"><h3>Online meetings</h3>
+        <p class="muted small">Mark a service as an online meeting and customers get a video link in their emails. By default ZexCore hosts the call. If you would rather use Google Meet or Zoom, paste your own link and it is used instead.</p>
+        <div class="field"><label for="mu">Your own meeting link <span class="faint">(optional)</span></label><input class="input" id="mu" type="url" inputmode="url" placeholder="https://meet.google.com/abc-defg-hij" value="${s.meetingUrl ?? ''}" ${dis}></div>
+        <p class="muted small" id="mu-usage" aria-live="polite"></p>
+      </section>
+
       <section class="card card-pad form-grid"><h3>Notifications</h3>
         <p class="muted small">Choose how you are told when a customer makes a booking request. Inside ZexCore, the bell and the Bookings and Messages tabs show a count of what is new until you open it.</p>
         <div class="row between"><div><b>Email alerts</b><div class="muted small">Get an email for every new booking request</div></div><label class="switch"><input type="checkbox" id="ne" ${s.notifyOwnerEmail !== false ? 'checked' : ''} ${dis}><span></span></label></div>
@@ -330,6 +338,7 @@ export async function renderSettings(view: HTMLElement): Promise<void> {
     } catch (e) { status.className = 'alert alert-error'; status.textContent = e instanceof Error ? e.message : 'Could not record acceptance.'; }
   }));
 
+  void meetingUsage().then((u) => { const el = $('#mu-usage', view); if (el) el.textContent = u.own ? 'Calls on your own link are not counted.' : u.ready ? `ZexCore video calls this month: ${u.used} of ${u.limit}. Each call lasts up to 30 minutes and renews on the 1st.` : 'ZexCore video calls are not switched on yet, so paste your own link above to host meetings.'; }).catch(() => undefined);
   bindMoney(view, 'depn'); if ($('#rdn', view)) bindMoney(view, 'rdn');
 
   // Upfront deposit toggle visibility
@@ -467,6 +476,7 @@ export async function renderSettings(view: HTMLElement): Promise<void> {
           logoUrl: currentLogo,
           reminderEmails: ($('#re') as HTMLInputElement | null)?.checked ?? false,
           followUpEmails: ($('#fu') as HTMLInputElement | null)?.checked ?? false,
+          meetingUrl: ($('#mu') as HTMLInputElement | null)?.value.trim() ?? '',
           notifyOwnerEmail: ($('#ne') as HTMLInputElement | null)?.checked ?? true,
           notifyOwnerWhatsApp: ($('#nw') as HTMLInputElement | null)?.checked ?? false,
           notifyWhatsAppPhone: ($('#nwp') as HTMLInputElement | null)?.value.trim() || null,

@@ -5,7 +5,7 @@ import { api, ApiError } from '../lib/api';
 import { money, ago } from '../lib/format';
 import { toast, emptyState, errorState, skeletonRows, busy } from '../lib/ui';
 import { current, loadMe, canAdmin } from '../lib/session';
-import { LIMITS, PLATFORM_FEE_PERCENT, hasFeatureAccess, type Tier } from '../lib/fb/plan';
+import { LIMITS, PLATFORM_FEE_PERCENT, CALLS_PER_MONTH, hasFeatureAccess, type Tier } from '../lib/fb/plan';
 
 interface PlanList { currencyRates: { NGN_PER_USD: number }; paystackPublicKey: string | null; plans: { tier: string; monthlyUsd: number | null; annualUsd: number | null; limits: Limits | null }[]; freeLimits: Limits; limitLabels: Labels }
 interface Usage { tier: string; effectiveTier: string; usage: Record<LimitKey, { used: number; limit: number | null }>; labels: Labels }
@@ -20,6 +20,7 @@ function extrasFor(t: string): string[] {
   const tier = t as Tier;
   const out: string[] = [];
   out.push(`Online payments, ${PLATFORM_FEE_PERCENT[tier]}% ZexCore fee`);
+  out.push(`${CALLS_PER_MONTH[tier].toLocaleString('en-US')} video calls a month`);
   if (hasFeatureAccess(tier, 'branding')) out.push('Your own logo');
   if (hasFeatureAccess(tier, 'compliance')) out.push('Data protection tools');
   if (hasFeatureAccess(tier, 'automations')) out.push(`Automations (${cap(tier, 'rules')})`);

@@ -6,13 +6,13 @@ export interface Settings {
   daysOpen: number[]; utcOffsetMinutes: number; leadMinutes: number; maxDaysAhead: number; onboarded: boolean;
   logoUrl?: string | null;
   riskDepositEnabled?: boolean; riskDepositLevel?: 'medium' | 'high'; riskDepositMinor?: number; waitlistEnabled?: boolean; exchangeRateMode?: 'auto' | 'manual'; weeklyDigest?: boolean;
-  notifyOwnerEmail?: boolean; reminderEmails?: boolean; followUpEmails?: boolean; notifyOwnerWhatsApp?: boolean; notifyWhatsAppPhone?: string | null;
+  notifyOwnerEmail?: boolean; reminderEmails?: boolean; meetingUrl?: string | null; followUpEmails?: boolean; notifyOwnerWhatsApp?: boolean; notifyWhatsAppPhone?: string | null;
 }
-export interface Service { id: string; name: string; description: string | null; durationMin: number; priceMinor: number; active: boolean; bookingMode?: 'appointment' | 'enquiry'; intakeFields?: { key: string; label: string; type: 'text'|'textarea'|'select'|'number'|'url'; required: boolean; options?: string[] }[]; consultationEnabled?: boolean }
+export interface Service { online?: boolean; id: string; name: string; description: string | null; durationMin: number; priceMinor: number; active: boolean; bookingMode?: 'appointment' | 'enquiry'; intakeFields?: { key: string; label: string; type: 'text'|'textarea'|'select'|'number'|'url'; required: boolean; options?: string[] }[]; consultationEnabled?: boolean }
 export interface Staff { id: string; name: string; title: string | null; active: boolean }
 export interface Booking {
   id: string; ref: string; status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
-  serviceId: string; serviceName?: string; durationMin?: number; staffId: string | null; staffName: string | null;
+  online?: boolean; serviceId: string; serviceName?: string; durationMin?: number; staffId: string | null; staffName: string | null;
   customerName: string; customerPhone: string; customerEmail: string | null; startsAt: string; endsAt: string;
   currency: string; priceMinor: number; depositMinor: number; depositStatus: 'none' | 'unpaid' | 'paid' | 'refunded' | 'mismatch';
   paymentReference: string | null; notes: string | null; source: string;

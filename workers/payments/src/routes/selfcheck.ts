@@ -85,6 +85,14 @@ export async function buildChecks(c: Ctx): Promise<Check[]> {
     return { status: 'ok', detail: pending!.length ? `${pending!.length} email${pending!.length === 1 ? ' is' : 's are'} waiting to be sent or retried.` : 'Nothing is stuck.' };
   }, 'outbox'));
 
+  checks.push(attempt('Video calls (Daily)', async () => {
+    if (!set(env.DAILY_API_KEY)) return { status: 'off', detail: 'Daily is not set up, so only a business\'s own meeting link works. Calls inside ZexCore are off.', fix: 'Create a Daily account, then run npx wrangler secret put DAILY_API_KEY.' };
+    const r = await d.fetch('https://api.daily.co/v1/rooms?limit=1', { headers: { authorization: `Bearer ${env.DAILY_API_KEY}` } });
+    if (r.status === 401 || r.status === 403) return { status: 'fail', detail: 'Daily rejected the API key.', fix: 'Copy the key again from Daily, Developers, then run npx wrangler secret put DAILY_API_KEY.' };
+    if (!r.ok) return { status: 'warn', detail: `Daily answered with an error (${r.status}).` };
+    return { status: 'ok', detail: 'Daily accepted the key. A booking for an online service opens a room when someone joins.' };
+  }, 'daily'));
+
   checks.push(attempt('Photo uploads (Cloudinary)', async () => {
     const cloud = (env.CLOUDINARY_CLOUD_NAME ?? '').trim(), key = (env.CLOUDINARY_API_KEY ?? '').trim(), secret = (env.CLOUDINARY_API_SECRET ?? '').trim();
     const missing = [!cloud && 'CLOUDINARY_CLOUD_NAME', !key && 'CLOUDINARY_API_KEY', !secret && 'CLOUDINARY_API_SECRET'].filter(Boolean);

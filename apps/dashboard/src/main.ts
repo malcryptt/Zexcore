@@ -58,7 +58,7 @@ function setMeta(path: string): void {
     canon.href = SITE + (path === '/' ? '/' : path);
   } else {
     canon?.remove();
-    if (['/signin', '/signup', '/forgot-password', '/reset-password', '/verify-email', '/accept-invite'].includes(path) || path.startsWith('/app')) {
+    if (['/signin', '/signup', '/forgot-password', '/reset-password', '/verify-email', '/accept-invite'].includes(path) || path.startsWith('/app') || path.startsWith('/meet/')) {
       if (!robots) { robots = document.createElement('meta'); robots.name = 'robots'; head.appendChild(robots); }
       robots.content = 'noindex, nofollow';
     } else robots?.remove();
@@ -95,6 +95,11 @@ legacyRoute('/multi-tenancy', 'tenancy');
 legacyRoute('/automation', 'automation');
 legacyRoute('/modules', 'modules');
 legacyRoute('/solutions', 'solutions');
+route('/meet/:wid/:bid/:key', async (ctx) => {
+  clearLegacySiteStyles();
+  const { renderGuestMeet } = await import('./views/meet');
+  await renderGuestMeet(ctx.params.wid!, ctx.params.bid!, ctx.params.key!);
+});
 route('/solutions/:industry', async (ctx) => {
   const { renderLegacySite } = await import('./legacySite');
   const { renderIndustryPage } = await import('./pages/industry');
@@ -142,7 +147,7 @@ const handleAuthAction = (ctx: { query: URLSearchParams }) => {
 route('/auth/action', handleAuthAction);
 route('/__/auth/action', handleAuthAction);
 
-const appRoute = (path: string, loader: () => Promise<(view: HTMLElement, ctx: { query: URLSearchParams }) => Promise<void> | void>) =>
+const appRoute = (path: string, loader: () => Promise<(view: HTMLElement, ctx: { query: URLSearchParams; params: Record<string, string> }) => Promise<void> | void>) =>
   route(path, async (ctx) => {
     clearLegacySiteStyles();
     const [view, render] = await Promise.all([
@@ -159,6 +164,7 @@ const appRoute = (path: string, loader: () => Promise<(view: HTMLElement, ctx: {
 
 route('/app/onboarding', async () => { const { renderOnboarding } = await import('./views/onboarding'); await renderOnboarding(); });
 appRoute('/app', () => import('./views/home').then((m) => m.renderHome));
+appRoute('/app/meet/:id', () => import('./views/meet').then((m) => (v, c) => m.renderMeet(v, c.params.id!)));
 appRoute('/app/bookings', () => import('./views/bookings').then((m) => m.renderBookings));
 appRoute('/app/enquiries', () => import('./views/enquiries').then((m) => m.renderEnquiries));
 appRoute('/app/calendar', () => import('./views/calendar').then((m) => (v, c) => m.renderCalendar(v, c.query.get('date'))));
