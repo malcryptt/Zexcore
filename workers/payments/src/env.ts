@@ -38,6 +38,8 @@ export interface Env {
   LICENSE_PRIVATE_JWK?: string;
   /** Secret: comma-separated e-mail addresses of platform admins, who may grant plans without payment. Their e-mail must also be verified. */
   PLATFORM_ADMIN_EMAILS?: string;
+  /** Secret: Daily API key. Switches in-dashboard video calls on; without it only a business's own meeting link works. */
+  DAILY_API_KEY?: string;
   /** Where dedicated-cluster requests are emailed (our sales inbox). Without it requests are still stored. */
   SALES_EMAIL?: string;
 }

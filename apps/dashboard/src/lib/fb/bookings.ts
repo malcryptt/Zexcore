@@ -11,6 +11,7 @@ export interface BookingDto {
   id: string; ref: string; status: string; serviceId: string; serviceName: string; durationMin: number; staffId: string | null; staffName: string | null;
   customerName: string; customerPhone: string; customerEmail: string | null; startsAt: string; endsAt: string; currency: string; priceMinor: number;
   depositMinor: number; depositStatus: 'none' | 'unpaid' | 'paid' | 'refunded'; paymentReference: string | null; notes: string | null; intakeAnswers?: Record<string,string>; consultationRequested?: boolean; source: string; createdAt: string | null;
+  online?: boolean;
   risk: { score: number; level: 'low' | 'medium' | 'high'; reasons: string[] } | null;
 }
 
@@ -30,7 +31,7 @@ function toDto(d: QueryDocumentSnapshot, svcs: Map<string, ServiceDto>, staff: M
   const x = d.data();
   const s = svcs.get(x.serviceId), p = staff.get(x.staffId);
   return {
-    id: d.id, ref: refOf(d.id), status: x.status, serviceId: x.serviceId, serviceName: s?.name ?? 'Removed service', durationMin: s?.durationMin ?? Math.round((x.endsAt.toMillis() - x.startsAt.toMillis()) / 60000),
+    id: d.id, ref: refOf(d.id), status: x.status, serviceId: x.serviceId, serviceName: s?.name ?? 'Removed service', online: s?.online === true, durationMin: s?.durationMin ?? Math.round((x.endsAt.toMillis() - x.startsAt.toMillis()) / 60000),
     staffId: x.staffId ?? null, staffName: p?.name ?? null, customerName: x.customerName, customerPhone: x.customerPhone, customerEmail: x.customerEmail ?? null,
     startsAt: iso(x.startsAt)!, endsAt: iso(x.endsAt)!, currency: 'USD', priceMinor: s?.priceMinor ?? 0, ...deposit(x, s?.priceMinor ?? 0, dep),
     notes: x.notes ?? null, intakeAnswers: x.intakeAnswers && typeof x.intakeAnswers === 'object' ? x.intakeAnswers : {}, consultationRequested: x.consultationRequested === true, source: x.source ?? 'staff', createdAt: iso(x.createdAt),

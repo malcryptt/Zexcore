@@ -11,6 +11,7 @@ import plus from 'lucide-static/icons/plus.svg?raw';
 import bell from 'lucide-static/icons/bell.svg?raw';
 import search from 'lucide-static/icons/search.svg?raw';
 import phone from 'lucide-static/icons/phone.svg?raw';
+import video from 'lucide-static/icons/video.svg?raw';
 import copy from 'lucide-static/icons/copy.svg?raw';
 import share2 from 'lucide-static/icons/share-2.svg?raw';
 import check from 'lucide-static/icons/check.svg?raw';
@@ -113,6 +114,7 @@ const ICONS: Record<string, string> = {
   'bell': bell,
   'search': search,
   'phone': phone,
+  'video': video,
   'copy': copy,
   'share-2': share2,
   'check': check,
@@ -185,7 +187,7 @@ const ICONS: Record<string, string> = {
   'calendar-check': calendarCheck,
 };
 
-export type IconName = 'house' | 'calendar' | 'calendar-days' | 'message-square' | 'ellipsis' | 'plus' | 'bell' | 'search' | 'phone' | 'copy' | 'share-2' | 'check' | 'circle-check' | 'x' | 'chevron-right' | 'chevron-down' | 'chevron-left' | 'arrow-left' | 'arrow-right' | 'clock' | 'user' | 'users' | 'mail' | 'lock' | 'eye' | 'eye-off' | 'shield-check' | 'zap' | 'credit-card' | 'receipt' | 'banknote' | 'settings' | 'scissors' | 'building-2' | 'truck' | 'shopping-bag' | 'sparkles' | 'stethoscope' | 'triangle-alert' | 'send' | 'ellipsis-vertical' | 'log-out' | 'history' | 'activity' | 'cpu' | 'radio' | 'thermometer' | 'file-text' | 'globe' | 'link' | 'refresh-cw' | 'circle-alert' | 'check-check' | 'badge-check' | 'trash-2' | 'pencil' | 'store' | 'rotate-ccw' | 'bot' | 'message-circle' | 'log-in' | 'wallet' | 'list-checks' | 'sliders-horizontal' | 'external-link' | 'info' | 'menu' | 'map-pin' | 'database' | 'workflow' | 'layers' | 'server' | 'key-round' | 'fingerprint' | 'scale' | 'rocket' | 'package' | 'id-card' | 'calendar-check' | 'handshake' | 'play' | 'kanban' | 'siren' | 'download' | 'rotate-cw' | 'clipboard-list' | 'target' | 'circle-x' | 'upload';
+export type IconName = 'house' | 'calendar' | 'calendar-days' | 'message-square' | 'ellipsis' | 'plus' | 'bell' | 'search' | 'phone' | 'video' | 'copy' | 'share-2' | 'check' | 'circle-check' | 'x' | 'chevron-right' | 'chevron-down' | 'chevron-left' | 'arrow-left' | 'arrow-right' | 'clock' | 'user' | 'users' | 'mail' | 'lock' | 'eye' | 'eye-off' | 'shield-check' | 'zap' | 'credit-card' | 'receipt' | 'banknote' | 'settings' | 'scissors' | 'building-2' | 'truck' | 'shopping-bag' | 'sparkles' | 'stethoscope' | 'triangle-alert' | 'send' | 'ellipsis-vertical' | 'log-out' | 'history' | 'activity' | 'cpu' | 'radio' | 'thermometer' | 'file-text' | 'globe' | 'link' | 'refresh-cw' | 'circle-alert' | 'check-check' | 'badge-check' | 'trash-2' | 'pencil' | 'store' | 'rotate-ccw' | 'bot' | 'message-circle' | 'log-in' | 'wallet' | 'list-checks' | 'sliders-horizontal' | 'external-link' | 'info' | 'menu' | 'map-pin' | 'database' | 'workflow' | 'layers' | 'server' | 'key-round' | 'fingerprint' | 'scale' | 'rocket' | 'package' | 'id-card' | 'calendar-check' | 'handshake' | 'play' | 'kanban' | 'siren' | 'download' | 'rotate-cw' | 'clipboard-list' | 'target' | 'circle-x' | 'upload';
 
 /** Inline SVG for an icon. `cls` adds size/colour utility classes (e.g. 'ico-sm'). */
 export function icon(name: IconName, cls = ''): string {

@@ -1,5 +1,5 @@
 /** Pricing: generated from the same constants the database rules and payments Worker use, so the page cannot drift from reality. */
-import { LIMITS, PLATFORM_FEE_PERCENT, PRICES, hasFeatureAccess, type Tier } from '../lib/fb/plan';
+import { LIMITS, PLATFORM_FEE_PERCENT, CALLS_PER_MONTH, PRICES, hasFeatureAccess, type Tier } from '../lib/fb/plan';
 import { block, cta, intro, shell, table } from './ref';
 
 const usd = (amount: number): string => '$' + amount.toLocaleString('en-US');
@@ -45,6 +45,7 @@ export function renderPricingPage(): string {
         ['Shop products (with photos)', ...tiers.map((t) => lim(LIMITS[t].products, t))],
         ['Booking deposits paid by card (Paystack)', ...tiers.map(() => 'Included')],
         ['Customers pay online for shop orders', ...tiers.map(() => 'Included')],
+        ['Video calls a month (up to 30 minutes each)', ...tiers.map((t) => CALLS_PER_MONTH[t as Tier].toLocaleString('en-US'))],
         ['ZexCore fee on each online payment (Paystack\'s fee is separate)', ...tiers.map((t) => `${PLATFORM_FEE_PERCENT[t as Tier]}%`)],
         ['Reminder and thank-you emails to customers', ...tiers.map(() => 'Included')],
         ['Sign-in alerts and device list (Security Watch)', ...tiers.map(() => 'Included')],
