@@ -22,6 +22,7 @@ const NAV: { label?: string; items: { href?: string; icon: IconName; text: strin
   { label: 'Business', items: [
     { href: '/app/services', icon: 'list-checks', text: 'Services' },
     { href: '/app/shop', icon: 'shopping-bag', text: 'Shop', key: 'shop' },
+    { href: '/app/calls', icon: 'video', text: 'Calls' },
     { href: '/app/enquiries', icon: 'mail', text: 'Service enquiries', key: 'enq' },
     { href: '/app/team', icon: 'id-card', text: 'Bookable staff' },
     { href: '/app/access', icon: 'users', text: 'Team access' },

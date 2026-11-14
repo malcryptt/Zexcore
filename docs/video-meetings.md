@@ -53,3 +53,14 @@ Then Billing, System check: the **Video calls (Daily)** line should be OK.
 
 `firebase.json` allows camera, microphone and screen sharing only for `https://*.daily.co` (the call frame), and lists
 `*.daily.co` in `frame-src`. The rest of the site still cannot use the camera.
+
+## Scheduled call requests
+
+For high-trust or high-value work (clinics, large orders) a business can let customers ask for a scheduled video call.
+
+- **Settings → Online meetings → Let customers request a call.** The threshold defaults to ₦100,000 (stored in USD cents at the rate when saved) and can be changed or set to 0, which offers calls only on services marked **Always offer a call**.
+- **Bookings:** the booking page offers "Request a call / No thanks" when the service price is at or above the threshold, or the service is marked always-offer. **Shop:** the checkout offers it when the order total is at or above the threshold. Declining, or a failed request, never blocks the booking or order.
+- The customer may suggest a time. The request is stored in `workspaces/{wid}/calls/{c_b_<bookingId>|c_o_<orderId>}` (Worker-only writes) and the owner is emailed. The owner opens **Calls**, confirms or changes the time (or declines), and the customer is emailed the time and a join link.
+- **Reminders:** a second Worker cron, `*/5 * * * *`, emails the customer and the owner once when a scheduled call is within 30 minutes. Re-scheduling re-arms the reminder. Redeploy the Worker (`npx wrangler deploy`) after pulling so the new trigger is registered.
+- **Joining** uses the same rooms, windows (customer 15 min before to 90 after; team 60 min before to 4 h after), own-link override, and monthly allowance as online bookings. A call counts only when someone joins.
+- A request must be made within 2 hours of the booking/order, and is idempotent per booking/order.

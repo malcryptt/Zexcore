@@ -9,7 +9,7 @@ import { DEMO_SLUG, demoBook, demoProfile, demoSlots } from './demo';
 
 interface PublicPage {
   wid: string; name: string; phone: string | null; address: string | null; openMinutes: number; closeMinutes: number; slotMinutes: number;
-  daysOpen: number[]; leadMinutes: number; maxDaysAhead: number; bookingCap: number; bookingEnabled: boolean; depositEnabled: boolean; depositMinor: number; exchangeRate: number; rateAuto: boolean; riskDeposit: boolean; waitlist: boolean;
+  daysOpen: number[]; leadMinutes: number; maxDaysAhead: number; bookingCap: number; bookingEnabled: boolean; depositEnabled: boolean; depositMinor: number; exchangeRate: number; rateAuto: boolean; riskDeposit: boolean; waitlist: boolean; callRequests: boolean; callThresholdMinor: number;
   currency?: string; logoUrl?: string | null;
 }
 const cache = new Map<string, { at: number; page: PublicPage }>();
@@ -28,7 +28,7 @@ async function page(slug: string): Promise<PublicPage> {
     daysOpen: [0, 1, 2, 3, 4, 5, 6].filter((x) => !closed.includes(x)), leadMinutes: d.leadMinutes ?? 60, maxDaysAhead: Math.min(d.maxDaysAhead ?? 60, 120),
     bookingCap: Math.max(1, Math.min(Number(d.bookingCap) || 30, 999_999)), bookingEnabled: true,
     exchangeRate: Number(d.exchangeRate) > 0 ? Number(d.exchangeRate) : getCachedNgnRate(), rateAuto: !(Number(d.exchangeRate) > 0),
-    riskDeposit: d.riskDeposit === true, waitlist: d.waitlist === true,
+    riskDeposit: d.riskDeposit === true, waitlist: d.waitlist === true, callRequests: d.callRequests === true, callThresholdMinor: Math.max(0, Number(d.callThresholdMinor) || 0),
     depositEnabled: d.depositEnabled === true && Number(d.depositMinor) > 0, depositMinor: d.depositEnabled === true ? Math.max(0, Number(d.depositMinor) || 0) : 0,
     currency: (d.currency as string) || 'USD',
     logoUrl: typeof d.logoUrl === 'string' && /^data:image\/(png|jpeg|svg\+xml|webp);base64,/.test(d.logoUrl) && d.logoUrl.length < 150_000 ? d.logoUrl : null,
@@ -45,7 +45,7 @@ async function catalog(wid: string) {
     getDocs(query(collection(db, 'workspaces', wid, 'staff'), orderBy('seq'))),
   ]);
   return {
-    services: s.docs.filter((d) => d.data().active !== false).map((d) => ({ id: d.id, name: d.data().name as string, description: (d.data().description ?? null) as string | null, durationMin: d.data().durationMin as number, priceMinor: (d.data().priceMinor ?? 0) as number, bookingMode: d.data().bookingMode === 'enquiry' ? 'enquiry' : 'appointment', intakeFields: Array.isArray(d.data().intakeFields) ? d.data().intakeFields : [], consultationEnabled: d.data().consultationEnabled === true })),
+    services: s.docs.filter((d) => d.data().active !== false).map((d) => ({ id: d.id, name: d.data().name as string, description: (d.data().description ?? null) as string | null, durationMin: d.data().durationMin as number, priceMinor: (d.data().priceMinor ?? 0) as number, bookingMode: d.data().bookingMode === 'enquiry' ? 'enquiry' : 'appointment', intakeFields: Array.isArray(d.data().intakeFields) ? d.data().intakeFields : [], consultationEnabled: d.data().consultationEnabled === true, offerCall: d.data().offerCall === true })),
     products: (await getDocs(query(collection(db, 'workspaces', wid, 'products'), where('active', '==', true))).catch(() => ({ docs: [] as QueryDocumentSnapshot[] }))).docs.sort((a, b) => Number(a.data().seq ?? 0) - Number(b.data().seq ?? 0)).map((d) => ({ id: d.id, name: d.data().name as string, description: (d.data().description ?? null) as string | null, priceMinor: Number(d.data().priceMinor) || 0, inStock: d.data().inStock !== false, imageUrl: (typeof d.data().imageUrl === 'string' && d.data().imageUrl.startsWith('https://res.cloudinary.com/') ? d.data().imageUrl : null) as string | null })),
     staff: t.docs.filter((d) => d.data().active !== false).map((d) => ({ id: d.id, name: d.data().name as string, title: (d.data().title ?? null) as string | null })),
   };
@@ -58,6 +58,7 @@ export async function profile(slug: string): Promise<unknown> {
   return {
     business: { slug, name: p.name, logoUrl: p.logoUrl ?? null, type: 'business', phone: p.phone, address: p.address, currency: p.currency || 'USD' }, currency: p.currency || 'USD', rateAuto: p.rateAuto, exchangeRate: p.exchangeRate, deposit: { enabled: p.depositEnabled, amountMinor: p.depositMinor }, waitlist: p.waitlist,
     hours: { openMinutes: p.openMinutes, closeMinutes: p.closeMinutes, daysOpen: p.daysOpen, utcOffsetMinutes: 60, maxDaysAhead: p.maxDaysAhead },
+    calls: { enabled: p.callRequests, thresholdMinor: p.callThresholdMinor },
     paystackPublicKey: null, services: cat.services, staff: cat.staff, products: cat.products,
   };
 }
@@ -122,7 +123,9 @@ export async function book(slug: string, b: Record<string, unknown>): Promise<un
   });
   // Tell the Worker so the owner is notified and approved automations run. Best effort: the booking already exists.
   if (paymentsUrl()) void fetch(`${paymentsUrl()}/api/public/booked`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ slug, bookingId: made.id }) }).catch(() => undefined);
-  const booking = { ref: refOf(made.id), status: 'pending', startsAt: made.startsAt, serviceName: service.name };
+  const callWanted = wantsCall(b);
+  const callSent = callWanted ? await requestCall(slug, { kind: 'booking', refId: made.id, ...callWanted }).then(() => true, () => false) : undefined;
+  const booking = { ref: refOf(made.id), status: 'pending', startsAt: made.startsAt, serviceName: service.name, ...(callWanted ? { callRequested: callSent === true } : {}) };
   // With risk protection on, the Worker decides after scoring this booking whether a deposit is due; it answers 409 when not.
   if (!(p.depositEnabled || p.riskDeposit) || !paymentsUrl()) return { booking, payment: null };
   // The Worker creates the Paystack checkout (amount is decided server-side from the business's own settings).
@@ -151,17 +154,21 @@ export async function joinWaitlist(slug: string, b: Record<string, unknown>): Pr
 const orderIds = new Map<string, string>();
 export async function placeOrder(slug: string, b: Record<string, unknown>): Promise<unknown> {
   await page(slug);
+  const { callRequest: _cr, ...orderBody } = b;   // the call request goes to its own endpoint, after the order exists
+  void _cr;
   const sig = `${slug}|${JSON.stringify(b)}`;
   let requestId = orderIds.get(sig);
   if (!requestId) { requestId = crypto.randomUUID(); orderIds.set(sig, requestId); }
   const base = paymentsUrl();
   if (!base) throw new ApiError(503, 'Ordering is not available right now.', 'unavailable');
   let r: Response;
-  try { r = await fetch(`${base}/api/public/order`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...b, slug, requestId }) }); }
+  try { r = await fetch(`${base}/api/public/order`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...orderBody, slug, requestId }) }); }
   catch { throw new ApiError(0, 'Cannot reach the server. Check your connection.', 'network'); }
   const j = (await r.json().catch(() => ({}))) as Record<string, unknown> & { error?: string };
   if (!r.ok) throw new ApiError(r.status, j.error ?? 'Could not send your order.');
   orderIds.delete(sig);
+  const callWanted = wantsCall(b);
+  if (callWanted && typeof j.id === 'string') j.callRequested = await requestCall(slug, { kind: 'order', refId: j.id, ...callWanted }).then(() => true, () => false);
   return j;
 }
 
@@ -194,4 +201,25 @@ export async function payment(slug: string, ref: string): Promise<unknown> {
   const j = (await r.json().catch(() => ({}))) as Record<string, unknown> & { error?: string };
   if (!r.ok) throw new ApiError(r.status, j.error ?? 'Payment not found', r.status === 404 ? 'not_found' : undefined);
   return j;
+}
+
+/** Ask for a scheduled video call about a booking or order that was just made. Best effort: it never undoes the booking or order. */
+export async function requestCall(slug: string, b: { kind: 'booking' | 'order'; refId: string; preferredAt?: string | null; note?: string }): Promise<void> {
+  const base = paymentsUrl();
+  if (!base) throw new ApiError(503, 'Call requests are not available right now.', 'unavailable');
+  let r: Response;
+  try { r = await fetch(`${base}/api/public/call-request`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...b, slug }) }); }
+  catch { throw new ApiError(0, 'Cannot reach the server. Check your connection.', 'network'); }
+  if (!r.ok) { const j = (await r.json().catch(() => ({}))) as { error?: string }; throw new ApiError(r.status, j.error ?? 'Could not send your call request.'); }
+}
+
+/** Whether a call is offered for something costing `priceMinor` (USD cents) on this page. Mirrors the Worker's check, which has the final say. */
+export const callOffered = (calls: { enabled: boolean; thresholdMinor: number } | undefined, priceMinor: number, always = false): boolean =>
+  !!calls?.enabled && (always || (calls.thresholdMinor > 0 && priceMinor >= calls.thresholdMinor));
+
+/** Reads the optional `callRequest: { preferredAt, note }` a page attaches when the customer chose "Request a call". */
+function wantsCall(b: Record<string, unknown>): { preferredAt: string | null; note?: string } | null {
+  const c = b.callRequest as { preferredAt?: unknown; note?: unknown } | undefined;
+  if (!c || typeof c !== 'object') return null;
+  return { preferredAt: typeof c.preferredAt === 'string' && c.preferredAt ? c.preferredAt : null, ...(typeof c.note === 'string' && c.note ? { note: c.note } : {}) };
 }

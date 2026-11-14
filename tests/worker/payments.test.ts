@@ -1,4 +1,5 @@
 import { joinKey } from '../../workers/payments/src/routes/meetings.js';
+import { scheduledCallReminders } from '../../workers/payments/src/routes/calls.js';
 import { scoreRisk } from '../../workers/payments/src/risk';
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { creditDays } from '../../workers/payments/src/routes/billing.js';
@@ -1953,5 +1954,108 @@ describe('video meetings', () => {
     expect(await sendCustomerEmails(env, { fetch: mockFetch(), now: () => NOW }, X, 'reminder')).toBe(1);
     const m = emails.at(-1); const body = String(m.html ?? '') + String(m.text ?? '');
     expect(body).toContain(`/meet/${X}/${BK}/${await joinKey(env, X, BK)}`); expect(body).toMatch(/Join the meeting/);
+  });
+});
+
+describe('scheduled call requests', () => {
+  const X = 'wscall00000000000001';
+  const BK = '202611_9';
+  const CID = `c_b_${BK}`;
+  const at = (min: number) => new Date(NOW.getTime() + min * 60_000);
+  const pub = (path: string, body: object) => call(path, { headers: { 'content-type': 'application/json', origin: 'https://zexcore.com.ng' }, body: JSON.stringify(body) });
+  const seed = (over: { settings?: Record<string, unknown>; svc?: Record<string, unknown>; bk?: Record<string, unknown> } = {}) => {
+    seedDoc(`slugs/call-biz`, { wid: X });
+    seedDoc(`workspaces/${X}`, { name: 'Call Clinic', plan: 'free', ownerUid: 'owner1', slug: 'call-biz', settings: { callRequests: true, callThresholdMinor: 10000, utcOffsetMinutes: 60, ...over.settings } });
+    seedDoc(`workspaces/${X}/members/owner1`, { role: 'owner', name: 'Sade', email: 'sade@example.com' });
+    seedDoc(`workspaces/${X}/services/s_0`, { name: 'Surgery consult', priceMinor: 20000, ...over.svc });
+    seedDoc(`workspaces/${X}/bookings/${BK}`, { source: 'public', status: 'new', serviceId: 's_0', customerName: 'Ada Obi', customerEmail: 'ada@example.com', customerPhone: '0803', startsAt: at(2000), createdAt: at(-5), ...over.bk });
+  };
+  const req = (o: object = {}) => pub('/api/public/call-request', { slug: 'call-biz', kind: 'booking', refId: BK, preferredAt: at(3000).toISOString(), note: 'After work please', ...o });
+  const respond = async (o: object) => call('/api/calls/respond', { headers: await authed(), body: JSON.stringify({ workspaceId: X, callId: CID, ...o }) });
+  const status = () => fromFs(store.get(`workspaces/${X}/calls/${CID}`)?.fields.status);
+  beforeEach(() => { dailyCalls = []; dailyStatus = 200; env = { ...env, DAILY_API_KEY: 'daily_test_key', RESEND_API_KEY: 're_test' }; emails = []; });
+
+  it('records a request, emails the business and acknowledges the customer', async () => {
+    seed();
+    const r = await req(); expect(r.status).toBe(201);
+    expect(status()).toBe('requested');
+    expect(emails.map((e) => e.to[0]).sort()).toEqual(['ada@example.com', 'sade@example.com']);
+  });
+
+  it('is idempotent: asking twice creates and emails once', async () => {
+    seed(); await req(); const n = emails.length;
+    const again = await req(); expect(((await again.json()) as any).duplicate).toBe(true);
+    expect(emails).toHaveLength(n);
+  });
+
+  it('refuses when calls are off, the price is below the threshold, or the booking is old', async () => {
+    seed({ settings: { callRequests: false } }); expect((await req()).status).toBe(409);
+    seed({ svc: { priceMinor: 500 } }); expect((await req()).status).toBe(409);
+    seed({ svc: { priceMinor: 500, offerCall: true } }); expect((await req()).status).toBe(201);
+    store.delete(`workspaces/${X}/calls/${CID}`);
+    seed({ bk: { createdAt: at(-600) } }); expect((await req()).status).toBe(404);
+  });
+
+  it('rejects a past preferred time', async () => {
+    seed(); expect((await req({ preferredAt: at(-30).toISOString() })).status).toBe(400);
+  });
+
+  it('works for shop orders over the threshold', async () => {
+    seed(); seedDoc(`workspaces/${X}/orders/abc123def456`, { ref: 'ZO-ABCDEF', totalMinor: 50000, customerName: 'Tolu', customerEmail: 'tolu@example.com', customerPhone: '0801', createdAt: at(-2) });
+    const r = await req({ kind: 'order', refId: 'abc123def456' }); expect(r.status).toBe(201);
+    expect(fromFs(store.get(`workspaces/${X}/calls/c_o_abc123def456`)?.fields.kind)).toBe('order');
+    seedDoc(`workspaces/${X}/orders/small123456`, { ref: 'ZO-SMALL', totalMinor: 100, customerName: 'T', createdAt: at(-2) });
+    expect((await req({ kind: 'order', refId: 'small123456' })).status).toBe(409);
+  });
+
+  it('only the team can answer, and confirming emails the customer a join link', async () => {
+    seed(); await req(); emails = [];
+    const denied = await call('/api/calls/respond', { headers: await authed({ sub: 'stranger' }), body: JSON.stringify({ workspaceId: X, callId: CID, action: 'confirm', scheduledAt: at(120).toISOString() }) });
+    expect(denied.status).toBeGreaterThanOrEqual(401);
+    expect((await respond({ action: 'confirm', scheduledAt: at(-600).toISOString() })).status).toBe(400);
+    expect((await respond({ action: 'confirm', scheduledAt: at(120).toISOString() })).status).toBe(200);
+    expect(status()).toBe('scheduled');
+    const m = emails.at(-1); expect(m.to[0]).toBe('ada@example.com');
+    expect(String(m.html) + String(m.text)).toContain(`/meet/${X}/${CID}/${await joinKey(env, X, CID)}`);
+  });
+
+  it('declining sends a polite note and closes it; a scheduled call can be cancelled', async () => {
+    seed(); await req(); emails = [];
+    expect((await respond({ action: 'cancel' })).status).toBe(409);
+    expect((await respond({ action: 'decline' })).status).toBe(200); expect(status()).toBe('declined');
+    expect(emails.at(-1).to[0]).toBe('ada@example.com');
+    expect((await respond({ action: 'confirm', scheduledAt: at(120).toISOString() })).status).toBe(409);
+  });
+
+  it('emails both sides once, about 30 minutes before, and again if the time moves', async () => {
+    seed(); await req();
+    await respond({ action: 'confirm', scheduledAt: at(120).toISOString() }); emails = [];
+    const deps = (m: number) => ({ fetch: mockFetch(), now: () => at(m) });
+    expect(await scheduledCallReminders(env, deps(0))).toBe(0);                    // two hours out: too early
+    expect(await scheduledCallReminders(env, deps(95))).toBe(2);                   // 25 minutes out
+    expect(emails.map((e) => e.to[0]).sort()).toEqual(['ada@example.com', 'sade@example.com']);
+    expect(await scheduledCallReminders(env, deps(97))).toBe(0);                   // not twice
+    await respond({ action: 'confirm', scheduledAt: at(140).toISOString() });      // moved
+    expect(await scheduledCallReminders(env, deps(115))).toBe(2);
+  });
+
+  it('does not remind about a cancelled call', async () => {
+    seed(); await req(); await respond({ action: 'confirm', scheduledAt: at(20).toISOString() }); await respond({ action: 'cancel' }); emails = [];
+    expect(await scheduledCallReminders(env, { fetch: mockFetch(), now: () => NOW })).toBe(0);
+  });
+
+  it('a scheduled call opens its room for the customer 15 minutes before and counts toward the allowance', async () => {
+    seed(); await req(); await respond({ action: 'confirm', scheduledAt: at(60).toISOString() });
+    const key = await joinKey(env, X, CID);
+    const early = await pub('/api/public/meeting', { workspaceId: X, bookingId: CID, key }); expect(early.status).toBe(409);
+    const later = (m: number) => handle(new Request('https://pay.example.workers.dev/api/public/meeting', { method: 'POST', headers: { 'content-type': 'application/json', origin: 'https://zexcore.com.ng' }, body: JSON.stringify({ workspaceId: X, bookingId: CID, key }) }), env, { fetch: mockFetch(), now: () => at(m) });
+    const ok = await later(50); expect(ok.status).toBe(200);
+    expect(fromFs(store.get(`meetingUsage/${X}_202611`)?.fields.count)).toBe(1);
+    expect((await pub('/api/public/meeting', { workspaceId: X, bookingId: CID, key: '0'.repeat(24) })).status).toBe(404);
+  });
+
+  it('an unscheduled request cannot be joined', async () => {
+    seed(); await req();
+    expect((await pub('/api/public/meeting', { workspaceId: X, bookingId: CID, key: await joinKey(env, X, CID) })).status).toBe(409);
   });
 });

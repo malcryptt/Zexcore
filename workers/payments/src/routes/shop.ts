@@ -72,7 +72,7 @@ export async function placeOrder(c: Ctx): Promise<Response> {
   const requestId = String(b.requestId ?? '');
   const id = REQUEST_ID_RE.test(requestId) ? (await sha256Hex(`${wid}:${requestId}`)).slice(0, 16) : randomHex(8);
   const again = mine.find((o) => o.id === id);
-  if (again) return json({ ok: true, ref: String(again.data.ref), totalMinor: Number(again.data.totalMinor) || 0, duplicate: true }, 200, c.headers);   // same order sent twice
+  if (again) return json({ ok: true, id, ref: String(again.data.ref), totalMinor: Number(again.data.totalMinor) || 0, duplicate: true }, 200, c.headers);   // same order sent twice
   if (mine.filter((o) => o.data.customerPhone === phone && o.data.status === 'new').length >= MAX_OPEN_PER_PHONE) throw new HttpError(429, 'You already have orders waiting for this business to confirm. Please wait for them to contact you.', 'busy');
   const open = await fsQuery(c.env, c.d, { parent: `workspaces/${wid}`, collection: 'orders', where: [{ field: 'status', op: 'EQUAL', value: 'new' }], limit: MAX_OPEN_ORDERS + 1 });
   if (open.filter((o) => o.data.status === 'new').length >= MAX_OPEN_ORDERS) throw new HttpError(429, 'This shop has a lot of waiting orders right now. Please try again later.', 'busy');
@@ -93,8 +93,8 @@ export async function placeOrder(c: Ctx): Promise<Response> {
   try {
     await fsCommit(c.env, c.d, [{ path: `workspaces/${wid}/orders/${id}`, precondition: { exists: false },
       fields: { ref, customerName: name, customerPhone: phone, customerEmail: email || null, address, notes: notes || null, items, totalMinor, status: pay ? 'awaiting_payment' : 'new', paymentStatus: pay ? 'unpaid' : 'none', createdAt: c.d.now() } }]);
-  } catch (e) { if (e instanceof FsConflict) return json({ ok: true, ref, totalMinor, duplicate: true }, 200, c.headers); throw e; }
-  if (pay) return json(await startOrderPayment(c, wid, slug, id, ref, email, totalMinor, pay), 201, c.headers);
+  } catch (e) { if (e instanceof FsConflict) return json({ ok: true, id, ref, totalMinor, duplicate: true }, 200, c.headers); throw e; }
+  if (pay) return json({ ...(await startOrderPayment(c, wid, slug, id, ref, email, totalMinor, pay)), id }, 201, c.headers);
 
   const st = ws.data.settings as Record<string, unknown> | undefined;
   const biz = String(st?.publicName ?? ws.data.name ?? 'the business');
@@ -117,7 +117,7 @@ export async function placeOrder(c: Ctx): Promise<Response> {
       note: `Reply on WhatsApp: https://wa.me/${phone.replace(/\D/g, '')}`,
     }).catch((e) => console.error('order owner email failed', e instanceof Error ? e.message : e));
   }
-  return json({ ok: true, ref, totalMinor }, 201, c.headers);
+  return json({ ok: true, id, ref, totalMinor }, 201, c.headers);
 }
 
 const STATUS_TEXT: Record<string, [string, string]> = {

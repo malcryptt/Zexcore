@@ -5,14 +5,16 @@ import { money, timeOf, DAY, MON, initials, ymd, whenLabel } from '../lib/format
 import { busy, toast } from '../lib/ui';
 import { brand } from '../layouts';
 import { createShop, type ShopProduct } from './publicShop';
+import { callBlock, bindCallBlock, readCallBlock } from '../lib/callBlock';
+import { callOffered } from '../lib/fb/public';
 import { formatInCurrency, fetchLiveRates, getCachedRates, type SupportedCurrency } from '../lib/fx';
 
 interface Profile {
   business: { slug: string; name: string; logoUrl?: string | null; type: string; phone: string | null; address: string | null };
-  currency: string; exchangeRate?: number; rateAuto?: boolean; deposit: { enabled: boolean; amountMinor: number }; waitlist?: boolean;
+  currency: string; exchangeRate?: number; rateAuto?: boolean; deposit: { enabled: boolean; amountMinor: number }; waitlist?: boolean; calls?: { enabled: boolean; thresholdMinor: number };
   hours: { openMinutes: number; closeMinutes: number; daysOpen: number[]; utcOffsetMinutes: number; maxDaysAhead: number };
   paystackPublicKey: string | null;
-  services: { id: string; name: string; description: string | null; durationMin: number; priceMinor: number; bookingMode?: 'appointment'|'enquiry'; intakeFields?: {key:string;label:string;type:'text'|'textarea'|'select'|'number'|'url';required:boolean;options?:string[];placeholder?:string}[]; consultationEnabled?:boolean }[];
+  services: { id: string; name: string; description: string | null; durationMin: number; priceMinor: number; bookingMode?: 'appointment'|'enquiry'; intakeFields?: {key:string;label:string;type:'text'|'textarea'|'select'|'number'|'url';required:boolean;options?:string[];placeholder?:string}[]; consultationEnabled?:boolean; offerCall?: boolean }[];
   staff: { id: string; name: string; title: string | null }[]; products?: ShopProduct[];
 }
 interface PayInfo { ref: string; status: string; depositStatus: string; amountMinor: number; currency: string; startsAt: string; serviceName: string }
@@ -117,6 +119,7 @@ export async function renderPublicBooking(slug: string, payRef: string | null, o
     if (dt && days.includes(dt)) st.date = dt;
   }
   const svc = () => p.services.find((s) => s.id === st.serviceId);
+  const callOn = (): boolean => svc()?.bookingMode !== 'enquiry' && callOffered(p.calls, svc()?.priceMinor ?? 0, svc()?.offerCall === true);
   const needDeposit = () => p.deposit.enabled && svc()?.bookingMode !== 'enquiry';
   const dep = () => { const s = svc(); const price = s?.priceMinor ?? 0; return needDeposit() ? (price > 0 ? Math.min(p.deposit.amountMinor, price) : p.deposit.amountMinor) : 0; };
 
@@ -163,6 +166,7 @@ export async function renderPublicBooking(slug: string, payRef: string | null, o
         </div>
         ${(svc()?.intakeFields ?? []).length ? html`<div class="card card-pad form-grid" style="margin-top:12px"><h3>Tell us more</h3>${(svc()?.intakeFields ?? []).map((f) => html`<div class="field"><label for="intake-${f.key}">${f.label}${f.required ? ' *' : ''}</label>${f.type === 'textarea' ? html`<textarea class="input" id="intake-${f.key}" rows="3" maxlength="2000" placeholder="${f.placeholder ?? ''}"></textarea>` : f.type === 'select' ? html`<select class="input" id="intake-${f.key}"><option value="">Choose…</option>${(f.options ?? []).map((x) => html`<option value="${x}">${x}</option>`)}</select>` : html`<input class="input" id="intake-${f.key}" type="${f.type === 'number' ? 'number' : f.type === 'url' ? 'url' : 'text'}" maxlength="2000" placeholder="${f.placeholder ?? ''}">`}</div>`)}</div>` : ''}
         ${svc()?.consultationEnabled ? html`<label class="check" style="margin-top:12px"><input type="checkbox" id="consultation"> I would also like a consultation</label>` : ''}
+        ${callOn() ? callBlock('bcall', 'For a booking like this you can ask the business for a scheduled video call. It is optional and does not change your booking.') : ''}
         </section>
       ${needDeposit() ? html`<section class="pub-section"><h2>${p.staff.length ? 5 : 4}. Secure your slot</h2><div class="notice">${ic('info')}<div><b>${priceText(dep())} refundable deposit</b> is required to hold your appointment. You will pay securely by card.${svc() && svc()!.priceMinor > dep() ? html` The balance of <b>${priceText(svc()!.priceMinor - dep())}</b> is paid when you arrive.` : ''}<div class="muted small" style="margin-top:6px;font-size:0.75rem">Charged as ${money(depositNgn(), 'NGN')} via Paystack at checkout.</div></div></div></section>` : ''}
       <div id="berr" class="alert alert-error hidden" style="margin-top:16px" role="alert"></div>
@@ -180,6 +184,7 @@ export async function renderPublicBooking(slug: string, payRef: string | null, o
     $$('[data-staff]').forEach((b) => b.addEventListener('click', () => { st.staffId = b.dataset.staff!; st.slot = ''; keep(); }));
     $$('[data-date]').forEach((b) => b.addEventListener('click', () => { st.date = b.dataset.date!; st.slot = ''; keep(); }));
     if (svc()?.bookingMode !== 'enquiry') void loadSlots();
+    bindCallBlock('bcall');
     $('#go')!.addEventListener('click', (e) => void submit(e.currentTarget as HTMLButtonElement));
   };
   const keep = () => { const v = { n: ($('#cn') as HTMLInputElement)?.value, p: ($('#cp') as HTMLInputElement)?.value, e: ($('#ce') as HTMLInputElement)?.value }; const y = window.scrollY; draw(); ($('#cn') as HTMLInputElement).value = v.n ?? ''; ($('#cp') as HTMLInputElement).value = v.p ?? ''; ($('#ce') as HTMLInputElement).value = v.e ?? ''; window.scrollTo(0, y); };
@@ -222,17 +227,20 @@ export async function renderPublicBooking(slug: string, payRef: string | null, o
     if (name.length < 2) return fail('Please enter your full name.');
     if (!phone) return fail('Please enter your phone number.');
     if (needDeposit() && !/^\S+@\S+\.\S+$/.test(email)) return fail('Please enter a valid email for your receipt.');
+    const callWish = readCallBlock('bcall', off);
+    if (callWish && !/^\S+@\S+\.\S+$/.test(email)) return fail('Add your email address so we can send you the call time, or choose No thanks.');
     await busy(btn, async () => {
       try {
         const intakeAnswers: Record<string,string> = {}; for (const f of svc()?.intakeFields ?? []) { const el = document.getElementById('intake-' + f.key) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null; const value = el?.value.trim() ?? ''; if (f.required && !value) return fail('Please complete: ' + f.label); if (value) intakeAnswers[f.key] = value; }
-        const r = await api<{ booking?: { ref: string; status: string; startsAt: string; serviceName: string }; enquiry?: { ref: string; status: string; serviceName: string }; payment: { reference: string; amountMinor: number; authorizationUrl: string } | null }>(`/api/public/${slug}/bookings`, { method: 'POST', auth: false, body: { serviceId: st.serviceId, staffId: st.staffId || null, customerName: name, customerPhone: phone, customerEmail: email || null, ...(svc()?.bookingMode === 'enquiry' ? {} : { startsAt: st.slot }), intakeAnswers, consultationRequested: (document.getElementById('consultation') as HTMLInputElement | null)?.checked === true } });
+        const r = await api<{ booking?: { ref: string; status: string; startsAt: string; serviceName: string; callRequested?: boolean }; enquiry?: { ref: string; status: string; serviceName: string }; payment: { reference: string; amountMinor: number; authorizationUrl: string } | null }>(`/api/public/${slug}/bookings`, { method: 'POST', auth: false, body: { serviceId: st.serviceId, staffId: st.staffId || null, customerName: name, customerPhone: phone, customerEmail: email || null, ...(callWish ? { callRequest: callWish } : {}), ...(svc()?.bookingMode === 'enquiry' ? {} : { startsAt: st.slot }), intakeAnswers, consultationRequested: (document.getElementById('consultation') as HTMLInputElement | null)?.checked === true } });
         if (r.enquiry) { showEnquiryReceipt(r.enquiry.ref, r.enquiry.serviceName); return; }
+        if (r.booking?.callRequested === true) toast('Call request sent. The business will email you a time.', 'success'); else if (callWish) toast('Your booking is in, but the call request did not go through. Please ask the business for a call.', 'info');
         if (r.booking && !r.payment) { showReceipt(r.booking.ref, r.booking.serviceName, r.booking.startsAt, r.booking.status, false); if (needDeposit()) toast('Your request is in. The business will arrange your deposit with you.', 'info'); return; }
         if (r.payment) location.assign(r.payment.authorizationUrl);
       } catch (e) { fail(e instanceof ApiError ? e.message : 'Could not complete your booking'); if (e instanceof ApiError && e.status === 409) void loadSlots(); }
     });
   }
-  const shopView = createShop(root, { slug, businessName: p.business.name, phone: p.business.phone, products: p.products ?? [], priceText, header: () => head(p.business.name, sub), tabs, onTabs });
+  const shopView = createShop(root, { slug, businessName: p.business.name, phone: p.business.phone, products: p.products ?? [], priceText, calls: p.calls, utcOffsetMinutes: off, header: () => head(p.business.name, sub), tabs, onTabs });
   const draw = (): void => (mode === 'shop' ? shopView() : drawBook());
   draw();
 }

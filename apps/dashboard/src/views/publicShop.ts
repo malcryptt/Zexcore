@@ -4,10 +4,11 @@ import { ic } from '../lib/icons';
 import { api, ApiError } from '../lib/api';
 import { busy, toast } from '../lib/ui';
 import { thumb } from '../lib/fb/shop';
-import { shopPay } from '../lib/fb/public';
+import { shopPay, callOffered } from '../lib/fb/public';
+import { callBlock, bindCallBlock, readCallBlock, peekCallBlock } from '../lib/callBlock';
 
 export interface ShopProduct { id: string; name: string; description: string | null; priceMinor: number; inStock: boolean; imageUrl: string | null }
-export interface ShopCtx { slug: string; businessName: string; phone: string | null; products: ShopProduct[]; priceText: (usdMinor: number) => string; header: () => Raw; tabs: () => Raw; onTabs: () => void }
+export interface ShopCtx { slug: string; businessName: string; phone: string | null; products: ShopProduct[]; priceText: (usdMinor: number) => string; calls?: { enabled: boolean; thresholdMinor: number }; utcOffsetMinutes?: number; header: () => Raw; tabs: () => Raw; onTabs: () => void }
 
 const MAX_QTY = 99;
 
@@ -16,6 +17,8 @@ export function createShop(root: HTMLElement, x: ShopCtx): () => void {
   let online = false;   // can pay now? asked once; a failed check means no
   void shopPay(x.slug).then((r) => { if (r.online) { online = true; draw(); } });
   const f = { name: '', phone: '', email: '', address: '', notes: '' };
+  let callState = { yes: false, at: '' };
+  const callOn = (): boolean => callOffered(x.calls, total()) && count() > 0;
   const total = (): number => x.products.reduce((n, p) => n + p.priceMinor * (cart.get(p.id) ?? 0), 0);
   const count = (): number => [...cart.values()].reduce((a, b) => a + b, 0);
 
@@ -35,6 +38,7 @@ export function createShop(root: HTMLElement, x: ShopCtx): () => void {
           <div class="grow"><b>${p.name}</b>${p.description ? html`<div class="muted small">${p.description}</div>` : ''}<div>${x.priceText(p.priceMinor)}</div></div>
           ${p.inStock ? html`<div class="row" style="gap:6px;align-items:center"><button type="button" class="btn btn-secondary btn-sm" data-dec="${p.id}" aria-label="One less ${p.name}">−</button><b class="num" style="min-width:20px;text-align:center" aria-live="polite">${cart.get(p.id) ?? 0}</b><button type="button" class="btn btn-secondary btn-sm" data-inc="${p.id}" aria-label="One more ${p.name}">+</button></div>` : html`<span class="muted small">Out of stock</span>`}</div>`)}</div></section>
       <section class="pub-section"><h2>2. Your details</h2>
+        ${callOn() ? callBlock('ocall', 'Your order is large enough that you can ask the business for a scheduled video call to go through it. It is optional and does not change your order.', callState) : ''}
         <div id="oerr" class="alert alert-error hidden" role="alert"></div>
         <div class="form-grid two"><div class="field"><label for="on">Full name</label><input class="input" id="on" autocomplete="name" maxlength="120" value="${f.name}"></div>
           <div class="field"><label for="op">Phone / WhatsApp</label><input class="input" id="op" type="tel" autocomplete="tel" placeholder="0803 123 4567" value="${f.phone}"></div></div>
@@ -44,18 +48,20 @@ export function createShop(root: HTMLElement, x: ShopCtx): () => void {
       <div class="card card-pad" style="position:sticky;bottom:8px"><div class="row between" style="align-items:center;gap:12px"><div><b>${count()} item${count() === 1 ? '' : 's'}</b><div class="muted small">${count() ? x.priceText(total()) : 'Nothing chosen yet'}</div></div>
         <div class="row" style="gap:8px;flex-wrap:wrap">${online ? html`<button type="button" class="btn btn-primary btn-lg" id="opay" ${count() ? '' : 'disabled'}>Pay now</button>` : ''}<button type="button" class="btn ${online ? 'btn-secondary' : 'btn-primary'} btn-lg" id="osend" ${count() ? '' : 'disabled'}>Send order request</button></div></div>
         <p class="muted small" style="margin:8px 0 0">${online ? 'Pay now takes you to Paystack. Your card is charged in naira at today\'s rate, and the money goes straight to the business. Or send a request and agree payment with the business yourself.' : 'This sends a request. You are not charged online: the business confirms the order and agrees payment with you.'}</p></div>`);
-    const keep = (): void => { f.name = ($('#on') as HTMLInputElement).value; f.phone = ($('#op') as HTMLInputElement).value; f.email = ($('#oe') as HTMLInputElement).value; f.address = ($('#oa') as HTMLTextAreaElement).value; f.notes = ($('#ox') as HTMLInputElement).value; };
+    const keep = (): void => { callState = peekCallBlock('ocall') ?? callState; f.name = ($('#on') as HTMLInputElement).value; f.phone = ($('#op') as HTMLInputElement).value; f.email = ($('#oe') as HTMLInputElement).value; f.address = ($('#oa') as HTMLTextAreaElement).value; f.notes = ($('#ox') as HTMLInputElement).value; };
     ['#on', '#op', '#oe', '#oa', '#ox'].forEach((s) => $(s)!.addEventListener('input', keep));
     const bump = (id: string, d: number): void => { keep(); const n = Math.max(0, Math.min(MAX_QTY, (cart.get(id) ?? 0) + d)); if (n) cart.set(id, n); else cart.delete(id); const y = window.scrollY; draw(); window.scrollTo(0, y); };
     $$('[data-inc]').forEach((b) => b.addEventListener('click', () => bump(b.dataset.inc!, 1)));
     $$('[data-dec]').forEach((b) => b.addEventListener('click', () => bump(b.dataset.dec!, -1)));
+    bindCallBlock('ocall');
     x.onTabs();
     $('#opay')?.addEventListener('click', (e) => void busy(e.currentTarget as HTMLButtonElement, async () => {
       keep();
       const box = $('#oerr')!; box.classList.add('hidden');
       try {
         if (!f.email.trim()) throw new ApiError(400, 'Enter your email address so we can send your payment receipt.');
-        const r = await api<{ authorizationUrl: string }>(`/api/public/${encodeURIComponent(x.slug)}/orders`, { method: 'POST', auth: false, body: { name: f.name, phone: f.phone, email: f.email, address: f.address, notes: f.notes, payOnline: true, items: [...cart].map(([id, qty]) => ({ id, qty })) } });
+        const wish = readCallBlock('ocall', x.utcOffsetMinutes ?? 60);
+        const r = await api<{ authorizationUrl: string }>(`/api/public/${encodeURIComponent(x.slug)}/orders`, { method: 'POST', auth: false, body: { name: f.name, phone: f.phone, email: f.email, address: f.address, notes: f.notes, payOnline: true, ...(wish ? { callRequest: wish } : {}), items: [...cart].map(([id, qty]) => ({ id, qty })) } });
         window.location.assign(r.authorizationUrl);
         await new Promise(() => undefined);   // keep the button busy while the browser leaves
       } catch (err) {
@@ -67,7 +73,10 @@ export function createShop(root: HTMLElement, x: ShopCtx): () => void {
       keep();
       const box = $('#oerr')!; box.classList.add('hidden');
       try {
-        const r = await api<{ ref: string }>(`/api/public/${encodeURIComponent(x.slug)}/orders`, { method: 'POST', auth: false, body: { name: f.name, phone: f.phone, email: f.email, address: f.address, notes: f.notes, items: [...cart].map(([id, qty]) => ({ id, qty })) } });
+        const wish = readCallBlock('ocall', x.utcOffsetMinutes ?? 60);
+        if (wish && !/^\S+@\S+\.\S+$/.test(f.email.trim())) throw new ApiError(400, 'Add your email address so we can send you the call time, or choose No thanks.');
+        const r = await api<{ ref: string; callRequested?: boolean }>(`/api/public/${encodeURIComponent(x.slug)}/orders`, { method: 'POST', auth: false, body: { name: f.name, phone: f.phone, email: f.email, address: f.address, notes: f.notes, ...(wish ? { callRequest: wish } : {}), items: [...cart].map(([id, qty]) => ({ id, qty })) } });
+        if (wish) toast(r.callRequested === true ? 'Call request sent. The business will email you a time.' : 'Your order is in, but the call request did not go through. Please ask the business for a call.', r.callRequested === true ? 'success' : 'info');
         done(r.ref);
       } catch (err) {
         const m = err instanceof ApiError ? err.message : 'Could not send your order. Please try again.';
