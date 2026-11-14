@@ -5,10 +5,10 @@ import { hasFeatureAccess, slotLimit } from './plan';
 import { normalizePhone } from './slots';
 
 export interface IntakeField { key: string; label: string; type: 'text' | 'textarea' | 'select' | 'number' | 'url'; required: boolean; options?: string[]; placeholder?: string }
-export interface ServiceDto { id: string; name: string; description: string | null; durationMin: number; priceMinor: number; active: boolean; bookingMode?: 'appointment' | 'enquiry'; intakeFields?: IntakeField[]; consultationEnabled?: boolean; online?: boolean }
+export interface ServiceDto { id: string; name: string; description: string | null; durationMin: number; priceMinor: number; active: boolean; bookingMode?: 'appointment' | 'enquiry'; intakeFields?: IntakeField[]; consultationEnabled?: boolean; online?: boolean; offerCall?: boolean }
 export interface StaffDto { id: string; name: string; title: string | null; active: boolean; auto?: boolean }
 
-const svc = (d: QueryDocumentSnapshot): ServiceDto => ({ id: d.id, name: d.data().name, description: d.data().description ?? null, durationMin: d.data().durationMin, priceMinor: d.data().priceMinor ?? 0, active: d.data().active !== false, bookingMode: d.data().bookingMode === 'enquiry' ? 'enquiry' : 'appointment', intakeFields: Array.isArray(d.data().intakeFields) ? d.data().intakeFields : [], consultationEnabled: d.data().consultationEnabled === true, online: d.data().online === true });
+const svc = (d: QueryDocumentSnapshot): ServiceDto => ({ id: d.id, name: d.data().name, description: d.data().description ?? null, durationMin: d.data().durationMin, priceMinor: d.data().priceMinor ?? 0, active: d.data().active !== false, bookingMode: d.data().bookingMode === 'enquiry' ? 'enquiry' : 'appointment', intakeFields: Array.isArray(d.data().intakeFields) ? d.data().intakeFields : [], consultationEnabled: d.data().consultationEnabled === true, online: d.data().online === true, offerCall: d.data().offerCall === true });
 const stf = (d: QueryDocumentSnapshot): StaffDto => ({ id: d.id, name: d.data().name, title: d.data().title ?? null, active: d.data().active !== false, auto: d.data().auto === true });
 const bySeq = (name: string, c: Ctx) => query(wsCol(c, name), orderBy('seq'));
 
@@ -49,6 +49,7 @@ function checkService(b: Record<string, unknown>, partial: boolean): Record<stri
   }
   if (b.consultationEnabled !== undefined) out.consultationEnabled = b.consultationEnabled === true;
   if (b.online !== undefined) out.online = b.online === true;
+  if (b.offerCall !== undefined) out.offerCall = b.offerCall === true;
   if (b.active !== undefined) out.active = Boolean(b.active);
   return out;
 }
@@ -179,6 +180,12 @@ export async function putSettings(b: Record<string, unknown>): Promise<{ setting
     s.meetingUrl = u || null;
   }
   if (b.followUpEmails !== undefined) s.followUpEmails = b.followUpEmails === true;
+  if (b.callRequests !== undefined) s.callRequests = b.callRequests === true;
+  if (b.callThresholdMinor !== undefined) {
+    const m = Math.round(Number(b.callThresholdMinor));
+    if (!Number.isFinite(m) || m < 0 || m > 100_000_00) throw new ApiError(400, 'Enter a call threshold between 0 and $100,000. Use 0 to offer calls only on services you choose.');
+    s.callThresholdMinor = m;
+  }
   if (b.waitlistEnabled !== undefined) {
     s.waitlistEnabled = b.waitlistEnabled === true;
     if (s.waitlistEnabled && !c.settings.waitlistEnabled) requireFeature(c, 'waitlist');
@@ -211,7 +218,7 @@ export async function putSettings(b: Record<string, unknown>): Promise<{ setting
     name: s.publicName || c.wsName, openMinutes: s.openMinutes, closeMinutes: s.closeMinutes, slotMinutes: s.slotMinutes,
     closedWeekdays: [0, 1, 2, 3, 4, 5, 6].filter((d) => !s.daysOpen.includes(d)), phone: s.phone, address: s.address,
     leadMinutes: s.leadMinutes, maxDaysAhead: s.maxDaysAhead, bookingCap: slotLimit(c.tier, 'bookingsPerMonth'),
-    depositEnabled: s.depositEnabled, depositMinor: s.depositMinor, exchangeRate: s.exchangeRateMode === 'auto' ? null : s.exchangeRate, currency: s.currency || 'USD', logoUrl: s.logoUrl ?? null, riskDeposit: s.riskDepositEnabled === true, waitlist: s.waitlistEnabled === true,
+    depositEnabled: s.depositEnabled, depositMinor: s.depositMinor, exchangeRate: s.exchangeRateMode === 'auto' ? null : s.exchangeRate, currency: s.currency || 'USD', logoUrl: s.logoUrl ?? null, riskDeposit: s.riskDepositEnabled === true, waitlist: s.waitlistEnabled === true, callRequests: s.callRequests === true, callThresholdMinor: s.callThresholdMinor ?? null,
   });
   void audit(c, 'settings.update', 'workspace', c.wid);
   await loadCtx(true);

@@ -18,6 +18,9 @@ import { CALLS_PER_MONTH, effectivePlan } from '../plan';
 import { HttpError, WID_RE, hmacSha256Hex, json, randomHex, readJson, timingSafeEqual } from '../util';
 
 const BOOKING_RE = /^\d{6}_\d{1,6}$/;
+/** A scheduled call request (see routes/calls.ts) is joined exactly like a booking, under an id starting `c_`. */
+export const CALL_RE = /^c_[bo]_[A-Za-z0-9_-]{1,60}$/;
+const MEETING_RE = (id: string): boolean => BOOKING_RE.test(id) || CALL_RE.test(id);
 const DAILY = 'https://api.daily.co/v1';
 const ROOM_MINUTES = 30;
 const MAX_PEOPLE = 4;
@@ -37,6 +40,13 @@ export async function joinKey(env: Env, wid: string, bookingId: string): Promise
 }
 
 /** Where a customer should go to join, or null when the service is not online or no way to host it is set up. */
+export async function callLinkFor(env: Env, wid: string, callId: string, settings: Record<string, unknown> | undefined): Promise<string | null> {
+  const own = ownLink(settings);
+  if (own) return own;
+  if (!dailyConfigured(env)) return null;
+  return `${env.APP_URL.replace(/\/$/, '')}/meet/${wid}/${callId}/${await joinKey(env, wid, callId)}`;
+}
+
 export async function meetingLinkFor(env: Env, wid: string, bookingId: string, service: Record<string, any> | undefined, settings: Record<string, unknown> | undefined): Promise<string | null> {
   if (service?.online !== true) return null;
   const own = ownLink(settings);
@@ -72,15 +82,21 @@ interface Target { mode: 'own' | 'daily'; url: string; used?: number; limit?: nu
 /** Finds or creates the room for a booking and returns a join URL for one person. */
 async function enter(c: Ctx, wid: string, bookingId: string, who: { name: string; owner: boolean }): Promise<Target> {
   const { env, d } = c;
-  const [bk, ws] = await Promise.all([fsGet(env, d, `workspaces/${wid}/bookings/${bookingId}`), fsGet(env, d, `workspaces/${wid}`)]);
-  if (!bk || !ws) throw new HttpError(404, 'Booking not found');
-  const svc = await fsGet(env, d, `workspaces/${wid}/services/${String(bk.data.serviceId)}`);
-  if (svc?.data.online !== true) throw new HttpError(400, 'This booking is not an online meeting.');
-  if (bk.data.status === 'cancelled') throw new HttpError(409, 'This booking was cancelled.');
+  const isCall = CALL_RE.test(bookingId);
+  const [bk, ws] = await Promise.all([fsGet(env, d, `workspaces/${wid}/${isCall ? 'calls' : 'bookings'}/${bookingId}`), fsGet(env, d, `workspaces/${wid}`)]);
+  if (!bk || !ws) throw new HttpError(404, isCall ? 'Call not found' : 'Booking not found');
+  if (isCall) {
+    if (bk.data.status !== 'scheduled') throw new HttpError(409, bk.data.status === 'cancelled' || bk.data.status === 'declined' ? 'This call was cancelled.' : 'This call has not been scheduled yet.');
+  } else {
+    const svc = await fsGet(env, d, `workspaces/${wid}/services/${String(bk.data.serviceId)}`);
+    if (svc?.data.online !== true) throw new HttpError(400, 'This booking is not an online meeting.');
+    if (bk.data.status === 'cancelled') throw new HttpError(409, 'This booking was cancelled.');
+  }
   const own = ownLink(ws.data.settings as Record<string, unknown> | undefined);
   if (own) return { mode: 'own', url: own };
   if (!dailyConfigured(env)) throw new HttpError(503, 'Video calls are not switched on yet. Ask the business for another way to meet.');
-  const starts = bk.data.startsAt instanceof Date ? bk.data.startsAt.getTime() : 0;
+  const at = isCall ? bk.data.scheduledAt : bk.data.startsAt;
+  const starts = at instanceof Date ? at.getTime() : 0;
   const now = d.now().getTime();
   // The room opens shortly before the appointment and stays available for the rest of the slot. The business can start earlier.
   const early = who.owner ? 60 * MIN : 15 * MIN, late = who.owner ? 4 * 60 * MIN : 90 * MIN;
@@ -111,7 +127,7 @@ export async function memberJoin(c: Ctx): Promise<Response> {
   const b = await readJson(c.req);
   const { wid, caller } = await requireMember(c, b.workspaceId, DOERS);
   const id = String(b.bookingId ?? '');
-  if (!BOOKING_RE.test(id)) throw new HttpError(400, 'Invalid booking');
+  if (!MEETING_RE(id)) throw new HttpError(400, 'Invalid booking');
   const t = await enter(c, wid, id, { name: caller.email?.split('@')[0] || 'Host', owner: true });
   return json(t, 200, c.headers);
 }
@@ -120,9 +136,9 @@ export async function memberJoin(c: Ctx): Promise<Response> {
 export async function publicJoin(c: Ctx): Promise<Response> {
   const b = await readJson(c.req, 1024);
   const wid = String(b.workspaceId ?? ''), id = String(b.bookingId ?? ''), key = String(b.key ?? '');
-  if (!WID_RE.test(wid) || !BOOKING_RE.test(id) || !/^[0-9a-f]{24}$/.test(key) || !dailyConfigured(c.env)) throw new HttpError(404, 'Not found');
+  if (!WID_RE.test(wid) || !MEETING_RE(id) || !/^[0-9a-f]{24}$/.test(key) || !dailyConfigured(c.env)) throw new HttpError(404, 'Not found');
   if (!timingSafeEqual(key, await joinKey(c.env, wid, id))) throw new HttpError(404, 'Not found');
-  const bk = await fsGet(c.env, c.d, `workspaces/${wid}/bookings/${id}`);
+  const bk = await fsGet(c.env, c.d, `workspaces/${wid}/${CALL_RE.test(id) ? 'calls' : 'bookings'}/${id}`);
   const name = String(bk?.data.customerName ?? 'Guest');
   return json(await enter(c, wid, id, { name, owner: false }), 200, c.headers);
 }

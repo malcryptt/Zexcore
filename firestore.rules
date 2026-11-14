@@ -89,13 +89,13 @@ service cloud.firestore {
         && getAfter(wsPath(request.resource.data.wid)).data.slug == slug
         && noExtraKeys(['wid', 'ownerUid', 'name', 'timezone', 'currency', 'bookingEnabled', 'slotMinutes',
                         'openMinutes', 'closeMinutes', 'closedWeekdays', 'depositNote', 'phone', 'address',
-                        'bookingCap', 'leadMinutes', 'maxDaysAhead', 'depositEnabled', 'depositMinor', 'exchangeRate', 'riskDeposit', 'waitlist']);
+                        'bookingCap', 'leadMinutes', 'maxDaysAhead', 'depositEnabled', 'depositMinor', 'exchangeRate', 'riskDeposit', 'waitlist', 'callRequests', 'callThresholdMinor']);
       allow update: if signedIn() && resource.data.ownerUid == request.auth.uid
         && request.resource.data.wid == resource.data.wid
         && request.resource.data.ownerUid == resource.data.ownerUid
         && noExtraKeys(['wid', 'ownerUid', 'name', 'timezone', 'currency', 'bookingEnabled', 'slotMinutes',
                         'openMinutes', 'closeMinutes', 'closedWeekdays', 'depositNote', 'phone', 'address',
-                        'bookingCap', 'leadMinutes', 'maxDaysAhead', 'depositEnabled', 'depositMinor', 'exchangeRate', 'riskDeposit', 'waitlist', 'logoUrl'])
+                        'bookingCap', 'leadMinutes', 'maxDaysAhead', 'depositEnabled', 'depositMinor', 'exchangeRate', 'riskDeposit', 'waitlist', 'logoUrl', 'callRequests', 'callThresholdMinor'])
         // the logo shown on the public booking page: Starter and above, a small image data URL, or empty
         && (!('logoUrl' in request.resource.data)
             || request.resource.data.logoUrl == null
@@ -285,6 +285,8 @@ service cloud.firestore {
       }
       match /automationRuns/{id} { allow read: if isAdmin(wid); allow write: if false; }
       match /automationMarkers/{id} { allow read, write: if false; }
+      // Scheduled call requests: the team reads them; only the Worker writes them (it checks the booking or order and sends the emails).
+      match /calls/{id} { allow read: if isMember(wid); allow write: if false; }
 
       // Where deposits are paid out, and the deposit payments themselves: written only by the Worker (service account).
       // Dedicated-cluster requests: written and read only by the Worker.

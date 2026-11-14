@@ -37,7 +37,7 @@ async function run(host: HTMLElement, load: () => Promise<JoinTarget>, leave: ()
 /** /app/meet/:id — the team side. */
 export async function renderMeet(view: HTMLElement, bookingId: string): Promise<void> {
   const head = html`<div class="page-head"><div><h1>Video meeting</h1><p>Allow the camera and microphone when your browser asks.</p></div></div>`;
-  await run(view, () => joinMeeting(bookingId), () => navigate('/app/bookings'), head, true);
+  await run(view, () => joinMeeting(bookingId), () => navigate(bookingId.startsWith('c_') ? '/app/calls' : '/app/bookings'), head, true);
 }
 
 /** /meet/:workspace/:booking/:key — the customer side, no sign-in. */

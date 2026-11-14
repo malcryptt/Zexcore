@@ -31,6 +31,7 @@ import { manageWhatsAppSequences, setWhatsAppConsent, scheduledWhatsApp } from '
 import { whatsappWebhook, whatsappWebhookVerify } from './routes/whatsappWebhook';
 import { scheduledDepositExpiry } from './routes/expiry';
 import { drainOutbox } from './outbox';
+import { publicCallRequest, respondToCall, scheduledCallReminders } from './routes/calls';
 import { scheduledCustomerEmails } from './routes/reminders';
 import { listDevices, recordSignIn, revokeAll } from './routes/security';
 import { paymentFeePolicy, acceptPaymentFeePolicy } from './routes/payment-fees';
@@ -68,6 +69,8 @@ const ROUTES: Record<string, Handler> = {
   'POST /api/meetings/join': memberJoin,
   'POST /api/meetings/usage': meetingUsage,
   'POST /api/public/meeting': publicJoin,
+  'POST /api/public/call-request': publicCallRequest,
+  'POST /api/calls/respond': respondToCall,
   'GET /api/banks': banks,
   'POST /api/payout/setup': payoutSetup,
   'POST /api/public/deposit': publicDeposit,
@@ -120,7 +123,7 @@ const ROUTES: Record<string, Handler> = {
 };
 
 /** Routes that take or confirm money. They stay off unless a live Paystack key is set (or the Worker is explicitly marked staging). */
-const PUBLIC_ROUTES = new Set(['GET /api/public/license-key', 'POST /api/public/license-verify', 'GET /api/public/shop-pay', 'GET /api/public/order-status', 'POST /api/public/waitlist', 'POST /api/public/order', 'POST /api/public/deposit', 'GET /api/public/deposit-status', 'POST /api/public/booked', 'POST /api/public/meeting', 'GET /api/banks', 'GET /api/team/invite-info']);
+const PUBLIC_ROUTES = new Set(['GET /api/public/license-key', 'POST /api/public/license-verify', 'GET /api/public/shop-pay', 'GET /api/public/order-status', 'POST /api/public/waitlist', 'POST /api/public/order', 'POST /api/public/deposit', 'GET /api/public/deposit-status', 'POST /api/public/booked', 'POST /api/public/meeting', 'POST /api/public/call-request', 'GET /api/banks', 'GET /api/team/invite-info']);
 const MONEY_ROUTES = new Set(['GET /api/public/order-status', 'POST /api/order/refund', 'POST /api/checkout', 'POST /api/paystack-webhook', 'GET /api/banks', 'POST /api/payout/setup', 'POST /api/public/deposit', 'POST /api/deposit/link', 'POST /api/deposit/refund', 'GET /api/public/deposit-status']);
 export { paymentsEnabled };
 
@@ -128,7 +131,7 @@ export { paymentsEnabled };
  * Best-effort throttle for the public (signed-out) routes: 20 calls a minute per visitor per route, per Worker instance.
  * It stops casual abuse; for a hard limit add a Cloudflare rate-limiting rule on /api/public/* (see docs/launch-runbook.md).
  */
-const PUBLIC_LIMITED = new Set(['GET /api/public/license-key', 'POST /api/public/license-verify', 'GET /api/public/shop-pay', 'GET /api/public/order-status', 'POST /api/public/waitlist', 'POST /api/public/order', 'POST /api/public/deposit', 'GET /api/public/deposit-status', 'POST /api/public/booked', 'POST /api/public/meeting']);
+const PUBLIC_LIMITED = new Set(['GET /api/public/license-key', 'POST /api/public/license-verify', 'GET /api/public/shop-pay', 'GET /api/public/order-status', 'POST /api/public/waitlist', 'POST /api/public/order', 'POST /api/public/deposit', 'GET /api/public/deposit-status', 'POST /api/public/booked', 'POST /api/public/meeting', 'POST /api/public/call-request']);
 const hits = new Map<string, number[]>();
 export function throttled(key: string, now: number, max = 20, windowMs = 60_000): boolean {
   const recent = (hits.get(key) ?? []).filter((t) => now - t < windowMs);
@@ -169,7 +172,12 @@ export async function handle(req: Request, env: Env, d: Deps = realDeps()): Prom
 export default {
   fetch: (req: Request, env: Env) => handle(req, env),
   /** Cron Trigger: hourly tick. Backs up the Enterprise/Dedicated workspaces that are due (see routes/backups.ts). */
-  scheduled: (_event: unknown, env: Env, ctx: { waitUntil(p: Promise<unknown>): void }) => {
+  scheduled: (event: { cron?: string }, env: Env, ctx: { waitUntil(p: Promise<unknown>): void }) => {
+    // The 5-minute trigger only sends "your call starts soon" emails (and delivers anything just queued); everything else runs hourly.
+    if (event?.cron === '*/5 * * * *') {
+      ctx.waitUntil(scheduledCallReminders(env, realDeps()).then(() => drainOutbox(env, realDeps())).catch((e) => console.error('call reminders', e instanceof Error ? e.message : e)));
+      return;
+    }
     ctx.waitUntil(scheduledPaymentFeeNotices(env, realDeps()).catch((e) => console.error('payment fee notices', e instanceof Error ? e.message : e)));
     ctx.waitUntil(recordHeartbeat(env, realDeps()).catch((e) => console.error('heartbeat', e instanceof Error ? e.message : e)));
     ctx.waitUntil(scheduledBackups(env, realDeps()).catch((e) => console.error('scheduled backups', e instanceof Error ? e.message : e)));
