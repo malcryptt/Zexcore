@@ -42,7 +42,7 @@ Then Billing, System check: the **Video calls (Daily)** line should be OK.
 
 ## Rules that keep it safe
 
-- Rooms open 15 minutes before the appointment for customers (an hour for the team) and close after the slot.
+- Either side can join any time from a day before the appointment until after the slot (customers 90 minutes after, the team 4 hours). The room is timed from the scheduled start, so joining early does not use up the 30 minutes.
 - At most 3 rooms per booking, so nobody can drain the monthly allowance by rejoining.
 - A cancelled booking cannot be joined.
 - The customer link carries a key (an HMAC of the workspace and booking, made with the Daily key). It cannot be guessed,
@@ -62,5 +62,5 @@ For high-trust or high-value work (clinics, large orders) a business can let cus
 - **Bookings:** the booking page offers "Request a call / No thanks" when the service price is at or above the threshold, or the service is marked always-offer. **Shop:** the checkout offers it when the order total is at or above the threshold. Declining, or a failed request, never blocks the booking or order.
 - The customer may suggest a time. The request is stored in `workspaces/{wid}/calls/{c_b_<bookingId>|c_o_<orderId>}` (Worker-only writes) and the owner is emailed. The owner opens **Calls**, confirms or changes the time (or declines), and the customer is emailed the time and a join link.
 - **Reminders:** a second Worker cron, `*/5 * * * *`, emails the customer and the owner once when a scheduled call is within 30 minutes. Re-scheduling re-arms the reminder. Redeploy the Worker (`npx wrangler deploy`) after pulling so the new trigger is registered.
-- **Joining** uses the same rooms, windows (customer 15 min before to 90 after; team 60 min before to 4 h after), own-link override, and monthly allowance as online bookings. A call counts only when someone joins.
+- **Joining** uses the same rooms, windows (from a day before; customer until 90 min after, team until 4 h after), own-link override, and monthly allowance as online bookings. A call counts only when someone joins.
 - A request must be made within 2 hours of the booking/order, and is idempotent per booking/order.

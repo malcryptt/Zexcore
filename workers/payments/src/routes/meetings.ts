@@ -98,9 +98,10 @@ async function enter(c: Ctx, wid: string, bookingId: string, who: { name: string
   const at = isCall ? bk.data.scheduledAt : bk.data.startsAt;
   const starts = at instanceof Date ? at.getTime() : 0;
   const now = d.now().getTime();
-  // The room opens shortly before the appointment and stays available for the rest of the slot. The business can start earlier.
-  const early = who.owner ? 60 * MIN : 15 * MIN, late = who.owner ? 4 * 60 * MIN : 90 * MIN;
-  if (!starts || now < starts - early) throw new HttpError(409, `This meeting opens ${who.owner ? 'an hour' : '15 minutes'} before the appointment.`);
+  // Either side can go in whenever it suits them: from a day before (so nobody is locked out by a clock) until well after the slot.
+  // The room is timed from the scheduled start, not from the first join, so joining early never uses up the 30 minutes.
+  const early = 24 * 60 * MIN, late = who.owner ? 4 * 60 * MIN : 90 * MIN;
+  if (!starts || now < starts - early) throw new HttpError(409, 'This meeting opens up to a day before the appointment.');
   if (now > starts + late) throw new HttpError(410, 'This appointment has ended.');
 
   const { plan } = effectivePlan(ws.data, d.now());
@@ -112,7 +113,7 @@ async function enter(c: Ctx, wid: string, bookingId: string, who: { name: string
   if (!room) {
     if (Number(existing?.data.rooms ?? 0) >= MAX_ROOMS_PER_BOOKING) throw new HttpError(429, 'This appointment has used its video sessions.');
     used = await takeCall(env, d, wid, limit);
-    const exp = Math.floor(now / 1000) + ROOM_MINUTES * 60 + 120;
+    const exp = Math.floor(Math.max(now, starts) / 1000) + ROOM_MINUTES * 60 + 120;
     const made = await daily(env, d, '/rooms', { name: `zx-${randomHex(12)}`, privacy: 'private', properties: { exp, max_participants: MAX_PEOPLE, eject_at_room_exp: true, enable_prejoin_ui: true, enable_chat: true } });
     room = { roomName: String(made.name), roomUrl: String(made.url), expiresAt: new Date(exp * 1000), rooms: Number(existing?.data.rooms ?? 0) + 1 };
     await fsCommit(env, d, [{ path: mtgPath, fields: { wid, bookingId, ...room, createdAt: d.now() } }]);

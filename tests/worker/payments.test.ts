@@ -1894,7 +1894,7 @@ describe('video meetings', () => {
     expect(j.url).toMatch(/^https:\/\/zex\.daily\.co\/zx-[0-9a-f]{24}\?t=tok-/);
     const room = dailyCalls.find((x) => x.path === '/rooms')!.body;
     expect(room).toMatchObject({ privacy: 'private', properties: { max_participants: 4, eject_at_room_exp: true } });
-    expect(room.properties.exp - Math.floor(NOW.getTime() / 1000)).toBeLessThanOrEqual(32 * 60);
+    expect(room.properties.exp - Math.floor(NOW.getTime() / 1000)).toBeLessThanOrEqual(10 * 60 + 32 * 60);   // timed from the start (10 minutes away), 30 minutes + grace
     expect(dailyCalls.find((x) => x.path === '/meeting-tokens')!.body.properties.is_owner).toBe(true);
     // The customer joins the same room: no second room, no second count, and no host powers.
     const g = await guest(); expect(g.status).toBe(200);
@@ -1925,10 +1925,16 @@ describe('video meetings', () => {
     expect(dailyCalls).toHaveLength(0);
   });
 
-  it('opens 15 minutes ahead for customers (an hour for the team) and closes after the slot', async () => {
-    seed({ bk: { startsAt: start(45) } });
-    expect((await guest()).status).toBe(409);
+  it('lets either side in early, from a day before, and closes after the slot', async () => {
+    seed({ bk: { startsAt: start(30 * 60) } });
+    expect((await guest()).status).toBe(409); expect((await owner()).status).toBe(409);
+    seed({ bk: { startsAt: start(5 * 60) } });
+    expect((await guest()).status).toBe(200);
+    // Joining 5 hours early must not use up the room: it lasts until 30 minutes after the scheduled start.
+    const room = dailyCalls.find((x) => x.path === '/rooms')!.body;
+    expect(room.properties.exp).toBeGreaterThan(Math.floor(start(5 * 60 + 29).getTime() / 1000));
     expect((await owner()).status).toBe(200);
+    expect(dailyCalls.filter((x) => x.path === '/rooms')).toHaveLength(1);
     seed({ bk: { startsAt: start(-300) } });
     expect((await guest()).status).toBe(410);
   });
@@ -2044,12 +2050,12 @@ describe('scheduled call requests', () => {
     expect(await scheduledCallReminders(env, { fetch: mockFetch(), now: () => NOW })).toBe(0);
   });
 
-  it('a scheduled call opens its room for the customer 15 minutes before and counts toward the allowance', async () => {
+  it('a scheduled call can be joined early by the customer and counts toward the allowance once', async () => {
     seed(); await req(); await respond({ action: 'confirm', scheduledAt: at(60).toISOString() });
     const key = await joinKey(env, X, CID);
-    const early = await pub('/api/public/meeting', { workspaceId: X, bookingId: CID, key }); expect(early.status).toBe(409);
+    const early = await pub('/api/public/meeting', { workspaceId: X, bookingId: CID, key }); expect(early.status).toBe(200);
     const later = (m: number) => handle(new Request('https://pay.example.workers.dev/api/public/meeting', { method: 'POST', headers: { 'content-type': 'application/json', origin: 'https://zexcore.com.ng' }, body: JSON.stringify({ workspaceId: X, bookingId: CID, key }) }), env, { fetch: mockFetch(), now: () => at(m) });
-    const ok = await later(50); expect(ok.status).toBe(200);
+    const ok = await later(50); expect(ok.status).toBe(200);   // same room, not a second call
     expect(fromFs(store.get(`meetingUsage/${X}_202611`)?.fields.count)).toBe(1);
     expect((await pub('/api/public/meeting', { workspaceId: X, bookingId: CID, key: '0'.repeat(24) })).status).toBe(404);
   });
