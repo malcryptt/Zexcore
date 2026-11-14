@@ -130,7 +130,7 @@ export async function respondToCall(c: Ctx): Promise<Response> {
       const moved = cur === 'scheduled';
       await queueFormal(c.env, c.d, `callset:${wid}:${callId}:${t}`, email, moved ? `Your call with ${biz} has moved` : `Your call with ${biz} is confirmed`, {
         heading: moved ? 'Your call time has changed' : 'Your call is confirmed', greeting: `Hello ${who},`,
-        paragraphs: [`${biz} will call you by video at the time below. ${link ? 'Use the button to join. The link opens 15 minutes before the call.' : 'The business will share how to join.'} We will email you again 30 minutes before.`],
+        paragraphs: [`${biz} will call you by video at the time below. ${link ? 'Use the button to join. You can join any time before it starts.' : 'The business will share how to join.'} We will email you again 30 minutes before.`],
         details: [['Business', biz], ['About', String(call.data.what ?? 'Your request')], ['Time', localWhen(new Date(t).toISOString(), off)], ['Length', 'About 30 minutes']],
         ...(link ? { button: { text: 'Join the call', url: link } } : {}) }, wid);
     }
@@ -188,7 +188,7 @@ export async function scheduledCallReminders(env: Env, d: Deps): Promise<number>
         const link = await callLinkFor(env, wid, call.id, st);
         await queueFormal(env, d, `callremind:${wid}:${call.id}:${at}`, email, `Your call with ${biz} starts soon`, {
           heading: 'Your call starts in about 30 minutes', greeting: `Hello ${firstName(String(call.data.customerName ?? ''), email)},`,
-          paragraphs: [`Your video call with ${biz} is at ${when}. ${link ? 'Use the button to join. It works from 15 minutes before.' : 'The business will share how to join.'}`],
+          paragraphs: [`Your video call with ${biz} is at ${when}. ${link ? 'Use the button to join. You can join any time before it starts.' : 'The business will share how to join.'}`],
           details: [['Business', biz], ['About', String(call.data.what ?? 'Your request')], ['Time', when]],
           ...(link ? { button: { text: 'Join the call', url: link } } : {}) }, wid).catch((e) => console.error('call reminder', e instanceof Error ? e.message : e));
         sent++;
@@ -197,7 +197,7 @@ export async function scheduledCallReminders(env: Env, d: Deps): Promise<number>
       if (owner.email) {
         await queueFormal(env, d, `callremindowner:${wid}:${call.id}:${at}`, owner.email, `Call with ${String(call.data.customerName ?? 'a customer')} starts soon`, {
           heading: 'A call starts in about 30 minutes', greeting: `Hello ${owner.name},`,
-          paragraphs: [`You have a video call with ${String(call.data.customerName ?? 'a customer')} at ${when}. Open it from your dashboard. You can join up to an hour early.`],
+          paragraphs: [`You have a video call with ${String(call.data.customerName ?? 'a customer')} at ${when}. Open it from your dashboard. You can join any time before it starts.`],
           details: [['Customer', String(call.data.customerName ?? 'Not given')], ['Phone', String(call.data.customerPhone ?? '') || 'Not given'], ['About', String(call.data.what ?? 'Request')], ['Time', when]],
           button: { text: 'Open the call', url: `${base(env)}/app/meet/${call.id}` } }, wid).catch((e) => console.error('call reminder owner', e instanceof Error ? e.message : e));
         sent++;
